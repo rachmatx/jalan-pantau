@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Tentang{% endblock %}
+
+{% block konten %}
+<div class="jp-wrap">
+  <div class="jp-pagehead">
+    <div>
+      <div class="jp-crumb"><span>SISTEM INSPEKSI JALAN</span><span>›</span><span class="jp-crumb-aktif">TENTANG</span></div>
+      <h1>Tentang Sistem JalanPantau</h1>
+      <p class="jp-hint">Inspeksi dan estimasi biaya kerusakan permukaan jalan berbasis visi komputer (YOLOv11s gambar, YOLOv11n live) — proyek Tugas Akhir.</p>
+    </div>
+    <div class="jp-pageactions">
+      <a class="jp-btn-light" href="#harga"><span>Tabel Tarif</span></a>
+      <a class="jp-btn-light" href="#batasan"><span>Batasan Ilmiah</span></a>
+    </div>
+  </div>
+
+  <section>
+    <div class="jp-table-title"><h3>Pipeline &amp; Metodologi Kerja</h3><span class="jp-table-count">3 TAHAP KOMPUTASI LOKAL</span></div>
+    <div class="jp-kpis" style="margin-top:12px">
+      <div class="jp-kpi jp-kpi-blue">
+        <div class="jp-kpi-top"><span>01 · DETEKSI VISUAL OTOMATIS</span></div>
+        <p class="jp-kpi-sub" style="font-size:13px;color:#0F172A">Citra jalan dari kamera statis (YOLOv11s) atau stream (YOLOv11n) dianalisis untuk 5 kelas kerusakan: retak memanjang, melintang, buaya, kerusakan lain, dan lubang.</p>
+      </div>
+      <div class="jp-kpi jp-kpi-blue">
+        <div class="jp-kpi-top"><span>02 · ESTIMASI DIMENSI &amp; SEVERITY</span></div>
+        <p class="jp-kpi-sub" style="font-size:13px;color:#0F172A">Dimensi dari bounding box terkalibrasi; severity Ringan/Sedang/Berat menentukan asumsi tebal lapis.</p>
+      </div>
+      <div class="jp-kpi jp-kpi-blue">
+        <div class="jp-kpi-top"><span>03 · ESTIMASI ANGGARAN &amp; PELAPORAN</span></div>
+        <p class="jp-kpi-sub" style="font-size:13px;color:#0F172A">Biaya dari tabel harga acuan; hasil tersimpan di SQLite lokal, terpetakan GPS, terunduh sebagai PDF.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="jp-table-title"><h3>Evaluasi Metrik Model (Benchmark Resmi)</h3><span class="jp-table-count">YOLOv11s GAMBAR · YOLOv11n LIVE</span></div>
+    <div class="jp-kpis" style="margin-top:12px">
+      <div class="jp-kpi jp-kpi-blue">
+        <div class="jp-kpi-top"><span>mAP VALIDASI</span><span class="jp-table-count">IoU 0,5</span></div>
+        <div class="jp-kpi-val mono">0,65</div>
+        <p class="jp-kpi-sub">YOLOv11s, split validasi RDD-only.</p>
+      </div>
+      <div class="jp-kpi jp-kpi-blue">
+        <div class="jp-kpi-top"><span>mAP PENGUJIAN</span><span class="jp-table-count">Test Split</span></div>
+        <div class="jp-kpi-val mono">0,53</div>
+        <p class="jp-kpi-sub">YOLOv11s, test RDD2022 full, tanpa augmentasi.</p>
+      </div>
+      <div class="jp-kpi jp-kpi-blue">
+        <div class="jp-kpi-top"><span>mAP OOD BANDUNG</span><span class="jp-table-count">Out-of-Domain</span></div>
+        <div class="jp-kpi-val mono">0,45</div>
+        <p class="jp-kpi-sub">161 foto lubang Kota Bandung, imgsz 960 (n 0,45 — setara).</p>
+      </div>
+      <div class="jp-kpi jp-kpi-blue">
+        <div class="jp-kpi-top"><span>BOBOT MODEL</span><span class="jp-table-count">best_yolo11s.pt + best.onnx</span></div>
+        <div class="jp-kpi-val mono">18<span style="font-size:16px">MB</span></div>
+        <p class="jp-kpi-sub">Gambar: YOLOv11s 18 MB · Live: YOLOv11n-ONNX 10 MB; latih 14.176 gambar.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="batasan">
+    <div class="jp-table-title"><h3>Batasan Teknis &amp; Asumsi Ilmiah</h3><span class="jp-table-count">INTEGRITAS ILMIAH TRANSPARAN</span></div>
+    <div class="jp-kpis" style="margin-top:12px">
+      <div class="jp-kpi jp-kpi-blue">
+        <div class="jp-kpi-top"><span>KAMERA MONOKULAR TUNGGAL</span></div>
+        <p class="jp-kpi-sub" style="font-size:13px;color:#0F172A">Tidak mengukur kedalaman — tebal lapis = asumsi per severity, bukan hasil profilometer.</p>
+      </div>
+      <div class="jp-kpi jp-kpi-blue">
+        <div class="jp-kpi-top"><span>SIANG HARI</span></div>
+        <p class="jp-kpi-sub" style="font-size:13px;color:#0F172A">Data latih siang hari. Mode malam hanya bantuan pencerah, bukan pengganti data malam.</p>
+      </div>
+      <div class="jp-kpi jp-kpi-blue">
+        <div class="jp-kpi-top"><span>ESTIMASI BUKAN RAB</span></div>
+        <p class="jp-kpi-sub" style="font-size:13px;color:#0F172A">Rupiah = estimasi pemeliharaan rutin untuk skoring prioritas, bukan RAB tender.</p>
+      </div>
+      <div class="jp-kpi jp-kpi-blue">
+        <div class="jp-kpi-top"><span>WAJIB KALIBRASI</span></div>
+        <p class="jp-kpi-sub" style="font-size:13px;color:#0F172A"><span class="jp-num">pixels_per_cm</span> wajib dikalibrasi per pemasangan kamera.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="harga">
+    <div class="jp-table-title"><h3>Tabel Indeks Biaya Pemeliharaan Rutin</h3><span class="jp-table-count">HARGA ACUAN EDITABLE</span></div>
+    <div class="jp-table-scroll" style="margin-top:12px">
+      <table class="jp-table">
+        <thead><tr><th>NO</th><th>TINGKAT SEVERITY</th><th>SPESIFIKASI PENANGANAN &amp; MATERIAL</th><th class="jp-num-right">ESTIMASI SATUAN</th><th>SATUAN ACUAN</th></tr></thead>
+        <tbody>
+          {% for h in prices %}
+          <tr>
+            <td class="jp-num">{{ "%02d"|format(loop.index) }}</td>
+            <td><span class="badge badge-{{ h.severity|lower }}"><span class="badge-dot"></span>{{ h.severity|upper }}</span></td>
+            <td><span class="jp-cell-main">{{ h.bahan }}</span></td>
+            <td class="jp-num-right">Rp{{ h.harga_fmt }}</td>
+            <td class="jp-num">{{ h.satuan }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="jp-note">Harga acuan dapat diubah di <span class="jp-num">config/harga_acuan.csv</span> tanpa mengubah kode.</p>
+  </section>
+
+  <section>
+    <div class="jp-card" style="padding:20px 24px">
+      <div class="jp-table-title"><h3>Proyek Tugas Akhir</h3><span class="jp-table-count">REPOSITORI &amp; AUDIT</span></div>
+      <p class="jp-hint">Program Studi Teknik Informatika. Artefak penelitian (notebook training, bobot ONNX, skema database, decision log) tersimpan di repositori proyek dan dapat diaudit penguji.</p>
+    </div>
+  </section>
+</div>
+{% endblock %}

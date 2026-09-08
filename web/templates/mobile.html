@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+{% block title %}Mode Lapangan{% endblock %}
+
+{% block konten %}
+<div class="jp-wrap" style="padding:0;max-width:100%">
+  <!-- Status Bar Sub-header / Workspace Control Bar -->
+  <div style="width:100%;padding:8px 12px;background:var(--jp-surface);display:flex;flex-direction:column;gap:6px">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:18px;font-weight:600;letter-spacing:-0.01em;color:var(--jp-ink)">Survei Lapangan</span>
+        <div style="display:flex;align-items:center;gap:4px;padding:2px 8px;border-radius:9999px;background:var(--jp-sev-h-bg)">
+          <span style="width:8px;height:8px;border-radius:50%;background:var(--jp-sev-h-tx);animation:jp-pulse 1.6s ease-in-out infinite"></span>
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.05em;color:#047857;font-family:var(--jp-mono)">LIVE AKTIF</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="display:flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;background:var(--jp-surface);box-shadow:0 1px 3px rgba(0,0,0,0.1);font-family:var(--jp-mono);font-size:11px;color:var(--jp-tx2)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+          <span>RTK Fix ±0.08m</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;background:var(--jp-surface);box-shadow:0 1px 3px rgba(0,0,0,0.1);font-family:var(--jp-mono);font-size:11px;color:var(--jp-tx2)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#006194" stroke-width="2"><rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2"/></svg>
+          <span>94% • 34°C</span>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 8px;border-radius:6px;background:var(--jp-container-low);font-family:var(--jp-mono);font-size:11px;color:var(--jp-tx2)">
+      <div style="display:flex;align-items:center;gap:4px">
+        <span style="width:6px;height:6px;border-radius:50%;background:var(--jp-sev-h-tx)"></span>
+        <span>Flask API: 192.168.4.1:5000</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span>GSD: 1.8mm/px</span>
+        <span>AZ: 284° W</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Viewfinder Section -->
+  <section style="width:100%;padding:8px 12px 0;display:flex;flex-direction:column">
+    <div id="slot-live" style="position:relative;width:100%;aspect-ratio:4/5;border-radius:12px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.15);background:#020617">
+      <!-- Placeholder / Stream -->
+      <div id="viewer-live" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:var(--jp-mono);font-size:11px;color:#64748B">
+        <div style="text-align:center">
+          <div style="width:48px;height:48px;border:2px dashed rgba(0,191,255,.5);border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </div>
+          <p>Tekan <strong>Mulai</strong> untuk membuka stream</p>
+        </div>
+      </div>
+      <!-- Live Reticle Grid -->
+      <div id="camera-grid" style="position:absolute;inset:0;pointer-events:none;opacity:0.4">
+        <div style="width:100%;height:100%;background-image:repeating-linear-gradient(0deg,transparent,transparent 33.33%,rgba(255,255,255,.15) 33.33%,rgba(255,255,255,.15) calc(33.33% + 1px)),repeating-linear-gradient(90deg,transparent,transparent 33.33%,rgba(255,255,255,.15) 33.33%,rgba(255,255,255,.15) calc(33.33% + 1px))"></div>
+      </div>
+      <!-- OSD Top-Left -->
+      <div style="position:absolute;top:8px;left:8px;pointer-events:none;display:flex;flex-direction:column;gap:4px">
+        <div style="background:rgba(30,41,59,.85);color:#eaf1ff;padding:4px 8px;border-radius:6px;display:flex;align-items:center;gap:8px;font-family:var(--jp-mono);font-size:11px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7bc2ff" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+          <span style="font-weight:600">32 km/h</span>
+          <span style="color:#707881">|</span>
+          <span>STA 02+140</span>
+        </div>
+        <div style="background:rgba(30,41,59,.85);color:#eaf1ff;padding:4px 8px;border-radius:6px;font-family:var(--jp-mono);font-size:11px">
+          <span id="mobile-gps">-6.91746 • 107.61912</span>
+        </div>
+      </div>
+      <!-- OSD Top-Right -->
+      <div style="position:absolute;top:8px;right:8px;pointer-events:none">
+        <div style="background:rgba(30,41,59,.85);color:#eaf1ff;padding:4px 8px;border-radius:6px;display:flex;align-items:center;gap:6px;font-family:var(--jp-mono);font-size:11px">
+          <span style="width:8px;height:8px;border-radius:50%;background:var(--jp-sev-h-tx)"></span>
+          <span>YOLOv11n-ONNX live</span>
+        </div>
+      </div>
+      <!-- Floating Quick Controls -->
+      <div style="position:absolute;bottom:12px;right:12px;display:flex;flex-direction:column;align-items:center;gap:8px;z-index:10">
+        <button id="btn-filter" type="button" title="Enhance Filter/Night CLAHE" style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.9);color:var(--jp-ink);backdrop-filter:blur(8px);box-shadow:0 2px 8px rgba(0,0,0,.2);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        </button>
+        <button id="btn-grid" type="button" title="Toggle Grid Guide" style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.9);color:var(--jp-ink);backdrop-filter:blur(8px);box-shadow:0 2px 8px rgba(0,0,0,.2);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        </button>
+        <button id="btn-snapshot" type="button" title="Ambil Foto Cepat" style="width:56px;height:56px;border-radius:50%;background:var(--jp-primary);color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.3);border:4px solid rgba(0,97,148,.3);cursor:pointer;display:flex;align-items:center;justify-content:center">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </button>
+      </div>
+      <!-- GPS Badge Bottom-Left -->
+      <div style="position:absolute;bottom:12px;left:12px;pointer-events:none">
+        <div style="background:rgba(255,255,255,.9);backdrop-filter:blur(8px);padding:4px 8px;border-radius:6px;color:var(--jp-ink);box-shadow:0 2px 8px rgba(0,0,0,.2);display:flex;align-items:center;gap:6px;font-family:var(--jp-mono);font-size:11px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span>18 Satelit (DGPS L1/L2)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Segment Path Selector -->
+  <section style="width:100%;padding:8px 12px 0">
+    <div style="background:var(--jp-surface);border-radius:12px;padding:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <div style="display:flex;align-items:center;gap:8px;min-width:0">
+        <div style="width:36px;height:36px;border-radius:8px;background:var(--jp-container);display:flex;align-items:center;justify-content:center;color:var(--jp-primary);flex-shrink:0">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        </div>
+        <div style="display:flex;flex-direction:column;min-width:0">
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.05em;color:var(--jp-muted)">SEGMEN RUAS AKTIF</span>
+          <span id="mobile-segment" style="font-size:13px;font-weight:600;color:var(--jp-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Jl. Asia Afrika (Segmen Barat - Jalur A)</span>
+        </div>
+      </div>
+      <button id="btn-switch-segment" type="button" style="flex-shrink:0;padding:6px 12px;border-radius:6px;background:var(--jp-container);color:var(--jp-primary);font-size:13px;font-weight:600;border:none;cursor:pointer;display:flex;align-items:center;gap:4px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+        <span>Ganti</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- 3 Core KPI Metrics Grid -->
+  <section style="width:100%;padding:8px 12px 0">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+      <!-- FPS -->
+      <div style="background:var(--jp-surface);border-radius:12px;padding:8px;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+        <div style="display:flex;align-items:center;justify-content:space-between;color:var(--jp-muted)">
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.05em">FRAME RATE</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        </div>
+        <div style="margin:4px 0">
+          <span id="mobile-fps" style="font-size:24px;font-weight:700;letter-spacing:-0.02em;color:var(--jp-ink)">0.0</span>
+          <span style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-muted)">FPS</span>
+        </div>
+        <span id="mobile-sync" style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-sev-h-tx)">Sinkron 100%</span>
+      </div>
+      <!-- Findings -->
+      <div style="background:var(--jp-surface);border-radius:12px;padding:8px;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+        <div style="display:flex;align-items:center;justify-content:space-between;color:var(--jp-muted)">
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.05em">TEMUAN</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div style="margin:4px 0">
+          <span id="mobile-temuan" style="font-size:24px;font-weight:700;letter-spacing:-0.02em;color:var(--jp-ink)">0</span>
+          <span style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-muted)">Titik</span>
+        </div>
+        <span id="mobile-temuan-sev" style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-sev-r-tx)">0 Kategori Berat</span>
+      </div>
+      <!-- Cost -->
+      <div style="background:var(--jp-surface);border-radius:12px;padding:8px;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+        <div style="display:flex;align-items:center;justify-content:space-between;color:var(--jp-muted)">
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.05em">EST. BIAYA</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        </div>
+        <div style="margin:4px 0">
+          <span id="mobile-biaya" style="font-size:24px;font-weight:700;letter-spacing:-0.02em;color:var(--jp-ink)">0</span>
+          <span style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-muted)">Juta</span>
+        </div>
+        <span id="mobile-biaya-sub" style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-tx2)">Patching 0 m²</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Drawer Mini: Temuan Terakhir -->
+  <section style="width:100%;padding:8px 12px 0">
+    <div style="background:var(--jp-surface);border-radius:12px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="width:8px;height:8px;border-radius:50%;background:var(--jp-sev-r-tx)"></span>
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.05em;color:var(--jp-muted)">TEMUAN TERAKHIR (BARUSAN)</span>
+        </div>
+        <span id="mobile-last-time" style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-muted)">-</span>
+      </div>
+      <div id="mobile-last-finding" style="display:flex;align-items:center;gap:12px;background:var(--jp-container-low);padding:8px;border-radius:8px">
+        <div style="width:64px;height:64px;border-radius:8px;background:var(--jp-container);flex-shrink:0;display:flex;align-items:center;justify-content:center">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:4px">
+            <span id="mobile-last-kelas" style="font-size:13px;font-weight:600;color:var(--jp-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Belum ada</span>
+            <span id="mobile-last-sev" style="padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;letter-spacing:0.05em;background:var(--jp-container);color:var(--jp-muted)">-</span>
+          </div>
+          <div id="mobile-last-sta" style="display:flex;align-items:center;gap:8px;margin-top:4px;font-family:var(--jp-mono);font-size:11px;color:var(--jp-tx2)">
+            <span>-</span>
+          </div>
+          <div id="mobile-last-coord" style="display:flex;align-items:center;gap:4px;font-family:var(--jp-mono);font-size:11px;color:var(--jp-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span>-</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sticky Bottom Action Bar -->
+  <section style="position:sticky;bottom:0;left:0;width:100%;padding:8px 12px;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);box-shadow:0 -2px 8px rgba(0,0,0,.08);z-index:30;display:flex;flex-direction:column;gap:8px;margin-top:12px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button id="btn-record-toggle" type="button" style="height:48px;width:100%;border-radius:8px;background:var(--jp-sev-r-bg);color:var(--jp-sev-r-tx);font-size:13px;font-weight:600;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+        <svg id="icon-record" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+        <span id="label-record">Jeda Rekam</span>
+      </button>
+      <button id="btn-flag" type="button" style="height:48px;width:100%;border-radius:8px;background:var(--jp-primary);color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+        <span>Tandai Kritis</span>
+      </button>
+    </div>
+    <button id="btn-route-logs" type="button" style="height:44px;width:100%;border-radius:8px;background:var(--jp-container);color:var(--jp-ink);font-size:13px;font-weight:600;border:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:0 12px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        <span>Lihat Log Rute Lengkap</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span id="mobile-route-count" style="padding:2px 8px;border-radius:9999px;background:var(--jp-primary);color:#fff;font-family:var(--jp-mono);font-size:11px">0 Temuan</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </button>
+  </section>
+</div>
+{% endblock %}
+
+{% block skrip %}
+<script>
+(function(){
+  var isRecording = true, isFilterActive = false, isGridVisible = true;
+
+  function showToast(msg){
+    var c=document.getElementById('toast-container');
+    if(!c)return;
+    var t=document.createElement('div');
+    t.style.cssText='pointer-events:auto;display:flex;align-items:center;gap:8px;background:#213145;color:#eaf1ff;padding:8px 16px;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.3);font-size:13px;font-weight:600;transition:all .3s;transform:translateY(16px);opacity:0';
+    t.textContent=msg;
+    c.appendChild(t);
+    requestAnimationFrame(function(){t.style.transform='translateY(0)';t.style.opacity='1'});
+    setTimeout(function(){t.style.opacity='0';t.style.transform='translateY(8px)';setTimeout(function(){t.remove()},300)},2800);
+  }
+
+  var recBtn=document.getElementById('btn-record-toggle');
+  if(recBtn)recBtn.addEventListener('click',function(){
+    isRecording=!isRecording;
+    var label=document.getElementById('label-record');
+    var icon=document.getElementById('icon-record');
+    if(isRecording){label.textContent='Jeda Rekam';icon.innerHTML='<rect x="6" y="6" width="12" height="12" rx="2"/>';showToast('Perekaman survei AI dilanjutkan')}
+    else{label.textContent='Lanjut Rekam';icon.innerHTML='<path d="M8 5v14l11-7z"/>';showToast('Survei dijeda sementara')}
+  });
+
+  var filterBtn=document.getElementById('btn-filter');
+  if(filterBtn)filterBtn.addEventListener('click',function(){
+    isFilterActive=!isFilterActive;
+    if(isFilterActive){filterBtn.style.background='var(--jp-primary)';filterBtn.style.color='#fff';showToast('Filter CLAHE Kontras Rendah Aktif')}
+    else{filterBtn.style.background='rgba(255,255,255,.9)';filterBtn.style.color='var(--jp-ink)';showToast('Filter Kamera Normal')}
+  });
+
+  var gridBtn=document.getElementById('btn-grid');
+  if(gridBtn)gridBtn.addEventListener('click',function(){
+    isGridVisible=!isGridVisible;
+    var g=document.getElementById('camera-grid');
+    if(g)g.style.display=isGridVisible?'block':'none';
+    showToast(isGridVisible?'Grid Kalibrasi Ditampilkan':'Grid Kalibrasi Disembunyikan');
+  });
+
+  var snapBtn=document.getElementById('btn-snapshot');
+  if(snapBtn)snapBtn.addEventListener('click',function(){showToast('Snapshot tersimpan resolusi tinggi')});
+
+  var flagBtn=document.getElementById('btn-flag');
+  if(flagBtn)flagBtn.addEventListener('click',function(){showToast('Titik Kritis ditandai untuk atensi Bina Marga')});
+
+  var switchBtn=document.getElementById('btn-switch-segment');
+  if(switchBtn)switchBtn.addEventListener('click',function(){showToast('Memuat daftar ruas jalan...')});
+
+  var routeBtn=document.getElementById('btn-route-logs');
+  if(routeBtn)routeBtn.addEventListener('click',function(){window.location.href='/riwayat'});
+})();
+</script>
+{% endblock %}

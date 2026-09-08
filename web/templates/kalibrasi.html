@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% block title %}Kalibrasi Pengukuran{% endblock %}
+
+{% block konten %}
+<div class="jp-wrap">
+  <div class="jp-card" style="padding:16px">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-size:18px;font-weight:600;color:var(--jp-ink)">Kalibrasi Pengukuran</span>
+          <span id="kal-status" style="padding:2px 8px;border-radius:6px;background:var(--jp-container);font-family:var(--jp-mono);font-size:11px;color:var(--jp-tx2)">memuat…</span>
+        </div>
+        <p style="font-size:12px;color:var(--jp-tx2);margin:4px 0 0">Satu angka mengendalikan semua dimensi aplikasi: <span class="jp-num">pixels_per_cm</span> di <span class="jp-num">config/severity.yaml</span>. Kamera mono tidak mengukur jarak absolut — nilai ini adalah aproksimasi pada bidang jalan dan <strong>wajib</strong> diukur ulang per pemasangan kamera/ketinggian.</p>
+      </div>
+    </div>
+    <div id="kal-info" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:12px;font-family:var(--jp-mono);font-size:12px;color:var(--jp-ink)"></div>
+  </div>
+
+  <div class="jp-grid" style="margin-top:16px">
+    <div class="jp-col-main" style="display:flex;flex-direction:column;gap:16px">
+      <div class="jp-card" style="padding:16px">
+        <h2 style="font-size:16px;margin:0 0 4px">Metode A — Nilai langsung</h2>
+        <p style="font-size:12px;color:var(--jp-muted);margin:0 0 12px">Bila Anda sudah mengukur sendiri (mis. objek 10 cm = 800 px → 80 px/cm).</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end">
+          <div>
+            <label for="ppc-langsung" style="font-size:13px;font-weight:600;display:block;margin-bottom:4px">pixels_per_cm</label>
+            <input type="number" id="ppc-langsung" min="0.05" max="500" step="0.1" class="jp-input jp-mono-input" style="height:36px;width:160px">
+          </div>
+          <div>
+            <label for="cat-langsung" style="font-size:13px;font-weight:600;display:block;margin-bottom:4px">Catatan</label>
+            <input type="text" id="cat-langsung" placeholder="mis. ukur mistar di lokasi A" class="jp-input" style="height:36px;min-width:220px">
+          </div>
+          <button id="btn-simpan-langsung" type="button" class="jp-btn-primary" style="height:36px">Simpan</button>
+        </div>
+      </div>
+
+      <div class="jp-card" style="padding:16px">
+        <h2 style="font-size:16px;margin:0 0 4px">Metode B — Foto penggaris, klik 2 titik</h2>
+        <p style="font-size:12px;color:var(--jp-muted);margin:0 0 12px">1) Unggah foto penggaris/mistar di atas aspal dari ketinggian kamera sebenarnya. 2) Klik dua titik pada garis skala yang panjangnya Anda ketahui. 3) Isi panjangnya (cm), hitung, simpan.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+          <input type="file" id="foto-penggaris" accept="image/jpeg,image/png">
+          <label for="ref-cm" style="font-size:13px;font-weight:600">Panjang referensi (cm)</label>
+          <input type="number" id="ref-cm" value="10" min="0.1" max="1000" step="0.1" class="jp-input jp-mono-input" style="height:36px;width:110px">
+          <button id="btn-hitung" type="button" class="jp-btn-demo" style="height:36px" disabled>Hitung dari 2 titik</button>
+          <button id="btn-simpan-penggaris" type="button" class="jp-btn-primary" style="height:36px" disabled>Simpan hasil ini</button>
+          <button id="btn-ulang-titik" type="button" class="jp-btn-demo" style="height:36px">Ulangi titik</button>
+        </div>
+        <div id="slot-penggaris" class="jp-viewer kosong" style="min-height:120px"><span>Belum ada foto. Pilih berkas JPG/PNG (maks 5 MB).</span></div>
+        <p id="hasil-klik" style="font-family:var(--jp-mono);font-size:13px" role="status"></p>
+      </div>
+    </div>
+
+    <div class="jp-col-side" style="display:flex;flex-direction:column;gap:16px">
+      <div class="jp-card" style="padding:16px">
+        <h2 style="font-size:16px;margin:0 0 8px">Dampak nilai saat ini</h2>
+        <div id="kal-dampak" style="font-family:var(--jp-mono);font-size:13px;display:flex;flex-direction:column;gap:4px"></div>
+      </div>
+      <div class="jp-card" style="padding:16px">
+        <h2 style="font-size:16px;margin:0 0 8px">Bukti & keterbatasan</h2>
+        <ul style="font-size:13px;color:var(--jp-tx2);margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px">
+          <li>Nilai + metode + waktu tersimpan di <span class="jp-num">config/severity.yaml</span> dan langsung berlaku untuk deteksi berikutnya.</li>
+          <li>Unduh <button id="btn-unduh-status" type="button" class="jp-btn-demo" style="padding:2px 10px">status JSON</button> sebagai bukti kalibrasi.</li>
+          <li>Tidak mengukur kedalaman lubang (tebal = asumsi per severity). Tidak menggantikan survei resmi dinas.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block skrip %}
+<script>
+(function(){
+  var statusEl = document.getElementById('kal-status');
+  var infoEl = document.getElementById('kal-info');
+  var dampakEl = document.getElementById('kal-dampak');
+  var statusData = null;
+
+  function toast(msg, ok){
+    var c = document.getElementById('toast-container');
+    if(!c){ alert(msg); return; }
+    var t = document.createElement('div');
+    t.style.cssText = 'padding:8px 12px;border-radius:8px;font-size:13px;font-weight:600;background:' + (ok ? '#213145' : '#ffdad6') + ';color:' + (ok ? '#eaf1ff' : '#93000a');
+    t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(function(){ t.remove(); }, 3200);
+  }
+
+  // P4 XSS: catatan kalibrasi dari admin (200 char) dirender via innerHTML.
+  function escHtml(v){
+    return String(v == null ? "-" : v).replace(/[&<>"']/g, function(m){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m];
+    });
+  }
+
+  async function muatStatus(){
+    try{
+      var res = await fetch('/api/kalibrasi');
+      var j = await res.json();
+      if(!res.ok) throw new Error(j.error || 'gagal');
+      statusData = j;
+      var terkal = j.metode !== 'bawaan';
+      statusEl.textContent = terkal ? ('TERKALIBRASI · ' + j.metode) : 'BELUM KALIBRASI LAPANGAN';
+      statusEl.style.color = terkal ? '#047857' : '#93000a';
+      infoEl.innerHTML =
+        '<div>Nilai<br><strong>' + escHtml(j.pixels_per_cm) + ' px/cm</strong></div>' +
+        '<div>Metode<br><strong>' + escHtml(j.metode) + '</strong></div>' +
+        '<div>Diperbarui<br><strong>' + escHtml(j.diperbarui) + '</strong></div>' +
+        '<div>Catatan<br><strong>' + escHtml(j.catatan || '-') + '</strong></div>';
+      dampakEl.innerHTML =
+        '<span>Box 100 px = <strong>' + escHtml(j.dampak.box_100px_cm) + ' cm</strong></span>' +
+        '<span>Lubang Ø 25 cm = <strong>' + escHtml(j.dampak.lubang_25cm_px) + ' px</strong></span>';
+      var pl = document.getElementById('ppc-langsung');
+      if(pl && !document.activeElement.isSameNode(pl)) pl.value = j.pixels_per_cm;
+    }catch(e){ statusEl.textContent = 'GAGAL MEMUAT STATUS'; }
+  }
+
+  async function simpan(body){
+    try{
+      var res = await fetch('/api/kalibrasi', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+      var j = await res.json();
+      if(!res.ok) throw new Error(j.error || 'gagal');
+      toast('Tersimpan: ' + j.pixels_per_cm + ' px/cm (' + j.metode + ')', true);
+      await muatStatus();
+    }catch(e){ toast('Gagal: ' + e.message, false); }
+  }
+
+  document.getElementById('btn-simpan-langsung').addEventListener('click', function(){
+    simpan({pixels_per_cm: parseFloat(document.getElementById('ppc-langsung').value),
+            catatan: document.getElementById('cat-langsung').value});
+  });
+
+  document.getElementById('btn-unduh-status').addEventListener('click', function(){
+    if(!statusData) return;
+    var blob = new Blob([JSON.stringify(statusData, null, 2)], {type:'application/json'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'status-kalibrasi.json';
+    a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+  });
+
+  /* Metode B: foto + klik 2 titik (koordinat diskala ke ukuran asli) */
+  var titik = [], dimAsli = null, hasilPpc = null;
+  var slot = document.getElementById('slot-penggaris');
+  var hasilEl = document.getElementById('hasil-klik');
+  var btnHitung = document.getElementById('btn-hitung');
+  var btnSimpanP = document.getElementById('btn-simpan-penggaris');
+
+  document.getElementById('foto-penggaris').addEventListener('change', async function(e){
+    var f = e.target.files[0];
+    if(!f) return;
+    var data = new FormData();
+    data.append('foto', f);
+    try{
+      var res = await fetch('/api/kalibrasi/foto', {method:'POST', body:data});
+      var j = await res.json();
+      if(!res.ok) throw new Error(j.error || 'gagal');
+      dimAsli = {w:j.lebar, h:j.tinggi};
+      titik = []; hasilPpc = null;
+      btnHitung.disabled = true; btnSimpanP.disabled = true;
+      hasilEl.textContent = 'Klik 2 titik pada garis skala yang diketahui.';
+      slot.classList.remove('kosong');
+      slot.innerHTML = '<img id="img-penggaris" src="data:image/jpeg;base64,' + j.image_b64 + '" alt="Foto penggaris" style="max-width:100%;cursor:crosshair">';
+      document.getElementById('img-penggaris').addEventListener('click', klikTitik);
+    }catch(err){ toast('Gagal: ' + err.message, false); }
+  });
+
+  function klikTitik(e){
+    if(titik.length >= 2) return;
+    var img = e.currentTarget, r = img.getBoundingClientRect();
+    var x = (e.clientX - r.left) * dimAsli.w / r.width;
+    var y = (e.clientY - r.top) * dimAsli.h / r.height;
+    titik.push([x, y]);
+    hasilEl.textContent = 'Titik ' + titik.length + '/2' + (titik.length === 2 ? ' — tekan Hitung.' : ' — klik titik kedua.');
+    btnHitung.disabled = titik.length !== 2;
+  }
+
+  document.getElementById('btn-ulang-titik').addEventListener('click', function(){
+    titik = []; hasilPpc = null;
+    btnHitung.disabled = true; btnSimpanP.disabled = true;
+    hasilEl.textContent = dimAsli ? 'Klik 2 titik pada garis skala yang diketahui.' : '';
+  });
+
+  btnHitung.addEventListener('click', function(){
+    var cm = parseFloat(document.getElementById('ref-cm').value);
+    if(!(cm > 0)){ toast('Panjang referensi harus > 0.', false); return; }
+    var dx = titik[0][0] - titik[1][0], dy = titik[0][1] - titik[1][1];
+    var px = Math.hypot(dx, dy);
+    hasilPpc = px / cm;
+    hasilEl.textContent = 'Jarak ' + px.toFixed(1) + ' px / ' + cm + ' cm = ' + hasilPpc.toFixed(2) + ' px/cm.';
+    btnSimpanP.disabled = false;
+  });
+
+  btnSimpanP.addEventListener('click', function(){
+    if(hasilPpc === null) return;
+    simpan({panjang_px: (function(){ var dx=titik[0][0]-titik[1][0], dy=titik[0][1]-titik[1][1]; return Math.hypot(dx,dy); })(),
+            panjang_cm: parseFloat(document.getElementById('ref-cm').value),
+            catatan: 'foto penggaris via UI'});
+  });
+
+  muatStatus();
+})();
+</script>
+{% endblock %}

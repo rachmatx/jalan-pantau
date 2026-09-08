@@ -1,0 +1,21 @@
+# Inference CPU only (i5-3470 + RX550: tidak ada CUDA Windows untuk AMD)
+# Python 3.10 disarankan
+ultralytics>=8.2
+opencv-python>=4.9
+streamlit>=1.33
+flask>=3.0
+flask-limiter>=3.5
+supervision>=0.22
+pandas>=2.0
+numpy>=1.26
+Pillow>=10.0
+fpdf2>=2.7
+geopy>=2.4
+pyyaml>=6.0
+
+# Opsional optimasi CPU:
+# onnx>=1.16
+onnxruntime>=1.17  # dipakai (verifikasi best.onnx lokal, CPUExecutionProvider)
+# openvino>=2024.1
+# torch: pasang varian CPU agar ringan (jangan ikut CUDA yang ~2,5GB):
+# pip install torch --index-url https://download.pytorch.org/whl/cpu

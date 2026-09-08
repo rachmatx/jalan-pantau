@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="id" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}JalanPantau{% endblock %} — Deteksi Kerusakan Jalan</title>
+  <meta name="description" content="JalanPantau: deteksi kerusakan jalan real-time dengan YOLOv11s dan YOLOv11n, estimasi severity, biaya perbaikan, dan peta sebaran GPS.">
+  <meta property="og:title" content="JalanPantau — Deteksi Kerusakan Jalan Real-Time">
+  <meta property="og:description" content="Ubah foto jalan menjadi data perbaikan: deteksi AI, estimasi biaya, laporan PDF, dan peta sebaran.">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#002D62">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='28' height='28' rx='7' fill='%23006194'/%3E%3Cpath d='M10 22 L14 10 L18 10 L14 22 Z' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ static_v }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/civic.css') }}?v={{ static_v }}">
+</head>
+<body>
+  <a class="skip" href="#main-content">Lewati ke konten</a>
+  <header class="jp-topbar">
+    <div class="jp-topbar-in">
+      <div style="display:flex;align-items:center;gap:16px">
+        <a class="jp-brand" href="/">
+          <svg width="24" height="24" viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="7" fill="#006194"/><path d="M10 22 L14 10 L18 10 L14 22 Z" fill="#fff"/><path d="M20 22 L24 10" stroke="#fff" stroke-width="2" stroke-dasharray="3 2"/></svg>
+          <span><span class="jp-brand-name">JalanPantau</span><span class="jp-brand-sub">SISTEM INSPEKSI JALAN</span></span>
+        </a>
+      </div>
+      <nav class="jp-nav" aria-label="Navigasi utama">
+        <a href="/" class="{{ 'aktif' if active == 'deteksi' else '' }}">Deteksi</a>
+        <a href="/peta" class="{{ 'aktif' if active == 'peta' else '' }}">Peta</a>
+        <a href="/riwayat" class="{{ 'aktif' if active == 'riwayat' else '' }}">Riwayat</a>
+        <a href="/disposisi" class="{{ 'aktif' if active == 'disposisi' else '' }}">Disposisi</a>
+        <a href="/kalibrasi" class="{{ 'aktif' if active == 'kalibrasi' else '' }}">Kalibrasi</a>
+        <a href="/tentang" class="{{ 'aktif' if active == 'tentang' else '' }}">Tentang</a>
+      </nav>
+      <div class="jp-meta">
+        <span class="jp-avatar" aria-hidden="true">JP</span>
+        <button type="button" class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="nav-tray" aria-label="Buka menu navigasi">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+  <div class="nav-tray" id="nav-tray" hidden>
+    <a href="/" class="{{ 'aktif' if active == 'deteksi' else '' }}">Deteksi</a>
+    <a href="/peta" class="{{ 'aktif' if active == 'peta' else '' }}">Peta</a>
+    <a href="/riwayat" class="{{ 'aktif' if active == 'riwayat' else '' }}">Riwayat</a>
+    <a href="/disposisi" class="{{ 'aktif' if active == 'disposisi' else '' }}">Disposisi</a>
+    <a href="/kalibrasi" class="{{ 'aktif' if active == 'kalibrasi' else '' }}">Kalibrasi</a>
+    <a href="/tentang" class="{{ 'aktif' if active == 'tentang' else '' }}">Tentang</a>
+  </div>
+  {% block subnav %}{% endblock %}
+  <main id="main-content">
+    {% block konten %}{% endblock %}
+  </main>
+  <footer class="jp-footer">
+    <div class="jp-footer-in">
+      <span>© 2025 JalanPantau • Platform Kecerdasan Artifisial Inspeksi Kerusakan Permukaan Jalan</span>
+      <nav class="jp-footer-links" aria-label="Navigasi sekunder">
+        <a href="/">Deteksi</a><a href="/peta">Peta</a><a href="/riwayat">Riwayat</a><a href="/disposisi">Disposisi</a><a href="/kalibrasi">Kalibrasi</a><a href="/tentang">Tentang</a>
+      </nav>
+      <span class="jp-footer-mono">Estimasi acuan, bukan RAB resmi dinas.</span>
+    </div>
+  </footer>
+  <div class="toast-container" id="toast-container" aria-live="polite"></div>
+  <script>
+    (function () {
+      var t = document.getElementById("nav-toggle");
+      var tray = document.getElementById("nav-tray");
+      if (!t || !tray) return;
+      t.addEventListener("click", function () {
+        var buka = tray.hidden;
+        tray.hidden = !buka;
+        t.setAttribute("aria-expanded", String(buka));
+        t.classList.toggle("terbuka", buka);
+      });
+    })();
+
+    // Global toast notification (dipakai semua halaman)
+    window.jpToast = function(type, title, message) {
+      var container = document.getElementById("toast-container");
+      if (!container) return;
+      var colors = {success:"#059669", error:"#DC2626", info:"#2563EB", warning:"#D97706"};
+      var icons = {success:"✓", error:"✕", info:"ℹ", warning:"⚠"};
+      var toast = document.createElement("div");
+      toast.style.cssText = "pointer-events:auto;padding:12px 16px;border-radius:8px;background:#fff;box-shadow:0 4px 16px rgba(0,0,0,.15);border-left:4px solid " + (colors[type] || colors.info) + ";display:flex;align-items:center;gap:12px;font-size:13px;min-width:280px;max-width:400px;animation:jp-toast-in .3s ease";
+      toast.innerHTML = '<span style="font-size:18px;font-weight:700;color:' + (colors[type] || colors.info) + '">' + (icons[type] || icons.info) + '</span>' +
+        '<div style="display:flex;flex-direction:column;flex:1"><span style="font-weight:600;color:#0F172A">' + (title || '') + '</span>' + (message ? '<span style="font-size:11px;color:#64748B;margin-top:2px">' + message + '</span>' : '') + '</div>';
+      container.appendChild(toast);
+      setTimeout(function() {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateX(20px)";
+        toast.style.transition = "all .3s";
+        setTimeout(function() { toast.remove(); }, 300);
+      }, 4500);
+    };
+  </script>
+  <style>
+    @keyframes jp-toast-in { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+  </style>
+  {% block skrip %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,7 @@
+severity,jenis_kerusakan,panjang_cm,lebar_cm,tebal_asumsi_cm,bahan,harga_satuan_rp,satuan,sumber_harga
+Ringan,,100,50,2,cold-mix patching,150000,m2,CONTOH-HSPK-Publik-2024 (ganti dengan sitasi resmi)
+Ringan,crack,100,50,2,crack sealing emulsi,45000,m,CONTOH-HSPK-Publik-2024 (ganti dengan sitasi resmi)
+Sedang,,30,30,5,hotmix AC-WC,350000,m2,CONTOH-HSPK-Publik-2024 (ganti dengan sitasi resmi)
+Sedang,crack,100,50,2,crack sealing emulsi,45000,m,CONTOH-HSPK-Publik-2024 (ganti dengan sitasi resmi)
+Berat,crack,100,50,2,"crack sealing emulsi (retak lebar, monitor ketat)",45000,m,CONTOH-HSPK-Publik-2024 (ganti dengan sitasi resmi)
+Berat,,100,100,10,beton + lapis pondasi,850000,m3,CONTOH-AHSP-Bina-Marga-2026 (ganti dengan sitasi resmi)

@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+
+<html lang="id"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      "colors": {
+        "severity-low-border": "#A7F3D0",
+        "on-background": "#0b1c30",
+        "text-secondary": "#475569",
+        "primary-container": "#007bb9",
+        "inverse-on-surface": "#eaf1ff",
+        "on-secondary": "#ffffff",
+        "tertiary": "#894d00",
+        "text-primary": "#0F172A",
+        "surface-container": "#e5eeff",
+        "surface-container-low": "#eff4ff",
+        "tertiary-fixed": "#ffdcc0",
+        "secondary": "#006399",
+        "tertiary-container": "#ac6200",
+        "error": "#ba1a1a",
+        "inverse-surface": "#213145",
+        "outline": "#707881",
+        "surface-variant": "#d3e4fe",
+        "on-primary-fixed": "#001d31",
+        "on-secondary-container": "#004f7b",
+        "severity-low-text": "#059669",
+        "surface-container-highest": "#d3e4fe",
+        "surface-tint": "#006398",
+        "bg-main": "#F8FAFC",
+        "surface-dim": "#cbdbf5",
+        "on-surface": "#0b1c30",
+        "error-container": "#ffdad6",
+        "on-primary-container": "#fdfcff",
+        "severity-med-border": "#FDE68A",
+        "text-muted": "#64748B",
+        "surface-container-lowest": "#ffffff",
+        "on-primary": "#ffffff",
+        "on-error-container": "#93000a",
+        "on-primary-fixed-variant": "#004b73",
+        "surface-bright": "#f8f9ff",
+        "on-error": "#ffffff",
+        "primary-fixed": "#cce5ff",
+        "secondary-container": "#7bc2ff",
+        "on-surface-variant": "#3f4850",
+        "surface-container-high": "#dce9ff",
+        "secondary-fixed": "#cde5ff",
+        "severity-high-bg": "#FEF2F2",
+        "on-tertiary-fixed": "#2d1600",
+        "severity-high-text": "#DC2626",
+        "inverse-primary": "#93ccff",
+        "on-tertiary": "#ffffff",
+        "background": "#f8f9ff",
+        "on-secondary-fixed-variant": "#004b74",
+        "on-tertiary-container": "#fffbff",
+        "severity-med-text": "#D97706",
+        "severity-high-border": "#FECACA",
+        "surface": "#FFFFFF",
+        "border-subtle": "#E2E8F0",
+        "on-secondary-fixed": "#001d32",
+        "outline-variant": "#bfc7d2",
+        "secondary-fixed-dim": "#94ccff",
+        "on-tertiary-fixed-variant": "#6b3b00",
+        "tertiary-fixed-dim": "#ffb875",
+        "primary": "#006194",
+        "severity-med-bg": "#FFFBEB",
+        "primary-fixed-dim": "#93ccff",
+        "severity-low-bg": "#ECFDF5"
+      },
+      "borderRadius": {
+        "DEFAULT": "0.125rem",
+        "lg": "0.25rem",
+        "xl": "0.5rem",
+        "full": "0.75rem"
+      },
+      "spacing": {
+        "space-xs": "0.5rem",
+        "space-xl": "2rem",
+        "space-sm": "0.75rem",
+        "space-2xs": "0.25rem",
+        "gutter-app": "1rem",
+        "space-lg": "1.5rem",
+        "space-md": "1rem",
+        "workbench-gap": "1.5rem"
+      },
+      "fontFamily": {
+        "data-mono-md": ["JetBrains Mono"],
+        "label-md": ["Inter"],
+        "data-mono-sm": ["JetBrains Mono"],
+        "headline-sm": ["Inter"],
+        "headline-lg": ["Inter"],
+        "body-sm": ["Inter"],
+        "body-md": ["Inter"],
+        "label-caps": ["Inter"],
+        "headline-xl": ["Inter"]
+      },
+      "fontSize": {
+        "data-mono-md": ["13px", {"lineHeight": "18px", "fontWeight": "500"}],
+        "label-md": ["13px", {"lineHeight": "16px", "fontWeight": "600"}],
+        "data-mono-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
+        "headline-sm": ["18px", {"lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+        "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+        "label-caps": ["11px", {"lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+        "headline-xl": ["30px", {"lineHeight": "36px", "letterSpacing": "-0.025em", "fontWeight": "700"}]
+      }
+    }
+  }
+}</script></head><body class="bg-bg-main text-on-surface font-body-md text-body-md min-h-screen"><header class="fixed top-0 w-full z-50 bg-surface/95 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 w-full px-gutter-app flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs"><img alt="JalanPantau Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UtcA_1fkyo_y_bO1b__NpqQNyghMKrrDUveJRn__6RbHgcRllW2v9BHRm8VRhUelk_qAQ8jnAbUcMjCelkVRgT_qG024RSW7M3ftrfoB3HLWyZIKo7HZgO-7KJpQzyoGbNgPA0SWNIe0IjaWfRBd-0xqTVRL1KomoMFZncFb3jiLU8nFF_X3qdn9l9ffM0MqMNMkzz_QF5IuFl-vv4Irl7nwXVZHX02_dwVDAn0kL_swwQ--Vnidqyqg"/><div class="flex flex-col"><span class="font-label-md text-label-md text-text-primary tracking-tight">JalanPantau</span><span class="font-label-caps text-label-caps text-text-muted">SISTEM INSPEKSI JALAN</span></div></div><div class="hidden sm:flex items-center gap-space-xs px-space-xs py-space-2xs rounded-full bg-surface-container-low"><span class="font-data-mono-sm text-data-mono-sm text-text-secondary">YOLOv11n • TA 2025</span><div class="flex items-center gap-1.5 px-space-2xs py-0.5 rounded-full bg-severity-low-bg"><span class="w-1.5 h-1.5 rounded-full bg-severity-low-text"></span><span class="font-data-mono-sm text-data-mono-sm text-severity-low-text">Model Siap</span></div></div></div><nav class="hidden md:flex items-center gap-space-xs" data-active-classes="bg-primary-container text-on-primary-container font-label-md"><a aria-current="page" class="px-space-sm py-1.5 rounded transition-colors bg-primary-container text-on-primary-container font-label-md" data-path="deteksi" href="#">Deteksi</a><a class="px-space-sm py-1.5 rounded text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="peta" href="#">Peta</a><a class="px-space-sm py-1.5 rounded text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="riwayat" href="#">Riwayat</a><a class="px-space-sm py-1.5 rounded text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="tentang" href="#">Tentang</a></nav><div class="flex items-center gap-space-sm"><div class="hidden lg:flex items-center gap-space-xs px-space-xs py-1 rounded bg-surface-container"><span class="material-symbols-outlined text-severity-low-text text-[16px]">wifi</span><span class="font-data-mono-sm text-data-mono-sm text-text-secondary">Lokal / Offline-Ready</span></div><div class="hidden xl:flex items-center gap-space-2xs text-text-muted"><span class="material-symbols-outlined text-[16px]">schedule</span><span class="font-data-mono-sm text-data-mono-sm">SHIFT 01 • WIB</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-16 bg-bg-main min-h-screen" id="main-content"><div class="flex flex-col w-full">
+<!-- Sub-Header / Workspace Control Bar -->
+<div class="w-full px-gutter-app py-space-sm bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-xs">
+<!-- Mode Switcher Tabs -->
+<div class="inline-flex p-1 rounded-lg bg-surface-container-low">
+<button class="flex items-center gap-space-2xs px-space-md py-1.5 rounded-lg bg-surface text-text-primary shadow-sm font-label-md text-label-md transition-all" id="tab-gambar">
+<span class="material-symbols-outlined text-[18px] text-primary">add_photo_alternate</span>
+<span>Gambar Statis</span>
+</button>
+<button class="flex items-center gap-space-2xs px-space-md py-1.5 rounded-lg text-text-secondary hover:text-text-primary font-label-md text-label-md transition-all" id="tab-live">
+<span class="material-symbols-outlined text-[18px]">videocam</span>
+<span>Live Streaming</span>
+<span class="ml-1 px-1.5 py-0.5 rounded-full bg-severity-low-bg text-severity-low-text font-data-mono-sm text-data-mono-sm tracking-wider">REAL-TIME</span>
+</button>
+</div>
+<div class="hidden lg:flex items-center gap-space-2xs ml-space-xs text-text-muted">
+<span class="font-data-mono-sm text-data-mono-sm text-outline">|</span>
+<span class="font-label-caps text-label-caps tracking-wider text-text-muted">MODE:</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-secondary">INSPEKSI JALAN KOTA</span>
+</div>
+</div>
+<!-- Status Bar Telemetry -->
+<div class="flex items-center gap-space-xs">
+<div class="flex items-center gap-space-xs px-space-sm py-1 rounded-lg bg-surface-container-low text-text-secondary">
+<span class="w-2 h-2 rounded-full bg-severity-low-text animate-pulse"></span>
+<span class="font-body-sm text-body-sm text-text-primary" id="status">Siap mendeteksi. Silakan unggah foto jalan berformat JPG atau PNG.</span>
+</div>
+<div class="hidden sm:flex items-center gap-space-2xs px-space-xs py-1 rounded bg-surface-container text-text-muted">
+<span class="material-symbols-outlined text-[16px]">memory</span>
+<span class="font-data-mono-sm text-data-mono-sm">YOLOv11n-seg</span>
+</div>
+</div>
+</div>
+<!-- WORKBENCH CONTENT WRAPPER -->
+<div class="w-full px-gutter-app py-space-md flex flex-col gap-space-lg">
+<!-- ================================================================= -->
+<!-- 1. TAB PANEL: GAMBAR (Default Aktif)                              -->
+<!-- ================================================================= -->
+<div class="flex flex-col gap-space-lg" id="panel-gambar">
+<!-- Asymmetric 2-Column Split Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+<!-- KOLOM KIRI: Visual Analysis Viewer (Lg: 7/12 cols) -->
+<div class="lg:col-span-7 flex flex-col gap-space-xs">
+<!-- Viewer Card -->
+<div class="w-full rounded-xl bg-surface shadow-sm overflow-hidden flex flex-col">
+<!-- Canvas Header Bar -->
+<div class="px-space-md py-space-xs bg-surface-container-lowest flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] text-text-secondary">center_focus_strong</span>
+<span class="font-label-caps text-label-caps text-text-secondary">VIEWER RESOLUSI TINGGI • 1920×1080 PKX</span>
+</div>
+<div class="flex items-center gap-space-2xs text-text-muted">
+<span class="w-2 h-2 rounded-full bg-severity-low-text"></span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-secondary">LAYER INFERENCE AKTIF</span>
+</div>
+</div>
+<!-- Viewer Viewport Canvas -->
+<div class="relative w-full aspect-[16/10] bg-slate-950 overflow-hidden flex items-center justify-center select-none group" id="slot-gambar">
+<!-- Grid Checkerboard Texture for Precision Visual Alignment -->
+<div class="absolute inset-0 opacity-15 pointer-events-none" style="background-image: radial-gradient(#94A3B8 1px, transparent 1px); background-size: 16px 16px;"></div>
+<!-- Main Inspected Image with Burned Bounding Boxes -->
+<div class="relative w-full h-full flex items-center justify-center" id="viewer-gambar">
+<img class="w-full h-full object-cover" data-alt="Close up sharp high angle street view of Indonesian municipal asphalt road with surface damages, marked with clear detection overlay bounding boxes in crisp technical engineering style, daylight sunlight, highly detailed texture of asphalt, cracks, and potholes." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOoSOMNCq6Nv6QiyGC1ZG3fEMqS6MYLhgBWgKkoQxpGZsWPgARUjhWM-oY-H8AfseM_zjGlVrqT7dDKZq3ydI8nZ_5VHOX6fuIsGkvOEPAlkuvHLzi0Sng38TgpCa0gIZe5vet5ESi0iAMwUOPgar9Oqz0InyuL-W6aKMHGE8ytLXQcgdmY2bwxG_-xxIFvxER0u_w4gWpDv9Sp5-ODvugqa9FIfnz6B62VFAtiNxXz-OkUJPu1y30"/>
+<!-- AI Bounding Box 1: Pothole (Berat - Merah) -->
+<div class="absolute top-[48%] left-[42%] w-[24%] h-[28%] bg-severity-high-text/10 rounded-sm pointer-events-none transition-all duration-200">
+<div class="absolute -top-6 left-0 flex items-center gap-1 px-1.5 py-0.5 rounded-t bg-severity-high-text text-on-error shadow-sm font-data-mono-sm text-data-mono-sm font-semibold tracking-tight whitespace-nowrap">
+<span class="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+<span>pothole 0.84 • Berat</span>
+</div>
+<div class="absolute bottom-1 right-1 px-1 py-0.5 bg-black/60 rounded font-data-mono-sm text-[9px] text-white">
+                    45×30 cm
+                  </div>
+</div>
+<!-- AI Bounding Box 2: Alligator Crack (Sedang - Amber) -->
+<div class="absolute top-[28%] left-[12%] w-[22%] h-[32%] bg-severity-med-text/10 rounded-sm pointer-events-none">
+<div class="absolute -top-6 left-0 flex items-center gap-1 px-1.5 py-0.5 rounded-t bg-severity-med-text text-white shadow-sm font-data-mono-sm text-data-mono-sm font-semibold tracking-tight whitespace-nowrap">
+<span>alligator_crack 0.76 • Sedang</span>
+</div>
+<div class="absolute bottom-1 right-1 px-1 py-0.5 bg-black/60 rounded font-data-mono-sm text-[9px] text-white">
+                    120×85 cm
+                  </div>
+</div>
+<!-- AI Bounding Box 3: Longitudinal Crack (Ringan - Hijau) -->
+<div class="absolute top-[18%] right-[14%] w-[16%] h-[56%] bg-severity-low-text/10 rounded-sm pointer-events-none">
+<div class="absolute -top-6 left-0 flex items-center gap-1 px-1.5 py-0.5 rounded-t bg-severity-low-text text-white shadow-sm font-data-mono-sm text-data-mono-sm font-semibold tracking-tight whitespace-nowrap">
+<span>longitudinal_crack 0.68 • Ringan</span>
+</div>
+<div class="absolute bottom-1 right-1 px-1 py-0.5 bg-black/60 rounded font-data-mono-sm text-[9px] text-white">
+                    P: 180 cm
+                  </div>
+</div>
+<!-- Subtle Center Crosshair Indicator -->
+<div class="absolute inset-0 pointer-events-none flex items-center justify-center opacity-30">
+<div class="w-8 h-px bg-white"></div>
+<div class="h-8 w-px bg-white -ml-4"></div>
+</div>
+</div>
+<!-- Floating Inspection Toolbar -->
+<div class="absolute bottom-space-sm right-space-sm z-20 flex items-center gap-1 p-1 bg-surface/90 backdrop-blur-md rounded-lg shadow-md">
+<button class="p-1.5 rounded text-text-secondary hover:text-text-primary hover:bg-surface-container-high transition-colors" title="Zoom Keluar" type="button">
+<span class="material-symbols-outlined text-[18px]">zoom_out</span>
+</button>
+<div class="px-2 py-0.5 font-data-mono-sm text-data-mono-sm text-text-primary select-none">
+                  100%
+                </div>
+<button class="p-1.5 rounded text-text-secondary hover:text-text-primary hover:bg-surface-container-high transition-colors" title="Zoom Masuk" type="button">
+<span class="material-symbols-outlined text-[18px]">zoom_in</span>
+</button>
+<div class="w-px h-4 bg-surface-container-high mx-0.5"></div>
+<button class="px-2 py-1 rounded text-text-secondary hover:text-text-primary hover:bg-surface-container-high font-data-mono-sm text-data-mono-sm transition-colors" title="Skala 1:1" type="button">
+                  1:1
+                </button>
+<button class="px-2 py-1 rounded text-text-secondary hover:text-text-primary hover:bg-surface-container-high font-data-mono-sm text-data-mono-sm transition-colors" title="Pas Layar" type="button">
+                  Pas
+                </button>
+<div class="w-px h-4 bg-surface-container-high mx-0.5"></div>
+<button class="p-1.5 rounded text-text-secondary hover:text-text-primary hover:bg-surface-container-high transition-colors" title="Layar Penuh" type="button">
+<span class="material-symbols-outlined text-[18px]">fullscreen</span>
+</button>
+</div>
+<!-- Geotag Quick Stamp on Visual -->
+<div class="absolute top-space-sm left-space-sm z-20 flex items-center gap-space-xs px-2.5 py-1 rounded bg-black/75 backdrop-blur-sm text-white font-data-mono-sm text-data-mono-sm pointer-events-none">
+<span class="material-symbols-outlined text-severity-low-text text-[14px]">my_location</span>
+<span>-6.921845, 107.608392</span>
+</div>
+</div>
+<!-- Viewport Metadata Footer -->
+<div class="px-space-md py-space-xs bg-surface-container-lowest flex items-center justify-between font-data-mono-sm text-data-mono-sm text-text-muted">
+<div class="flex items-center gap-space-md">
+<span>FILE: IMG_20250218_JlnAsiaAfrika.jpg</span>
+<span>UKURAN: 2.4 MB</span>
+</div>
+<div class="flex items-center gap-space-sm text-text-secondary">
+<span>INFERENCE: 34.2 ms</span>
+<span class="text-severity-low-text font-semibold">NMS OK</span>
+</div>
+</div>
+</div>
+</div>
+<!-- KOLOM KANAN: Panel Kontrol Parameter (Lg: 5/12 cols) -->
+<div class="lg:col-span-5 flex flex-col">
+<div class="w-full rounded-xl bg-surface shadow-sm p-space-md flex flex-col gap-space-md">
+<div class="flex items-center justify-between pb-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">tune</span>
+<span class="font-headline-sm text-headline-sm text-text-primary">Parameter Inspeksi</span>
+</div>
+<span class="px-2 py-0.5 rounded bg-surface-container font-data-mono-sm text-data-mono-sm text-text-secondary">SIDANG TA</span>
+</div>
+<!-- Form Deteksi -->
+<form class="flex flex-col gap-space-md" id="form-deteksi" onsubmit="event.preventDefault();">
+<!-- 1. Dropzone Unggah Foto -->
+<div class="flex flex-col gap-space-2xs">
+<label class="font-label-md text-label-md text-text-primary flex items-center justify-between">
+<span>Berkas Citra Jalan</span>
+<span class="font-body-sm text-body-sm text-text-muted">Maks. 15 MB</span>
+</label>
+<div class="relative rounded-lg bg-surface-container-low p-space-md flex flex-col items-center justify-center text-center group hover:bg-surface-container transition-colors">
+<input accept="image/jpeg,image/png" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" id="gambar" type="file"/>
+<div class="w-10 h-10 rounded-full bg-surface flex items-center justify-center text-primary shadow-sm mb-space-2xs group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-[24px]">cloud_upload</span>
+</div>
+<span class="font-label-md text-label-md text-text-primary">IMG_20250218_JlnAsiaAfrika.jpg</span>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5">Tersimpan dari kamera geotag • 2.4 MB</p>
+<button class="mt-space-xs px-space-sm py-1 rounded bg-surface text-text-primary shadow-sm font-label-md text-label-md hover:bg-surface-container-high transition-colors pointer-events-none" type="button">
+                    Ganti Foto
+                  </button>
+</div>
+</div>
+<!-- 2. Slider Confidence Threshold -->
+<div class="flex flex-col gap-space-2xs p-space-sm rounded-lg bg-surface-container-lowest">
+<div class="flex items-center justify-between">
+<label class="font-label-md text-label-md text-text-primary flex items-center gap-1.5" for="conf">
+<span>Ambang Batas Kepercayaan (Conf)</span>
+<span class="material-symbols-outlined text-[15px] text-text-muted" title="Semakin tinggi nilai, semakin sedikit false positive.">info</span>
+</label>
+<div class="px-2 py-0.5 rounded bg-surface font-data-mono-md text-data-mono-md text-primary font-bold shadow-sm">
+<output id="conf-out">0.25</output>
+</div>
+</div>
+<input class="w-full accent-primary h-1.5 bg-surface-container rounded-lg cursor-pointer my-1.5" id="conf" max="0.80" min="0.05" oninput="document.getElementById('conf-out').value = parseFloat(this.value).toFixed(2)" step="0.01" type="range" value="0.25"/>
+<div class="flex justify-between font-data-mono-sm text-data-mono-sm text-text-muted">
+<span>0.05 (Sensitif)</span>
+<span>Standar: 0.25</span>
+<span>0.80 (Presisi)</span>
+</div>
+</div>
+<!-- 3. Mode Pencahayaan Adaptif (CLAHE) -->
+<div class="p-space-sm rounded-lg bg-surface-container-lowest flex items-start gap-space-xs cursor-pointer">
+<input class="mt-1 w-4 h-4 rounded text-primary focus:ring-0 accent-primary cursor-pointer" id="malam" type="checkbox"/>
+<label class="cursor-pointer select-none" for="malam">
+<span class="font-label-md text-label-md text-text-primary block">Pencahayaan Rendah / Malam (CLAHE)</span>
+<span class="font-body-sm text-body-sm text-text-secondary">Mengaktifkan perbaikan kontras adaptif lokal sebelum inferensi model.</span>
+</label>
+</div>
+<!-- 4. Metadata Geospasial -->
+<div class="flex flex-col gap-space-xs p-space-sm rounded-lg bg-surface-container-lowest">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-secondary tracking-wider">LOKASI &amp; GEOTAG GEOGRAFIS</span>
+<button class="flex items-center gap-1 text-primary hover:text-on-secondary-container font-label-md text-label-md transition-colors" type="button">
+<span class="material-symbols-outlined text-[15px]">satellite_alt</span>
+<span>Ambil GPS Saat Ini</span>
+</button>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-body-sm text-body-sm text-text-muted" for="lokasi-gambar">Nama Ruas / Titik Jalan</label>
+<input class="w-full px-space-sm py-1.5 rounded bg-surface text-text-primary font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary shadow-sm" id="lokasi-gambar" type="text" value="Jl. Asia Afrika No. 65, Sumur Bandung, Kota Bandung"/>
+</div>
+<div class="grid grid-cols-2 gap-space-xs mt-1">
+<div class="flex flex-col gap-1">
+<label class="font-data-mono-sm text-data-mono-sm text-text-muted" for="lat-gambar">Latitude (Lintang)</label>
+<input class="w-full px-space-sm py-1 rounded bg-surface text-text-primary font-data-mono-md text-data-mono-md focus:outline-none focus:ring-2 focus:ring-primary shadow-sm" id="lat-gambar" step="any" type="number" value="-6.921845"/>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-data-mono-sm text-data-mono-sm text-text-muted" for="lon-gambar">Longitude (Bujur)</label>
+<input class="w-full px-space-sm py-1 rounded bg-surface text-text-primary font-data-mono-md text-data-mono-md focus:outline-none focus:ring-2 focus:ring-primary shadow-sm" id="lon-gambar" step="any" type="number" value="107.608392"/>
+</div>
+</div>
+</div>
+<!-- 5. Tombol Aksi Utama -->
+<button class="w-full py-space-sm px-space-md rounded-lg bg-primary text-on-primary font-label-md text-label-md flex items-center justify-center gap-space-xs shadow-sm hover:bg-secondary transition-all active:scale-[0.99]" id="tombol" type="button">
+<span class="material-symbols-outlined text-[20px]">radar</span>
+<span>Mulai Deteksi AI (Inferensi)</span>
+</button>
+</form>
+</div>
+</div>
+</div>
+<!-- =============================================================== -->
+<!-- PANEL HASIL DETEKSI LENGKAP (id="hasil")                        -->
+<!-- =============================================================== -->
+<section class="w-full rounded-xl bg-surface shadow-sm p-space-lg flex flex-col gap-space-lg" id="hasil">
+<!-- Header Hasil Deteksi -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm pb-space-sm">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<span class="w-2.5 h-2.5 rounded-full bg-severity-low-text"></span>
+<h2 class="font-headline-lg text-headline-lg text-text-primary tracking-tight">Hasil Analisis Kerusakan Jalan (YOLOv11n)</h2>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted mt-0.5">Waktu Pindai: <span class="font-data-mono-sm text-data-mono-sm text-text-secondary">18 Feb 2025, 14:23:10 WIB</span> • ID Tugas: <span class="font-data-mono-sm text-data-mono-sm text-text-secondary">JP-20250218-0042</span></p>
+</div>
+<!-- Aksi Laporan -->
+<div class="flex items-center gap-space-xs">
+<button class="flex items-center gap-1.5 px-space-md py-2 rounded-lg bg-surface text-text-primary shadow-sm hover:bg-surface-container font-label-md text-label-md transition-colors" id="unduh">
+<span class="material-symbols-outlined text-[18px] text-error">picture_as_pdf</span>
+<span>Unduh Laporan PDF</span>
+</button>
+<button class="flex items-center gap-1.5 px-space-md py-2 rounded-lg bg-primary-container text-on-primary-container hover:bg-primary hover:text-on-primary font-label-md text-label-md shadow-sm transition-colors" id="simpan">
+<span class="material-symbols-outlined text-[18px]">save</span>
+<span>Simpan ke Riwayat</span>
+</button>
+</div>
+</div>
+<!-- 3 KPI SUMMARY CARDS -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<!-- Card 1: Total Temuan -->
+<div class="p-space-md rounded-xl bg-surface-container-low flex flex-col justify-between gap-space-xs">
+<div class="flex items-center justify-between text-text-muted">
+<span class="font-label-caps text-label-caps tracking-wider">TOTAL TEMUAN</span>
+<span class="material-symbols-outlined text-[20px] text-primary">analytics</span>
+</div>
+<div class="flex items-baseline gap-space-xs my-1">
+<span class="font-headline-xl text-headline-xl text-text-primary font-bold" id="temuan-nilai">3 Titik</span>
+<span class="font-body-sm text-body-sm text-text-secondary">teridentifikasi</span>
+</div>
+<div class="font-body-sm text-body-sm text-text-muted flex items-center gap-1">
+<span class="material-symbols-outlined text-severity-low-text text-[14px]">check_circle</span>
+<span>5 kategori kerusakan dipindai</span>
+</div>
+</div>
+<!-- Card 2: Prioritas Terparah -->
+<div class="p-space-md rounded-xl bg-severity-high-bg flex flex-col justify-between gap-space-xs">
+<div class="flex items-center justify-between text-severity-high-text">
+<span class="font-label-caps text-label-caps tracking-wider">PRIORITAS TERPARAH</span>
+<span class="material-symbols-outlined text-[20px]">warning</span>
+</div>
+<div class="flex items-baseline gap-space-xs my-1">
+<div class="inline-flex items-center gap-1.5 px-space-sm py-1 rounded-full bg-severity-high-text text-on-error font-label-md text-label-md" id="berat-nilai">
+<span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
+<span>Berat (1 Lubang)</span>
+</div>
+</div>
+<span class="font-body-sm text-body-sm text-severity-high-text">Peringatan: Risiko fatal bagi pengendara roda dua</span>
+</div>
+<!-- Card 3: Estimasi Total Biaya -->
+<div class="p-space-md rounded-xl bg-surface-container-low flex flex-col justify-between gap-space-xs">
+<div class="flex items-center justify-between text-text-muted">
+<span class="font-label-caps text-label-caps tracking-wider">ESTIMASI TOTAL BIAYA</span>
+<span class="material-symbols-outlined text-[20px] text-secondary">payments</span>
+</div>
+<div class="flex items-baseline gap-space-xs my-1">
+<span class="font-data-mono-md text-headline-lg text-text-primary font-bold" id="total-nilai">Rp 1.450.000</span>
+</div>
+<span class="font-body-sm text-body-sm text-text-muted">Acuan perbaikan berkala Bina Marga Kota</span>
+</div>
+</div>
+<!-- TABEL RINCIAN TEMUAN (id="tabel") -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-headline-sm text-text-primary">Rincian Klasifikasi Objek Kerusakan</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">3 Data Tabel</span>
+</div>
+<div class="w-full overflow-x-auto rounded-lg bg-surface shadow-sm">
+<table class="w-full text-left border-collapse" id="tabel">
+<thead>
+<tr class="bg-surface-container-low text-text-muted font-label-caps text-label-caps">
+<th class="py-space-sm px-space-md">#</th>
+<th class="py-space-sm px-space-md">JENIS KERUSAKAN</th>
+<th class="py-space-sm px-space-md">AREA / DIMENSI ESTIMASI</th>
+<th class="py-space-sm px-space-md">TINGKAT KEPARAHAN</th>
+<th class="py-space-sm px-space-md font-data-mono-sm">CONFIDENCE</th>
+<th class="py-space-sm px-space-md font-data-mono-sm text-right">ESTIMASI BIAYA</th>
+</tr>
+</thead>
+<tbody class="divide-y-0 font-body-md text-body-md text-text-primary">
+<!-- Row 1: Pothole -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-space-sm px-space-md font-data-mono-sm text-data-mono-sm text-text-muted">01</td>
+<td class="py-space-sm px-space-md">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-text-primary">Lubang (Pothole)</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">class: pothole</span>
+</div>
+</td>
+<td class="py-space-sm px-space-md font-data-mono-sm text-data-mono-sm text-text-secondary">
+                    45 × 30 cm <span class="text-text-muted">(kedalaman est. 6 cm)</span>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1.5 px-space-xs py-0.5 rounded-full bg-severity-high-bg text-severity-high-text font-label-md text-label-caps">
+<span class="w-1.5 h-1.5 rounded-full bg-severity-high-text"></span>
+<span>BERAT</span>
+</span>
+</td>
+<td class="py-space-sm px-space-md font-data-mono-md text-data-mono-md text-text-primary">
+                    0.84 <span class="text-text-muted text-data-mono-sm">(84%)</span>
+</td>
+<td class="py-space-sm px-space-md font-data-mono-md text-data-mono-md text-right font-bold text-text-primary">
+                    Rp 850.000
+                  </td>
+</tr>
+<!-- Row 2: Alligator Crack -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-space-sm px-space-md font-data-mono-sm text-data-mono-sm text-text-muted">02</td>
+<td class="py-space-sm px-space-md">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-text-primary">Retak Kulit Buaya (Alligator Crack)</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">class: alligator_crack</span>
+</div>
+</td>
+<td class="py-space-sm px-space-md font-data-mono-sm text-data-mono-sm text-text-secondary">
+                    120 × 85 cm <span class="text-text-muted">(luas 1.02 m²)</span>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1.5 px-space-xs py-0.5 rounded-full bg-severity-med-bg text-severity-med-text font-label-md text-label-caps">
+<span class="w-1.5 h-1.5 rounded-full bg-severity-med-text"></span>
+<span>SEDANG</span>
+</span>
+</td>
+<td class="py-space-sm px-space-md font-data-mono-md text-data-mono-md text-text-primary">
+                    0.76 <span class="text-text-muted text-data-mono-sm">(76%)</span>
+</td>
+<td class="py-space-sm px-space-md font-data-mono-md text-data-mono-md text-right font-bold text-text-primary">
+                    Rp 450.000
+                  </td>
+</tr>
+<!-- Row 3: Longitudinal Crack -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-space-sm px-space-md font-data-mono-sm text-data-mono-sm text-text-muted">03</td>
+<td class="py-space-sm px-space-md">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-text-primary">Retak Memanjang (Longitudinal Crack)</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">class: longitudinal_crack</span>
+</div>
+</td>
+<td class="py-space-sm px-space-md font-data-mono-sm text-data-mono-sm text-text-secondary">
+                    Panjang 180 cm <span class="text-text-muted">(lebar rekahan 4 mm)</span>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1.5 px-space-xs py-0.5 rounded-full bg-severity-low-bg text-severity-low-text font-label-md text-label-caps">
+<span class="w-1.5 h-1.5 rounded-full bg-severity-low-text"></span>
+<span>RINGAN</span>
+</span>
+</td>
+<td class="py-space-sm px-space-md font-data-mono-md text-data-mono-md text-text-primary">
+                    0.68 <span class="text-text-muted text-data-mono-sm">(68%)</span>
+</td>
+<td class="py-space-sm px-space-md font-data-mono-md text-data-mono-md text-right font-bold text-text-primary">
+                    Rp 150.000
+                  </td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Catatan Kaki Teknis -->
+<div class="flex items-center gap-space-2xs text-text-muted font-body-sm text-body-sm pt-space-xs">
+<span class="material-symbols-outlined text-[16px] text-text-muted">policy</span>
+<span>Estimasi dihitung berdasarkan standar pemeliharaan rutin Dinas Bina Marga Provinsi Jawa Barat. Bukan merupakan Rencana Anggaran Biaya (RAB) tender final.</span>
+</div>
+</div>
+</section>
+</div>
+<!-- ================================================================= -->
+<!-- 2. TAB PANEL: LIVE STREAMING (id="panel-live" Hidden Default)    -->
+<!-- ================================================================= -->
+<div class="hidden flex-col gap-space-lg" id="panel-live">
+<!-- Split Live Workbench -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+<!-- Kolom Kiri: Live Stream Canvas Viewport -->
+<div class="lg:col-span-8 flex flex-col gap-space-xs">
+<div class="w-full rounded-xl bg-surface shadow-sm overflow-hidden flex flex-col">
+<div class="px-space-md py-space-xs bg-surface-container-lowest flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="w-2.5 h-2.5 rounded-full bg-error animate-ping"></span>
+<span class="font-label-caps text-label-caps text-text-primary tracking-wider">LIVE FEED YOLOv11n TRACKER</span>
+</div>
+<div class="font-data-mono-sm text-data-mono-sm text-severity-low-text flex items-center gap-1" id="status-live">
+<span class="material-symbols-outlined text-[14px]">sensors</span>
+<span>STREAM STANDBY</span>
+</div>
+</div>
+<!-- Live Video Box -->
+<div class="relative w-full aspect-video bg-slate-950 overflow-hidden flex items-center justify-center" id="slot-live">
+<div class="relative w-full h-full flex items-center justify-center" id="viewer-live">
+<img class="w-full h-full object-cover" data-alt="First person vehicle dashcam perspective of urban city road in daylight, real-time bounding box annotations of potholes and cracks overlaid directly, camera speed overlay telemetry in HUD display style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5iBfgrAZS4IyakViNJCjuJelnOG0FigkT_8mJMe78bOy81bE04f0ADyWHnjbcvgaztYI0ZOReNgPCRNHz_8X7JHXSnybBrc4bqgwDgJZSSvU9dLRUchL509p9ugRJjdaUiwrZ2bF2qvaLHf5ErNINMXViW04R4gdb0iFsOXxzkp4gr7ZxosKbqpzr9qBI3wzGZgxroGdPO1VUyDrcvf0Im_BGbFWDLcQmCYOaPfRP6r6jK7_-yxrp"/>
+<!-- HUD Telemetry Overlay -->
+<div class="absolute top- space-sm left-space-sm p-space-xs rounded bg-black/70 backdrop-blur-sm text-white font-data-mono-sm text-data-mono-sm flex flex-col gap-0.5">
+<div class="flex items-center gap-1 text-severity-low-text font-bold">
+<span>GPS FIX: ACTIVE</span>
+</div>
+<span id="live-coords-hud">-6.921845, 107.608392</span>
+<span class="text-white/70">SPEED: 38.4 km/h</span>
+</div>
+<div class="absolute bottom-space-sm left-space-sm flex items-center gap-space-xs p-1.5 rounded bg-black/75 backdrop-blur-sm text-white font-data-mono-sm text-data-mono-sm">
+<span class="w-2 h-2 rounded-full bg-error animate-pulse"></span>
+<span>RECORDING LOG</span>
+</div>
+</div>
+</div>
+<!-- Real-time Stats Cards Bar -->
+<div class="p-space-sm bg-surface-container-lowest grid grid-cols-2 sm:grid-cols-4 gap-space-xs" id="stat-cards">
+<div class="p-space-xs rounded bg-surface shadow-sm flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted">FRAME RATE</span>
+<span class="font-data-mono-md text-data-mono-md text-text-primary font-bold" id="fps-stat">28.4 FPS</span>
+</div>
+<div class="p-space-xs rounded bg-surface shadow-sm flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted">TEMUAN UNIK</span>
+<span class="font-data-mono-md text-data-mono-md text-primary font-bold" id="unik-stat">14 Titik</span>
+</div>
+<div class="p-space-xs rounded bg-surface shadow-sm flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted">FRAME AKTIF</span>
+<span class="font-data-mono-md text-data-mono-md text-severity-med-text font-bold" id="deteksi-stat">3 Deteksi</span>
+</div>
+<div class="p-space-xs rounded bg-surface shadow-sm flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted">TOTAL PROCESSED</span>
+<span class="font-data-mono-md text-data-mono-md text-text-secondary" id="frame-stat">1.420 Frm</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Kolom Kanan: Live Feed Source & Parameters Controls -->
+<div class="lg:col-span-4 flex flex-col gap-space-md">
+<div class="w-full rounded-xl bg-surface shadow-sm p-space-md flex flex-col gap-space-md">
+<div class="flex items-center justify-between pb-space-xs">
+<span class="font-headline-sm text-headline-sm text-text-primary">Konfigurasi Siaran</span>
+<span class="px-2 py-0.5 rounded bg-surface-container font-data-mono-sm text-data-mono-sm text-text-secondary">RTSP / CAM</span>
+</div>
+<!-- Source Switcher Form -->
+<div class="flex flex-col gap-space-sm">
+<label class="font-label-md text-label-md text-text-primary" for="sumber">Sumber Video / Kamera</label>
+<select class="w-full px-space-sm py-2 rounded bg-surface text-text-primary font-body-md text-body-md shadow-sm focus:ring-2 focus:ring-primary focus:outline-none" id="sumber">
+<option value="webcam">Webcam Perangkat / USB Cam</option>
+<option value="ipcam">IP Camera (RTSP / HTTP Stream)</option>
+<option value="file">Berkas Rekaman Video Jalan</option>
+</select>
+<!-- Source Parameter Blocks -->
+<div class="flex flex-col gap-1 p-space-xs rounded bg-surface-container-low" id="in-webcam">
+<label class="font-data-mono-sm text-data-mono-sm text-text-muted" for="webcam-idx">Indeks Kamera</label>
+<input class="w-full px-space-xs py-1 rounded bg-surface text-text-primary font-data-mono-md text-data-mono-md focus:outline-none shadow-sm" id="webcam-idx" max="5" min="0" type="number" value="0"/>
+</div>
+<div class="hidden flex-col gap-1 p-space-xs rounded bg-surface-container-low" id="in-ipcam">
+<label class="font-data-mono-sm text-data-mono-sm text-text-muted" for="ipcam-url">URL RTSP / Streaming IP</label>
+<input class="w-full px-space-xs py-1 rounded bg-surface text-text-primary font-data-mono-sm text-data-mono-sm focus:outline-none shadow-sm" id="ipcam-url" placeholder="rtsp://192.168.1.100:554/stream1" type="text"/>
+</div>
+<div class="hidden flex-col gap-1 p-space-xs rounded bg-surface-container-low" id="in-file">
+<label class="font-data-mono-sm text-data-mono-sm text-text-muted" for="video">Pilih Berkas MP4</label>
+<input accept="video/mp4,video/mkv" class="w-full text-text-secondary font-body-sm text-body-sm" id="video" type="file"/>
+</div>
+<!-- Confidence & Frame Skip Parameters -->
+<div class="flex flex-col gap-space-2xs p-space-xs rounded bg-surface-container-low">
+<div class="flex items-center justify-between">
+<label class="font-label-md text-label-md text-text-primary" for="conf-live">Ambang Batas Conf</label>
+<output class="font-data-mono-sm text-data-mono-sm font-bold text-primary" id="conf-live-out">0.30</output>
+</div>
+<input class="accent-primary cursor-pointer w-full" id="conf-live" max="0.9" min="0.1" oninput="document.getElementById('conf-live-out').value = parseFloat(this.value).toFixed(2)" step="0.05" type="range" value="0.30"/>
+</div>
+<div class="flex items-center justify-between p-space-xs rounded bg-surface-container-low">
+<label class="font-label-md text-label-md text-text-primary" for="skip">Frame Skip (Efisiensi CPU)</label>
+<select class="px-space-xs py-1 rounded bg-surface text-text-primary font-data-mono-sm text-data-mono-sm shadow-sm" id="skip">
+<option value="1">Skip 1 Frame</option>
+<option selected="" value="2">Skip 2 Frame (Optimal)</option>
+<option value="3">Skip 3 Frame</option>
+</select>
+</div>
+<!-- CLAHE Checkbox for Live -->
+<div class="flex items-center gap-space-xs p-space-xs rounded bg-surface-container-low">
+<input class="accent-primary" id="malam-live" type="checkbox"/>
+<label class="font-body-sm text-body-sm text-text-primary cursor-pointer" for="malam-live">Enhancement Malam Adaptif</label>
+</div>
+<!-- Lokasi Live -->
+<div class="flex flex-col gap-1 p-space-xs rounded bg-surface-container-low">
+<label class="font-data-mono-sm text-data-mono-sm text-text-muted" for="lokasi">Nama Ruas Inspeksi</label>
+<input class="w-full px-space-xs py-1 rounded bg-surface text-text-primary font-body-sm text-body-sm shadow-sm" id="lokasi" type="text" value="Jl. Ir. H. Juanda (Dago), Bandung"/>
+<div class="grid grid-cols-2 gap-1 mt-1">
+<input class="w-full px-space-xs py-1 rounded bg-surface text-text-primary font-data-mono-sm text-data-mono-sm shadow-sm" id="lat-live" step="any" type="number" value="-6.884120"/>
+<input class="w-full px-space-xs py-1 rounded bg-surface text-text-primary font-data-mono-sm text-data-mono-sm shadow-sm" id="lon-live" step="any" type="number" value="107.613480"/>
+</div>
+</div>
+<!-- Tombol Kontrol Stream -->
+<div class="flex flex-col gap-space-xs pt-space-xs">
+<button class="w-full py-2 rounded-lg bg-severity-low-text text-white font-label-md text-label-md shadow-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-1" id="mulai" type="button">
+<span class="material-symbols-outlined text-[18px]">play_arrow</span>
+<span>Mulai Stream Live</span>
+</button>
+<div class="grid grid-cols-2 gap-space-xs">
+<button class="py-1.5 rounded-lg bg-error text-white font-label-md text-label-md shadow-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-1" id="berhenti" type="button">
+<span class="material-symbols-outlined text-[16px]">stop</span>
+<span>Hentikan</span>
+</button>
+<button class="py-1.5 rounded-lg bg-surface text-text-primary font-label-md text-label-md shadow-sm hover:bg-surface-container transition-colors flex items-center justify-center gap-1" id="demo" type="button">
+<span class="material-symbols-outlined text-[16px] text-primary">smart_display</span>
+<span>Putar Demo</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Live Stream Results Aggregation Panel (id="hasil-live") -->
+<div class="w-full rounded-xl bg-surface shadow-sm p-space-md flex flex-col gap-space-md" id="hasil-live">
+<div class="flex items-center justify-between pb-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">list_alt</span>
+<span class="font-headline-sm text-headline-sm text-text-primary">Temuan Terakumulasi Live Tracking</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">TOTAL ESTIMASI:</span>
+<span class="font-data-mono-md text-headline-sm text-text-primary font-bold" id="total-live-nilai">Rp 4.250.000</span>
+<button class="ml-space-sm px-space-sm py-1 rounded bg-surface text-text-primary shadow-sm hover:bg-surface-container font-label-md text-label-md" id="unduh-live">Unduh Log</button>
+<button class="px-space-sm py-1 rounded bg-primary text-on-primary shadow-sm font-label-md text-label-md" id="simpan-live">Simpan Sesi</button>
+</div>
+</div>
+<div class="w-full overflow-x-auto">
+<table class="w-full text-left border-collapse" id="tabel-live">
+<thead>
+<tr class="bg-surface-container-low text-text-muted font-label-caps text-label-caps">
+<th class="py-space-xs px-space-md">TRACK ID</th>
+<th class="py-space-xs px-space-md">KELAS KERUSAKAN</th>
+<th class="py-space-xs px-space-md">TIMESTAMP</th>
+<th class="py-space-xs px-space-md">SEVERITY</th>
+<th class="py-space-xs px-space-md">CONF AVERAGE</th>
+<th class="py-space-xs px-space-md text-right">AKSI</th>
+</tr>
+</thead>
+<tbody class="divide-y-0 font-body-sm text-body-sm">
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-space-xs px-space-md font-data-mono-sm text-data-mono-sm">#TRK-108</td>
+<td class="py-space-xs px-space-md font-semibold text-text-primary">Lubang (pothole)</td>
+<td class="py-space-xs px-space-md font-data-mono-sm text-text-muted">14:24:02.12</td>
+<td class="py-space-xs px-space-md"><span class="px-2 py-0.5 rounded-full bg-severity-high-bg text-severity-high-text font-label-caps text-label-caps font-bold">BERAT</span></td>
+<td class="py-space-xs px-space-md font-data-mono-sm text-text-primary">0.89</td>
+<td class="py-space-xs px-space-md text-right"><button class="text-primary hover:underline font-label-md text-label-md">Lihat Snapshot</button></td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-space-xs px-space-md font-data-mono-sm text-data-mono-sm">#TRK-109</td>
+<td class="py-space-xs px-space-md font-semibold text-text-primary">Retak Melintang (transverse_crack)</td>
+<td class="py-space-xs px-space-md font-data-mono-sm text-text-muted">14:24:14.88</td>
+<td class="py-space-xs px-space-md"><span class="px-2 py-0.5 rounded-full bg-severity-med-bg text-severity-med-text font-label-caps text-label-caps font-bold">SEDANG</span></td>
+<td class="py-space-xs px-space-md font-data-mono-sm text-text-primary">0.74</td>
+<td class="py-space-xs px-space-md text-right"><button class="text-primary hover:underline font-label-md text-label-md">Lihat Snapshot</button></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  // Tab Switching Logic between Gambar & Live
+  const tabGambar = document.getElementById('tab-gambar');
+  const tabLive = document.getElementById('tab-live');
+  const panelGambar = document.getElementById('panel-gambar');
+  const panelLive = document.getElementById('panel-live');
+  const statusEl = document.getElementById('status');
+
+  if (tabGambar && tabLive && panelGambar && panelLive) {
+    tabGambar.addEventListener('click', () => {
+      // Toggle Active Tab Visuals
+      tabGambar.className = 'flex items-center gap-space-2xs px-space-md py-1.5 rounded-lg bg-surface text-text-primary shadow-sm font-label-md text-label-md transition-all';
+      tabLive.className = 'flex items-center gap-space-2xs px-space-md py-1.5 rounded-lg text-text-secondary hover:text-text-primary font-label-md text-label-md transition-all';
+      
+      // Toggle Panels
+      panelGambar.classList.remove('hidden');
+      panelGambar.classList.add('flex');
+      panelLive.classList.add('hidden');
+      panelLive.classList.remove('flex');
+
+      if (statusEl) {
+        statusEl.textContent = 'Mode Gambar Statis: Siap mendeteksi. Unggah atau pilih citra jalan.';
+      }
+    });
+
+    tabLive.addEventListener('click', () => {
+      // Toggle Active Tab Visuals
+      tabLive.className = 'flex items-center gap-space-2xs px-space-md py-1.5 rounded-lg bg-surface text-text-primary shadow-sm font-label-md text-label-md transition-all';
+      tabGambar.className = 'flex items-center gap-space-2xs px-space-md py-1.5 rounded-lg text-text-secondary hover:text-text-primary font-label-md text-label-md transition-all';
+      
+      // Toggle Panels
+      panelGambar.classList.add('hidden');
+      panelGambar.classList.remove('flex');
+      panelLive.classList.remove('hidden');
+      panelLive.classList.add('flex');
+
+      if (statusEl) {
+        statusEl.textContent = 'Mode Live Streaming: Siapkan sumber kamera atau RTSP streaming.';
+      }
+    });
+  }
+
+  // Live Input Source Toggle logic
+  const sumberSelect = document.getElementById('sumber');
+  const inWebcam = document.getElementById('in-webcam');
+  const inIpcam = document.getElementById('in-ipcam');
+  const inFile = document.getElementById('in-file');
+
+  if (sumberSelect) {
+    sumberSelect.addEventListener('change', (e) => {
+      const val = e.target.value;
+      if (inWebcam) inWebcam.classList.add('hidden');
+      if (inIpcam) inIpcam.classList.add('hidden');
+      if (inFile) inFile.classList.add('hidden');
+
+      if (val === 'webcam' && inWebcam) inWebcam.classList.remove('hidden');
+      if (val === 'ipcam' && inIpcam) inIpcam.classList.remove('hidden');
+      if (val === 'file' && inFile) inFile.classList.remove('hidden');
+    });
+  }
+</script></main><footer class="w-full bg-surface py-space-md shadow-[0_-1px_6px_rgba(0,0,0,0.03)]"><div class="w-full px-gutter-app flex flex-col sm:flex-row items-center justify-between gap-space-xs text-text-muted font-body-sm text-body-sm"><span>© 2025 JalanPantau • Platform Kecerdasan Artifisial Inspeksi Kerusakan Permukaan Jalan</span><span class="font-data-mono-sm text-data-mono-sm">Infrastruktur Bina Marga &amp; Transportasi Cerdas</span></div></footer><div class="fixed bottom-space-md right-space-md z-50 flex flex-col gap-space-xs pointer-events-none" id="toast-container"></div></body></html>

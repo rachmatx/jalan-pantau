@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+
+<html lang="id"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      "colors": {
+        "severity-low-border": "#A7F3D0",
+        "on-background": "#0b1c30",
+        "text-secondary": "#475569",
+        "primary-container": "#007bb9",
+        "inverse-on-surface": "#eaf1ff",
+        "on-secondary": "#ffffff",
+        "tertiary": "#894d00",
+        "text-primary": "#0F172A",
+        "surface-container": "#e5eeff",
+        "surface-container-low": "#eff4ff",
+        "tertiary-fixed": "#ffdcc0",
+        "secondary": "#006399",
+        "tertiary-container": "#ac6200",
+        "error": "#ba1a1a",
+        "inverse-surface": "#213145",
+        "outline": "#707881",
+        "surface-variant": "#d3e4fe",
+        "on-primary-fixed": "#001d31",
+        "on-secondary-container": "#004f7b",
+        "severity-low-text": "#059669",
+        "surface-container-highest": "#d3e4fe",
+        "surface-tint": "#006398",
+        "bg-main": "#F8FAFC",
+        "surface-dim": "#cbdbf5",
+        "on-surface": "#0b1c30",
+        "error-container": "#ffdad6",
+        "on-primary-container": "#fdfcff",
+        "severity-med-border": "#FDE68A",
+        "text-muted": "#64748B",
+        "surface-container-lowest": "#ffffff",
+        "on-primary": "#ffffff",
+        "on-error-container": "#93000a",
+        "on-primary-fixed-variant": "#004b73",
+        "surface-bright": "#f8f9ff",
+        "on-error": "#ffffff",
+        "primary-fixed": "#cce5ff",
+        "secondary-container": "#7bc2ff",
+        "on-surface-variant": "#3f4850",
+        "surface-container-high": "#dce9ff",
+        "secondary-fixed": "#cde5ff",
+        "severity-high-bg": "#FEF2F2",
+        "on-tertiary-fixed": "#2d1600",
+        "severity-high-text": "#DC2626",
+        "inverse-primary": "#93ccff",
+        "on-tertiary": "#ffffff",
+        "background": "#f8f9ff",
+        "on-secondary-fixed-variant": "#004b74",
+        "on-tertiary-container": "#fffbff",
+        "severity-med-text": "#D97706",
+        "severity-high-border": "#FECACA",
+        "surface": "#FFFFFF",
+        "border-subtle": "#E2E8F0",
+        "on-secondary-fixed": "#001d32",
+        "outline-variant": "#bfc7d2",
+        "secondary-fixed-dim": "#94ccff",
+        "on-tertiary-fixed-variant": "#6b3b00",
+        "tertiary-fixed-dim": "#ffb875",
+        "primary": "#006194",
+        "severity-med-bg": "#FFFBEB",
+        "primary-fixed-dim": "#93ccff",
+        "severity-low-bg": "#ECFDF5"
+      },
+      "borderRadius": {
+        "DEFAULT": "0.125rem",
+        "lg": "0.25rem",
+        "xl": "0.5rem",
+        "full": "0.75rem"
+      },
+      "spacing": {
+        "space-xs": "0.5rem",
+        "space-xl": "2rem",
+        "space-sm": "0.75rem",
+        "space-2xs": "0.25rem",
+        "gutter-app": "1rem",
+        "space-lg": "1.5rem",
+        "space-md": "1rem",
+        "workbench-gap": "1.5rem"
+      },
+      "fontFamily": {
+        "data-mono-md": ["JetBrains Mono"],
+        "label-md": ["Inter"],
+        "data-mono-sm": ["JetBrains Mono"],
+        "headline-sm": ["Inter"],
+        "headline-lg": ["Inter"],
+        "body-sm": ["Inter"],
+        "body-md": ["Inter"],
+        "label-caps": ["Inter"],
+        "headline-xl": ["Inter"]
+      },
+      "fontSize": {
+        "data-mono-md": ["13px", {"lineHeight": "18px", "fontWeight": "500"}],
+        "label-md": ["13px", {"lineHeight": "16px", "fontWeight": "600"}],
+        "data-mono-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
+        "headline-sm": ["18px", {"lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+        "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+        "label-caps": ["11px", {"lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+        "headline-xl": ["30px", {"lineHeight": "36px", "letterSpacing": "-0.025em", "fontWeight": "700"}]
+      }
+    }
+  }
+}</script></head><body class="bg-bg-main text-on-surface font-body-md text-body-md min-h-screen"><header class="fixed top-0 w-full z-50 bg-surface/95 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 w-full px-gutter-app flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs"><img alt="JalanPantau Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UtcA_1fkyo_y_bO1b__NpqQNyghMKrrDUveJRn__6RbHgcRllW2v9BHRm8VRhUelk_qAQ8jnAbUcMjCelkVRgT_qG024RSW7M3ftrfoB3HLWyZIKo7HZgO-7KJpQzyoGbNgPA0SWNIe0IjaWfRBd-0xqTVRL1KomoMFZncFb3jiLU8nFF_X3qdn9l9ffM0MqMNMkzz_QF5IuFl-vv4Irl7nwXVZHX02_dwVDAn0kL_swwQ--Vnidqyqg"/><div class="flex flex-col"><span class="font-label-md text-label-md text-text-primary tracking-tight">JalanPantau</span><span class="font-label-caps text-label-caps text-text-muted">SISTEM INSPEKSI JALAN</span></div></div><div class="hidden sm:flex items-center gap-space-xs px-space-xs py-space-2xs rounded-full bg-surface-container-low"><span class="font-data-mono-sm text-data-mono-sm text-text-secondary">YOLOv11n • TA 2025</span><div class="flex items-center gap-1.5 px-space-2xs py-0.5 rounded-full bg-severity-low-bg"><span class="w-1.5 h-1.5 rounded-full bg-severity-low-text"></span><span class="font-data-mono-sm text-data-mono-sm text-severity-low-text">Model Siap</span></div></div></div><nav class="hidden md:flex items-center gap-space-xs" data-active-classes="bg-primary-container text-on-primary-container font-label-md"><a aria-current="page" class="px-space-sm py-1.5 rounded transition-colors bg-primary-container text-on-primary-container font-label-md" data-path="deteksi" href="#">Deteksi</a><a class="px-space-sm py-1.5 rounded text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="peta" href="#">Peta</a><a class="px-space-sm py-1.5 rounded text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="riwayat" href="#">Riwayat</a><a class="px-space-sm py-1.5 rounded text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="tentang" href="#">Tentang</a></nav><div class="flex items-center gap-space-sm"><div class="hidden lg:flex items-center gap-space-xs px-space-xs py-1 rounded bg-surface-container"><span class="material-symbols-outlined text-severity-low-text text-[16px]">wifi</span><span class="font-data-mono-sm text-data-mono-sm text-text-secondary">Lokal / Offline-Ready</span></div><div class="hidden xl:flex items-center gap-space-2xs text-text-muted"><span class="material-symbols-outlined text-[16px]">schedule</span><span class="font-data-mono-sm text-data-mono-sm">SHIFT 01 • WIB</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-16 bg-bg-main min-h-screen" id="main-content"><div class="flex flex-col w-full relative">
+<!-- Dynamic Leaflet Stylesheet & Script Injection -->
+<link crossorigin="" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" rel="stylesheet"/>
+<script crossorigin="" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Fullscreen Spatial Canvas Context -->
+<div class="relative w-full h-[calc(100vh-4rem)] overflow-hidden bg-bg-main">
+<!-- LEAFLET MAP CONTAINER (Contract ID: id="map") -->
+<div class="w-full h-full z-0" id="map"></div>
+<!-- TOP-LEFT: FLOATING FILTER & TELEMETRY TOOLBAR -->
+<div class="absolute top-space-md left-space-md z-20 flex flex-col gap-space-xs max-w-xl w-[calc(100%-2rem)] sm:w-auto pointer-events-none">
+<!-- Primary Spatial Filter Bar -->
+<div class="bg-surface/95 backdrop-blur-md rounded-xl shadow-md p-space-sm pointer-events-auto flex flex-col gap-space-xs">
+<div class="flex items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">explore</span>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-text-primary tracking-tight">Geospasial Kerusakan</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">KORIDOR KOTA BANDUNG • SEKTOR PUSAT</span>
+</div>
+</div>
+<!-- Live Marker Counter (Contract ID: id="peta-hitung") -->
+<div class="px-space-xs py-1 rounded bg-surface-container flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="font-data-mono-sm text-data-mono-sm text-on-surface-variant font-semibold" id="peta-hitung">18 dari 18 titik kerusakan tampil</span>
+</div>
+</div>
+<!-- Filter Controls Row -->
+<div class="flex flex-wrap items-center gap-space-xs pt-space-2xs">
+<!-- Severity Filter Chips with 'f-sev' class contract -->
+<div class="flex items-center gap-1.5 bg-surface-container-low px-space-xs py-1 rounded-full">
+<span class="font-label-caps text-label-caps text-text-muted mr-1">TINGKAT:</span>
+<!-- Filter Berat (Merah) -->
+<label class="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-severity-high-text bg-severity-high-bg hover:opacity-90 transition-all select-none shadow-sm">
+<input checked="" class="f-sev accent-severity-high-text w-3.5 h-3.5 rounded cursor-pointer" type="checkbox" value="berat"/>
+<span class="font-label-md text-label-md">Berat</span>
+<span class="font-data-mono-sm text-data-mono-sm px-1.5 py-0.2 rounded-full bg-surface text-severity-high-text font-bold">5</span>
+</label>
+<!-- Filter Sedang (Kuning) -->
+<label class="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-severity-med-text bg-severity-med-bg hover:opacity-90 transition-all select-none shadow-sm">
+<input checked="" class="f-sev accent-severity-med-text w-3.5 h-3.5 rounded cursor-pointer" type="checkbox" value="sedang"/>
+<span class="font-label-md text-label-md">Sedang</span>
+<span class="font-data-mono-sm text-data-mono-sm px-1.5 py-0.2 rounded-full bg-surface text-severity-med-text font-bold">8</span>
+</label>
+<!-- Filter Ringan (Hijau) -->
+<label class="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-severity-low-text bg-severity-low-bg hover:opacity-90 transition-all select-none shadow-sm">
+<input checked="" class="f-sev accent-severity-low-text w-3.5 h-3.5 rounded cursor-pointer" type="checkbox" value="ringan"/>
+<span class="font-label-md text-label-md">Ringan</span>
+<span class="font-data-mono-sm text-data-mono-sm px-1.5 py-0.2 rounded-full bg-surface text-severity-low-text font-bold">5</span>
+</label>
+</div>
+<!-- Quick Corridor Search Input -->
+<div class="relative flex-1 min-w-[180px]">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted text-[16px]">search</span>
+<input class="w-full pl-8 pr-space-xs py-1 text-body-sm font-body-sm bg-surface rounded text-text-primary placeholder:text-text-muted focus:outline-none focus:bg-surface-container-high transition-colors" id="peta-cari-jalan" placeholder="Cari ruas jalan (Asia Afrika, Dago...)" type="text"/>
+</div>
+<!-- Reset Filter Icon Button -->
+<button class="p-1.5 rounded text-text-secondary hover:text-text-primary hover:bg-surface-container transition-colors" id="peta-reset-filter" title="Reset Semua Filter">
+<span class="material-symbols-outlined text-[18px]">restart_alt</span>
+</button>
+</div>
+</div>
+<!-- EMPTY STATE FLOATING CHIP OVERLAY (Contract ID: id="peta-kosong") -->
+<div class="hidden pointer-events-auto bg-surface-container-lowest/95 backdrop-blur-md rounded-xl p-space-md shadow-xl flex items-start gap-space-sm transition-all duration-300" id="peta-kosong">
+<div class="w-8 h-8 rounded-full bg-error-container text-error flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]">travel_explore</span>
+</div>
+<div class="flex flex-col gap-1 min-w-0 flex-1">
+<span class="font-label-md text-label-md text-text-primary">Tidak Ada Titik Kerusakan Sesuai Filter</span>
+<p class="font-body-sm text-body-sm text-text-secondary">
+            Belum ada titik yang cocok dengan filter atau koordinat belum tersimpan. Silakan periksa filter atau unggah inspeksi baru dengan koordinat GPS.
+          </p>
+<div class="flex items-center gap-space-xs pt-space-2xs">
+<button class="px-space-xs py-1 rounded bg-primary text-on-primary font-label-md text-label-md hover:bg-primary-container transition-colors" onclick="window.resetFilters()">
+              Tampilkan Semua Titik
+            </button>
+</div>
+</div>
+<!-- Dismiss Button (Contract ID: id="chip-tutup") -->
+<button class="text-text-muted hover:text-text-primary p-1 rounded hover:bg-surface-container transition-colors shrink-0" id="chip-tutup" title="Tutup Pemberitahuan">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+</div>
+<!-- FLOATING MAP CONTROLS (Layer & Reset Zoom) -->
+<div class="absolute top-space-md right-space-md z-20 hidden md:flex flex-col gap-1.5 pointer-events-auto">
+<div class="bg-surface/95 backdrop-blur-md rounded-lg shadow-sm p-1 flex flex-col gap-1">
+<button class="w-8 h-8 rounded flex items-center justify-center text-text-secondary hover:bg-surface-container hover:text-primary transition-colors" onclick="window.mapFitBounds()" title="Pusatkan Seluruh Titik">
+<span class="material-symbols-outlined text-[20px]">filter_center_focus</span>
+</button>
+<button class="w-8 h-8 rounded flex items-center justify-center text-text-secondary hover:bg-surface-container hover:text-primary transition-colors" onclick="window.toggleLayerSatellite()" title="Ganti Mode Peta">
+<span class="material-symbols-outlined text-[20px]">layers</span>
+</button>
+<button class="w-8 h-8 rounded flex items-center justify-center text-text-secondary hover:bg-surface-container hover:text-primary transition-colors" onclick="window.locateUser()" title="Posisi Saya">
+<span class="material-symbols-outlined text-[20px]">my_location</span>
+</button>
+</div>
+</div>
+<!-- RIGHT/BOTTOM DOCK: MUNICIPAL WORKBENCH SUMMARY PANEL -->
+<aside class="absolute bottom-space-md right-space-md z-20 w-[calc(100%-2rem)] sm:w-96 max-h-[calc(100vh-7rem)] bg-surface/95 backdrop-blur-md rounded-xl shadow-xl flex flex-col overflow-hidden transition-all duration-300 pointer-events-auto" id="side-drawer">
+<!-- Drawer Header Bar -->
+<div class="p-space-sm bg-surface-container flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">analytics</span>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-text-primary">Ringkasan Wilayah</span>
+<span class="font-label-caps text-label-caps text-text-muted">DINAS BINA MARGA KOTA BANDUNG</span>
+</div>
+</div>
+<button class="p-1 rounded text-text-muted hover:text-text-primary hover:bg-surface-container-high transition-colors" id="toggle-drawer-btn" title="Sembunyikan / Tampilkan">
+<span class="material-symbols-outlined text-[18px]">expand_more</span>
+</button>
+</div>
+<!-- Drawer Content Scrollable -->
+<div class="flex flex-col overflow-y-auto max-h-[593px] p-space-sm gap-space-sm" id="drawer-body">
+<!-- Metrics Bento Overview -->
+<div class="grid grid-cols-2 gap-space-xs">
+<div class="p-space-xs rounded bg-surface-container-low flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted">TOTAL KERUSAKAN</span>
+<span class="font-headline-lg text-headline-lg text-text-primary mt-0.5">18 <span class="text-body-sm font-normal text-text-secondary">Lokasi</span></span>
+</div>
+<div class="p-space-xs rounded bg-surface-container-low flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted">ESTIMASI ANGGARAN</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold mt-0.5 font-data-mono-md">Rp 14.850.000</span>
+</div>
+</div>
+<!-- Severity Distribution Breakdown Inline Bar -->
+<div class="flex flex-col gap-1.5 p-space-xs rounded bg-surface-container-lowest">
+<div class="flex justify-between items-center text-body-sm font-body-sm">
+<span class="font-label-caps text-label-caps text-text-muted">PROPORSI INTENSITAS</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-secondary">5B • 8S • 5R</span>
+</div>
+<!-- Stacked bar viz -->
+<div class="w-full h-2 rounded-full overflow-hidden flex bg-surface-container">
+<div class="bg-severity-high-text h-full" style="width: 27.7%" title="5 Berat (27.7%)"></div>
+<div class="bg-severity-med-text h-full" style="width: 44.4%" title="8 Sedang (44.4%)"></div>
+<div class="bg-severity-low-text h-full" style="width: 27.7%" title="5 Ringan (27.7%)"></div>
+</div>
+<div class="grid grid-cols-3 gap-1 pt-1 font-data-mono-sm text-data-mono-sm text-center">
+<div class="flex items-center gap-1 justify-center text-severity-high-text">
+<span class="w-2 h-2 rounded-full bg-severity-high-text"></span>5 Berat
+            </div>
+<div class="flex items-center gap-1 justify-center text-severity-med-text">
+<span class="w-2 h-2 rounded-full bg-severity-med-text"></span>8 Sedang
+            </div>
+<div class="flex items-center gap-1 justify-center text-severity-low-text">
+<span class="w-2 h-2 rounded-full bg-severity-low-text"></span>5 Ringan
+            </div>
+</div>
+</div>
+<!-- Priority Queue List -->
+<div class="flex flex-col gap-space-2xs">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted">TITIK PRIORITAS INTERVENSI</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">URUT TERTINGGI</span>
+</div>
+<div class="flex flex-col gap-1.5" id="peta-list-prioritas">
+<!-- Item 1: Asia Afrika 65 -->
+<div class="p-2.5 rounded bg-surface hover:bg-surface-container-low transition-colors cursor-pointer flex items-center justify-between group shadow-sm" onclick="window.focusMarker(0)">
+<div class="flex items-start gap-2 min-w-0">
+<span class="w-2.5 h-2.5 rounded-full bg-severity-high-text mt-1 shrink-0"></span>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-text-primary truncate group-hover:text-primary">Jl. Asia Afrika No. 65</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted truncate">1 Lubang (0.84) • 1 Retak Buaya</span>
+</div>
+</div>
+<div class="flex flex-col items-end shrink-0 pl-2">
+<span class="font-data-mono-sm text-data-mono-sm font-semibold text-severity-high-text">Rp 1.300.000</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">SKR 0.92</span>
+</div>
+</div>
+<!-- Item 2: Ir. H. Juanda / Dago 112 -->
+<div class="p-2.5 rounded bg-surface hover:bg-surface-container-low transition-colors cursor-pointer flex items-center justify-between group shadow-sm" onclick="window.focusMarker(1)">
+<div class="flex items-start gap-2 min-w-0">
+<span class="w-2.5 h-2.5 rounded-full bg-severity-high-text mt-1 shrink-0"></span>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-text-primary truncate group-hover:text-primary">Jl. Ir. H. Juanda No. 112</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted truncate">2 Lubang Parah (0.91)</span>
+</div>
+</div>
+<div class="flex flex-col items-end shrink-0 pl-2">
+<span class="font-data-mono-sm text-data-mono-sm font-semibold text-severity-high-text">Rp 1.850.000</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">SKR 0.88</span>
+</div>
+</div>
+<!-- Item 3: RE Martadinata 48 -->
+<div class="p-2.5 rounded bg-surface hover:bg-surface-container-low transition-colors cursor-pointer flex items-center justify-between group shadow-sm" onclick="window.focusMarker(2)">
+<div class="flex items-start gap-2 min-w-0">
+<span class="w-2.5 h-2.5 rounded-full bg-severity-med-text mt-1 shrink-0"></span>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-text-primary truncate group-hover:text-primary">Jl. RE Martadinata No. 48</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted truncate">3 Retak Kulit Buaya (0.78)</span>
+</div>
+</div>
+<div class="flex flex-col items-end shrink-0 pl-2">
+<span class="font-data-mono-sm text-data-mono-sm font-semibold text-severity-med-text">Rp 950.000</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">SKR 0.74</span>
+</div>
+</div>
+<!-- Item 4: Surapati No. 80 -->
+<div class="p-2.5 rounded bg-surface hover:bg-surface-container-low transition-colors cursor-pointer flex items-center justify-between group shadow-sm" onclick="window.focusMarker(3)">
+<div class="flex items-start gap-2 min-w-0">
+<span class="w-2.5 h-2.5 rounded-full bg-severity-med-text mt-1 shrink-0"></span>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-text-primary truncate group-hover:text-primary">Jl. Surapati No. 80</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted truncate">Retak Memanjang 4.2m</span>
+</div>
+</div>
+<div class="flex flex-col items-end shrink-0 pl-2">
+<span class="font-data-mono-sm text-data-mono-sm font-semibold text-severity-med-text">Rp 720.000</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">SKR 0.68</span>
+</div>
+</div>
+<!-- Item 5: Braga No. 12 -->
+<div class="p-2.5 rounded bg-surface hover:bg-surface-container-low transition-colors cursor-pointer flex items-center justify-between group shadow-sm" onclick="window.focusMarker(4)">
+<div class="flex items-start gap-2 min-w-0">
+<span class="w-2.5 h-2.5 rounded-full bg-severity-low-text mt-1 shrink-0"></span>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-text-primary truncate group-hover:text-primary">Jl. Braga No. 12</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted truncate">Retak Halus Permukaan</span>
+</div>
+</div>
+<div class="flex flex-col items-end shrink-0 pl-2">
+<span class="font-data-mono-sm text-data-mono-sm font-semibold text-severity-low-text">Rp 350.000</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">SKR 0.42</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Legend Card -->
+<div class="p-space-xs rounded bg-surface-container-low flex flex-col gap-1">
+<span class="font-label-caps text-label-caps text-text-muted">LEGENDA KLASIFIKASI BINA MARGA</span>
+<div class="flex flex-col gap-1 pt-1 font-body-sm text-body-sm text-text-secondary">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-severity-high-text shrink-0"></span>
+<span><strong>Berat</strong>: Lubang dalam (&gt;4cm), amblas struktur</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-severity-med-text shrink-0"></span>
+<span><strong>Sedang</strong>: Retak buaya, pelepasan butir luas</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-severity-low-text shrink-0"></span>
+<span><strong>Ringan</strong>: Retak memanjang &amp; rambut &lt;2mm</span>
+</div>
+</div>
+</div>
+</div>
+</aside>
+<!-- FLOATING POPUP TEMPLATE (Hidden, rendered dynamically into Leaflet popup) -->
+<template id="custom-popup-template">
+<div class="p-3 font-sans w-72 flex flex-col gap-2.5 bg-surface text-on-surface">
+<div class="flex items-center justify-between pb-1.5 border-b border-border-subtle">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-severity-high-text"></span>
+<span class="font-label-md text-label-md text-text-primary tracking-tight">Jl. Asia Afrika No. 65, Bandung</span>
+</div>
+<span class="px-2 py-0.5 rounded-full text-severity-high-text bg-severity-high-bg text-[10px] font-bold">Berat</span>
+</div>
+<!-- Photo inspection with AI overlay bounding box simulation -->
+<div class="relative w-full h-32 rounded overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Tampak dekat aspal jalanan perkotaan di Jalan Asia Afrika Bandung yang mengalami kerusakan lubang pothole dan retakan aspal, ditandai kotak bounding box analitik AI berwarna merah terang dan oranye, sudut pandang inspeksi teknis jalan raya tajam pencahayaan siang hari." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLZCBt3EcBtPVzFTfKEyy9-tW_hyYt9bSo7TcJxdEc_FhpIRYgMBa2Y1FV_Y4Jy3mKxlzBGFe84puVjWAxuYqCHrp3ENHqfVyh1jMyRXgjQTQPJI5OQAqRq9Qig5M6htRr_Udh3mvPbOj-BilgkB6Zs_1zyjfD5Y1lQXlXV9mkePasBUGMLrLoYqsZQ1wYKW6cMRSOeTicy7NzUN5khdg0jdZiPeve2sfvE5-379V8WJ60KU14Afdn"/>
+<!-- Bounding box overlays -->
+<div class="absolute inset-x-8 inset-y-6 border-2 border-red-500 bg-red-500/20 rounded-sm pointer-events-none flex items-start justify-start p-1">
+<span class="bg-red-600 text-white text-[9px] font-mono px-1 py-0.2 rounded">Pothole 0.84</span>
+</div>
+<div class="absolute bottom-2 right-4 w-20 h-10 border-2 border-amber-500 bg-amber-500/20 rounded-sm pointer-events-none flex items-start justify-start p-0.5">
+<span class="bg-amber-600 text-white text-[8px] font-mono px-1 py-0.2 rounded">Alligator 0.76</span>
+</div>
+<div class="absolute top-1.5 right-1.5 bg-inverse-surface/80 text-inverse-on-surface px-1.5 py-0.5 rounded text-[10px] font-mono">
+            ID: JP-BDO-042
+          </div>
+</div>
+<div class="flex flex-col gap-1 text-[12px] text-text-secondary">
+<div class="flex items-center justify-between">
+<span class="text-text-muted">Waktu Inspeksi</span>
+<span class="font-medium text-text-primary">18 Feb 2025, 14:23 WIB</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-text-muted">Temuan AI</span>
+<span class="font-medium text-text-primary text-right">1 Lubang, 1 Retak Buaya</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-text-muted">Estimasi Biaya</span>
+<span class="font-mono font-bold text-severity-high-text">Rp 1.300.000</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-1.5 pt-1">
+<button class="w-full py-1.5 px-2 rounded bg-primary text-on-primary text-[11px] font-semibold hover:bg-primary-container transition-colors text-center" onclick="window.navigasiKeRiwayat('JP-BDO-042')">
+            Lihat di Riwayat
+          </button>
+<button class="w-full py-1.5 px-2 rounded bg-surface-container text-on-surface text-[11px] font-semibold hover:bg-surface-container-high transition-colors text-center" onclick="window.bukaFotoBukti('JP-BDO-042')">
+            Foto Asli (FHD)
+          </button>
+</div>
+</div>
+</template>
+</div>
+</div>
+<!-- LEAFLET INITIALIZATION & FILTER CONTROLLER SCRIPT -->
+<script>
+  // Ensure header navigation highlights 'Peta'
+  (function updateActiveNav() {
+    try {
+      const navLinks = document.querySelectorAll('header nav a');
+      navLinks.forEach(link => {
+        if (link.getAttribute('data-path') === 'peta') {
+          link.classList.add('bg-primary-container', 'text-on-primary-container', 'font-label-md');
+          link.classList.remove('text-on-surface-variant');
+        } else {
+          link.classList.remove('bg-primary-container', 'text-on-primary-container');
+        }
+      });
+    } catch (e) {
+      console.warn("Nav sync skipped", e);
+    }
+  })();
+
+  // Inspection Dataset for Bandung Core Corridor
+  const titikData = [
+    {
+      id: "JP-BDO-042",
+      lokasi: "Jl. Asia Afrika No. 65, Bandung",
+      ruas: "Jl. Asia Afrika",
+      lat: -6.9212,
+      lng: 107.6105,
+      sev: "berat",
+      waktu: "18 Feb 2025, 14:23 WIB",
+      detail: "1 Lubang (Pothole 0.84), 1 Retak Kulit Buaya",
+      biaya: "Rp 1.300.000",
+      pothole: 1,
+      alligator: 1,
+      longitudinal: 0,
+      skr: 0.92,
+      openDefault: true
+    },
+    {
+      id: "JP-BDO-019",
+      lokasi: "Jl. Ir. H. Juanda No. 112 (Dago)",
+      ruas: "Jl. Ir. H. Juanda / Dago",
+      lat: -6.8920,
+      lng: 107.6142,
+      sev: "berat",
+      waktu: "18 Feb 2025, 11:15 WIB",
+      detail: "2 Lubang Parah (Pothole 0.91)",
+      biaya: "Rp 1.850.000",
+      skr: 0.88
+    },
+    {
+      id: "JP-BDO-031",
+      lokasi: "Jl. RE Martadinata No. 48",
+      ruas: "Jl. RE Martadinata",
+      lat: -6.9078,
+      lng: 107.6185,
+      sev: "sedang",
+      waktu: "18 Feb 2025, 09:40 WIB",
+      detail: "3 Retak Kulit Buaya (0.78)",
+      biaya: "Rp 950.000",
+      skr: 0.74
+    },
+    {
+      id: "JP-BDO-055",
+      lokasi: "Jl. Surapati No. 80 (Dekat Gasibu)",
+      ruas: "Jl. Surapati",
+      lat: -6.8995,
+      lng: 107.6225,
+      sev: "sedang",
+      waktu: "17 Feb 2025, 16:10 WIB",
+      detail: "Retak Memanjang 4.2m (0.71)",
+      biaya: "Rp 720.000",
+      skr: 0.68
+    },
+    {
+      id: "JP-BDO-008",
+      lokasi: "Jl. Braga No. 12",
+      ruas: "Jl. Braga",
+      lat: -6.9182,
+      lng: 107.6096,
+      sev: "ringan",
+      waktu: "17 Feb 2025, 15:30 WIB",
+      detail: "Retak Rambut Halus Permukaan (0.64)",
+      biaya: "Rp 350.000",
+      skr: 0.42
+    },
+    {
+      id: "JP-BDO-061",
+      lokasi: "Jl. Pasteur No. 14",
+      ruas: "Jl. Dr. Djunjunan / Pasteur",
+      lat: -6.8988,
+      lng: 107.5920,
+      sev: "berat",
+      waktu: "17 Feb 2025, 10:12 WIB",
+      detail: "1 Lubang Melintang Bahu Jalan (0.86)",
+      biaya: "Rp 1.450.000",
+      skr: 0.85
+    },
+    {
+      id: "JP-BDO-062",
+      lokasi: "Jl. Merdeka No. 22",
+      ruas: "Jl. Merdeka",
+      lat: -6.9142,
+      lng: 107.6110,
+      sev: "sedang",
+      waktu: "16 Feb 2025, 13:45 WIB",
+      detail: "2 Retak Kulit Buaya (0.72)",
+      biaya: "Rp 880.000",
+      skr: 0.69
+    },
+    {
+      id: "JP-BDO-063",
+      lokasi: "Jl. Sunda No. 34",
+      ruas: "Jl. Sunda",
+      lat: -6.9189,
+      lng: 107.6165,
+      sev: "ringan",
+      waktu: "16 Feb 2025, 11:20 WIB",
+      detail: "Retak Memanjang 2.1m",
+      biaya: "Rp 400.000",
+      skr: 0.45
+    },
+    {
+      id: "JP-BDO-064",
+      lokasi: "Jl. Gatot Subroto No. 101",
+      ruas: "Jl. Gatot Subroto",
+      lat: -6.9285,
+      lng: 107.6255,
+      sev: "berat",
+      waktu: "16 Feb 2025, 09:05 WIB",
+      detail: "Lubang Amblas Berulang (0.89)",
+      biaya: "Rp 1.600.000",
+      skr: 0.89
+    },
+    {
+      id: "JP-BDO-065",
+      lokasi: "Jl. Diponegoro No. 18 (Gedung Sate)",
+      ruas: "Jl. Diponegoro",
+      lat: -6.9015,
+      lng: 107.6189,
+      sev: "ringan",
+      waktu: "15 Feb 2025, 14:15 WIB",
+      detail: "Retak Rambut Sambungan Beton",
+      biaya: "Rp 250.000",
+      skr: 0.38
+    },
+    {
+      id: "JP-BDO-066",
+      lokasi: "Jl. Lembong No. 8",
+      ruas: "Jl. Lembong",
+      lat: -6.9198,
+      lng: 107.6125,
+      sev: "sedang",
+      waktu: "15 Feb 2025, 10:45 WIB",
+      detail: "Pelepasan Butir Aspal & Retak",
+      biaya: "Rp 820.000",
+      skr: 0.65
+    },
+    {
+      id: "JP-BDO-067",
+      lokasi: "Jl. Cihampelas No. 160",
+      ruas: "Jl. Cihampelas",
+      lat: -6.8950,
+      lng: 107.6045,
+      sev: "berat",
+      waktu: "14 Feb 2025, 16:30 WIB",
+      detail: "Lubang Dalam dekat Saluran Air (0.87)",
+      biaya: "Rp 1.500.000",
+      skr: 0.86
+    },
+    {
+      id: "JP-BDO-068",
+      lokasi: "Jl. Naripan No. 45",
+      ruas: "Jl. Naripan",
+      lat: -6.9205,
+      lng: 107.6150,
+      sev: "sedang",
+      waktu: "14 Feb 2025, 11:15 WIB",
+      detail: "Retak Buaya Tersebar",
+      biaya: "Rp 910.000",
+      skr: 0.70
+    },
+    {
+      id: "JP-BDO-069",
+      lokasi: "Jl. Buah Batu No. 55",
+      ruas: "Jl. Buah Batu",
+      lat: -6.9360,
+      lng: 107.6230,
+      sev: "sedang",
+      waktu: "13 Feb 2025, 15:40 WIB",
+      detail: "Kerusakan Tepi Jalan & Retak",
+      biaya: "Rp 790.000",
+      skr: 0.62
+    },
+    {
+      id: "JP-BDO-070",
+      lokasi: "Jl. Riau No. 115",
+      ruas: "Jl. RE Martadinata",
+      lat: -6.9095,
+      lng: 107.6270,
+      sev: "sedang",
+      waktu: "13 Feb 2025, 08:30 WIB",
+      detail: "Retak Memanjang & Pelepasan Butir",
+      biaya: "Rp 680.000",
+      skr: 0.58
+    },
+    {
+      id: "JP-BDO-071",
+      lokasi: "Jl. Veteran No. 10",
+      ruas: "Jl. Veteran",
+      lat: -6.9172,
+      lng: 107.6145,
+      sev: "ringan",
+      waktu: "12 Feb 2025, 17:00 WIB",
+      detail: "Retak Rambut Melintang",
+      biaya: "Rp 320.000",
+      skr: 0.35
+    },
+    {
+      id: "JP-BDO-072",
+      lokasi: "Jl. Tamblong No. 20",
+      ruas: "Jl. Tamblong",
+      lat: -6.9180,
+      lng: 107.6120,
+      sev: "ringan",
+      waktu: "12 Feb 2025, 13:10 WIB",
+      detail: "Retak Garis Tipis",
+      biaya: "Rp 280.000",
+      skr: 0.32
+    },
+    {
+      id: "JP-BDO-073",
+      lokasi: "Jl. Kebon Kawung (Stasiun Bandung)",
+      ruas: "Jl. Kebon Kawung",
+      lat: -6.9125,
+      lng: 107.6030,
+      sev: "sedang",
+      waktu: "12 Feb 2025, 09:20 WIB",
+      detail: "Gelombang & Retak Halus",
+      biaya: "Rp 850.000",
+      skr: 0.63
+    }
+  ];
+
+  let mapInstance = null;
+  let markerInstances = [];
+  const totalCount = titikData.length;
+
+  function initMap() {
+    if (typeof L === 'undefined') {
+      setTimeout(initMap, 150);
+      return;
+    }
+
+    // Centered around Bandung Core (Asia Afrika, Dago, Pasteur)
+    mapInstance = L.map('map', {
+      zoomControl: false,
+      attributionControl: false
+    }).setView([-6.9175, 107.6150], 14);
+
+    // Clean modern OpenStreetMap / Carto Light Cartography
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19,
+      subdomains: 'abcd'
+    }).addTo(mapInstance);
+
+    // Reposition zoom control to bottom left to avoid top headers & floating drawer
+    L.control.zoom({ position: 'bottomleft' }).addTo(mapInstance);
+
+    renderMarkers();
+  }
+
+  function getSeverityColor(sev) {
+    if (sev === 'berat') return '#dc2626';
+    if (sev === 'sedang') return '#d97706';
+    return '#16a34a';
+  }
+
+  function renderMarkers() {
+    // Clear existing
+    markerInstances.forEach(item => mapInstance.removeLayer(item.marker));
+    markerInstances = [];
+
+    // Get active filter values
+    const checkedCheckboxes = document.querySelectorAll('.f-sev:checked');
+    const activeSeverities = Array.from(checkedCheckboxes).map(c => c.value);
+    const searchQuery = (document.getElementById('peta-cari-jalan')?.value || '').toLowerCase().trim();
+
+    let visibleCount = 0;
+    let defaultPopupMarker = null;
+
+    titikData.forEach((item, index) => {
+      const matchSev = activeSeverities.includes(item.sev);
+      const matchSearch = searchQuery === '' || 
+        item.lokasi.toLowerCase().includes(searchQuery) || 
+        item.ruas.toLowerCase().includes(searchQuery);
+
+      if (matchSev && matchSearch) {
+        visibleCount++;
+
+        const color = getSeverityColor(item.sev);
+
+        // Custom pulsing dot marker
+        const customIcon = L.divIcon({
+          className: 'custom-div-icon',
+          html: `
+            <div style="position: relative; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+              <div style="position: absolute; width: 24px; height: 24px; border-radius: 9999px; background-color: ${color}; opacity: 0.25; transform: scale(1.1); animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+              <div style="position: relative; width: 14px; height: 14px; border-radius: 9999px; background-color: ${color}; border: 2.5px solid #ffffff; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>
+            </div>
+          `,
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
+        });
+
+        const marker = L.marker([item.lat, item.lng], { icon: customIcon }).addTo(mapInstance);
+
+        // Construct HTML Popup
+        const sevLabel = item.sev === 'berat' ? 'Berat' : (item.sev === 'sedang' ? 'Sedang' : 'Ringan');
+        const sevBg = item.sev === 'berat' ? '#FEF2F2' : (item.sev === 'sedang' ? '#FFFBEB' : '#ECFDF5');
+        const sevTextColor = item.sev === 'berat' ? '#DC2626' : (item.sev === 'sedang' ? '#D97706' : '#059669');
+
+        const popupContent = `
+          <div style="font-family: 'Inter', sans-serif; width: 280px; padding: 2px; color: #0F172A;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+              <div>
+                <h4 style="font-size: 13px; font-weight: 600; margin: 0; line-height: 1.2;">${item.lokasi}</h4>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #64748B;">${item.waktu}</span>
+              </div>
+              <span style="background-color: ${sevBg}; color: ${sevTextColor}; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; white-space: nowrap;">${sevLabel}</span>
+            </div>
+            
+            <div style="position: relative; width: 100%; height: 110px; border-radius: 6px; overflow: hidden; background: #e2e8f0; margin-bottom: 8px;">
+              <img src="placeholder" data-alt="Inspeksi foto aspal jalan rusak di ${item.lokasi} dengan retakan jalan dan lubang, kotak bounding box AI mendeteksi kerusakan jalan secara akurat, sudut pandang kamera inspektor." style="width: 100%; height: 100%; object-fit: cover;" />
+              <div style="position: absolute; inset: 15px 25px; border: 2px solid ${color}; background-color: ${color}25; border-radius: 3px; display: flex; align-items: flex-start; padding: 2px;">
+                <span style="background: ${color}; color: #ffffff; font-size: 8px; font-family: monospace; padding: 1px 4px; border-radius: 2px;">AI: ${item.sev.toUpperCase()}</span>
+              </div>
+              <div style="position: absolute; bottom: 4px; right: 4px; background: rgba(15,23,42,0.75); color: #ffffff; font-size: 9px; font-family: monospace; padding: 1px 6px; border-radius: 4px;">
+                ${item.id}
+              </div>
+            </div>
+
+            <div style="font-size: 11px; margin-bottom: 8px; line-height: 1.4; color: #475569;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                <span>Temuan:</span>
+                <span style="font-weight: 600; color: #0F172A; text-align: right;">${item.detail}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span>Estimasi Biaya:</span>
+                <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: ${color};">${item.biaya}</span>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
+              <button onclick="window.navigasiKeRiwayat('${item.id}')" style="background-color: #006194; color: #ffffff; border: none; padding: 6px; font-size: 11px; font-weight: 600; border-radius: 4px; cursor: pointer; text-align: center;">Riwayat</button>
+              <button onclick="window.bukaFotoBukti('${item.id}')" style="background-color: #eff4ff; color: #004f7b; border: none; padding: 6px; font-size: 11px; font-weight: 600; border-radius: 4px; cursor: pointer; text-align: center;">Buka Foto</button>
+            </div>
+          </div>
+        `;
+
+        marker.bindPopup(popupContent, { maxWidth: 300 });
+
+        markerInstances.push({
+          data: item,
+          marker: marker
+        });
+
+        if (item.openDefault && !defaultPopupMarker) {
+          defaultPopupMarker = marker;
+        }
+      }
+    });
+
+    // Update Counter (Contract ID: id="peta-hitung")
+    const counterEl = document.getElementById('peta-hitung');
+    if (counterEl) {
+      counterEl.textContent = `${visibleCount} dari ${totalCount} titik kerusakan tampil`;
+    }
+
+    // Toggle Empty State Overlay (Contract ID: id="peta-kosong")
+    const emptyStateEl = document.getElementById('peta-kosong');
+    if (emptyStateEl) {
+      if (visibleCount === 0) {
+        emptyStateEl.classList.remove('hidden');
+      } else {
+        emptyStateEl.classList.add('hidden');
+      }
+    }
+
+    // Automatically open the first priority popup (Jl. Asia Afrika No. 65)
+    if (defaultPopupMarker && visibleCount > 0) {
+      setTimeout(() => {
+        defaultPopupMarker.openPopup();
+      }, 400);
+    }
+  }
+
+  // Event Listeners for Filters
+  document.querySelectorAll('.f-sev').forEach(input => {
+    input.addEventListener('change', renderMarkers);
+  });
+
+  document.getElementById('peta-cari-jalan')?.addEventListener('input', () => {
+    renderMarkers();
+  });
+
+  document.getElementById('peta-reset-filter')?.addEventListener('click', () => {
+    window.resetFilters();
+  });
+
+  // Empty State dismiss handler (Contract ID: id="chip-tutup")
+  document.getElementById('chip-tutup')?.addEventListener('click', () => {
+    const emptyStateEl = document.getElementById('peta-kosong');
+    if (emptyStateEl) {
+      emptyStateEl.classList.add('hidden');
+    }
+  });
+
+  // Global Actions
+  window.resetFilters = function() {
+    document.querySelectorAll('.f-sev').forEach(c => c.checked = true);
+    const searchInput = document.getElementById('peta-cari-jalan');
+    if (searchInput) searchInput.value = '';
+    renderMarkers();
+    if (mapInstance) {
+      mapInstance.setView([-6.9175, 107.6150], 14);
+    }
+  };
+
+  window.focusMarker = function(index) {
+    if (titikData[index] && mapInstance) {
+      const item = titikData[index];
+      mapInstance.flyTo([item.lat, item.lng], 16, { duration: 1.2 });
+      
+      const found = markerInstances.find(m => m.data.id === item.id);
+      if (found) {
+        setTimeout(() => {
+          found.marker.openPopup();
+        }, 1200);
+      }
+    }
+  };
+
+  window.mapFitBounds = function() {
+    if (!mapInstance || markerInstances.length === 0) return;
+    const group = new L.featureGroup(markerInstances.map(m => m.marker));
+    mapInstance.fitBounds(group.getBounds().pad(0.15));
+  };
+
+  window.toggleLayerSatellite = function() {
+    alert("Beralih ke citra satelit resolusi tinggi Bina Marga Kota Bandung.");
+  };
+
+  window.locateUser = function() {
+    if (navigator.geolocation && mapInstance) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          mapInstance.flyTo([pos.coords.latitude, pos.coords.longitude], 15);
+        },
+        () => {
+          // Default fall back to Alun-alun Bandung
+          mapInstance.flyTo([-6.9218, 107.6074], 16);
+        }
+      );
+    }
+  };
+
+  window.navigasiKeRiwayat = function(inspectionId) {
+    // Smooth transition / navigation indicator
+    const toast = document.getElementById('toast-container');
+    if (toast) {
+      const msg = document.createElement('div');
+      msg.className = 'px-4 py-2 bg-inverse-surface text-inverse-on-surface rounded shadow-lg text-body-sm animate-fade-in flex items-center gap-2 pointer-events-auto';
+      msg.innerHTML = `<span class="material-symbols-outlined text-[16px] text-severity-low-text">check_circle</span> Membuka data riwayat komprehensif ID: <strong>${inspectionId}</strong>...`;
+      toast.appendChild(msg);
+      setTimeout(() => msg.remove(), 2500);
+    }
+  };
+
+  window.bukaFotoBukti = function(inspectionId) {
+    const toast = document.getElementById('toast-container');
+    if (toast) {
+      const msg = document.createElement('div');
+      msg.className = 'px-4 py-2 bg-surface text-text-primary border border-border-subtle rounded shadow-lg text-body-sm animate-fade-in flex items-center gap-2 pointer-events-auto';
+      msg.innerHTML = `<span class="material-symbols-outlined text-[16px] text-primary">photo_camera</span> Memuat foto resolusi tinggi beranotasi AI untuk <strong>${inspectionId}</strong>...`;
+      toast.appendChild(msg);
+      setTimeout(() => msg.remove(), 2500);
+    }
+  };
+
+  // Drawer collapsible micro-interaction
+  const drawerToggle = document.getElementById('toggle-drawer-btn');
+  const drawerBody = document.getElementById('drawer-body');
+  let isDrawerOpen = true;
+
+  drawerToggle?.addEventListener('click', () => {
+    isDrawerOpen = !isDrawerOpen;
+    if (isDrawerOpen) {
+      drawerBody.classList.remove('hidden');
+      drawerToggle.innerHTML = '<span class="material-symbols-outlined text-[18px]">expand_more</span>';
+    } else {
+      drawerBody.classList.add('hidden');
+      drawerToggle.innerHTML = '<span class="material-symbols-outlined text-[18px]">expand_less</span>';
+    }
+  });
+
+  // Mount on DOM Ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMap);
+  } else {
+    initMap();
+  }
+</script></main><footer class="w-full bg-surface py-space-md shadow-[0_-1px_6px_rgba(0,0,0,0.03)]"><div class="w-full px-gutter-app flex flex-col sm:flex-row items-center justify-between gap-space-xs text-text-muted font-body-sm text-body-sm"><span>© 2025 JalanPantau • Platform Kecerdasan Artifisial Inspeksi Kerusakan Permukaan Jalan</span><span class="font-data-mono-sm text-data-mono-sm">Infrastruktur Bina Marga &amp; Transportasi Cerdas</span></div></footer><div class="fixed bottom-space-md right-space-md z-50 flex flex-col gap-space-xs pointer-events-none" id="toast-container"></div></body></html>

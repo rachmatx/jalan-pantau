@@ -1,0 +1,169 @@
+# ============================================================
+# Model weights (file besar, download/training terpisah)
+# ============================================================
+*.pt
+*.onnx
+*.engine
+*.tflite
+app/weights/*.pt
+app/weights/*.onnx
+!app/weights-README.md
+
+# ============================================================
+# Python
+# ============================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+*.egg
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ============================================================
+# Database & runtime files
+# ============================================================
+*.db
+*.sqlite
+*.sqlite3
+web/instance/riwayat.db
+web/instance/jalanpantau.db
+web/instance/*.log
+web/instance/*.err
+web/instance/hasil/
+
+# ============================================================
+# Dataset & gambar sample (file besar)
+# ============================================================
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.tiff
+*.webp
+# Kecuali file gambar yang diperlukan untuk UI/demo
+!web/static/demo/*.png
+!web/static/demo/*.jpg
+!web/static/demo/*.mp4
+!stitch_aplikasi_deteksi_kerusakan_jalan/**/*.png
+!stitch_aplikasi_deteksi_kerusakan_jalan/**/*.jpg
+
+# ============================================================
+# Folder dataset & hasil training
+# ============================================================
+data/
+datasets/
+runs/
+artifacts/
+reports/*.pdf
+reports/*.zip
+yolov11s-rdd-only/runs/
+yolov11s-rdd-only/*.png
+yolov11s-rdd-only/*.jpg
+China_MotorBike_*.jpg
+India_*.jpg
+Japan_*.jpg
+Norway_*.jpg
+United_States_*.jpg
+Czech_*.jpg
+
+# ============================================================
+# Stitch exports (large HTML/CSS files)
+# ============================================================
+stitch_aplikasi_deteksi_kerusakan_jalan*.zip
+stitch_aplikasi_deteksi_kerusalan_jalan/code.html
+
+# ============================================================
+# IDE & OS
+# ============================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ============================================================
+# Logs & temp
+# ============================================================
+*.log
+*.err
+logs/
+tmp/
+temp/
+*.tmp
+
+# ============================================================
+# Environment & secrets
+# ============================================================
+.env
+.env.local
+*.secret
+config/local*.yaml
+
+# ============================================================
+# Jupyter notebooks checkpoints
+# ============================================================
+.ipynb_checkpoints/
+*.ipynb
+
+# ============================================================
+# Testing
+# ============================================================
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# ============================================================
+# Playwright MCP (auto-generated)
+# ============================================================
+.playwright-mcp/
+
+# ============================================================
+# Command Code (local config)
+# ============================================================
+.commandcode/
+
+# ============================================================
+# PDF reports
+# ============================================================
+*.pdf
+!reports/*.pdf
+
+# ============================================================
+# Obsidian vault (personal notes)
+# ============================================================
+Obsidian Vault/
+
+# ============================================================
+# Zip files (model backups, exports)
+# ============================================================
+*.zip
+!stitch_aplikasi_deteksi_kerusakan_jalan*.zip
+
+# ============================================================
+# Session & auth files (sensitive)
+# ============================================================
+reports/backup-opencode-*/ses_*.json
+reports/backup-opencode-*/mcp-auth.json
+*.secret
+*.token
+
+# ============================================================
+# Large notebook outputs
+# ============================================================
+yolov11s-rdd-only/*.zip
+yolov11s-rdd-only/best.zip
+yolov11s-rdd-only/epoch90.zip
+yolov11s-rdd-only/last.zip

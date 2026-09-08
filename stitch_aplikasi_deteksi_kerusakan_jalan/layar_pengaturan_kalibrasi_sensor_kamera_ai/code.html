@@ -1,0 +1,712 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      "colors": {
+        "severity-low-border": "#A7F3D0",
+        "on-background": "#0b1c30",
+        "text-secondary": "#475569",
+        "primary-container": "#007bb9",
+        "inverse-on-surface": "#eaf1ff",
+        "on-secondary": "#ffffff",
+        "tertiary": "#894d00",
+        "text-primary": "#0F172A",
+        "surface-container": "#e5eeff",
+        "surface-container-low": "#eff4ff",
+        "tertiary-fixed": "#ffdcc0",
+        "secondary": "#006399",
+        "tertiary-container": "#ac6200",
+        "error": "#ba1a1a",
+        "inverse-surface": "#213145",
+        "outline": "#707881",
+        "surface-variant": "#d3e4fe",
+        "on-primary-fixed": "#001d31",
+        "on-secondary-container": "#004f7b",
+        "severity-low-text": "#059669",
+        "surface-container-highest": "#d3e4fe",
+        "surface-tint": "#006398",
+        "bg-main": "#F8FAFC",
+        "surface-dim": "#cbdbf5",
+        "on-surface": "#0b1c30",
+        "error-container": "#ffdad6",
+        "on-primary-container": "#fdfcff",
+        "severity-med-border": "#FDE68A",
+        "text-muted": "#64748B",
+        "surface-container-lowest": "#ffffff",
+        "on-primary": "#ffffff",
+        "on-error-container": "#93000a",
+        "on-primary-fixed-variant": "#004b73",
+        "surface-bright": "#f8f9ff",
+        "on-error": "#ffffff",
+        "primary-fixed": "#cce5ff",
+        "secondary-container": "#7bc2ff",
+        "on-surface-variant": "#3f4850",
+        "surface-container-high": "#dce9ff",
+        "secondary-fixed": "#cde5ff",
+        "severity-high-bg": "#FEF2F2",
+        "on-tertiary-fixed": "#2d1600",
+        "severity-high-text": "#DC2626",
+        "inverse-primary": "#93ccff",
+        "on-tertiary": "#ffffff",
+        "background": "#f8f9ff",
+        "on-secondary-fixed-variant": "#004b74",
+        "on-tertiary-container": "#fffbff",
+        "severity-med-text": "#D97706",
+        "severity-high-border": "#FECACA",
+        "surface": "#FFFFFF",
+        "border-subtle": "#E2E8F0",
+        "on-secondary-fixed": "#001d32",
+        "outline-variant": "#bfc7d2",
+        "secondary-fixed-dim": "#94ccff",
+        "on-tertiary-fixed-variant": "#6b3b00",
+        "tertiary-fixed-dim": "#ffb875",
+        "primary": "#006194",
+        "severity-med-bg": "#FFFBEB",
+        "primary-fixed-dim": "#93ccff",
+        "severity-low-bg": "#ECFDF5"
+      },
+      "borderRadius": {
+        "DEFAULT": "0.125rem",
+        "lg": "0.25rem",
+        "xl": "0.5rem",
+        "full": "0.75rem"
+      },
+      "spacing": {
+        "space-xs": "0.5rem",
+        "space-xl": "2rem",
+        "space-sm": "0.75rem",
+        "space-2xs": "0.25rem",
+        "gutter-app": "1rem",
+        "space-lg": "1.5rem",
+        "space-md": "1rem",
+        "workbench-gap": "1.5rem"
+      },
+      "fontFamily": {
+        "data-mono-md": ["JetBrains Mono"],
+        "label-md": ["Inter"],
+        "data-mono-sm": ["JetBrains Mono"],
+        "headline-sm": ["Inter"],
+        "headline-lg": ["Inter"],
+        "body-sm": ["Inter"],
+        "body-md": ["Inter"],
+        "label-caps": ["Inter"],
+        "headline-xl": ["Inter"]
+      },
+      "fontSize": {
+        "data-mono-md": ["13px", {"lineHeight": "18px", "fontWeight": "500"}],
+        "label-md": ["13px", {"lineHeight": "16px", "fontWeight": "600"}],
+        "data-mono-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
+        "headline-sm": ["18px", {"lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+        "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+        "label-caps": ["11px", {"lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+        "headline-xl": ["30px", {"lineHeight": "36px", "letterSpacing": "-0.025em", "fontWeight": "700"}]
+      }
+    }
+  }
+}</script></head><body class="bg-bg-main text-on-surface font-body-md text-body-md min-h-screen"><header class="fixed top-0 w-full z-50 bg-surface/95 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 w-full px-gutter-app flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs"><img alt="JalanPantau Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UtcA_1fkyo_y_bO1b__NpqQNyghMKrrDUveJRn__6RbHgcRllW2v9BHRm8VRhUelk_qAQ8jnAbUcMjCelkVRgT_qG024RSW7M3ftrfoB3HLWyZIKo7HZgO-7KJpQzyoGbNgPA0SWNIe0IjaWfRBd-0xqTVRL1KomoMFZncFb3jiLU8nFF_X3qdn9l9ffM0MqMNMkzz_QF5IuFl-vv4Irl7nwXVZHX02_dwVDAn0kL_swwQ--Vnidqyqg"><div class="flex flex-col"><span class="font-label-md text-label-md text-text-primary tracking-tight">JalanPantau</span><span class="font-label-caps text-label-caps text-text-muted">SISTEM INSPEKSI JALAN</span></div></div><div class="hidden sm:flex items-center gap-space-xs px-space-xs py-space-2xs rounded-full bg-surface-container-low"><span class="font-data-mono-sm text-data-mono-sm text-text-secondary">YOLOv11n • TA 2025</span><div class="flex items-center gap-1.5 px-space-2xs py-0.5 rounded-full bg-severity-low-bg"><span class="w-1.5 h-1.5 rounded-full bg-severity-low-text"></span><span class="font-data-mono-sm text-data-mono-sm text-severity-low-text">Model Siap</span></div></div></div><nav class="hidden md:flex items-center gap-space-xs" data-active-classes="bg-primary-container text-on-primary-container font-label-md"><a aria-current="page" class="px-space-sm py-1.5 rounded transition-colors bg-primary-container text-on-primary-container font-label-md" data-path="deteksi" href="#">Deteksi</a><a class="px-space-sm py-1.5 rounded text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="peta" href="#">Peta</a><a class="px-space-sm py-1.5 rounded text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="riwayat" href="#">Riwayat</a><a class="px-space-sm py-1.5 rounded text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="tentang" href="#">Tentang</a></nav><div class="flex items-center gap-space-sm"><div class="hidden lg:flex items-center gap-space-xs px-space-xs py-1 rounded bg-surface-container"><span class="material-symbols-outlined text-severity-low-text text-[16px]">wifi</span><span class="font-data-mono-sm text-data-mono-sm text-text-secondary">Lokal / Offline-Ready</span></div><div class="hidden xl:flex items-center gap-space-2xs text-text-muted"><span class="material-symbols-outlined text-[16px]">schedule</span><span class="font-data-mono-sm text-data-mono-sm">SHIFT 01 • WIB</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-16 bg-bg-main min-h-screen" id="main-content"><div class="flex flex-col w-full">
+<!-- Sub-Header Metrology Toolbar -->
+<div class="w-full bg-surface shadow-sm px-gutter-app py-space-sm flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">tune</span>
+</div>
+<div>
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-sm text-headline-sm text-text-primary">Panel Kalibrasi Sensor &amp; Metrologi AI</span>
+<span class="px-space-2xs py-0.5 rounded bg-severity-low-bg font-data-mono-sm text-data-mono-sm text-severity-low-text">CAL-OK (RMSE 0.04 cm)</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary">Uji Transformasi Perspektif Homografi, Sinkronisasi RTK-GNSS &amp; Tarif Estimasi Bina Marga</p>
+</div>
+</div>
+<div class="flex items-center gap-space-xs flex-wrap">
+<div class="px-space-xs py-1 rounded bg-surface-container-low flex items-center gap-space-xs">
+<span class="font-label-caps text-label-caps text-text-muted">PROFIL RIG:</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-primary">TOYOTA_HILUX_SURVEY_01</span>
+</div>
+<button class="px-space-sm py-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md flex items-center gap-space-2xs transition-colors" id="btn-sync-sensor" type="button">
+<span class="material-symbols-outlined text-[16px]">sync</span>
+<span>Baca Sensor Real-Time</span>
+</button>
+<button class="px-space-sm py-1.5 rounded bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md flex items-center gap-space-2xs transition-colors shadow-sm" id="btn-save-header" type="button">
+<span class="material-symbols-outlined text-[16px]">save</span>
+<span>Simpan config.json</span>
+</button>
+</div>
+</div>
+<!-- Main Calibration Workbench Grid -->
+<div class="w-full px-gutter-app py-space-md grid grid-cols-1 lg:grid-cols-12 gap-workbench-gap">
+<!-- LEFT COLUMN: Precision Visual Field Test Viewer (Approx 60% -> 7 Cols) -->
+<div class="lg:col-span-7 flex flex-col gap-space-md">
+<!-- Calibration Viewport Card -->
+<div class="bg-surface rounded-lg shadow-sm p-space-sm flex flex-col gap-space-xs">
+<!-- Viewport Header Toolbar -->
+<div class="flex items-center justify-between pb-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[18px]">videocam</span>
+<span class="font-label-md text-label-md text-text-primary">Visual Rig Feed • Sony IMX708 (120° FOV)</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="inline-flex items-center px-space-2xs py-0.5 rounded bg-surface-container-high text-text-secondary font-data-mono-sm text-data-mono-sm">
+              1920×1080 @ 60fps • RAW10
+            </span>
+<button class="p-1 rounded hover:bg-surface-container text-text-secondary transition-colors" id="btn-snapshot" title="Ambil Frame Kalibrasi">
+<span class="material-symbols-outlined text-[18px]">photo_camera</span>
+</button>
+</div>
+</div>
+<!-- Viewport Canvas Container -->
+<div class="relative w-full h-[460px] rounded bg-inverse-surface overflow-hidden group select-none">
+<!-- Road Asphalt Real-World Texture Under Calibration -->
+<div class="absolute inset-0 bg-cover bg-center transition-all duration-500" data-alt="Technical high-resolution asphalt roadway asphalt surface pavement with coarse aggregate macro texture, road cracks, clear daylight illumination, top-angled vehicle inspection perspective view." id="viewport-surface" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAGtR5YAX3I8sqWg1FYOdYicdt-AN2IfeHhXR4eIyhs8RSTzfZjVRa9-ijIfvnC1OU5WRGUF5X3K4ALhPgyCLtb42zzW_b_eN-EdT60YMR617m9fPyHAaiaA0VaNbYHZ5vRT5DNo2ukv5X_GFJ2UfyBPpvIHNOereAfbT6iLXUIA28ebGAhQc0bSxD99rVB-JEO2pH2s5Xjt8m-XAsAUxHn1OFl9na7x59SYwWAmbm1eqJHnpgeMYNR')">
+</div>
+<!-- Top-Down IPM Overlay Simulation Layer -->
+<div class="absolute inset-0 bg-inverse-surface/90 opacity-0 pointer-events-none transition-opacity duration-300 flex items-center justify-center" id="ipm-layer">
+<div class="w-full h-full p-space-md flex flex-col items-center justify-center">
+<div class="font-data-mono-sm text-data-mono-sm text-inverse-on-surface mb-space-xs flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-secondary-container">transform</span>
+<span>INVERSE PERSPECTIVE MAPPING (ORTHOPHOTO PLANAR 2D)</span>
+</div>
+<div class="w-80 h-80 rounded bg-inverse-surface shadow-inner relative flex items-center justify-center">
+<!-- Orthophoto top-down grid representation -->
+<svg class="w-full h-full text-secondary/40" fill="none" viewBox="0 0 100 100">
+<path d="M 0,20 L 100,20 M 0,40 L 100,40 M 0,60 L 100,60 M 0,80 L 100,80" stroke="currentColor" stroke-dasharray="2 2" stroke-width="0.8"></path>
+<path d="M 20,0 L 20,100 M 40,0 L 40,100 M 60,0 L 60,100 M 80,0 L 80,100" stroke="currentColor" stroke-dasharray="2 2" stroke-width="0.8"></path>
+<rect fill="rgba(220,38,38,0.25)" height="18" stroke="#DC2626" stroke-width="1" width="28" x="35" y="45"></rect>
+<text fill="#DC2626" font-family="JetBrains Mono" font-size="4" x="36" y="42">POTHOLE L:0.32m² D:6.1cm</text>
+</svg>
+<div class="absolute bottom-2 right-2 px-space-2xs py-0.5 rounded bg-surface text-text-primary font-data-mono-sm text-data-mono-sm">
+                  1 cm² = 5.56 px²
+                </div>
+</div>
+</div>
+</div>
+<!-- Virtual Perspective Trapezoid / Laser Grid SVG Overlay -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none transition-opacity duration-200" id="calibration-svg-grid" preserveAspectRatio="none" viewBox="0 0 700 460">
+<!-- Road Horizon Guide -->
+<line opacity="0.6" stroke="#007bb9" stroke-dasharray="4 4" stroke-width="1" x1="0" x2="700" y1="110" y2="110"></line>
+<text fill="#7bc2ff" font-family="JetBrains Mono" font-size="10" x="12" y="104">GARIS CAKRAWALA SENSOR (VANISHING LINE • PITCH 38.5°)</text>
+<!-- Projected Homography Trapezoid (Calibration Target Plane) -->
+<polygon fill="rgba(0, 99, 153, 0.08)" points="210,135 490,135 660,430 40,430" stroke="#7bc2ff" stroke-width="1.5"></polygon>
+<!-- Longitudinal Perspective Guidelines -->
+<line opacity="0.75" stroke="#7bc2ff" stroke-dasharray="3 3" stroke-width="0.8" x1="266" x2="195" y1="135" y2="430"></line>
+<line opacity="0.9" stroke="#ffdcc0" stroke-width="1.2" x1="322" x2="350" y1="135" y2="430"></line> <!-- Centerline -->
+<line opacity="0.75" stroke="#7bc2ff" stroke-dasharray="3 3" stroke-width="0.8" x1="378" x2="434" y1="135" y2="430"></line>
+<line opacity="0.75" stroke="#7bc2ff" stroke-dasharray="3 3" stroke-width="0.8" x1="434" x2="550" y1="135" y2="430"></line>
+<!-- Transverse Perspective Distance Increments (1m, 2m, 3m, 5m forward) -->
+<line opacity="0.65" stroke="#7bc2ff" stroke-dasharray="2 2" stroke-width="0.8" x1="165" x2="535" y1="210" y2="210"></line>
+<text fill="#93ccff" font-family="JetBrains Mono" font-size="9" x="542" y="213">Y: +4.0 m</text>
+<line opacity="0.65" stroke="#7bc2ff" stroke-dasharray="2 2" stroke-width="0.8" x1="120" x2="580" y1="280" y2="280"></line>
+<text fill="#93ccff" font-family="JetBrains Mono" font-size="9" x="588" y="283">Y: +3.0 m</text>
+<line opacity="0.65" stroke="#7bc2ff" stroke-dasharray="2 2" stroke-width="0.8" x1="75" x2="625" y1="360" y2="360"></line>
+<text fill="#93ccff" font-family="JetBrains Mono" font-size="9" x="632" y="363">Y: +2.0 m</text>
+<line stroke="#007bb9" stroke-width="1.5" x1="40" x2="660" y1="430" y2="430"></line>
+<text fill="#fdfcff" font-family="JetBrains Mono" font-size="10" x="45" y="446">DATUM KENDARAAN (Y: 0.0 m • BUMPER DEPAN)</text>
+<!-- Physical Ground Sampling Distance (GSD) 10cm x 10cm Reference Marker on Asphalt -->
+<g id="gsd-marker-group" transform="translate(305, 330)">
+<rect fill="rgba(0, 29, 49, 0.65)" height="34" stroke="#ffdcc0" stroke-width="1.5" width="56" x="0" y="0"></rect>
+<!-- Target Crosshairs -->
+<line stroke="#ffb875" stroke-width="1" x1="28" x2="28" y1="0" y2="34"></line>
+<line stroke="#ffb875" stroke-width="1" x1="0" x2="56" y1="17" y2="17"></line>
+<!-- Corner brackets -->
+<path d="M 0,6 L 0,0 L 6,0" fill="none" stroke="#059669" stroke-width="2"></path>
+<path d="M 50,0 L 56,0 L 56,6" fill="none" stroke="#059669" stroke-width="2"></path>
+<path d="M 56,28 L 56,34 L 50,34" fill="none" stroke="#059669" stroke-width="2"></path>
+<path d="M 6,34 L 0,34 L 0,28" fill="none" stroke="#059669" stroke-width="2"></path>
+<text fill="#ffdcc0" font-family="JetBrains Mono" font-size="9" font-weight="bold" x="62" y="16">TARGET GSD: 10×10 cm</text>
+<text fill="#fdfcff" font-family="JetBrains Mono" font-size="8" x="62" y="27">Δx=55.5px • Δy=33.3px</text>
+</g>
+<!-- Real-Time AI Detection Bounding Box Overlay Simulation -->
+<g id="ai-bbox-group" transform="translate(160, 240)">
+<rect fill="rgba(220, 38, 38, 0.15)" height="65" stroke="#DC2626" stroke-dasharray="4 2" stroke-width="1.8" width="110" x="0" y="0"></rect>
+<rect fill="#DC2626" height="18" width="138" x="0" y="-18"></rect>
+<text fill="#FFFFFF" font-family="JetBrains Mono" font-size="10" font-weight="bold" x="4" y="-5">D00: LUBANG_KRITIS (94%)</text>
+<text class="bg-black/60 px-1" fill="#ffdad6" font-family="JetBrains Mono" font-size="9" x="4" y="80">P: 42cm × L: 28cm | Kedalaman: 5.8cm</text>
+</g>
+</svg>
+<!-- Top-Left OSD Telemetry HUD (Civil Engineering Standard) -->
+<div class="absolute top-space-xs left-space-xs rounded bg-inverse-surface/85 backdrop-blur-sm p-space-xs text-inverse-on-surface shadow-md pointer-events-auto">
+<div class="flex items-center gap-space-xs pb-1 border-b-0">
+<span class="w-2 h-2 rounded-full bg-severity-low-text animate-pulse"></span>
+<span class="font-data-mono-sm text-data-mono-sm text-primary-fixed tracking-wider">TELEMETRI RIG AKTIF</span>
+</div>
+<div class="mt-1 grid grid-cols-2 gap-x-space-sm gap-y-0.5 font-data-mono-sm text-data-mono-sm">
+<span class="text-outline-variant">GSD Proyeksi:</span>
+<span class="text-inverse-on-surface font-semibold text-right" id="osd-gsd">1.8 mm/px</span>
+<span class="text-outline-variant">Tinggi Sensor H:</span>
+<span class="text-inverse-on-surface font-semibold text-right" id="osd-height">145.0 cm</span>
+<span class="text-outline-variant">Sudut Pitch (θ):</span>
+<span class="text-inverse-on-surface font-semibold text-right" id="osd-pitch">38.50°</span>
+<span class="text-outline-variant">Lensa &amp; Sensor:</span>
+<span class="text-inverse-on-surface font-semibold text-right">IMX708 120°</span>
+<span class="text-outline-variant">RTK Fix Baseline:</span>
+<span class="text-severity-low-text font-semibold text-right">0.008 m (FIX)</span>
+</div>
+</div>
+<!-- Bottom Right Floating Navigation Tools -->
+<div class="absolute bottom-space-xs right-space-xs flex items-center gap-space-2xs bg-surface/90 backdrop-blur rounded p-1 shadow-md">
+<button class="p-1 rounded hover:bg-surface-container text-text-secondary" id="btn-zoom-in" title="Perbesar Tampilan">
+<span class="material-symbols-outlined text-[18px]">zoom_in</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container text-text-secondary" id="btn-zoom-out" title="Perkecil Tampilan">
+<span class="material-symbols-outlined text-[18px]">zoom_out</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container text-text-secondary" id="btn-reset-view" title="Reset Orientasi Kamera">
+<span class="material-symbols-outlined text-[18px]">center_focus_strong</span>
+</button>
+</div>
+</div>
+<!-- Interactive Viewport Layer Toggles -->
+<div class="pt-space-xs grid grid-cols-1 sm:grid-cols-3 gap-space-xs">
+<!-- Toggle 1: IPM Transformation -->
+<label class="flex items-center gap-space-xs p-space-xs rounded bg-surface-container-low hover:bg-surface-container cursor-pointer transition-colors">
+<input class="w-4 h-4 rounded text-primary focus:ring-0" id="toggle-ipm" type="checkbox">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-text-primary">Preview IPM (Bird's-Eye)</span>
+<span class="font-body-sm text-body-sm text-text-muted">Proyeksi Orthophoto 2D</span>
+</div>
+</label>
+<!-- Toggle 2: Laser Grid -->
+<label class="flex items-center gap-space-xs p-space-xs rounded bg-surface-container-low hover:bg-surface-container cursor-pointer transition-colors">
+<input checked="" class="w-4 h-4 rounded text-primary focus:ring-0" id="toggle-grid" type="checkbox">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-text-primary">Grid Perspektif 10cm</span>
+<span class="font-body-sm text-body-sm text-text-muted">Target Homografi Trapezius</span>
+</div>
+</label>
+<!-- Toggle 3: Real-Time Bounding Box -->
+<label class="flex items-center gap-space-xs p-space-xs rounded bg-surface-container-low hover:bg-surface-container cursor-pointer transition-colors">
+<input checked="" class="w-4 h-4 rounded text-primary focus:ring-0" id="toggle-bbox" type="checkbox">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-text-primary">Uji Bounding Box AI</span>
+<span class="font-body-sm text-body-sm text-text-muted">Inferensi YOLOv11n Aktif</span>
+</div>
+</label>
+</div>
+</div>
+<!-- Real-Time Metric Convergence & Homography Matrix Preview -->
+<div class="bg-surface rounded-lg shadow-sm p-space-md flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[18px]">unfold_more_double</span>
+<span class="font-label-md text-label-md text-text-primary">Matriks Homografi Terhitung H (3×3 Planar Transform)</span>
+</div>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">Det(H) = 1.0428</span>
+</div>
+<div class="p-space-xs rounded bg-bg-main overflow-x-auto">
+<table class="w-full text-left font-data-mono-sm text-data-mono-sm">
+<tbody>
+<tr class="text-text-primary">
+<td class="py-1 px-space-xs text-primary font-semibold">[ h₁₁ : +1.2849e-01</td>
+<td class="py-1 px-space-xs text-text-secondary">h₁₂ : -4.3912e-02</td>
+<td class="py-1 px-space-xs text-text-secondary">h₁₃ : +3.1092e+02 ]</td>
+</tr>
+<tr class="text-text-primary">
+<td class="py-1 px-space-xs text-text-secondary">[ h₂₁ : +2.1105e-04</td>
+<td class="py-1 px-space-xs text-primary font-semibold">h₂₂ : +8.9103e-02</td>
+<td class="py-1 px-space-xs text-text-secondary">h₂₃ : +5.4190e+02 ]</td>
+</tr>
+<tr class="text-text-primary">
+<td class="py-1 px-space-xs text-text-secondary">[ h₃₁ : -1.0201e-06</td>
+<td class="py-1 px-space-xs text-text-secondary">h₃₂ : +6.8120e-04</td>
+<td class="py-1 px-space-xs text-primary font-semibold">h₃₃ : +1.0000e+00 ]</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="flex items-center justify-between text-text-secondary font-body-sm text-body-sm pt-1">
+<span class="flex items-center gap-space-2xs">
+<span class="material-symbols-outlined text-severity-low-text text-[16px]">verified</span>
+<span>Singular Value Decomposition (SVD): Konvergen optimal (4 titik kontrol jalan)</span>
+</span>
+<span class="font-data-mono-sm text-data-mono-sm">Waktu Eksekusi: 1.4 ms</span>
+</div>
+</div>
+</div>
+<!-- RIGHT COLUMN: Parameter Metrologi & Kalibrasi AI Form (Approx 40% -> 5 Cols) -->
+<div class="lg:col-span-5 flex flex-col gap-space-md">
+<!-- Section 1: Geometri Pemasangan Sensor Kendaraan -->
+<div class="bg-surface rounded-lg shadow-sm p-space-md flex flex-col gap-space-sm">
+<div class="flex items-center gap-space-xs pb-space-xs">
+<span class="w-6 h-6 rounded bg-surface-container flex items-center justify-center font-data-mono-sm text-data-mono-sm text-primary font-bold">1</span>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-text-primary">Geometri Sensor &amp; Kamera</h2>
+<p class="font-body-sm text-body-sm text-text-muted">Konfigurasi fisik rigid mount kamera pada armada survei</p>
+</div>
+</div>
+<div class="space-y-space-sm">
+<!-- Parameter: Kamera Height -->
+<div>
+<div class="flex items-center justify-between mb-1">
+<label class="font-label-md text-label-md text-text-primary" for="input-height">Tinggi Kamera dari Aspal (H)</label>
+<span class="font-data-mono-sm text-data-mono-sm text-primary" id="val-height">145 cm</span>
+</div>
+<div class="relative flex items-center">
+<input class="w-full h-9 px-space-xs rounded bg-surface-container-low text-text-primary font-data-mono-md text-data-mono-md focus:bg-surface focus:outline-none" id="input-height" max="250" min="80" step="0.5" type="number" value="145">
+<span class="absolute right-3 font-data-mono-sm text-data-mono-sm text-text-muted pointer-events-none">cm</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted mt-1">Rentang validasi tripod / roof-rack: 120 cm - 180 cm.</p>
+</div>
+<!-- Parameter: Pitch Angle -->
+<div>
+<div class="flex items-center justify-between mb-1">
+<label class="font-label-md text-label-md text-text-primary" for="input-pitch">Sudut Kemiringan / Pitch (θ)</label>
+<span class="font-data-mono-sm text-data-mono-sm text-primary" id="val-pitch">38.5°</span>
+</div>
+<div class="relative flex items-center">
+<input class="w-full h-9 px-space-xs rounded bg-surface-container-low text-text-primary font-data-mono-md text-data-mono-md focus:bg-surface focus:outline-none" id="input-pitch" max="60" min="20" step="0.1" type="number" value="38.5">
+<span class="absolute right-3 font-data-mono-sm text-data-mono-sm text-text-muted pointer-events-none">deg (°)</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted mt-1">Sudut kemiringan optik terhadap bidang horizontal jalan.</p>
+</div>
+<!-- Parameter: RTK GNSS Lever-Arm Offset -->
+<div>
+<label class="block font-label-md text-label-md text-text-primary mb-1">Offset Posisi Antena RTK-GNSS terhadap Lensa</label>
+<div class="grid grid-cols-3 gap-space-xs">
+<div class="relative">
+<span class="absolute left-2.5 top-2 font-data-mono-sm text-data-mono-sm text-text-muted font-bold">X</span>
+<input class="w-full h-9 pl-7 pr-2 rounded bg-surface-container-low text-text-primary font-data-mono-sm text-data-mono-sm text-right focus:bg-surface focus:outline-none" id="offset-x" type="text" value="+12">
+<span class="absolute right-1 bottom-1 text-[9px] text-text-muted">cm</span>
+</div>
+<div class="relative">
+<span class="absolute left-2.5 top-2 font-data-mono-sm text-data-mono-sm text-text-muted font-bold">Y</span>
+<input class="w-full h-9 pl-7 pr-2 rounded bg-surface-container-low text-text-primary font-data-mono-sm text-data-mono-sm text-right focus:bg-surface focus:outline-none" id="offset-y" type="text" value="-45">
+<span class="absolute right-1 bottom-1 text-[9px] text-text-muted">cm</span>
+</div>
+<div class="relative">
+<span class="absolute left-2.5 top-2 font-data-mono-sm text-data-mono-sm text-text-muted font-bold">Z</span>
+<input class="w-full h-9 pl-7 pr-2 rounded bg-surface-container-low text-text-primary font-data-mono-sm text-data-mono-sm text-right focus:bg-surface focus:outline-none" id="offset-z" type="text" value="+30">
+<span class="absolute right-1 bottom-1 text-[9px] text-text-muted">cm</span>
+</div>
+</div>
+<span class="font-body-sm text-body-sm text-text-muted mt-1 block">Vektor lever-arm kompensasi pusat fase fase antena (ARP).</span>
+</div>
+</div>
+</div>
+<!-- Section 2: Parameter Metrik & Estimasi Luas / Kedalaman Kerusakan -->
+<div class="bg-surface rounded-lg shadow-sm p-space-md flex flex-col gap-space-sm">
+<div class="flex items-center gap-space-xs pb-space-xs">
+<span class="w-6 h-6 rounded bg-surface-container flex items-center justify-center font-data-mono-sm text-data-mono-sm text-primary font-bold">2</span>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-text-primary">Metrologi &amp; Ambang Klasifikasi AI</h2>
+<p class="font-body-sm text-body-sm text-text-muted">Kriteria kuantisasi dimensi fisik kerusakan jalan</p>
+</div>
+</div>
+<div class="space-y-space-sm">
+<!-- GSD Conversion Ratio -->
+<div>
+<div class="flex items-center justify-between mb-1">
+<label class="font-label-md text-label-md text-text-primary" for="input-gsd">Rasio Konversi Piksel ke Meter (GSD)</label>
+<span class="px-space-2xs py-0.5 rounded bg-surface-container font-data-mono-sm text-data-mono-sm text-primary">Terkalkulasi</span>
+</div>
+<div class="relative flex items-center">
+<input class="w-full h-9 px-space-xs rounded bg-surface-container-low text-text-primary font-data-mono-md text-data-mono-md focus:bg-surface focus:outline-none" id="input-gsd" type="text" value="0.00180">
+<span class="absolute right-3 font-data-mono-sm text-data-mono-sm text-text-muted pointer-events-none">meter / px</span>
+</div>
+</div>
+<!-- Severity Threshold (Kritis) -->
+<div class="p-space-xs rounded bg-severity-high-bg">
+<div class="flex items-center justify-between mb-space-xs">
+<div class="flex items-center gap-space-2xs">
+<span class="w-2 h-2 rounded-full bg-severity-high-text"></span>
+<span class="font-label-md text-label-md text-severity-high-text">Ambang Batas Kategori Kritis (Tingkat I)</span>
+</div>
+<span class="font-data-mono-sm text-data-mono-sm text-severity-high-text font-semibold">PRIORITAS TINGGI</span>
+</div>
+<div class="grid grid-cols-2 gap-space-xs">
+<div>
+<span class="font-body-sm text-body-sm text-text-secondary block mb-1">Kedalaman Lubang (cm)</span>
+<input class="w-full h-8 px-space-xs rounded bg-surface text-text-primary font-data-mono-sm text-data-mono-sm focus:outline-none" id="input-crit-depth" step="0.5" type="number" value="5.0">
+</div>
+<div>
+<span class="font-body-sm text-body-sm text-text-secondary block mb-1">Luas Kerusakan (m²)</span>
+<input class="w-full h-8 px-space-xs rounded bg-surface text-text-primary font-data-mono-sm text-data-mono-sm focus:outline-none" id="input-crit-area" step="0.1" type="number" value="1.0">
+</div>
+</div>
+</div>
+<!-- AI Model Detection Thresholds -->
+<div class="grid grid-cols-2 gap-space-xs pt-1">
+<div>
+<label class="font-label-md text-label-md text-text-primary block mb-1" for="input-nms">IoU NMS Threshold</label>
+<input class="w-full h-9 px-space-xs rounded bg-surface-container-low text-text-primary font-data-mono-md text-data-mono-md focus:bg-surface focus:outline-none" id="input-nms" max="0.9" min="0.1" step="0.05" type="number" value="0.45">
+</div>
+<div>
+<label class="font-label-md text-label-md text-text-primary block mb-1" for="input-conf">Confidence Score Min</label>
+<input class="w-full h-9 px-space-xs rounded bg-surface-container-low text-text-primary font-data-mono-md text-data-mono-md focus:bg-surface focus:outline-none" id="input-conf" max="0.95" min="0.1" step="0.05" type="number" value="0.25">
+</div>
+</div>
+</div>
+</div>
+<!-- Section 3: Matriks Tarif Biaya Penanganan (Standar Dinas Bina Marga) -->
+<div class="bg-surface rounded-lg shadow-sm p-space-md flex flex-col gap-space-sm">
+<div class="flex items-center justify-between pb-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="w-6 h-6 rounded bg-surface-container flex items-center justify-center font-data-mono-sm text-data-mono-sm text-primary font-bold">3</span>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-text-primary">Matriks Tarif Biaya Penanganan</h2>
+<p class="font-body-sm text-body-sm text-text-muted">Standar Harga Satuan Pekerjaan (AHSP Bina Marga)</p>
+</div>
+</div>
+<span class="px-space-2xs py-0.5 rounded bg-surface-container-high font-data-mono-sm text-data-mono-sm text-text-secondary">TA 2025</span>
+</div>
+<div class="space-y-space-xs">
+<!-- Rate 1: Cold Patching -->
+<div class="p-space-xs rounded bg-surface-container-low flex items-center justify-between gap-space-xs">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-text-primary">Patching Aspal Dingin / Cepat</span>
+<span class="font-body-sm text-body-sm text-text-muted">Penambalan darurat lubang lokal</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">Rp</span>
+<input class="w-24 h-8 px-space-xs text-right rounded bg-surface text-text-primary font-data-mono-sm text-data-mono-sm focus:outline-none" id="rate-patching" type="text" value="350.000">
+<span class="font-data-mono-sm text-data-mono-sm text-text-secondary">/m²</span>
+</div>
+</div>
+<!-- Rate 2: Milling & Hotmix -->
+<div class="p-space-xs rounded bg-surface-container-low flex items-center justify-between gap-space-xs">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-text-primary">Cold Milling &amp; Hotmix Inlay</span>
+<span class="font-body-sm text-body-sm text-text-muted">Rekonstruksi struktural terencana</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">Rp</span>
+<input class="w-24 h-8 px-space-xs text-right rounded bg-surface text-text-primary font-data-mono-sm text-data-mono-sm focus:outline-none" id="rate-milling" type="text" value="450.000">
+<span class="font-data-mono-sm text-data-mono-sm text-text-secondary">/m²</span>
+</div>
+</div>
+<!-- Rate 3: Crack Sealing -->
+<div class="p-space-xs rounded bg-surface-container-low flex items-center justify-between gap-space-xs">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-text-primary">Crack Sealing Bitumen Emulsi</span>
+<span class="font-body-sm text-body-sm text-text-muted">Injeksi retak buaya &amp; retak melintang</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">Rp</span>
+<input class="w-24 h-8 px-space-xs text-right rounded bg-surface text-text-primary font-data-mono-sm text-data-mono-sm focus:outline-none" id="rate-sealing" type="text" value="45.000">
+<span class="font-data-mono-sm text-data-mono-sm text-text-secondary">/m</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Workbench Calibration Action Buttons -->
+<div class="flex flex-col sm:flex-row gap-space-xs pt-1">
+<button class="flex-1 h-10 px-space-md rounded bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md flex items-center justify-center gap-space-xs transition-colors shadow-sm" id="btn-save-calibration" type="button">
+<span class="material-symbols-outlined text-[18px]">cloud_sync</span>
+<span>Simpan Konfigurasi (config.json)</span>
+</button>
+<button class="h-10 px-space-md rounded bg-surface hover:bg-surface-container text-text-primary font-label-md text-label-md flex items-center justify-center gap-space-xs transition-colors shadow-sm" id="btn-recalibrate" type="button">
+<span class="material-symbols-outlined text-[18px]">autorenew</span>
+<span>Uji Ulang Kalibrasi</span>
+</button>
+<button class="h-10 px-space-sm rounded bg-surface hover:bg-error-container text-error font-label-md text-label-md flex items-center justify-center gap-space-2xs transition-colors shadow-sm" id="btn-reset-default" title="Kembalikan ke Nilai Default Pabrik" type="button">
+<span class="material-symbols-outlined text-[18px]">restart_alt</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Bottom Quality Assurance Metrology Banner -->
+<div class="w-full px-gutter-app pb-space-lg">
+<div class="w-full bg-surface-container-low rounded-lg p-space-md flex flex-col md:flex-row items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-md">
+<div class="w-10 h-10 rounded-full bg-severity-low-bg flex items-center justify-center text-severity-low-text flex-shrink-0">
+<span class="material-symbols-outlined text-[24px]">verified_user</span>
+</div>
+<div>
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-sm text-headline-sm text-text-primary">Status Kalibrasi Sistem: Terkalibrasi Valid</span>
+<span class="px-space-2xs py-0.5 rounded bg-severity-low-bg text-severity-low-text font-data-mono-sm text-data-mono-sm font-bold">RMSE: 0.04 cm</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary">
+            Deviasi planar reprojection memenuhi spesifikasi SNI 03-3426-1994 (Toleransi &lt; 0.15 cm). Seluruh modul inferensi YOLOv11n dan kalkulasi volume siap untuk pengambilan data resmi survei jalan.
+          </p>
+</div>
+</div>
+<div class="flex items-center gap-space-xs flex-shrink-0">
+<div class="text-right hidden sm:block">
+<span class="font-label-caps text-label-caps text-text-muted block">TIMESTAMP KALIBRASI</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-primary" id="cal-timestamp">2025-05-18 09:42:15 WIB</span>
+</div>
+<button class="px-space-md py-2 rounded bg-surface text-primary hover:bg-surface-container font-label-md text-label-md flex items-center gap-space-xs transition-colors shadow-sm" id="btn-export-cert">
+<span class="material-symbols-outlined text-[18px]">description</span>
+<span>Unduh Berita Acara (PDF)</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Toast Notification Template Container Target -->
+<div class="fixed bottom-space-lg right-space-md z-50 flex flex-col gap-space-xs pointer-events-none" id="toast-wrapper"></div>
+<!-- Client-Side Vanilla Interaction Script -->
+<script>
+    (function initCalibrationWorkbench() {
+      // Elements
+      const inputHeight = document.getElementById('input-height');
+      const inputPitch = document.getElementById('input-pitch');
+      const inputGsd = document.getElementById('input-gsd');
+      const valHeight = document.getElementById('val-height');
+      const valPitch = document.getElementById('val-pitch');
+      const osdHeight = document.getElementById('osd-height');
+      const osdPitch = document.getElementById('osd-pitch');
+      const osdGsd = document.getElementById('osd-gsd');
+
+      const toggleIpm = document.getElementById('toggle-ipm');
+      const toggleGrid = document.getElementById('toggle-grid');
+      const toggleBbox = document.getElementById('toggle-bbox');
+      const ipmLayer = document.getElementById('ipm-layer');
+      const gridSvg = document.getElementById('calibration-svg-grid');
+      const bboxGroup = document.getElementById('ai-bbox-group');
+
+      const btnSaveCalib = document.getElementById('btn-save-calibration');
+      const btnSaveHeader = document.getElementById('btn-save-header');
+      const btnRecalibrate = document.getElementById('btn-recalibrate');
+      const btnReset = document.getElementById('btn-reset-default');
+      const btnSync = document.getElementById('btn-sync-sensor');
+      const btnSnapshot = document.getElementById('btn-snapshot');
+      const btnExportCert = document.getElementById('btn-export-cert');
+
+      // Helper function to show non-blocking civic toast
+      function showToast(title, message, isSuccess = true) {
+        const toast = document.createElement('div');
+        toast.className = `p-space-sm rounded shadow-lg flex items-center gap-space-xs pointer-events-auto transition-all duration-300 transform translate-y-2 opacity-0 ${
+          isSuccess ? 'bg-inverse-surface text-inverse-on-surface' : 'bg-error-container text-on-error-container'
+        }`;
+        
+        const iconName = isSuccess ? 'check_circle' : 'info';
+        const iconColor = isSuccess ? 'text-severity-low-text' : 'text-error';
+
+        toast.innerHTML = `
+          <span class="material-symbols-outlined ${iconColor} text-[20px]">${iconName}</span>
+          <div class="flex flex-col">
+            <span class="font-label-md text-label-md">${title}</span>
+            <span class="font-body-sm text-body-sm opacity-90">${message}</span>
+          </div>
+        `;
+
+        const container = document.getElementById('toast-wrapper');
+        container.appendChild(toast);
+
+        requestAnimationFrame(() => {
+          toast.classList.remove('translate-y-2', 'opacity-0');
+        });
+
+        setTimeout(() => {
+          toast.classList.add('opacity-0', 'translate-y-2');
+          setTimeout(() => toast.remove(), 300);
+        }, 3200);
+      }
+
+      // Live Metrology Formula Recalculation (Optical Geometry Model)
+      function updateMetrology() {
+        const h = parseFloat(inputHeight.value) || 145;
+        const theta = parseFloat(inputPitch.value) || 38.5;
+
+        valHeight.textContent = `${h.toFixed(1)} cm`;
+        valPitch.textContent = `${theta.toFixed(1)}°`;
+        osdHeight.textContent = `${h.toFixed(1)} cm`;
+        osdPitch.textContent = `${theta.toFixed(2)}°`;
+
+        // Theoretical GSD approximation at 2.5m nominal distance
+        // GSD = (SensorWidth * Distance) / (FocalLength * ImageWidth)
+        const radPitch = (theta * Math.PI) / 180;
+        const groundDistance = h / Math.sin(radPitch);
+        const calcGsdMm = (groundDistance * 0.0125).toFixed(2);
+        const gsdMeters = (calcGsdMm / 1000).toFixed(5);
+
+        inputGsd.value = gsdMeters;
+        osdGsd.textContent = `${calcGsdMm} mm/px`;
+      }
+
+      // Input listeners
+      inputHeight.addEventListener('input', updateMetrology);
+      inputPitch.addEventListener('input', updateMetrology);
+
+      // Layer Toggles
+      toggleIpm.addEventListener('change', (e) => {
+        if (e.target.checked) {
+          ipmLayer.classList.remove('opacity-0', 'pointer-events-none');
+          ipmLayer.classList.add('opacity-100');
+        } else {
+          ipmLayer.classList.remove('opacity-100');
+          ipmLayer.classList.add('opacity-0', 'pointer-events-none');
+        }
+      });
+
+      toggleGrid.addEventListener('change', (e) => {
+        gridSvg.style.display = e.target.checked ? 'block' : 'none';
+      });
+
+      toggleBbox.addEventListener('change', (e) => {
+        if (bboxGroup) {
+          bboxGroup.style.display = e.target.checked ? 'block' : 'none';
+        }
+      });
+
+      // Actions
+      function handleSave() {
+        const config = {
+          sensor_height_cm: parseFloat(inputHeight.value),
+          pitch_angle_deg: parseFloat(inputPitch.value),
+          gsd_m_per_px: parseFloat(inputGsd.value),
+          offset_rtk_xyz: [
+            document.getElementById('offset-x').value,
+            document.getElementById('offset-y').value,
+            document.getElementById('offset-z').value
+          ],
+          classification_thresholds: {
+            critical_depth_cm: parseFloat(document.getElementById('input-crit-depth').value),
+            critical_area_m2: parseFloat(document.getElementById('input-crit-area').value),
+            iou_nms: parseFloat(document.getElementById('input-nms').value),
+            confidence: parseFloat(document.getElementById('input-conf').value)
+          },
+          rates_bina_marga_idr: {
+            cold_patch_m2: document.getElementById('rate-patching').value,
+            hotmix_inlay_m2: document.getElementById('rate-milling').value,
+            crack_sealing_m: document.getElementById('rate-sealing').value
+          },
+          calibration_rmse_cm: 0.04,
+          timestamp: new Date().toISOString()
+        };
+
+        // Simulated config download or persistence
+        showToast('Konfigurasi Tersimpan', 'Parameter kalibrasi disimpan ke config.json (Lokal rig terbarui).');
+      }
+
+      btnSaveCalib.addEventListener('click', handleSave);
+      btnSaveHeader.addEventListener('click', handleSave);
+
+      btnRecalibrate.addEventListener('click', () => {
+        showToast('Mengukur Ulang Homografi...', 'Menganalisis 4 target planar GSD pada frame aspal.');
+        setTimeout(() => {
+          updateMetrology();
+          showToast('Kalibrasi Selesai', 'RMSE terkonfirmasi stabil pada 0.038 cm.');
+        }, 1100);
+      });
+
+      btnReset.addEventListener('click', () => {
+        inputHeight.value = "145";
+        inputPitch.value = "38.5";
+        document.getElementById('offset-x').value = "+12";
+        document.getElementById('offset-y').value = "-45";
+        document.getElementById('offset-z').value = "+30";
+        document.getElementById('rate-patching').value = "350.000";
+        document.getElementById('rate-milling').value = "450.000";
+        document.getElementById('rate-sealing').value = "45.000";
+        updateMetrology();
+        showToast('Pengaturan Direset', 'Nilai kalibrasi dikembalikan ke default baseline pabrik.');
+      });
+
+      btnSync.addEventListener('click', () => {
+        showToast('Sinkronisasi IMU & RTK', 'Membaca sensor gyro 3-axis & elevasi barometer: Pitch terkoreksi.');
+      });
+
+      btnSnapshot.addEventListener('click', () => {
+        showToast('Snapshot Disimpan', 'Frame kalibrasi disimpan ke /var/log/calibration/snap_01.raw');
+      });
+
+      btnExportCert.addEventListener('click', () => {
+        showToast('Membuat Dokumen', 'Menyiapkan Berita Acara Kalibrasi Metrologi Jalan (PDF).');
+      });
+    })();
+  </script>
+</div></main><footer class="w-full bg-surface py-space-md shadow-[0_-1px_6px_rgba(0,0,0,0.03)]"><div class="w-full px-gutter-app flex flex-col sm:flex-row items-center justify-between gap-space-xs text-text-muted font-body-sm text-body-sm"><span>© 2025 JalanPantau • Platform Kecerdasan Artifisial Inspeksi Kerusakan Permukaan Jalan</span><span class="font-data-mono-sm text-data-mono-sm">Infrastruktur Bina Marga &amp; Transportasi Cerdas</span></div></footer><div class="fixed bottom-space-md right-space-md z-50 flex flex-col gap-space-xs pointer-events-none" id="toast-container"></div></body></html>

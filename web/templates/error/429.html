@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Terlalu Banyak Permintaan | JalanPantau</title>
+  <style>
+    :root { --navy:#0F1E33; --blue:#2563EB; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family:"Segoe UI",system-ui,sans-serif; background:var(--navy);
+      min-height:100vh; display:flex; align-items:center; justify-content:center;
+      color:#0F172A;
+    }
+    .card {
+      background:#fff; border-radius:16px; padding:40px 36px; max-width:420px;
+      width:90%; text-align:center; box-shadow:0 24px 60px rgba(0,0,0,.45);
+    }
+    .ico {
+      width:64px; height:64px; margin:0 auto 18px; border-radius:16px;
+      background:#FEF3C7; display:flex; align-items:center; justify-content:center;
+    }
+    h1 { font-size:20px; margin-bottom:8px; color:var(--navy); }
+    p { font-size:14px; color:#475569; line-height:1.6; margin-bottom:24px; }
+    code { background:#F1F5F9; padding:2px 6px; border-radius:6px; font-size:13px; }
+    a {
+      display:inline-block; background:var(--blue); color:#fff; text-decoration:none;
+      padding:11px 26px; border-radius:10px; font-size:14px; font-weight:600;
+    }
+    a:hover { background:#1D4ED8; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="ico">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+    </div>
+    <h1>Sedikit Terlalu Cepat</h1>
+    <p>Anda telah mengirim terlalu banyak permintaan dalam waktu singkat.
+       Untuk menjaga keamanan layanan, mohon tunggu sebentar
+       (kurang lebih <code>1 menit</code>) sebelum mencoba lagi.</p>
+    <a href="/">Kembali ke Halaman Utama</a>
+  </main>
+</body>
+</html>

@@ -1,0 +1,27 @@
+# Ambang severity — EDITABLE tanpa ubah kode.
+# Acuan retak: README RDDC2024-ID (Low <10mm, Moderate 10-75mm, High >75mm).
+# Keterbatasan jujur: kamera mono tidak mengukur kedalaman; tebal = asumsi per severity.
+# Kalibrasi rutin via halaman /kalibrasi (nilai langsung / foto penggaris klik
+# 2 titik) atau edit manual; blok "kalibrasi:" di bawah ditulis otomatis UI.
+pixels_per_cm: 8.0000  # WAJIB kalibrasi ulang per pemasangan
+crack_width_mm:
+  ringan_max: 10
+  sedang_max: 75
+pothole_diameter_cm:
+  ringan_max: 25
+  sedang_max: 50
+area_cm2:
+  ringan_max: 200
+  sedang_max: 900
+tebal_asumsi_cm:
+  Ringan: 2
+  Sedang: 5
+  Berat: 10
+bahan:
+  Ringan: cold-mix patching
+  Sedang: hotmix AC-WC
+  Berat: beton + lapis pondasi
+kalibrasi:
+  metode: manual
+  diperbarui: "2026-09-08 16:22 SE Asia Standard Time"
+  catatan: "-"

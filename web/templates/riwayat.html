@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}Riwayat{% endblock %}
+
+{% block konten %}
+<div class="jp-wrap">
+  <div class="jp-crumb"><span>LOG AUDIT INFRASTRUKTUR</span><span>›</span><span class="jp-crumb-aktif">ARSIP RIWAYAT PEMINDAIAN</span></div>
+  <div class="jp-pagehead">
+    <div>
+      <h1>Riwayat Inspeksi Permukaan Jalan <span class="jp-countchip">Total: <b id="kpi-sesi">0</b> sesi</span></h1>
+    </div>
+    <div class="jp-pageactions">
+      <button type="button" class="jp-btn-light" id="btn-export-csv">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 9v11"/></svg>
+        <span>Ekspor CSV</span>
+      </button>
+      <button type="button" class="jp-btn-light" id="btn-cetak">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 8V3h10v5M7 17H4v-7h16v7h-3M7 14h10v7H7z"/></svg>
+        <span>Cetak</span>
+      </button>
+      <a class="jp-btn-primary-sm" href="/">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+        <span>Inspeksi Baru</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="jp-kpi4">
+    <div class="jp-kpi4-card"><span class="jp-caps">TOTAL TEMUAN</span><strong><span id="kpi-temuan">0</span> <small>anomali</small></strong></div>
+    <div class="jp-kpi4-card"><span class="jp-caps">SESI BERAT</span><strong class="sev-tx-berat"><span id="kpi-berat">0</span> <small>sesi</small></strong></div>
+    <div class="jp-kpi4-card"><span class="jp-caps">SESI SEDANG</span><strong class="sev-tx-sedang"><span id="kpi-sedang">0</span> <small>sesi</small></strong></div>
+    <div class="jp-kpi4-card"><span class="jp-caps">ESTIMASI AGREGAT</span><strong class="mono" id="kpi-rupiah">Rp0</strong></div>
+  </div>
+
+  <div class="jp-card jp-filtercard">
+    <form id="filter">
+      <div class="jp-filtergrid">
+        <div><label class="jp-caps" for="f-dari">DARI TANGGAL</label><input type="date" id="f-dari" class="jp-input"></div>
+        <div><label class="jp-caps" for="f-sampai">SAMPAI TANGGAL</label><input type="date" id="f-sampai" class="jp-input"></div>
+        <div><label class="jp-caps" for="f-sev">SEVERITY TERPARAH</label>
+          <select id="f-sev" class="jp-select">
+            <option value="">Semua</option>
+            <option>Ringan</option>
+            <option>Sedang</option>
+            <option>Berat</option>
+          </select>
+        </div>
+        <div><label class="jp-caps" for="f-q">CARI LOKASI / SUMBER</label><input type="search" id="f-q" placeholder="cth: Asia Afrika" class="jp-input"></div>
+        <div class="jp-filterbtns">
+          <button type="submit" class="jp-btn-primary-sm">Filter</button>
+          <button type="button" class="jp-btn-light" id="f-reset">Reset</button>
+        </div>
+      </div>
+    </form>
+  </div>
+  <p class="jp-hint" id="f-info" aria-live="polite"></p>
+
+  <div class="jp-card">
+    <div class="jp-table-scroll" id="daftar"></div>
+  </div>
+
+  <!-- Paginasi -->
+  <div id="riwayat-paginasi" style="display:none;align-items:center;justify-content:center;gap:4px;margin-top:16px;flex-wrap:wrap"></div>
+
+  <dialog id="detail" class="jp-dialog" aria-labelledby="d-judul" style="max-width:min(900px,94vw);width:900px;padding:0;border-radius:12px;border:none;overflow:hidden">
+    <div style="display:flex;flex-direction:column;max-height:92vh">
+      <!-- Header Status Bar -->
+      <div id="d-status" style="width:100%;background:var(--jp-container-low);padding:8px 16px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 1px 3px rgba(0,0,0,.03)">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:6px;padding:2px 10px;border-radius:9999px;background:var(--jp-sev-h-bg)">
+            <span style="width:8px;height:8px;border-radius:50%;background:var(--jp-sev-h-tx);animation:jp-pulse 1.6s infinite"></span>
+            <span style="font-size:11px;font-weight:600;letter-spacing:.05em;color:#047857;text-transform:uppercase">Terverifikasi / Sah</span>
+          </div>
+          <span style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-tx2);font-weight:600" id="d-nomor">-</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="padding:4px 8px;border-radius:6px;background:var(--jp-container);font-family:var(--jp-mono);font-size:11px;color:var(--jp-tx2)">SHA-256: <span id="d-hash">-</span></span>
+          <span style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-primary);text-transform:uppercase;background:rgba(0,97,148,.1);padding:2px 8px;border-radius:6px">PPK Wilayah</span>
+        </div>
+      </div>
+      <!-- Title Section -->
+      <div style="padding:16px 24px;background:var(--jp-surface);display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-muted)">BERITA ACARA AUDIT VISUAL KERUSAKAN JALAN</span>
+          </div>
+          <h2 id="d-judul" style="font-size:24px;font-weight:700;letter-spacing:-0.02em;color:var(--jp-ink);margin:4px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Detail Berita Acara Inspeksi</h2>
+          <p id="d-subjudul" style="font-size:12px;color:var(--jp-tx2);margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span>Sektor -</span><span style="color:var(--jp-outline)">•</span>
+            <span>Klasifikasi Jalan: -</span><span style="color:var(--jp-outline)">•</span>
+            <span>Konstruksi: -</span>
+          </p>
+        </div>
+        <button type="button" id="d-x" aria-label="Tutup" style="padding:8px;color:var(--jp-tx2);background:var(--jp-container-low);border:none;border-radius:8px;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <!-- Scrollable Body -->
+      <div class="dialog-body" style="flex:1;overflow-y:auto;padding:16px 24px;background:var(--jp-bg)">
+        <!-- Metadata Grid -->
+        <div class="jp-meta4" id="d-meta" style="margin-bottom:16px"></div>
+        <!-- Foto Bukti -->
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-tx2);display:flex;align-items:center;gap:6px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--jp-primary)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              Bukti Tangkapan Citra Teranotasi AI
+            </span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-muted)" id="d-frame">-</span>
+              <button type="button" id="d-foto-fullscreen" style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-primary);background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:4px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg>
+                Resolusi Penuh
+              </button>
+            </div>
+          </div>
+          <div id="d-foto" style="position:relative;width:100%;border-radius:12px;overflow:hidden;background:#020617;box-shadow:0 4px 12px rgba(0,0,0,.15)">
+            <div style="aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;color:#64748B;font-family:var(--jp-mono);font-size:11px">Foto bukti tidak tersedia</div>
+          </div>
+        </div>
+        <!-- Tabel RAB -->
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-tx2);display:flex;align-items:center;gap:6px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--jp-primary)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+              Inventarisasi Temuan & Rencana Anggaran Biaya (RAB) Penanganan
+            </span>
+            <span style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-muted)">Standar Spesifikasi Umum Bina Marga 2018 (Rev. 2)</span>
+          </div>
+          <div class="jp-table-scroll" id="d-tabel"></div>
+          <!-- Paginasi temuan -->
+          <div id="d-paginasi" style="display:none;align-items:center;justify-content:center;gap:4px;margin-top:8px;flex-wrap:wrap"></div>
+          <p class="jp-hint" id="d-page-info" aria-live="polite" style="margin-top:4px"></p>
+        </div>
+        <!-- Catatan Legalisasi -->
+        <div style="padding:12px;background:var(--jp-container-low);border-radius:12px;display:flex;align-items:flex-start;gap:12px;margin-bottom:16px">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--jp-muted)" stroke-width="2" style="flex-shrink:0;margin-top:2px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <span style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-tx2)">CATATAN LEGALISASI & AUDIT TRAIL</span>
+            <p style="font-size:12px;color:var(--jp-muted);margin:0;line-height:1.5">Data telemetri ini telah divalidasi silang secara geospasial terhadap GIS Jaringan Jalan Kota Bandung. Nilai taksiran merupakan harga satuan standar pemeliharaan rutin Dinas Bina Marga Provinsi Jawa Barat Tahun Anggaran 2025.</p>
+          </div>
+        </div>
+        <!-- Pengesahan / Tanda Tangan -->
+        <div style="margin-top:24px;margin-bottom:16px">
+          <div style="text-align:center;margin-bottom:16px">
+            <p style="font-size:12px;color:var(--jp-tx2);margin:0">Demikian Berita Acara Hasil Audit Inspeksi ini dibuat dengan sebenar-benarnya secara otomatis oleh sistem kecerdasan buatan dan telah diverifikasi silang oleh tim teknis lapangan untuk digunakan sebagaimana mestinya.</p>
+          </div>
+          <div id="d-ttd" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;text-align:center"></div>
+        </div>
+      </div>
+      <!-- Footer Actions -->
+      <div class="dialog-footer" style="width:100%;padding:12px 24px;background:var(--jp-surface);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 -1px 6px rgba(0,0,0,.03);flex-shrink:0">
+        <button type="button" id="d-hapus" class="jp-btn-danger" style="padding:8px 16px">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+          <span>Hapus Rekaman</span>
+        </button>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+          <span style="font-family:var(--jp-mono);font-size:13px;font-weight:700" id="d-total">-</span>
+          <button type="button" id="d-tutup" class="jp-btn-demo" style="padding:8px 16px">Tutup (Esc)</button>
+          <button type="button" id="d-pdf" class="jp-btn-save" style="padding:8px 16px">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span>Unduh Dokumen Berita Acara PDF</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+</div>
+{% endblock %}
+
+{% block skrip %}
+<script src="{{ url_for('static', filename='js/riwayat.js') }}?v={{ static_v }}"></script>
+{% endblock %}

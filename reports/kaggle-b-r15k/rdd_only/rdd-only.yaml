@@ -1,0 +1,6 @@
+path: /kaggle/working/rdd_only
+train: train/images
+val: val/images
+test: /kaggle/input/datasets/aliabdelmenam/rdd-2022/RDD_SPLIT/test/images
+nc: 5
+names: ['longitudinal_crack', 'transverse_crack', 'alligator_crack', 'other_corruption', 'pothole']

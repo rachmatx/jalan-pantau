@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+
+<html lang="id"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      "colors": {
+        "severity-low-border": "#A7F3D0",
+        "on-background": "#0b1c30",
+        "text-secondary": "#475569",
+        "primary-container": "#007bb9",
+        "inverse-on-surface": "#eaf1ff",
+        "on-secondary": "#ffffff",
+        "tertiary": "#894d00",
+        "text-primary": "#0F172A",
+        "surface-container": "#e5eeff",
+        "surface-container-low": "#eff4ff",
+        "tertiary-fixed": "#ffdcc0",
+        "secondary": "#006399",
+        "tertiary-container": "#ac6200",
+        "error": "#ba1a1a",
+        "inverse-surface": "#213145",
+        "outline": "#707881",
+        "surface-variant": "#d3e4fe",
+        "on-primary-fixed": "#001d31",
+        "on-secondary-container": "#004f7b",
+        "severity-low-text": "#059669",
+        "surface-container-highest": "#d3e4fe",
+        "surface-tint": "#006398",
+        "bg-main": "#F8FAFC",
+        "surface-dim": "#cbdbf5",
+        "on-surface": "#0b1c30",
+        "error-container": "#ffdad6",
+        "on-primary-container": "#fdfcff",
+        "severity-med-border": "#FDE68A",
+        "text-muted": "#64748B",
+        "surface-container-lowest": "#ffffff",
+        "on-primary": "#ffffff",
+        "on-error-container": "#93000a",
+        "on-primary-fixed-variant": "#004b73",
+        "surface-bright": "#f8f9ff",
+        "on-error": "#ffffff",
+        "primary-fixed": "#cce5ff",
+        "secondary-container": "#7bc2ff",
+        "on-surface-variant": "#3f4850",
+        "surface-container-high": "#dce9ff",
+        "secondary-fixed": "#cde5ff",
+        "severity-high-bg": "#FEF2F2",
+        "on-tertiary-fixed": "#2d1600",
+        "severity-high-text": "#DC2626",
+        "inverse-primary": "#93ccff",
+        "on-tertiary": "#ffffff",
+        "background": "#f8f9ff",
+        "on-secondary-fixed-variant": "#004b74",
+        "on-tertiary-container": "#fffbff",
+        "severity-med-text": "#D97706",
+        "severity-high-border": "#FECACA",
+        "surface": "#FFFFFF",
+        "border-subtle": "#E2E8F0",
+        "on-secondary-fixed": "#001d32",
+        "outline-variant": "#bfc7d2",
+        "secondary-fixed-dim": "#94ccff",
+        "on-tertiary-fixed-variant": "#6b3b00",
+        "tertiary-fixed-dim": "#ffb875",
+        "primary": "#006194",
+        "severity-med-bg": "#FFFBEB",
+        "primary-fixed-dim": "#93ccff",
+        "severity-low-bg": "#ECFDF5"
+      },
+      "borderRadius": {
+        "DEFAULT": "0.125rem",
+        "lg": "0.25rem",
+        "xl": "0.5rem",
+        "full": "0.75rem"
+      },
+      "spacing": {
+        "space-xs": "0.5rem",
+        "space-xl": "2rem",
+        "space-sm": "0.75rem",
+        "space-2xs": "0.25rem",
+        "gutter-app": "1rem",
+        "space-lg": "1.5rem",
+        "space-md": "1rem",
+        "workbench-gap": "1.5rem"
+      },
+      "fontFamily": {
+        "data-mono-md": ["JetBrains Mono"],
+        "label-md": ["Inter"],
+        "data-mono-sm": ["JetBrains Mono"],
+        "headline-sm": ["Inter"],
+        "headline-lg": ["Inter"],
+        "body-sm": ["Inter"],
+        "body-md": ["Inter"],
+        "label-caps": ["Inter"],
+        "headline-xl": ["Inter"]
+      },
+      "fontSize": {
+        "data-mono-md": ["13px", {"lineHeight": "18px", "fontWeight": "500"}],
+        "label-md": ["13px", {"lineHeight": "16px", "fontWeight": "600"}],
+        "data-mono-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
+        "headline-sm": ["18px", {"lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+        "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+        "label-caps": ["11px", {"lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+        "headline-xl": ["30px", {"lineHeight": "36px", "letterSpacing": "-0.025em", "fontWeight": "700"}]
+      }
+    }
+  }
+}</script></head><body class="bg-bg-main text-on-surface font-body-md text-body-md min-h-screen"><header class="fixed top-0 w-full z-50 bg-surface/95 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 w-full px-gutter-app flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs"><img alt="JalanPantau Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UtcA_1fkyo_y_bO1b__NpqQNyghMKrrDUveJRn__6RbHgcRllW2v9BHRm8VRhUelk_qAQ8jnAbUcMjCelkVRgT_qG024RSW7M3ftrfoB3HLWyZIKo7HZgO-7KJpQzyoGbNgPA0SWNIe0IjaWfRBd-0xqTVRL1KomoMFZncFb3jiLU8nFF_X3qdn9l9ffM0MqMNMkzz_QF5IuFl-vv4Irl7nwXVZHX02_dwVDAn0kL_swwQ--Vnidqyqg"/><div class="flex flex-col"><span class="font-label-md text-label-md text-text-primary tracking-tight">JalanPantau</span><span class="font-label-caps text-label-caps text-text-muted">SISTEM INSPEKSI JALAN</span></div></div><div class="hidden sm:flex items-center gap-space-xs px-space-xs py-space-2xs rounded-full bg-surface-container-low"><span class="font-data-mono-sm text-data-mono-sm text-text-secondary">YOLOv11n • TA 2025</span><div class="flex items-center gap-1.5 px-space-2xs py-0.5 rounded-full bg-severity-low-bg"><span class="w-1.5 h-1.5 rounded-full bg-severity-low-text"></span><span class="font-data-mono-sm text-data-mono-sm text-severity-low-text">Model Siap</span></div></div></div><nav class="hidden md:flex items-center gap-space-xs" data-active-classes="bg-primary-container text-on-primary-container font-label-md"><a aria-current="page" class="px-space-sm py-1.5 rounded transition-colors bg-primary-container text-on-primary-container font-label-md" data-path="deteksi" href="#">Deteksi</a><a class="px-space-sm py-1.5 rounded text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="peta" href="#">Peta</a><a class="px-space-sm py-1.5 rounded text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="riwayat" href="#">Riwayat</a><a class="px-space-sm py-1.5 rounded text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="tentang" href="#">Tentang</a></nav><div class="flex items-center gap-space-sm"><div class="hidden lg:flex items-center gap-space-xs px-space-xs py-1 rounded bg-surface-container"><span class="material-symbols-outlined text-severity-low-text text-[16px]">wifi</span><span class="font-data-mono-sm text-data-mono-sm text-text-secondary">Lokal / Offline-Ready</span></div><div class="hidden xl:flex items-center gap-space-2xs text-text-muted"><span class="material-symbols-outlined text-[16px]">schedule</span><span class="font-data-mono-sm text-data-mono-sm">SHIFT 01 • WIB</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-16 bg-bg-main min-h-screen" id="main-content"><div class="flex flex-col w-full">
+<!-- Nav Active State Updater Script -->
+<script>
+    (function () {
+      const activeNav = document.querySelector('nav a[data-path="riwayat"]');
+      if (activeNav) {
+        document.querySelectorAll('nav a').forEach(el => {
+          el.className = "px-space-sm py-1.5 rounded text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-colors";
+        });
+        activeNav.className = "px-space-sm py-1.5 rounded bg-primary-container text-on-primary-container font-label-md text-label-md shadow-sm";
+      }
+    })();
+  </script>
+<!-- Riwayat Overview Subheader & Quick Summary Cards -->
+<div class="w-full px-gutter-app py-space-md flex flex-col gap-space-md">
+<!-- Breadcrumb & Action Banner -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-2xs text-text-muted font-label-caps text-label-caps">
+<span>LOG AUDIT INFRASTRUKTUR</span>
+<span class="material-symbols-outlined text-[12px]">chevron_right</span>
+<span class="text-primary font-semibold">ARSIP RIWAYAT PEMINDAIAN</span>
+</div>
+<div class="flex items-center gap-space-xs mt-1">
+<h1 class="font-headline-lg text-headline-lg text-text-primary">Riwayat Inspeksi Permukaan Jalan</h1>
+<span class="inline-flex items-center px-space-xs py-0.5 rounded-full bg-surface-container text-text-secondary font-data-mono-sm text-data-mono-sm">
+            Total: 142 Titik
+          </span>
+</div>
+</div>
+<div class="flex items-center gap-space-xs flex-wrap">
+<button class="inline-flex items-center gap-1.5 px-space-sm py-2 rounded bg-surface text-text-primary shadow-sm hover:bg-surface-container-low transition-colors font-label-md text-label-md" id="btn-export-csv">
+<span class="material-symbols-outlined text-[18px] text-text-secondary">table_view</span>
+          Ekspor CSV
+        </button>
+<button class="inline-flex items-center gap-1.5 px-space-sm py-2 rounded bg-surface text-text-primary shadow-sm hover:bg-surface-container-low transition-colors font-label-md text-label-md" id="btn-export-rekap">
+<span class="material-symbols-outlined text-[18px] text-text-secondary">print</span>
+          Rekapitulasi Cetak
+        </button>
+<a class="inline-flex items-center gap-1.5 px-space-md py-2 rounded bg-primary text-on-primary shadow hover:bg-primary-container transition-colors font-label-md text-label-md" data-path="deteksi" href="#">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+          Inspeksi Baru
+        </a>
+</div>
+</div>
+<!-- Metric KPI Grid -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-space-sm">
+<div class="p-space-md bg-surface rounded shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-text-muted">
+<span class="font-label-caps text-label-caps uppercase tracking-wider">Total Temuan Rusak</span>
+<span class="material-symbols-outlined text-text-muted text-[18px]">emergency</span>
+</div>
+<div class="mt-2 flex items-baseline gap-space-xs">
+<span class="font-headline-lg text-headline-lg text-text-primary">318</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-secondary">anomali</span>
+</div>
+<span class="font-body-sm text-body-sm text-text-muted mt-1">24 ruas jalan terdata</span>
+</div>
+<div class="p-space-md bg-surface rounded shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-severity-high-text">
+<span class="font-label-caps text-label-caps uppercase tracking-wider">Tingkat Parah (Kritis)</span>
+<span class="w-2 h-2 rounded-full bg-severity-high-text"></span>
+</div>
+<div class="mt-2 flex items-baseline gap-space-xs">
+<span class="font-headline-lg text-headline-lg text-severity-high-text">46</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-secondary">titik butuh darurat</span>
+</div>
+<span class="font-body-sm text-body-sm text-text-muted mt-1">Prioritas penanganan 24 jam</span>
+</div>
+<div class="p-space-md bg-surface rounded shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-severity-med-text">
+<span class="font-label-caps text-label-caps uppercase tracking-wider">Tingkat Sedang</span>
+<span class="w-2 h-2 rounded-full bg-severity-med-text"></span>
+</div>
+<div class="mt-2 flex items-baseline gap-space-xs">
+<span class="font-headline-lg text-headline-lg text-severity-med-text">68</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-secondary">titik penjadwalan</span>
+</div>
+<span class="font-body-sm text-body-sm text-text-muted mt-1">Target perbaikan minggu depan</span>
+</div>
+<div class="p-space-md bg-surface rounded shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-primary">
+<span class="font-label-caps text-label-caps uppercase tracking-wider">Estimasi Agregat RAP</span>
+<span class="material-symbols-outlined text-primary text-[18px]">payments</span>
+</div>
+<div class="mt-2 flex items-baseline gap-space-xs">
+<span class="font-headline-lg text-headline-lg text-text-primary">Rp 48,2 M</span>
+</div>
+<span class="font-body-sm text-body-sm text-severity-low-text mt-1">Kalkulasi model Bina Marga</span>
+</div>
+</div>
+<!-- Filter Bar Form -->
+<div class="p-space-md bg-surface rounded shadow-sm">
+<form class="flex flex-col gap-space-md" id="filter">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-2xs text-text-primary font-label-md text-label-md">
+<span class="material-symbols-outlined text-primary text-[18px]">filter_alt</span>
+            Filter Multi-Kriteria
+          </div>
+<button class="font-label-caps text-label-caps text-text-muted hover:text-text-primary uppercase flex items-center gap-1 transition-colors" id="f-reset" type="reset">
+<span class="material-symbols-outlined text-[14px]">restart_alt</span>
+            Reset Parameter
+          </button>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-space-sm items-end">
+<!-- Rentang Tanggal: Dari -->
+<div class="flex flex-col gap-1 lg:col-span-2">
+<label class="font-label-caps text-label-caps text-text-muted" for="f-dari">DARI TANGGAL</label>
+<div class="relative">
+<input class="w-full h-10 px-space-xs bg-bg-main rounded text-text-primary font-data-mono-sm text-data-mono-sm focus:bg-surface focus:outline-none focus:ring-1 focus:ring-primary" id="f-dari" type="date" value="2025-02-15"/>
+</div>
+</div>
+<!-- Rentang Tanggal: Sampai -->
+<div class="flex flex-col gap-1 lg:col-span-2">
+<label class="font-label-caps text-label-caps text-text-muted" for="f-sampai">SAMPAI TANGGAL</label>
+<div class="relative">
+<input class="w-full h-10 px-space-xs bg-bg-main rounded text-text-primary font-data-mono-sm text-data-mono-sm focus:bg-surface focus:outline-none focus:ring-1 focus:ring-primary" id="f-sampai" type="date" value="2025-02-18"/>
+</div>
+</div>
+<!-- Tingkat Severity Badges / Checkboxes -->
+<div class="flex flex-col gap-1 lg:col-span-4">
+<label class="font-label-caps text-label-caps text-text-muted">TINGKAT TINGKAT SEVERITY (STATUS)</label>
+<div class="flex items-center gap-space-xs h-10 bg-bg-main px-space-xs rounded flex-wrap">
+<label class="flex items-center gap-1.5 cursor-pointer text-body-sm font-body-sm text-text-secondary select-none">
+<input checked="" class="f-sev rounded text-primary focus:ring-0" name="sev_berat" type="checkbox" value="berat"/>
+<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-severity-high-bg text-severity-high-text font-data-mono-sm text-data-mono-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-severity-high-text"></span>Berat
+                </span>
+</label>
+<label class="flex items-center gap-1.5 cursor-pointer text-body-sm font-body-sm text-text-secondary select-none">
+<input checked="" class="f-sev rounded text-primary focus:ring-0" name="sev_sedang" type="checkbox" value="sedang"/>
+<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-severity-med-bg text-severity-med-text font-data-mono-sm text-data-mono-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-severity-med-text"></span>Sedang
+                </span>
+</label>
+<label class="flex items-center gap-1.5 cursor-pointer text-body-sm font-body-sm text-text-secondary select-none">
+<input checked="" class="f-sev rounded text-primary focus:ring-0" name="sev_ringan" type="checkbox" value="ringan"/>
+<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-severity-low-bg text-severity-low-text font-data-mono-sm text-data-mono-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-severity-low-text"></span>Ringan
+                </span>
+</label>
+</div>
+</div>
+<!-- Kata Kunci / ID Pencarian -->
+<div class="flex flex-col gap-1 lg:col-span-3">
+<label class="font-label-caps text-label-caps text-text-muted" for="f-q">CARI JALAN / ID INSPEKSI</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-2.5 text-text-muted text-[18px]">search</span>
+<input class="w-full h-10 pl-9 pr-space-xs bg-bg-main rounded text-text-primary font-body-md text-body-md placeholder:text-text-muted focus:bg-surface focus:outline-none focus:ring-1 focus:ring-primary" id="f-q" placeholder="Cth: Asia Afrika, Dago, JP-0042" type="text"/>
+</div>
+</div>
+<!-- Tombol Eksekusi Filter -->
+<div class="lg:col-span-1">
+<button class="w-full h-10 px-space-xs bg-primary text-on-primary rounded font-label-md text-label-md flex items-center justify-center gap-1 hover:bg-primary-container transition-colors shadow-sm" id="f-submit" type="submit">
+<span class="material-symbols-outlined text-[16px]">tune</span>
+              Filter
+            </button>
+</div>
+</div>
+</form>
+</div>
+<!-- Active Filter Status Indicator Chips -->
+<div class="flex items-center justify-between text-body-sm font-body-sm text-text-secondary px-1">
+<div class="flex items-center gap-space-xs flex-wrap">
+<span>Menampilkan <strong>6</strong> dari <strong>142</strong> catatan inspeksi tervalidasi</span>
+<span class="text-text-muted">•</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container font-data-mono-sm text-data-mono-sm text-text-primary">
+          Rentang: 16 Feb 2025 – 18 Feb 2025
+        </span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container font-data-mono-sm text-data-mono-sm text-text-primary">
+          Kota: Bandung Raya (Disbina Marga)
+        </span>
+</div>
+<div class="hidden sm:flex items-center gap-1 text-text-muted font-data-mono-sm text-data-mono-sm">
+<span class="material-symbols-outlined text-[14px] text-severity-low-text">sync</span>
+        Sinkronisasi otomatis (Lokal DB)
+      </div>
+</div>
+<!-- Daftar Tabel Riwayat Container -->
+<div class="w-full bg-surface rounded shadow-sm overflow-hidden flex flex-col" id="daftar">
+<div class="overflow-x-auto w-full">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low text-text-muted font-label-caps text-label-caps uppercase tracking-wider">
+<th class="py-3 px-space-md" scope="col">Waktu &amp; ID</th>
+<th class="py-3 px-space-md" scope="col">Sumber Deteksi</th>
+<th class="py-3 px-space-md" scope="col">Lokasi &amp; Geotag</th>
+<th class="py-3 px-space-md" scope="col">Severity Terparah</th>
+<th class="py-3 px-space-md" scope="col">Temuan Kerusakan</th>
+<th class="py-3 px-space-md text-right" scope="col">Estimasi Biaya (RAP)</th>
+<th class="py-3 px-space-md text-center" scope="col">Aksi</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-bg-main font-body-sm text-body-sm text-text-primary" id="table-riwayat-body">
+<!-- Row 1 (Highlighted / Targeted in Modal Demo) -->
+<tr class="hover:bg-surface-container-low/70 transition-colors group cursor-pointer" onclick="openDetailModal('JP-20250218-0042')">
+<td class="py-3.5 px-space-md align-top">
+<div class="flex flex-col">
+<span class="font-data-mono-md text-data-mono-md font-semibold text-primary group-hover:underline flex items-center gap-1">
+                    JP-20250218-0042
+                    <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted mt-0.5">18 Feb 2025, 14:23:10 WIB</span>
+</div>
+</td>
+<td class="py-3.5 px-space-md align-top">
+<div class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-surface-container font-label-md text-label-md text-text-secondary">
+<span class="material-symbols-outlined text-[16px] text-text-muted">photo_camera</span>
+                  Gambar Statis
+                </div>
+</td>
+<td class="py-3.5 px-space-md align-top max-w-xs">
+<div class="flex flex-col">
+<span class="font-body-md text-body-md font-semibold text-text-primary truncate">Jl. Asia Afrika No. 65, Sumur Bandung</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted mt-0.5 flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px] text-primary">location_on</span>
+                    -6.921845, 107.608392
+                  </span>
+</div>
+</td>
+<td class="py-3.5 px-space-md align-top">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-severity-high-bg text-severity-high-text font-label-md text-label-md">
+<span class="w-2 h-2 rounded-full bg-severity-high-text"></span>
+                  Berat
+                </span>
+</td>
+<td class="py-3.5 px-space-md align-top">
+<div class="flex flex-col gap-0.5">
+<span class="text-text-primary font-medium">1 Lubang, 1 Retak Kulit Buaya</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">Conf: 0.84 pothole • 0.76 alligator</span>
+</div>
+</td>
+<td class="py-3.5 px-space-md align-top text-right font-data-mono-md text-data-mono-md font-semibold text-text-primary">
+                Rp 1.300.000
+              </td>
+<td class="py-3.5 px-space-md align-top text-center" onclick="event.stopPropagation()">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1.5 rounded hover:bg-surface-container text-text-secondary hover:text-primary transition-colors" onclick="openDetailModal('JP-20250218-0042')" title="Lihat Detail Inspeksi">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1.5 rounded hover:bg-surface-container text-text-secondary hover:text-primary transition-colors" onclick="downloadRowPdf('JP-20250218-0042')" title="Unduh PDF Berita Acara">
+<span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+</button>
+<button class="p-1.5 rounded hover:bg-error-container text-text-secondary hover:text-error transition-colors" onclick="deleteRowPrompt('JP-20250218-0042')" title="Hapus Riwayat">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-low/70 transition-colors group cursor-pointer" onclick="openDetailModal('JP-20250218-0039')">
+<td class="py-3.5 px-space-md align-top">
+<div class="flex flex-col">
+<span class="font-data-mono-md text-data-mono-md font-semibold text-primary group-hover:underline flex items-center gap-1">
+                    JP-20250218-0039
+                    <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted mt-0.5">18 Feb 2025, 13:45:02 WIB</span>
+</div>
+</td>
+<td class="py-3.5 px-space-md align-top">
+<div class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-surface-container font-label-md text-label-md text-text-secondary">
+<span class="material-symbols-outlined text-[16px] text-text-muted">videocam</span>
+                  Live Webcam
+                </div>
+</td>
+<td class="py-3.5 px-space-md align-top max-w-xs">
+<div class="flex flex-col">
+<span class="font-body-md text-body-md font-semibold text-text-primary truncate">Jl. Ir. H. Juanda No. 112, Dago</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted mt-0.5 flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px] text-primary">location_on</span>
+                    -6.889124, 107.613401
+                  </span>
+</div>
+</td>
+<td class="py-3.5 px-space-md align-top">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-severity-high-bg text-severity-high-text font-label-md text-label-md">
+<span class="w-2 h-2 rounded-full bg-severity-high-text"></span>
+                  Berat
+                </span>
+</td>
+<td class="py-3.5 px-space-md align-top">
+<div class="flex flex-col gap-0.5">
+<span class="text-text-primary font-medium">2 Lubang Parah (0.91)</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">Kedalaman &gt; 6.5 cm terdeteksi</span>
+</div>
+</td>
+<td class="py-3.5 px-space-md align-top text-right font-data-mono-md text-data-mono-md font-semibold text-text-primary">
+                Rp 1.850.000
+              </td>
+<td class="py-3.5 px-space-md align-top text-center" onclick="event.stopPropagation()">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1.5 rounded hover:bg-surface-container text-text-secondary hover:text-primary transition-colors" onclick="openDetailModal('JP-20250218-0039')" title="Lihat Detail Inspeksi">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1.5 rounded hover:bg-surface-container text-text-secondary hover:text-primary transition-colors" onclick="downloadRowPdf('JP-20250218-0039')" title="Unduh PDF Berita Acara">
+<span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+</button>
+<button class="p-1.5 rounded hover:bg-error-container text-text-secondary hover:text-error transition-colors" onclick="deleteRowPrompt('JP-20250218-0039')" title="Hapus Riwayat">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low/70 transition-colors group cursor-pointer" onclick="openDetailModal('JP-20250218-0031')">
+<td class="py-3.5 px-space-md align-top">
+<div class="flex flex-col">
+<span class="font-data-mono-md text-data-mono-md font-semibold text-primary group-hover:underline flex items-center gap-1">
+                    JP-20250218-0031
+                    <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted mt-0.5">18 Feb 2025, 11:15:40 WIB</span>
+</div>
+</td>
+<td class="py-3.5 px-space-md align-top">
+<div class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-surface-container font-label-md text-label-md text-text-secondary">
+<span class="material-symbols-outlined text-[16px] text-text-muted">photo_camera</span>
+                  Gambar Statis
+                </div>
+</td>
+<td class="py-3.5 px-space-md align-top max-w-xs">
+<div class="flex flex-col">
+<span class="font-body-md text-body-md font-semibold text-text-primary truncate">Jl. RE Martadinata No. 48, Cihapit</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted mt-0.5 flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px] text-primary">location_on</span>
+                    -6.908231, 107.618945
+                  </span>
+</div>
+</td>
+<td class="py-3.5 px-space-md align-top">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-severity-med-bg text-severity-med-text font-label-md text-label-md">
+<span class="w-2 h-2 rounded-full bg-severity-med-text"></span>
+                  Sedang
+                </span>
+</td>
+<td class="py-3.5 px-space-md align-top">
+<div class="flex flex-col gap-0.5">
+<span class="text-text-primary font-medium">3 Retak Kulit Buaya (0.78)</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">Penjalaran retak 2.8 m²</span>
+</div>
+</td>
+<td class="py-3.5 px-space-md align-top text-right font-data-mono-md text-data-mono-md font-semibold text-text-primary">
+                Rp 950.000
+              </td>
+<td class="py-3.5 px-space-md align-top text-center" onclick="event.stopPropagation()">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1.5 rounded hover:bg-surface-container text-text-secondary hover:text-primary transition-colors" onclick="openDetailModal('JP-20250218-0031')" title="Lihat Detail Inspeksi">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1.5 rounded hover:bg-surface-container text-text-secondary hover:text-primary transition-colors" onclick="downloadRowPdf('JP-20250218-0031')" title="Unduh PDF Berita Acara">
+<span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+</button>
+<button class="p-1.5 rounded hover:bg-error-container text-text-secondary hover:text-error transition-colors" onclick="deleteRowPrompt('JP-20250218-0031')" title="Hapus Riwayat">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-low/70 transition-colors group cursor-pointer" onclick="openDetailModal('JP-20250217-0019')">
+<td class="py-3.5 px-space-md align-top">
+<div class="flex flex-col">
+<span class="font-data-mono-md text-data-mono-md font-semibold text-primary group-hover:underline flex items-center gap-1">
+                    JP-20250217-0019
+                    <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted mt-0.5">17 Feb 2025, 16:30:15 WIB</span>
+</div>
+</td>
+<td class="py-3.5 px-space-md align-top">
+<div class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-surface-container font-label-md text-label-md text-text-secondary">
+<span class="material-symbols-outlined text-[16px] text-text-muted">photo_camera</span>
+                  Gambar Statis
+                </div>
+</td>
+<td class="py-3.5 px-space-md align-top max-w-xs">
+<div class="flex flex-col">
+<span class="font-body-md text-body-md font-semibold text-text-primary truncate">Jl. Surapati No. 80, Sukaluyu</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted mt-0.5 flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px] text-primary">location_on</span>
+                    -6.899201, 107.625110
+                  </span>
+</div>
+</td>
+<td class="py-3.5 px-space-md align-top">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-severity-med-bg text-severity-med-text font-label-md text-label-md">
+<span class="w-2 h-2 rounded-full bg-severity-med-text"></span>
+                  Sedang
+                </span>
+</td>
+<td class="py-3.5 px-space-md align-top">
+<div class="flex flex-col gap-0.5">
+<span class="text-text-primary font-medium">Retak Memanjang 4.2m</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">Lebar celah 12 mm</span>
+</div>
+</td>
+<td class="py-3.5 px-space-md align-top text-right font-data-mono-md text-data-mono-md font-semibold text-text-primary">
+                Rp 720.000
+              </td>
+<td class="py-3.5 px-space-md align-top text-center" onclick="event.stopPropagation()">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1.5 rounded hover:bg-surface-container text-text-secondary hover:text-primary transition-colors" onclick="openDetailModal('JP-20250217-0019')" title="Lihat Detail Inspeksi">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1.5 rounded hover:bg-surface-container text-text-secondary hover:text-primary transition-colors" onclick="downloadRowPdf('JP-20250217-0019')" title="Unduh PDF Berita Acara">
+<span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+</button>
+<button class="p-1.5 rounded hover:bg-error-container text-text-secondary hover:text-error transition-colors" onclick="deleteRowPrompt('JP-20250217-0019')" title="Hapus Riwayat">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-container-low/70 transition-colors group cursor-pointer" onclick="openDetailModal('JP-20250217-0012')">
+<td class="py-3.5 px-space-md align-top">
+<div class="flex flex-col">
+<span class="font-data-mono-md text-data-mono-md font-semibold text-primary group-hover:underline flex items-center gap-1">
+                    JP-20250217-0012
+                    <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted mt-0.5">17 Feb 2025, 10:05:22 WIB</span>
+</div>
+</td>
+<td class="py-3.5 px-space-md align-top">
+<div class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-surface-container font-label-md text-label-md text-text-secondary">
+<span class="material-symbols-outlined text-[16px] text-text-muted">videocam</span>
+                  Live Webcam
+                </div>
+</td>
+<td class="py-3.5 px-space-md align-top max-w-xs">
+<div class="flex flex-col">
+<span class="font-body-md text-body-md font-semibold text-text-primary truncate">Jl. Braga No. 12, Braga</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted mt-0.5 flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px] text-primary">location_on</span>
+                    -6.918302, 107.609502
+                  </span>
+</div>
+</td>
+<td class="py-3.5 px-space-md align-top">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-severity-low-bg text-severity-low-text font-label-md text-label-md">
+<span class="w-2 h-2 rounded-full bg-severity-low-text"></span>
+                  Ringan
+                </span>
+</td>
+<td class="py-3.5 px-space-md align-top">
+<div class="flex flex-col gap-0.5">
+<span class="text-text-primary font-medium">Retak Halus Permukaan</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">Garis mikro &lt; 3 mm</span>
+</div>
+</td>
+<td class="py-3.5 px-space-md align-top text-right font-data-mono-md text-data-mono-md font-semibold text-text-primary">
+                Rp 350.000
+              </td>
+<td class="py-3.5 px-space-md align-top text-center" onclick="event.stopPropagation()">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1.5 rounded hover:bg-surface-container text-text-secondary hover:text-primary transition-colors" onclick="openDetailModal('JP-20250217-0012')" title="Lihat Detail Inspeksi">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1.5 rounded hover:bg-surface-container text-text-secondary hover:text-primary transition-colors" onclick="downloadRowPdf('JP-20250217-0012')" title="Unduh PDF Berita Acara">
+<span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+</button>
+<button class="p-1.5 rounded hover:bg-error-container text-text-secondary hover:text-error transition-colors" onclick="deleteRowPrompt('JP-20250217-0012')" title="Hapus Riwayat">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 6 -->
+<tr class="hover:bg-surface-container-low/70 transition-colors group cursor-pointer" onclick="openDetailModal('JP-20250216-0008')">
+<td class="py-3.5 px-space-md align-top">
+<div class="flex flex-col">
+<span class="font-data-mono-md text-data-mono-md font-semibold text-primary group-hover:underline flex items-center gap-1">
+                    JP-20250216-0008
+                    <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted mt-0.5">16 Feb 2025, 15:40:08 WIB</span>
+</div>
+</td>
+<td class="py-3.5 px-space-md align-top">
+<div class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-surface-container font-label-md text-label-md text-text-secondary">
+<span class="material-symbols-outlined text-[16px] text-text-muted">photo_camera</span>
+                  Gambar Statis
+                </div>
+</td>
+<td class="py-3.5 px-space-md align-top max-w-xs">
+<div class="flex flex-col">
+<span class="font-body-md text-body-md font-semibold text-text-primary truncate">Jl. Wastukencana No. 2, Babakan Ciamis</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted mt-0.5 flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px] text-primary">location_on</span>
+                    -6.913511, 107.607421
+                  </span>
+</div>
+</td>
+<td class="py-3.5 px-space-md align-top">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-severity-low-bg text-severity-low-text font-label-md text-label-md">
+<span class="w-2 h-2 rounded-full bg-severity-low-text"></span>
+                  Ringan
+                </span>
+</td>
+<td class="py-3.5 px-space-md align-top">
+<div class="flex flex-col gap-0.5">
+<span class="text-text-primary font-medium">Retak Melintang 1.5m</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">Conf: 0.71 transverse_crack</span>
+</div>
+</td>
+<td class="py-3.5 px-space-md align-top text-right font-data-mono-md text-data-mono-md font-semibold text-text-primary">
+                Rp 280.000
+              </td>
+<td class="py-3.5 px-space-md align-top text-center" onclick="event.stopPropagation()">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1.5 rounded hover:bg-surface-container text-text-secondary hover:text-primary transition-colors" onclick="openDetailModal('JP-20250216-0008')" title="Lihat Detail Inspeksi">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-1.5 rounded hover:bg-surface-container text-text-secondary hover:text-primary transition-colors" onclick="downloadRowPdf('JP-20250216-0008')" title="Unduh PDF Berita Acara">
+<span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+</button>
+<button class="p-1.5 rounded hover:bg-error-container text-text-secondary hover:text-error transition-colors" onclick="deleteRowPrompt('JP-20250216-0008')" title="Hapus Riwayat">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination & Table Footer -->
+<div class="px-space-md py-space-sm bg-surface-container-low flex flex-col sm:flex-row items-center justify-between gap-space-xs text-text-secondary font-body-sm text-body-sm">
+<div class="flex items-center gap-2">
+<span>Halaman <strong>1</strong> dari <strong>24</strong></span>
+<span class="text-text-muted">•</span>
+<label class="flex items-center gap-1 font-data-mono-sm text-data-mono-sm">
+<span>Baris per halaman:</span>
+<select class="bg-surface rounded px-1.5 py-0.5 text-text-primary focus:outline-none">
+<option>10</option>
+<option selected="">20</option>
+<option>50</option>
+</select>
+</label>
+</div>
+<div class="flex items-center gap-1">
+<button class="px-2 py-1 rounded bg-surface text-text-muted cursor-not-allowed text-xs font-label-md flex items-center" disabled="">
+<span class="material-symbols-outlined text-[16px]">chevron_left</span>
+            Sebelumnya
+          </button>
+<button class="px-2.5 py-1 rounded bg-primary text-on-primary font-data-mono-sm text-data-mono-sm">1</button>
+<button class="px-2.5 py-1 rounded bg-surface hover:bg-surface-container text-text-primary font-data-mono-sm text-data-mono-sm transition-colors">2</button>
+<button class="px-2.5 py-1 rounded bg-surface hover:bg-surface-container text-text-primary font-data-mono-sm text-data-mono-sm transition-colors">3</button>
+<span class="px-1 text-text-muted">...</span>
+<button class="px-2.5 py-1 rounded bg-surface hover:bg-surface-container text-text-primary font-data-mono-sm text-data-mono-sm transition-colors">24</button>
+<button class="px-2 py-1 rounded bg-surface text-text-primary hover:bg-surface-container transition-colors text-xs font-label-md flex items-center">
+            Berikutnya
+            <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Fallback / Ready Empty State (Hidden by default, activated if filter yields 0 results) -->
+<div class="hidden w-full p-space-xl bg-surface rounded shadow-sm text-center flex-col items-center justify-center gap-space-sm my-4" id="state-kosong">
+<div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[36px]">folder_off</span>
+</div>
+<div class="max-w-md flex flex-col gap-1">
+<h2 class="font-headline-sm text-headline-sm text-text-primary">Tidak Ditemukan Riwayat yang Sesuai</h2>
+<p class="font-body-md text-body-md text-text-secondary">
+          Tidak ada data catatan inspeksi jalan pada rentang filter tanggal atau kata kunci ini. Silakan ubah filter atau lakukan deteksi baru.
+        </p>
+</div>
+<div class="flex items-center gap-space-sm mt-2">
+<button class="px-space-md py-2 rounded bg-surface-container hover:bg-surface-container-high text-text-primary font-label-md text-label-md transition-colors" onclick="resetFilters()">
+          Reset Filter
+        </button>
+<a class="px-space-md py-2 rounded bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md transition-colors shadow" data-path="deteksi" href="#">
+          Mulai Deteksi Sekarang
+        </a>
+</div>
+</div>
+</div>
+<!-- MODAL DETAIL INSPEKSI (id="detail") -->
+<!-- Berada dalam overlay interaktif dengan backdrop blur -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-space-xs sm:p-space-md bg-inverse-surface/60 backdrop-blur-sm overflow-y-auto" id="detail">
+<div class="relative w-full max-w-4xl bg-surface rounded-lg shadow-2xl overflow-hidden flex flex-col max-h-[942px] my-auto animate-in fade-in zoom-in-95 duration-200">
+<!-- Modal Header -->
+<div class="flex items-center justify-between px-space-md py-space-sm bg-surface-container-low">
+<div class="flex items-center gap-space-xs min-w-0">
+<span class="p-1.5 rounded bg-primary-container text-on-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">troubleshoot</span>
+</span>
+<div class="flex flex-col min-w-0">
+<span class="font-label-caps text-label-caps text-text-muted">BERITA ACARA AUDIT TEKNIS</span>
+<h2 class="font-headline-sm text-headline-sm text-text-primary truncate" id="d-judul">
+              Detail Inspeksi: JP-20250218-0042 — Jl. Asia Afrika No. 65
+            </h2>
+</div>
+</div>
+<button class="w-8 h-8 rounded hover:bg-surface-container flex items-center justify-center text-text-muted hover:text-text-primary transition-colors" id="d-x" onclick="closeDetailModal()" title="Tutup Modal (Esc)">
+<span class="material-symbols-outlined text-[22px]">close</span>
+</button>
+</div>
+<!-- Status Bar / Toast in Modal -->
+<div class="px-space-md py-1.5 bg-severity-low-bg text-severity-low-text font-data-mono-sm text-data-mono-sm flex items-center justify-between" id="d-status">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span>Status Verifikasi: Terkonfirmasi AI YOLOv11n (Inference: 14.8ms • IoU: 0.65)</span>
+</div>
+<span class="text-text-secondary hidden sm:inline">GPS Valid: Akurasi ±1.2m</span>
+</div>
+<!-- Modal Body Content -->
+<div class="p-space-md overflow-y-auto flex flex-col gap-space-md">
+<!-- Metadata Strip -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-space-xs bg-bg-main p-space-xs rounded">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted">WAKTU AUDIT</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-primary font-medium">18 Feb 2025 • 14:23 WIB</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted">METODE AKUISISI</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-primary font-medium">Kamera Statis (12MP)</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted">KOORDINAT BINA MARGA</span>
+<span class="font-data-mono-sm text-data-mono-sm text-primary font-medium">-6.921845, 107.608392</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-text-muted">KATEGORI SEVERITY</span>
+<span class="font-data-mono-sm text-data-mono-sm text-severity-high-text font-bold uppercase">BERAT (PRIORITAS 1)</span>
+</div>
+</div>
+<!-- Visual Bukti Inspeksi: YOLOv11n Bounding Boxes Canvas Display -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-text-primary flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-text-secondary">crop_free</span>
+              Foto Bukti Deteksi (Anotasi YOLOv11n)
+            </span>
+<div class="flex items-center gap-space-xs">
+<span class="inline-flex items-center gap-1 text-data-mono-sm font-data-mono-sm text-severity-high-text">
+<span class="w-2.5 h-2.5 rounded bg-severity-high-text"></span> Pothole (0.84)
+              </span>
+<span class="inline-flex items-center gap-1 text-data-mono-sm font-data-mono-sm text-severity-med-text">
+<span class="w-2.5 h-2.5 rounded bg-severity-med-text"></span> Alligator Crack (0.76)
+              </span>
+</div>
+</div>
+<!-- Controlled Aspect Ratio Bounding Container -->
+<div class="relative w-full aspect-[16/9] max-h-[360px] bg-inverse-surface rounded overflow-hidden shadow-inner flex items-center justify-center group" id="d-foto">
+<img class="w-full h-full object-cover" data-alt="Close-up asphalt road surface showing severe road damages in Bandung city with a prominent deep pothole in foreground and intersecting alligator fatigue cracks on sunny afternoon. Clear asphalt grain texture, high resolution civil engineering road survey photogrammetry." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAp0eZ5NOFvNKqA7g5h_EEb3wovxkndxlVbH5Yc21yr7Ac3UFeze6vC5WyKhKHAt_yGT0QwcMN2ZyLG5EAPjJlEmvVgvPLC-3TNMrv6f6kMzTtraqSD7yWlO_1aeGc8UmfhTESwybY1R_pwg_oJYWiTpV69uVpy3WigIUsCWRR4P4fe_xEoD8gmoXJ-lq_ixt7XfFlsCe3OM1F9MRAN3dZYmnVRyMMK-xBuGa54LF6HCUFq9cQzyF2I"/>
+<!-- YOLO Bounding Box 1: Lubang (Pothole) - High Severity (Merah) -->
+<div class="absolute left-[24%] top-[36%] w-[28%] h-[42%] pointer-events-none transition-all">
+<div class="w-full h-full bg-severity-high-text/10 shadow-[0_0_0_2px_#DC2626] rounded flex flex-col justify-between p-1">
+<div class="self-start px-1.5 py-0.5 bg-severity-high-text text-white font-data-mono-sm text-data-mono-sm rounded shadow flex items-center gap-1">
+<span>pothole</span>
+<span class="opacity-80">0.84</span>
+</div>
+<div class="self-end px-1 py-0.2 bg-black/70 text-white font-data-mono-sm text-[10px] rounded backdrop-blur-xs">
+                  Ø ~52cm • Depth 7.4cm
+                </div>
+</div>
+</div>
+<!-- YOLO Bounding Box 2: Retak Kulit Buaya (Alligator Crack) - Medium Severity (Oranye) -->
+<div class="absolute left-[56%] top-[25%] w-[34%] h-[48%] pointer-events-none transition-all">
+<div class="w-full h-full bg-severity-med-text/10 shadow-[0_0_0_2px_#D97706] rounded flex flex-col justify-between p-1">
+<div class="self-start px-1.5 py-0.5 bg-severity-med-text text-white font-data-mono-sm text-data-mono-sm rounded shadow flex items-center gap-1">
+<span>alligator_crack</span>
+<span class="opacity-80">0.76</span>
+</div>
+<div class="self-end px-1 py-0.2 bg-black/70 text-white font-data-mono-sm text-[10px] rounded backdrop-blur-xs">
+                  Area ~1.45 m²
+                </div>
+</div>
+</div>
+<!-- Visual Crosshair Center Hud -->
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
+<span class="material-symbols-outlined text-[64px] text-white">filter_center_focus</span>
+</div>
+<!-- Telemetry Overlay Floating on Photo -->
+<div class="absolute bottom-2 left-2 px-2 py-1 rounded bg-black/60 backdrop-blur-sm text-white font-data-mono-sm text-[10px] flex items-center gap-2">
+<span>LAT: -6.921845</span>
+<span>LON: 107.608392</span>
+<span>SPEED: 0.0 KM/H</span>
+<span class="text-secondary-fixed">RESOLUSI: 1920x1080</span>
+</div>
+</div>
+</div>
+<!-- Tabel Rincian Temuan Objek (id="d-tabel") -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-text-primary">Daftar Objek Terdeteksi &amp; Estimasi Rincian</span>
+<span class="font-label-caps text-label-caps text-text-muted">STANDAR BINA MARGA 2024</span>
+</div>
+<div class="overflow-x-auto rounded bg-surface-container-low">
+<table class="w-full text-left border-collapse font-body-sm text-body-sm" id="d-tabel">
+<thead>
+<tr class="bg-surface-container text-text-secondary font-label-caps text-label-caps uppercase tracking-wider">
+<th class="py-2.5 px-space-sm">No</th>
+<th class="py-2.5 px-space-sm">Jenis Kerusakan</th>
+<th class="py-2.5 px-space-sm">Dimensi / Estimasi Area</th>
+<th class="py-2.5 px-space-sm">Severity</th>
+<th class="py-2.5 px-space-sm">Tingkat Keyakinan</th>
+<th class="py-2.5 px-space-sm text-right">Estimasi Biaya</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface text-text-primary">
+<tr>
+<td class="py-2.5 px-space-sm font-data-mono-sm">01</td>
+<td class="py-2.5 px-space-sm font-medium">Lubang Jalan Dalam (Pothole)</td>
+<td class="py-2.5 px-space-sm font-data-mono-sm text-text-secondary">Diameter ~52 cm (Kedalaman ~7.4 cm)</td>
+<td class="py-2.5 px-space-sm">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-severity-high-bg text-severity-high-text font-data-mono-sm text-data-mono-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-severity-high-text"></span>Berat
+                    </span>
+</td>
+<td class="py-2.5 px-space-sm font-data-mono-md text-data-mono-md text-primary font-semibold">84.2%</td>
+<td class="py-2.5 px-space-sm text-right font-data-mono-md text-data-mono-md font-semibold">Rp 850.000</td>
+</tr>
+<tr>
+<td class="py-2.5 px-space-sm font-data-mono-sm">02</td>
+<td class="py-2.5 px-space-sm font-medium">Retak Kulit Buaya (Alligator Crack)</td>
+<td class="py-2.5 px-space-sm font-data-mono-sm text-text-secondary">Luasan poligon ~1.45 m²</td>
+<td class="py-2.5 px-space-sm">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-severity-med-bg text-severity-med-text font-data-mono-sm text-data-mono-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-severity-med-text"></span>Sedang
+                    </span>
+</td>
+<td class="py-2.5 px-space-sm font-data-mono-md text-data-mono-md text-primary font-semibold">76.8%</td>
+<td class="py-2.5 px-space-sm text-right font-data-mono-md text-data-mono-md font-semibold">Rp 450.000</td>
+</tr>
+</tbody>
+<tfoot>
+<tr class="bg-surface-container font-medium text-text-primary">
+<td class="py-2.5 px-space-sm text-right font-label-md text-label-md" colspan="5">Total Estimasi Anggaran Penanganan:</td>
+<td class="py-2.5 px-space-sm text-right font-data-mono-md text-data-mono-md font-bold text-primary">Rp 1.300.000</td>
+</tr>
+</tfoot>
+</table>
+</div>
+</div>
+<!-- Rekomendasi Tindakan Teknis -->
+<div class="p-space-sm bg-surface-container-low rounded flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px] shrink-0 mt-0.5">assignment_turned_in</span>
+<div class="flex flex-col gap-0.5">
+<span class="font-label-md text-label-md text-text-primary">Rekomendasi Penanganan Cepat</span>
+<p class="font-body-sm text-body-sm text-text-secondary">
+              Metode Cold Mix Asphalt untuk pothole primer dalam waktu 1x24 jam guna mencegah insiden kendaraan roda dua, dilanjutkan dengan perapian milling selektif dan asphalt seal coat pada zona alligator crack.
+            </p>
+</div>
+</div>
+</div>
+<!-- Modal Action Buttons Bar -->
+<div class="px-space-md py-space-sm bg-surface-container-low flex flex-col sm:flex-row items-center justify-between gap-space-xs">
+<button class="w-full sm:w-auto inline-flex items-center justify-center gap-1 px-space-sm py-2 rounded bg-error-container text-on-error-container hover:bg-error hover:text-on-error font-label-md text-label-md transition-colors" id="d-hapus" onclick="confirmDeleteModalRecord()">
+<span class="material-symbols-outlined text-[18px]">delete_forever</span>
+          Hapus Catatan Ini
+        </button>
+<div class="flex items-center gap-space-xs w-full sm:w-auto justify-end">
+<button class="w-full sm:w-auto px-space-md py-2 rounded bg-surface hover:bg-surface-container text-text-primary font-label-md text-label-md transition-colors shadow-sm" id="d-tutup" onclick="closeDetailModal()">
+            Tutup
+          </button>
+<button class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-space-md py-2 rounded bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md transition-colors shadow" id="d-pdf" onclick="generatePdfReport()">
+<span class="material-symbols-outlined text-[18px]">download</span>
+            Unduh Berita Acara PDF
+          </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Client Micro-Interactions Script -->
+<script>
+    function openDetailModal(id) {
+      const modal = document.getElementById('detail');
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+      }
+    }
+
+    function closeDetailModal() {
+      const modal = document.getElementById('detail');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = '';
+      }
+    }
+
+    // Close modal on Escape press
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        closeDetailModal();
+      }
+    });
+
+    // Close on backdrop click
+    const detailModalEl = document.getElementById('detail');
+    if (detailModalEl) {
+      detailModalEl.addEventListener('click', function(e) {
+        if (e.target === this) {
+          closeDetailModal();
+        }
+      });
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = "px-space-md py-space-xs rounded bg-inverse-surface text-inverse-on-surface font-body-sm text-body-sm shadow-lg flex items-center gap-2 pointer-events-auto transform transition-all duration-300";
+      toast.innerHTML = `<span class="material-symbols-outlined text-[18px] text-primary-fixed">${type === 'error' ? 'error' : 'info'}</span><span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 3200);
+    }
+
+    function generatePdfReport() {
+      showToast('Menghasilkan berkas PDF Berita Acara Inspeksi...', 'info');
+      setTimeout(() => {
+        showToast('Dokumen BA-JP20250218-0042.pdf berhasil diunduh.', 'info');
+      }, 1200);
+    }
+
+    function downloadRowPdf(recordId) {
+      showToast(`Mengunduh PDF untuk inspeksi ${recordId}...`, 'info');
+    }
+
+    function deleteRowPrompt(recordId) {
+      if (confirm(`Apakah Anda yakin ingin menghapus data inspeksi ${recordId} secara permanen dari basis data?`)) {
+        showToast(`Catatan ${recordId} berhasil dihapus.`, 'info');
+      }
+    }
+
+    function confirmDeleteModalRecord() {
+      if (confirm('Konfirmasi: Hapus data inspeksi ini secara permanen dari server lokal?')) {
+        closeDetailModal();
+        showToast('Catatan JP-20250218-0042 telah dihapus.', 'info');
+      }
+    }
+
+    // Filter submit handler
+    const filterForm = document.getElementById('filter');
+    if (filterForm) {
+      filterForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const q = document.getElementById('f-q').value.trim();
+        showToast(`Memfilter data riwayat: "${q || 'Semua parameter'}"`, 'info');
+      });
+    }
+
+    // Export CSV and Rekap buttons
+    const btnCsv = document.getElementById('btn-export-csv');
+    if (btnCsv) {
+      btnCsv.addEventListener('click', function() {
+        showToast('Mengekspor 142 baris data ke riwayat_jalanpantau_2025.csv', 'info');
+      });
+    }
+
+    const btnRekap = document.getElementById('btn-export-rekap');
+    if (btnRekap) {
+      btnRekap.addEventListener('click', function() {
+        showToast('Menyiapkan lembar rekapitulasi audit untuk dicetak.', 'info');
+      });
+    }
+
+    function resetFilters() {
+      if (filterForm) filterForm.reset();
+      const emptyState = document.getElementById('state-kosong');
+      const tableDaftar = document.getElementById('daftar');
+      if (emptyState) emptyState.classList.add('hidden');
+      if (tableDaftar) tableDaftar.classList.remove('hidden');
+      showToast('Parameter filter telah dikembalikan ke awal.', 'info');
+    }
+  </script>
+</div></main><footer class="w-full bg-surface py-space-md shadow-[0_-1px_6px_rgba(0,0,0,0.03)]"><div class="w-full px-gutter-app flex flex-col sm:flex-row items-center justify-between gap-space-xs text-text-muted font-body-sm text-body-sm"><span>© 2025 JalanPantau • Platform Kecerdasan Artifisial Inspeksi Kerusakan Permukaan Jalan</span><span class="font-data-mono-sm text-data-mono-sm">Infrastruktur Bina Marga &amp; Transportasi Cerdas</span></div></footer><div class="fixed bottom-space-md right-space-md z-50 flex flex-col gap-space-xs pointer-events-none" id="toast-container"></div></body></html>

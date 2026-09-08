@@ -1,0 +1,576 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="dash-header">
+  <div>
+    <h1 class="dash-title">Dashboard {{ nama_daerah }}</h1>
+    <p class="dash-subtitle">Kelola laporan kerusakan jalan yang masuk</p>
+  </div>
+</div>
+
+<!-- Filter & Search Bar -->
+<div class="dash-filter-bar">
+  <div class="dash-filter-group">
+    <button class="dash-filter-btn aktif" data-filter="semua">Semua</button>
+    <button class="dash-filter-btn" data-filter="Terkirim">Terkirim</button>
+    <button class="dash-filter-btn" data-filter="Diproses">Diproses</button>
+    <button class="dash-filter-btn" data-filter="Selesai">Selesai</button>
+    <input type="date" id="dash-dari" class="dash-date" title="Dari tanggal">
+    <span style="font-size:11px;color:var(--dash-muted)">s/d</span>
+    <input type="date" id="dash-sampai" class="dash-date" title="Sampai tanggal">
+  </div>
+  <div class="dash-search-wrap">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" id="dash-search" placeholder="Cari nomor tiket atau lokasi..." class="dash-search-input">
+  </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="dash-kpis">
+  <div class="dash-kpi kpi-baru">
+    <div class="dash-kpi-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>
+    </div>
+    <div class="dash-kpi-info">
+      <span class="dash-kpi-label">Laporan Baru</span>
+      <strong class="dash-kpi-val" id="kpi-baru">{{ stats.baru or 0 }}</strong>
+    </div>
+  </div>
+  <div class="dash-kpi kpi-proses">
+    <div class="dash-kpi-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    </div>
+    <div class="dash-kpi-info">
+      <span class="dash-kpi-label">Sedang Dikerjakan</span>
+      <strong class="dash-kpi-val" id="kpi-proses">{{ stats.diproses or 0 }}</strong>
+    </div>
+  </div>
+  <div class="dash-kpi kpi-selesai">
+    <div class="dash-kpi-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    </div>
+    <div class="dash-kpi-info">
+      <span class="dash-kpi-label">Selesai</span>
+      <strong class="dash-kpi-val" id="kpi-selesai">{{ stats.selesai or 0 }}</strong>
+    </div>
+  </div>
+  <div class="dash-kpi kpi-total">
+    <div class="dash-kpi-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    </div>
+    <div class="dash-kpi-info">
+      <span class="dash-kpi-label">Total Laporan</span>
+      <strong class="dash-kpi-val" id="kpi-total">{{ stats.total or 0 }}</strong>
+    </div>
+  </div>
+  <div class="dash-kpi kpi-biaya">
+    <div class="dash-kpi-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></svg>
+    </div>
+    <div class="dash-kpi-info">
+      <span class="dash-kpi-label">Estimasi Biaya</span>
+      <strong class="dash-kpi-val" id="kpi-biaya" style="font-size:17px">Rp0</strong>
+    </div>
+  </div>
+</div>
+
+<!-- Tren + Komposisi -->
+<div class="dash-duo">
+  <div class="dash-card">
+    <div class="dash-card-head">
+      <h2>Tren 8 Minggu</h2>
+      <span style="font-size:11px;color:var(--dash-muted)">laporan / minggu</span>
+    </div>
+    <div style="padding:8px 14px 10px"><div id="dash-tren" class="dash-tren"></div></div>
+  </div>
+  <div class="dash-card">
+    <div class="dash-card-head">
+      <h2>Komposisi</h2>
+    </div>
+    <div style="padding:8px 14px 10px">
+      <div class="dash-donat-wrap">
+        <div class="dash-donat"><div id="dash-donat-status"></div><div class="dash-leg" id="dash-leg-status"></div></div>
+        <div class="dash-donat"><div id="dash-donat-urgensi"></div><div class="dash-leg" id="dash-leg-urgensi"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Peta Sebaran Laporan -->
+<div class="dash-card" style="margin-bottom:24px">
+  <div class="dash-card-head">
+    <h2>Peta Sebaran Laporan</h2>
+    <span id="dash-map-count" style="font-size:12px;color:var(--dash-muted)">0 titik</span>
+  </div>
+  <div id="map-sebaran" class="dash-map"></div>
+</div>
+
+<!-- Tabel Disposisi -->
+<div class="dash-card">
+  <div class="dash-card-head">
+    <h2>Laporan <span id="dash-filter-label">Semua</span></h2>
+    <div class="dash-head-right">
+      <span class="dash-urg-chip urg-kritis">Kritis <b id="urg-kritis">0</b></span>
+      <span class="dash-urg-chip urg-tinggi">Tinggi <b id="urg-tinggi">0</b></span>
+      <span class="dash-urg-chip urg-rutin">Rutin <b id="urg-rutin">0</b></span>
+      <span id="dash-count" style="font-size:12px;color:var(--dash-muted)">0 laporan</span>
+      <button type="button" class="dash-btn-apply" id="dash-unduh-csv">Unduh CSV</button>
+    </div>
+  </div>
+  <div class="dash-table-wrap">
+    <table class="dash-table" id="dash-tabel">
+      <thead>
+        <tr>
+          <th class="sortable" data-sort="tiket">No. Tiket</th>
+          <th class="sortable sort-desc" data-sort="waktu">Waktu</th>
+          <th class="sortable" data-sort="lokasi">Lokasi</th>
+          <th class="sortable" data-sort="urgensi">Urgensi</th>
+          <th class="sortable" data-sort="status">Status</th>
+          <th>Umur</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="dash-tabel-body">
+        <tr><td colspan="7" class="dash-loading">Memuat...</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- Paginasi -->
+  <div id="dash-paginasi" style="display:none;align-items:center;justify-content:center;gap:4px;margin-top:12px;flex-wrap:wrap"></div>
+  <!-- Info overflow -->
+  <p class="dash-hint" id="dash-overflow-info" aria-live="polite"></p>
+</div>
+{% endblock %}
+
+{% block skrip %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+(function(){
+  var daerah = "{{ daerah }}";
+  // P4 XSS: escape sebelum innerHTML/bindPopup (data disposisi dari server).
+  function esc(v) {
+    return String(v == null ? "" : v).replace(/[&<>"'`=]/g, function(c) {
+      return {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;",
+              "'": "&#39;", "`": "&#96;", "=": "&#61;"}[c];
+    });
+  }
+  var semuaData = [];
+  var dataTampil = [];
+  var filterAktif = 'semua';
+  var queryCari = '';
+  var tglDari = '', tglSampai = '';
+  var sortKey = 'waktu', sortDir = -1;
+  var idMaks = 0;
+  var URUT_U = {Kritis: 0, Tinggi: 1, Rutin: 2};
+  var URUT_S = {Terkirim: 0, Diproses: 1, Selesai: 2};
+  var peta = null, penanda = [];
+  // Pagination state
+  var halamanDash = 1;
+  var PER_HALAMAN_DASH = 25;
+  var totalDbDash = 0;
+  var overflowDash = false;
+
+  function nilaiSort(r) {
+    if (sortKey === 'tiket') return (r.bap_nomor || '').toLowerCase();
+    if (sortKey === 'lokasi') return (r.lokasi || '').toLowerCase();
+    if (sortKey === 'urgensi') return URUT_U[r.urgensi] === undefined ? 9 : URUT_U[r.urgensi];
+    if (sortKey === 'status') return URUT_S[r.status] === undefined ? 9 : URUT_S[r.status];
+    var t = new Date(r.waktu).getTime();
+    return isNaN(t) ? 0 : t;
+  }
+
+  function rupiahRingkas(v) {
+    if (v >= 1e9) return 'Rp' + (v / 1e9).toFixed(2).replace('.', ',') + ' M';
+    if (v >= 1e6) return 'Rp' + (v / 1e6).toFixed(2).replace('.', ',') + ' Jt';
+    if (v >= 1e3) return 'Rp' + Math.round(v / 1e3) + ' rb';
+    return 'Rp' + v;
+  }
+
+  function donatSVG(segs, total) {
+    var R = 34, C = 2 * Math.PI * R, off = 0, parts = '';
+    segs.forEach(function(s) {
+      var len = total ? s.val / total * C : 0;
+      if (len > 0) {
+        parts += '<circle cx="45" cy="45" r="' + R + '" fill="none" stroke="' + s.color
+          + '" stroke-width="12" stroke-dasharray="' + len.toFixed(1) + ' ' + C.toFixed(1)
+          + '" stroke-dashoffset="' + (-off).toFixed(1) + '" transform="rotate(-90 45 45)"/>';
+      }
+      off += len;
+    });
+    return '<svg width="86" height="86" viewBox="0 0 90 90"><circle cx="45" cy="45" r="' + R
+      + '" fill="none" stroke="#E2E8F0" stroke-width="12"/>' + parts
+      + '<text x="45" y="50" text-anchor="middle" font-size="16" font-weight="700" fill="#0F172A">'
+      + total + '</text></svg>';
+  }
+
+  function legenda(segs) {
+    return segs.map(function(s) {
+      return '<div><i style="background:' + s.color + '"></i>' + s.label + ' <b>' + s.val + '</b></div>';
+    }).join('');
+  }
+
+  function umurSLA(r) {
+    var t = new Date(r.waktu).getTime();
+    if (isNaN(t)) return '-';
+    var jam = (Date.now() - t) / 3600000;
+    var teks = jam < 1 ? Math.max(1, Math.round(jam * 60)) + ' mnt'
+      : jam < 24 ? Math.floor(jam) + ' jam'
+      : Math.floor(jam / 24) + ' hari';
+    var batas = r.urgensi === 'Kritis' ? 24 : 48;
+    if (r.status !== 'Selesai' && jam > batas) {
+      teks += ' <span class="dash-sla-lewat">Lewat SLA</span>';
+    }
+    return teks;
+  }
+
+  function renderPeta(list) {
+    var el = document.getElementById('map-sebaran');
+    var lbl = document.getElementById('dash-map-count');
+    if (!el) return;
+    if (typeof L === 'undefined') {
+      el.innerHTML = '<div class="dash-empty">Peta membutuhkan koneksi internet.</div>';
+      if (lbl) lbl.textContent = '0 titik';
+      return;
+    }
+    try {
+      if (!peta) {
+        peta = L.map('map-sebaran').setView([-6.6, 106.8], 10);
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19}).addTo(peta);
+      }
+      penanda.forEach(function(m) { peta.removeLayer(m); });
+      penanda = [];
+      var titik = [];
+      list.forEach(function(r) {
+        if (r.lat && r.lon) {
+          penanda.push(L.marker([r.lat, r.lon]).addTo(peta).bindPopup(
+            '<b>' + esc(r.bap_nomor) + '</b><br>' + esc(r.lokasi || '-') + '<br>'
+            + esc(r.status) + ' &bull; ' + esc(r.urgensi) + '<br>'
+            + '<a href="/pupr-' + esc(daerah) + '/dashboard/disposisi/' + Number(r.id) + '">Detail</a>'));
+          titik.push([r.lat, r.lon]);
+        }
+      });
+      if (lbl) lbl.textContent = titik.length + ' titik';
+      if (titik.length) peta.fitBounds(titik, {padding: [20, 20]});
+    } catch (e) {
+      el.innerHTML = '<div class="dash-empty">Peta gagal dimuat.</div>';
+    }
+  }
+
+  function renderPaginasiDash(total) {
+    var totalHal = Math.ceil(total / PER_HALAMAN_DASH);
+    var pagEl = document.getElementById("dash-paginasi");
+    if (!pagEl) return;
+    if (totalHal <= 1) { pagEl.style.display = "none"; return; }
+    pagEl.style.display = "flex";
+    var html = '<button type="button" class="dash-btn-light" id="dash-pag-prev"' + (halamanDash <= 1 ? " disabled" : "") + ">‹ Sebelumnya</button>";
+    for (var i = 1; i <= totalHal; i++) {
+      html += '<button type="button" class="dash-btn-light dash-pag-num' + (i === halamanDash ? " aktif" : "") + '" data-hal="' + i + '">' + i + "</button>";
+    }
+    html += '<button type="button" class="dash-btn-light" id="dash-pag-next"' + (halamanDash >= totalHal ? " disabled" : "") + ">Berikutnya ›</button>";
+    pagEl.innerHTML = html;
+    var btnPrev = document.getElementById("dash-pag-prev");
+    var btnNext = document.getElementById("dash-pag-next");
+    if (btnPrev) btnPrev.onclick = function() { if (halamanDash > 1) { halamanDash--; renderTabel(); }};
+    if (btnNext) btnNext.onclick = function() { if (halamanDash < totalHal) { halamanDash++; renderTabel(); }};
+    var nums = document.querySelectorAll(".dash-pag-num");
+    for (var j = 0; j < nums.length; j++) {
+      (function(idx) {
+        nums[j].onclick = function() { halamanDash = idx + 1; renderTabel(); };
+      })(j);
+    }
+  }
+
+  function renderTabel() {
+    var filtered = semuaData.filter(function(r) {
+      var matchStatus = filterAktif === 'semua' || r.status === filterAktif;
+      var matchCari = !queryCari ||
+        (r.bap_nomor && r.bap_nomor.toLowerCase().includes(queryCari.toLowerCase())) ||
+        (r.lokasi && r.lokasi.toLowerCase().includes(queryCari.toLowerCase()));
+      var matchTgl = true;
+      if (tglDari || tglSampai) {
+        var w = (r.waktu || '').slice(0, 10);
+        if (tglDari && w < tglDari) matchTgl = false;
+        if (tglSampai && w > tglSampai) matchTgl = false;
+      }
+      return matchStatus && matchCari && matchTgl;
+    });
+    filtered.sort(function(a, b) {
+      var x = nilaiSort(a), y = nilaiSort(b);
+      return (x < y ? -1 : x > y ? 1 : 0) * sortDir;
+    });
+    dataTampil = filtered;
+
+    var tbody = document.getElementById("dash-tabel-body");
+    document.getElementById("dash-count").textContent = filtered.length + ' laporan';
+
+    var k = 0, t = 0, ru = 0;
+    filtered.forEach(function(r) {
+      if (r.urgensi === 'Kritis') k++;
+      else if (r.urgensi === 'Tinggi') t++;
+      else ru++;
+    });
+    document.getElementById('urg-kritis').textContent = k;
+    document.getElementById('urg-tinggi').textContent = t;
+    document.getElementById('urg-rutin').textContent = ru;
+
+    if (!filtered.length) {
+      tbody.innerHTML = '<tr><td colspan="7"><div class="dash-empty" style="padding:40px;text-align:center">' +
+        '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--dash-muted)" stroke-width="1.5" style="margin-bottom:8px"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>' +
+        '<strong style="display:block;margin-bottom:4px">Tidak ada laporan</strong>' +
+        '<span style="font-size:12px">Belum ada laporan disposisi untuk filter ini.</span>' +
+        '</div></td></tr>';
+      renderPeta(filtered);
+      document.getElementById("dash-paginasi").style.display = "none";
+      document.getElementById("dash-overflow-info").textContent = "";
+      return;
+    }
+
+    // Pagination: slice data untuk halaman aktif
+    var start = (halamanDash - 1) * PER_HALAMAN_DASH;
+    var end = start + PER_HALAMAN_DASH;
+    var pageRows = filtered.slice(start, end);
+
+    tbody.innerHTML = pageRows.map(function(r) {
+      var sc = r.status === 'Terkirim' ? 'terkirim' : r.status === 'Diproses' ? 'diproses' : 'selesai';
+      var uc = r.urgensi === 'Kritis' ? 'kritis' : r.urgensi === 'Tinggi' ? 'tinggi' : 'rutin';
+      return '<tr>'
+        + '<td><span class="dash-tiket">' + esc(r.bap_nomor) + '</span></td>'
+        + '<td>' + esc(new Date(r.waktu).toLocaleString('id-ID', {dateStyle:'short', timeStyle:'short'})) + '</td>'
+        + '<td>' + esc(r.lokasi || '-') + '</td>'
+        + '<td><span class="urgency urgency-' + uc + '">' + esc(r.urgensi) + '</span></td>'
+        + '<td><span class="badge-status status-' + sc + '">' + esc(r.status) + '</span></td>'
+        + '<td style="white-space:nowrap">' + umurSLA(r) + '</td>'
+        + '<td><a href="/pupr-' + esc(daerah) + '/dashboard/disposisi/' + Number(r.id) + '" class="dash-btn-detail">Detail</a></td>'
+        + '</tr>';
+    }).join("");
+    renderPeta(filtered);
+    renderPaginasiDash(filtered.length);
+
+    // Overflow info
+    var infoEl = document.getElementById("dash-overflow-info");
+    if (infoEl) {
+      if (overflowDash) {
+        infoEl.innerHTML = '<span style="color:#B45309;font-weight:600">⚠ Menampilkan ' + semuaData.length + ' dari ' + totalDbDash + ' laporan.</span> Gunakan filter status/urgensi/tanggal untuk mempersempit.';
+      } else if (filtered.length > PER_HALAMAN_DASH) {
+        infoEl.textContent = "Menampilkan " + (start + 1) + "-" + Math.min(end, filtered.length) + " dari " + filtered.length + " laporan (Halaman " + halamanDash + "/" + Math.ceil(filtered.length / PER_HALAMAN_DASH) + ").";
+      } else {
+        infoEl.textContent = "";
+      }
+    }
+  }
+  
+  // Load data
+  function muatData(rows, totalDb, overflow) {
+    semuaData = rows;
+    totalDbDash = totalDb || rows.length;
+    overflowDash = overflow || false;
+    idMaks = rows.reduce(function(m, r) { return r.id > m ? r.id : m; }, idMaks);
+    halamanDash = 1;  // reset ke halaman 1 saat data baru
+    renderTabel();
+    updateKPI();
+    renderTren();
+    renderDonat();
+  }
+  // Load dengan cek overflow (ambil 201, kirim 200)
+  fetch("/api/disposisi?daerah=" + daerah + "&exact=1&limit=201")
+    .then(function(r) { return r.json(); })
+    .then(function(rows) {
+      var overflow = rows.length > 200;
+      var data = overflow ? rows.slice(0, 200) : rows;
+      // Hitung total DB dari KPI stats (server-side) atau fallback
+      var totalDb = statsTotalDb || rows.length;
+      muatData(data, totalDb, overflow);
+    })
+    .catch(function() {
+      document.getElementById("dash-tabel-body").innerHTML = '<tr><td colspan="7" class="dash-empty">Gagal memuat data.</td></tr>';
+    });
+
+  // Fetch total DB terpisah untuk overflow info
+  var statsTotalDb = 0;
+  fetch("/api/disposisi/stats?daerah=" + daerah + "&exact=1")
+    .then(function(r) { return r.json(); })
+    .then(function(s) { statsTotalDb = s.total || 0; })
+    .catch(function() {});
+  
+  // Animasi counter KPI (naik/turun smooth)
+  function animasiCounter(el, target, durasi) {
+    if (!el) return;
+    var mulai = parseInt(el.textContent.replace(/\D/g, '')) || 0;
+    if (mulai === target) { el.textContent = target; return; }
+    var startTime = performance.now();
+    function step(now) {
+      var progress = Math.min((now - startTime) / durasi, 1);
+      // Ease out quad
+      var ease = 1 - (1 - progress) * (1 - progress);
+      var current = Math.round(mulai + (target - mulai) * ease);
+      el.textContent = current;
+      if (progress < 1) requestAnimationFrame(step);
+      else el.textContent = target;
+    }
+    requestAnimationFrame(step);
+  }
+
+  function updateKPI() {
+    var baru = semuaData.filter(function(r) { return r.status === 'Terkirim'; }).length;
+    var proses = semuaData.filter(function(r) { return r.status === 'Diproses'; }).length;
+    var selesai = semuaData.filter(function(r) { return r.status === 'Selesai'; }).length;
+    var elBaru = document.getElementById('kpi-baru');
+    var elProses = document.getElementById('kpi-proses');
+    var elSelesai = document.getElementById('kpi-selesai');
+    var elTotal = document.getElementById('kpi-total');
+    // Animasi counter untuk setiap KPI
+    animasiCounter(elBaru, baru, 600);
+    animasiCounter(elProses, proses, 600);
+    animasiCounter(elSelesai, selesai, 600);
+    animasiCounter(elTotal, semuaData.length, 600);
+    var sumRp = semuaData.reduce(function(s, r) { return s + (r.total_rp || 0); }, 0);
+    var elRp = document.getElementById('kpi-biaya');
+    if (elRp) {
+      elRp.textContent = rupiahRingkas(sumRp);
+      elRp.title = 'Rp' + sumRp.toLocaleString('id-ID');
+    }
+  }
+
+  function renderTren() {
+    var el = document.getElementById('dash-tren');
+    if (!el) return;
+    var now = new Date();
+    now.setHours(0, 0, 0, 0);
+    var senin = new Date(now);
+    senin.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+    var buckets = [];
+    for (var i = 7; i >= 0; i--) {
+      var d0 = new Date(senin);
+      d0.setDate(senin.getDate() - 7 * i);
+      var d1 = new Date(d0);
+      d1.setDate(d0.getDate() + 7);
+      buckets.push({d0: d0, d1: d1, n: 0});
+    }
+    semuaData.forEach(function(r) {
+      var t = new Date(r.waktu).getTime();
+      if (isNaN(t)) return;
+      for (var j = 0; j < 8; j++) {
+        if (t >= buckets[j].d0.getTime() && t < buckets[j].d1.getTime()) { buckets[j].n++; break; }
+      }
+    });
+    var mx = Math.max.apply(null, buckets.map(function(b) { return b.n; }).concat([1]));
+    el.innerHTML = buckets.map(function(b) {
+      var h = Math.max(3, Math.round(b.n / mx * 78));
+      var lbl = b.d0.getDate() + '/' + (b.d0.getMonth() + 1);
+      return '<div class="dash-bar-col" title="' + b.n + ' laporan"><div class="dash-bar'
+        + ((b.n === mx && b.n > 0) ? ' puncak' : '') + '" style="height:' + h + 'px"></div>'
+        + '<div class="dash-bar-lbl">' + lbl + '</div></div>';
+    }).join('');
+  }
+
+  function renderDonat() {
+    function bangun(defs, key) {
+      return defs.map(function(d) {
+        return {label: d[0], color: d[1],
+          val: semuaData.filter(function(r) { return r[key] === d[0]; }).length};
+      });
+    }
+    var segsS = bangun([['Terkirim', '#0284C7'], ['Diproses', '#D97706'], ['Selesai', '#059669']], 'status');
+    var segsU = bangun([['Kritis', '#DC2626'], ['Tinggi', '#D97706'], ['Rutin', '#64748B']], 'urgensi');
+    var elS = document.getElementById('dash-donat-status');
+    var elU = document.getElementById('dash-donat-urgensi');
+    if (elS) elS.innerHTML = donatSVG(segsS, semuaData.length);
+    if (elU) elU.innerHTML = donatSVG(segsU, semuaData.length);
+    var lgS = document.getElementById('dash-leg-status');
+    var lgU = document.getElementById('dash-leg-urgensi');
+    if (lgS) lgS.innerHTML = legenda(segsS);
+    if (lgU) lgU.innerHTML = legenda(segsU);
+  }
+
+  function dashToast(pesan) {
+    var d = document.createElement('div');
+    d.className = 'dash-toast';
+    d.textContent = pesan;
+    document.body.appendChild(d);
+    setTimeout(function() { d.remove(); }, 5000);
+  }
+
+  // Polling laporan baru tiap 30 detik
+  setInterval(function() {
+    if (document.hidden) return;
+    fetch("/api/disposisi?daerah=" + daerah + "&exact=1&limit=200")
+      .then(function(r) { return r.json(); })
+      .then(function(rows) {
+        var mx = rows.reduce(function(m, r) { return r.id > m ? r.id : m; }, 0);
+        if (mx > idMaks && idMaks > 0) {
+          var baru = rows.filter(function(r) { return r.id > idMaks; }).length;
+          dashToast(baru + ' laporan baru masuk');
+        }
+        if (mx !== idMaks || rows.length !== semuaData.length) muatData(rows);
+      })
+      .catch(function() {});
+  }, 30000);
+  
+  // Filter buttons
+  document.querySelectorAll('.dash-filter-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.dash-filter-btn').forEach(function(b) { b.classList.remove('aktif'); });
+      btn.classList.add('aktif');
+      filterAktif = btn.getAttribute('data-filter');
+      document.getElementById('dash-filter-label').textContent = btn.textContent;
+      renderTabel();
+    });
+  });
+  
+  // Search
+  var searchInput = document.getElementById('dash-search');
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      queryCari = this.value;
+      renderTabel();
+    });
+  }
+
+  // Unduh CSV dari data terfilter
+  document.getElementById('dash-unduh-csv').addEventListener('click', function() {
+    function sel(v) {
+      v = (v === null || v === undefined) ? '' : String(v);
+      return '"' + v.replace(/"/g, '""') + '"';
+    }
+    var baris = [['No. Tiket', 'Waktu', 'Lokasi', 'Lat', 'Lon', 'Temuan',
+      'Urgensi', 'Status', 'Total Biaya (Rp)', 'Instansi'].map(sel).join(';')];
+    dataTampil.forEach(function(r) {
+      baris.push([r.bap_nomor, r.waktu, r.lokasi, r.lat, r.lon, r.n_temuan,
+        r.urgensi, r.status, r.total_rp, r.instansi_nama].map(sel).join(';'));
+    });
+    var blob = new Blob(["\ufeff" + baris.join("\r\n")], {type: 'text/csv;charset=utf-8'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    var tgl = new Date().toISOString().slice(0, 10);
+    a.download = 'disposisi-' + daerah + '-' + tgl + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function() { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  });
+
+  // Filter tanggal
+  function ikatTanggal(id, cb) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('change', function() { cb(this.value); renderTabel(); });
+  }
+  ikatTanggal('dash-dari', function(v) { tglDari = v; });
+  ikatTanggal('dash-sampai', function(v) { tglSampai = v; });
+
+  // Sorting klik header
+  document.querySelectorAll('#dash-tabel th.sortable').forEach(function(th) {
+    th.addEventListener('click', function() {
+      var k = th.getAttribute('data-sort');
+      if (sortKey === k) { sortDir = -sortDir; }
+      else { sortKey = k; sortDir = 1; }
+      document.querySelectorAll('#dash-tabel th.sortable').forEach(function(o) {
+        o.classList.remove('sort-asc', 'sort-desc');
+      });
+      th.classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
+      renderTabel();
+    });
+  });
+})();
+</script>
+{% endblock %}

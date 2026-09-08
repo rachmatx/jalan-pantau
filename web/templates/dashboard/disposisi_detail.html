@@ -1,0 +1,270 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Detail BAP #{{ item.id }}{% endblock %}
+{% block content %}
+{% if not item %}
+<div class="dash-card" style="padding:32px;text-align:center">
+  <p>Laporan tidak ditemukan.</p>
+  <a href="/pupr-{{ daerah }}/dashboard" class="dash-btn-lihat" style="margin-top:16px">&larr; Kembali</a>
+</div>
+{% else %}
+<!-- Header -->
+<div class="dash-header" style="margin-bottom:16px">
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <h1 class="dash-title" style="margin:0;font-size:20px">{{ item.bap_nomor }}</h1>
+    <span class="badge-status status-{{ item.status|lower|replace(' ','') }}">{{ item.status }}</span>
+  </div>
+  <p class="dash-subtitle">{{ item.lokasi }} • {{ item.waktu }}</p>
+</div>
+
+<div class="dash-detail-grid">
+  <!-- Kolom Kiri -->
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <!-- Foto Bukti -->
+    {% if image_b64 %}
+    <div class="dash-card" style="padding:0;overflow:hidden">
+      <div style="padding:12px 16px;border-bottom:1px solid var(--dash-border);display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <h3 style="font-size:13px;font-weight:600;margin:0">Foto Bukti Inspeksi AI</h3>
+        <button type="button" class="dash-btn-detail" id="btn-unduh-foto" style="background:none;border:none;cursor:pointer">Unduh Foto</button>
+      </div>
+      {% if sesudah_b64 %}
+      <div class="dash-ba-grid" style="background:#0f172a;padding:8px">
+        <div style="text-align:center">
+          <div style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.05em;margin-bottom:4px">SEBELUM</div>
+          <img id="foto-bukti-img" src="data:image/jpeg;base64,{{ image_b64 }}" alt="Foto sebelum" style="max-width:100%;max-height:300px;object-fit:contain">
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:10px;font-weight:700;color:#4ade80;letter-spacing:.05em;margin-bottom:4px">SESUDAH</div>
+          <img src="data:image/jpeg;base64,{{ sesudah_b64 }}" alt="Foto sesudah" style="max-width:100%;max-height:300px;object-fit:contain">
+        </div>
+      </div>
+      {% else %}
+      <div style="background:#0f172a;text-align:center">
+        <img id="foto-bukti-img" src="data:image/jpeg;base64,{{ image_b64 }}" alt="Foto bukti" style="max-width:100%;max-height:350px;object-fit:contain">
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Tabel Rincian Kerusakan -->
+    {% if rows %}
+    <div class="dash-card" style="padding:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <h3 style="font-size:13px;font-weight:600;margin:0">Rincian Klasifikasi Objek Kerusakan</h3>
+        <span style="font-size:11px;color:var(--dash-muted)">{{ rows|length }} temuan</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr style="border-bottom:2px solid #e2e8f0">
+              <th style="padding:8px;text-align:left">#</th>
+              <th style="padding:8px;text-align:left">Jenis</th>
+              <th style="padding:8px;text-align:left">Area</th>
+              <th style="padding:8px;text-align:left">Severity</th>
+              <th style="padding:8px;text-align:left">Conf</th>
+              <th style="padding:8px;text-align:right">Biaya</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in rows %}
+            <tr style="border-bottom:1px solid #f1f5f9">
+              <td style="padding:8px;font-family:monospace">{{ loop.index }}</td>
+              <td style="padding:8px">{{ r.kelas|replace('_',' ')|title }}</td>
+              <td style="padding:8px;font-family:monospace;font-size:11px">{{ r.dasar }}</td>
+              <td style="padding:8px"><span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:{% if r.severity == 'Berat' %}#FEF2F2;color:#DC2626{% elif r.severity == 'Sedang' %}#FFFBEB;color:#D97706{% else %}#ECFDF5;color:#059669{% endif %}">{{ r.severity }}</span></td>
+              <td style="padding:8px;font-family:monospace">{{ '%.0f'|format(r.conf*100) }}%</td>
+              <td style="padding:8px;text-align:right;font-family:monospace">Rp{{ '%d'|format(r.total_rp) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Lokasi -->
+    {% if sesi and sesi.lat and sesi.lon %}
+    <div class="dash-card" style="padding:0;overflow:hidden">
+      <div style="padding:12px 16px;border-bottom:1px solid var(--dash-border)">
+        <h3 style="font-size:13px;font-weight:600;margin:0">Lokasi Kerusakan</h3>
+      </div>
+      <div id="map-detail" style="height:250px;background:var(--dash-surface-2)"></div>
+      <div style="padding:10px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-family:monospace;font-size:11px;color:var(--dash-muted)">
+        <span>Lat: {{ '%.6f'|format(sesi.lat) }}, Lon: {{ '%.6f'|format(sesi.lon) }}</span>
+        <a class="dash-btn-detail" target="_blank" rel="noopener" href="https://www.google.com/maps?q={{ sesi.lat }},{{ sesi.lon }}">Google Maps</a>
+        <button type="button" class="dash-btn-detail" id="btn-salin-koordinat" style="background:none;border:none;cursor:pointer;padding:0">Salin</button>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Kolom Kanan -->
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <!-- Ringkasan -->
+    <div class="dash-card" style="padding:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px">
+        <h3 style="font-size:13px;font-weight:600;margin:0">Ringkasan Laporan</h3>
+        <button type="button" class="dash-btn-detail" id="btn-cetak" style="background:none;border:none;cursor:pointer">Cetak</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:12px">
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--dash-muted)">Sumber</span><span style="font-weight:500">JalanPantau AI</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--dash-muted)">Temuan</span><span style="font-weight:600">{{ sesi.n_temuan if sesi else item.n_temuan }} titik</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--dash-muted)">Total Biaya</span><span style="font-family:monospace;font-weight:700;color:var(--dash-accent)">Rp{{ '%d' % (sesi.total_rp if sesi else item.total_rp) }}</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--dash-muted)">Sisa SLA</span><span id="sla-hitung" data-waktu="{{ item.waktu }}" data-urgensi="{{ item.urgensi }}" data-status="{{ item.status }}">-</span></div>
+        <div style="height:1px;background:var(--dash-border);margin:4px 0"></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--dash-muted)">Instansi</span><span style="font-weight:500">{{ item.instansi_nama }}</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--dash-muted)">Urgensi</span><span style="font-weight:600">{{ item.urgensi|capitalize }}</span></div>
+        {% if item.penanggung_jawab and item.penanggung_jawab != '-' %}
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--dash-muted)">Penanggung Jawab</span><span style="font-weight:600">{{ item.penanggung_jawab }}</span></div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="dash-card" style="padding:12px">
+      <h3 style="font-size:13px;font-weight:600;margin:0 0 12px">Status Penanganan</h3>
+      <div style="position:relative;padding-left:24px">
+        <div style="position:absolute;left:8px;top:8px;bottom:8px;width:2px;background:var(--dash-border)"></div>
+        <div style="position:relative;margin-bottom:12px">
+          <div style="position:absolute;left:-20px;top:4px;width:12px;height:12px;border-radius:50%;background:{% if item.status in ['Terkirim','Diproses','Selesai'] %}#059669{% else %}#cbd5e1{% endif %}"></div>
+          <div style="font-size:12px;font-weight:500">1. Terkirim</div>
+          <div style="font-size:10px;color:var(--dash-muted)">{{ item.waktu }}</div>
+        </div>
+        <div style="position:relative;margin-bottom:12px">
+          <div style="position:absolute;left:-20px;top:4px;width:12px;height:12px;border-radius:50%;background:{% if item.status in ['Diproses','Selesai'] %}#059669{% else %}#cbd5e1{% endif %}"></div>
+          <div style="font-size:12px;font-weight:500">2. Diproses</div>
+          <div style="font-size:10px;color:var(--dash-muted)">{{ item.waktu_diproses if item.waktu_diproses else ('Sedang berlangsung' if item.status == 'Diproses' else 'Menunggu') }}</div>
+        </div>
+        <div style="position:relative">
+          <div style="position:absolute;left:-20px;top:4px;width:12px;height:12px;border-radius:50%;background:{% if item.status == 'Selesai' %}#059669{% else %}#cbd5e1{% endif %}"></div>
+          <div style="font-size:12px;font-weight:500">3. Selesai</div>
+          <div style="font-size:10px;color:var(--dash-muted)">{{ item.waktu_selesai if item.waktu_selesai else ('Selesai ditangani' if item.status == 'Selesai' else 'Menunggu') }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Update Status -->
+    <div class="dash-card" style="padding:12px">
+      <h3 style="font-size:13px;font-weight:600;margin:0 0 12px">Update Status</h3>
+      {% if catatan_list %}
+      <div class="dash-cat-list">
+        {% for c in catatan_list %}
+        <div class="dash-cat-item"><b>{{ c.status }}</b> — {{ c.catatan }}<br><span>{{ c.waktu }}</span></div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if item.catatan and item.catatan != '-' %}
+      <div style="font-size:11px;color:var(--dash-muted);background:var(--dash-surface-2);border-radius:6px;padding:8px 10px;margin-bottom:8px">Catatan terakhir: <span style="color:var(--dash-text)">{{ item.catatan }}</span></div>
+      {% endif %}
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <select id="update-status" class="dash-select">
+          <option value="Terkirim" {{ 'selected' if item.status == 'Terkirim' else '' }}>Terkirim</option>
+          <option value="Diproses" {{ 'selected' if item.status == 'Diproses' else '' }}>Diproses</option>
+          <option value="Selesai" {{ 'selected' if item.status == 'Selesai' else '' }}>Selesai</option>
+        </select>
+        <textarea id="update-catatan" class="dash-select" rows="2" placeholder="Catatan penanganan..."></textarea>
+        <input id="update-pj" class="dash-select" placeholder="Penanggung jawab..." value="{{ item.penanggung_jawab if item.penanggung_jawab and item.penanggung_jawab != '-' else '' }}">
+        <input id="update-foto" type="file" accept=".jpg,.jpeg,.png" class="dash-file" title="Foto sesudah penanganan (maks 5MB)">
+        <button type="button" class="dash-btn-apply" onclick="updateStatus()">Simpan Perubahan</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block skrip %}
+{% if sesi and sesi.lat and sesi.lon %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+(function(){
+  var ll = [{{ sesi.lat }}, {{ sesi.lon }}];
+  var map = L.map("map-detail").setView(ll, 15);
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom: 19}).addTo(map);
+  L.marker(ll).addTo(map).bindPopup({{ (sesi.lokasi or 'Lokasi')|tojson }}).openPopup();
+  window.updateStatus = function() { if (window.__kirimUpdate) window.__kirimUpdate(); };
+})();
+</script>
+{% else %}
+<script>
+window.updateStatus = function() { if (window.__kirimUpdate) window.__kirimUpdate(); };
+</script>
+{% endif %}
+<script>
+(function(){
+  window.__kirimUpdate = function() {
+    var status = document.getElementById('update-status').value;
+    var catatan = document.getElementById('update-catatan').value;
+    var pjEl = document.getElementById('update-pj');
+    var pj = pjEl ? pjEl.value : '';
+    fetch('/api/disposisi/{{ item.id if item else 0 }}', {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({status: status, catatan: catatan, penanggung_jawab: pj})})
+    .then(function(r) { return r.json(); })
+    .then(function(j) {
+      if (!j.ok) { alert('Gagal: ' + (j.error || 'Unknown')); return; }
+      var fi = document.getElementById('update-foto');
+      if (fi && fi.files && fi.files.length) {
+        var fd = new FormData();
+        fd.append('foto', fi.files[0]);
+        fetch('/api/disposisi/{{ item.id if item else 0 }}/foto', {method: 'POST', body: fd})
+        .then(function(r) { return r.json(); })
+        .then(function(j2) {
+          alert(j2.ok ? 'Berhasil disimpan + foto sesudah!' : 'Status tersimpan, foto gagal: ' + (j2.error || ''));
+          location.reload();
+        })
+        .catch(function() { alert('Status tersimpan, foto gagal terkirim.'); location.reload(); });
+      } else { alert('Status berhasil diupdate!'); location.reload(); }
+    })
+    .catch(function() { alert('Gagal mengupdate status.'); });
+  };
+
+  function segarkanSLA() {
+    var el = document.getElementById('sla-hitung');
+    if (!el) return;
+    var t = new Date(el.getAttribute('data-waktu')).getTime();
+    var urg = el.getAttribute('data-urgensi');
+    var st = el.getAttribute('data-status');
+    if (isNaN(t) || st === 'Selesai') {
+      el.textContent = st === 'Selesai' ? 'Selesai' : '-';
+      el.className = '';
+      return;
+    }
+    var batas = urg === 'Kritis' ? 24 : 48;
+    var sisa = batas * 3600000 - (Date.now() - t);
+    function fmt(ms) {
+      var m = Math.floor(Math.abs(ms) / 60000);
+      var h = Math.floor(m / 60), d = Math.floor(h / 24);
+      if (d > 0) return d + ' hari ' + (h % 24) + ' jam';
+      if (h > 0) return h + ' jam ' + (m % 60) + ' mnt';
+      return m + ' mnt';
+    }
+    if (sisa >= 0) { el.textContent = 'Sisa ' + fmt(sisa); el.className = 'aman'; }
+    else { el.textContent = 'Terlambat ' + fmt(sisa); el.className = 'lewat'; }
+  }
+  segarkanSLA();
+  setInterval(segarkanSLA, 60000);
+
+  var bU = document.getElementById('btn-unduh-foto');
+  if (bU) bU.addEventListener('click', function(){
+    var img = document.getElementById('foto-bukti-img');
+    if (!img || !img.src) return;
+    fetch(img.src).then(function(r){ return r.blob(); }).then(function(b){
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(b);
+      a.download = 'bukti-{{ item.bap_nomor|replace("/","-") if item else "foto" }}.jpg';
+      document.body.appendChild(a); a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+    });
+  });
+  var bS = document.getElementById('btn-salin-koordinat');
+  if (bS) bS.addEventListener('click', function(){
+    var t = '{{ sesi.lat if sesi else "" }}, {{ sesi.lon if sesi else "" }}';
+    function ok(){ alert('Koordinat tersalin: ' + t); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(t).then(ok, function(){ prompt('Salin manual:', t); });
+    } else { prompt('Salin manual:', t); }
+  });
+  var bC = document.getElementById('btn-cetak');
+  if (bC) bC.addEventListener('click', function(){ window.print(); });
+})();
+</script>
+{% endblock %}

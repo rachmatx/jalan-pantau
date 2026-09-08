@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Pratinjau Berita Acara{% endblock %}
+
+{% block konten %}
+<!-- Sticky Top Command Bar -->
+<div style="position:sticky;top:64px;z-index:40;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);box-shadow:0 1px 3px rgba(0,0,0,.03)">
+  <div style="width:100%;padding:8px 16px;display:flex;flex-direction:column;gap:8px">
+    <div style="display:flex;align-items:center;gap:8px;min-width:0;width:100%">
+      <a href="/riwayat" style="font-size:13px;font-weight:600;color:var(--jp-tx2);text-decoration:none;display:flex;align-items:center;gap:4px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        <span>Riwayat</span>
+      </a>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--jp-muted)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      <span style="font-family:var(--jp-mono);font-size:13px;color:var(--jp-ink)">Sesi #{{ sid }}</span>
+      <span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:9999px;background:#fef3c7;font-family:var(--jp-mono);font-size:11px;color:#92400e;font-weight:600;flex-shrink:0">DRAF — BUKAN DOKUMEN RESMI</span>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px;width:100%;flex-shrink:0">
+      <div style="display:flex;align-items:center;background:var(--jp-container);border-radius:8px;padding:2px">
+        <button id="zoom-out-btn" type="button" style="padding:4px;border:none;border-radius:6px;background:transparent;color:var(--jp-tx2);cursor:pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+        <span id="zoom-level" style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-ink);padding:0 8px">100%</span>
+        <button id="zoom-in-btn" type="button" style="padding:4px;border:none;border-radius:6px;background:transparent;color:var(--jp-tx2);cursor:pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+        <button id="zoom-fit-btn" type="button" style="padding:4px 8px;border:none;border-radius:6px;background:transparent;color:var(--jp-tx2);font-size:11px;font-weight:600;letter-spacing:0.05em;cursor:pointer">FIT</button>
+      </div>
+      <button type="button" class="jp-btn-save" style="padding:6px 16px" onclick="window.print()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg><span>Cetak / Simpan PDF</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Document Canvas Workspace -->
+<div style="width:100%;background:#E2E8F0;padding:32px 16px;display:flex;justify-content:flex-start;align-items:flex-start;overflow-x:auto;min-height:calc(100vh - 8rem)">
+  <div id="paper-doc" style="width:100%;max-width:850px;background:var(--jp-surface);color:var(--jp-ink);box-shadow:0 8px 30px rgba(0,0,0,.12);padding:32px;transition:transform .2s;transform-origin:top left">
+    {% if sesi %}
+    <div style="text-align:center;margin:8px 0 24px">
+      <h3 style="font-size:18px;font-weight:700;color:var(--jp-ink);margin:0;text-transform:uppercase">Ringkasan Hasil Inspeksi Jalan (Draf)</h3>
+      <p style="font-size:12px;color:var(--jp-tx2);margin:8px 0 0">Disusun otomatis oleh JalanPantau dari sesi #{{ sesi.id }} · Memerlukan verifikasi dan pengesahan manual sebelum dipakai resmi.</p>
+    </div>
+
+    <div style="margin-bottom:24px">
+      <div style="background:var(--jp-container-low);padding:8px 12px;border-radius:8px;margin-bottom:8px">
+        <h4 style="font-size:13px;font-weight:600;letter-spacing:.05em;margin:0;text-transform:uppercase">Bagian I: Data Sesi</h4>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;padding:12px">
+        <div style="display:flex;justify-content:space-between;gap:8px"><span style="font-size:12px;color:var(--jp-tx2)">Waktu:</span><span style="font-family:var(--jp-mono);font-size:11px;font-weight:600">{{ sesi.waktu }}</span></div>
+        <div style="display:flex;justify-content:space-between;gap:8px"><span style="font-size:12px;color:var(--jp-tx2)">Sumber:</span><span style="font-size:12px;font-weight:600">{{ sesi.sumber }}</span></div>
+        <div style="display:flex;justify-content:space-between;gap:8px"><span style="font-size:12px;color:var(--jp-tx2)">Lokasi:</span><span style="font-size:12px;font-weight:600">{{ sesi.lokasi }}</span></div>
+        <div style="display:flex;justify-content:space-between;gap:8px"><span style="font-size:12px;color:var(--jp-tx2)">Koordinat:</span><span style="font-family:var(--jp-mono);font-size:11px;font-weight:600">{{ sesi.lat or '-' }}, {{ sesi.lon or '-' }}</span></div>
+        <div style="display:flex;justify-content:space-between;gap:8px"><span style="font-size:12px;color:var(--jp-tx2)">Model:</span><span style="font-family:var(--jp-mono);font-size:11px;font-weight:600">{{ sesi.model }}</span></div>
+        <div style="display:flex;justify-content:space-between;gap:8px"><span style="font-size:12px;color:var(--jp-tx2)">Temuan:</span><span style="font-family:var(--jp-mono);font-size:11px;font-weight:600">{{ sesi.n_temuan }} · terberat {{ sesi.worst }}</span></div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:24px">
+      <div style="background:var(--jp-container-low);padding:8px 12px;border-radius:8px;margin-bottom:8px">
+        <h4 style="font-size:13px;font-weight:600;letter-spacing:.05em;margin:0;text-transform:uppercase">Bagian II: Daftar Temuan</h4>
+      </div>
+      {% if temuan %}
+      <table style="width:100%;font-size:12px;border-collapse:collapse">
+        <thead><tr style="background:var(--jp-container);color:var(--jp-muted);font-size:10px;text-transform:uppercase">
+          <th style="padding:8px 10px;text-align:left">No</th>
+          <th style="padding:8px 10px;text-align:left">Kelas</th>
+          <th style="padding:8px 10px;text-align:left">Ukuran</th>
+          <th style="padding:8px 10px;text-align:left">Severity</th>
+          <th style="padding:8px 10px;text-align:left">Conf</th>
+          <th style="padding:8px 10px;text-align:right">Estimasi</th>
+        </tr></thead>
+        <tbody>
+          {% for t in temuan %}
+          <tr style="border-top:1px solid var(--jp-line)">
+            <td style="padding:8px 10px;font-family:var(--jp-mono)">{{ t.idx }}</td>
+            <td style="padding:8px 10px;font-weight:600">{{ t.kelas }}</td>
+            <td style="padding:8px 10px;font-family:var(--jp-mono);font-size:11px">{{ t.dasar }}</td>
+            <td style="padding:8px 10px">{{ t.severity }}</td>
+            <td style="padding:8px 10px;font-family:var(--jp-mono)">{{ t.conf }}</td>
+            <td style="padding:8px 10px;text-align:right;font-family:var(--jp-mono)">{{ t.total_str }}</td>
+          </tr>
+          {% endfor %}
+          <tr style="border-top:2px solid var(--jp-ink);font-weight:700">
+            <td colspan="5" style="padding:10px;text-align:right">Total estimasi acuan:</td>
+            <td style="padding:10px;text-align:right;font-family:var(--jp-mono)">Rp{{ "{:,}".format(total_rp).replace(",", ".") }}</td>
+          </tr>
+        </tbody>
+      </table>
+      {% else %}
+      <p style="font-size:13px;color:var(--jp-tx2)">Tidak ada temuan pada sesi ini.</p>
+      {% endif %}
+    </div>
+
+    <div style="margin-bottom:24px">
+      <div style="background:var(--jp-container-low);padding:8px 12px;border-radius:8px;margin-bottom:8px">
+        <h4 style="font-size:13px;font-weight:600;letter-spacing:.05em;margin:0;text-transform:uppercase">Bagian III: Pengesahan</h4>
+      </div>
+      <p style="font-size:12px;color:var(--jp-tx2)">Draf ini sah dipakai setelah ditandatangani petugas berwenang. Kolom di bawah diisi manual.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:24px;text-align:center">
+        <div><p style="font-size:12px;color:var(--jp-tx2)">Petugas lapangan,</p><div style="height:64px"></div><p style="margin:0">( ........................................ )</p><p style="font-size:11px;color:var(--jp-tx2)">Nama / NIP</p></div>
+        <div><p style="font-size:12px;color:var(--jp-tx2)">Menyetujui,</p><div style="height:64px"></div><p style="margin:0">( ........................................ )</p><p style="font-size:11px;color:var(--jp-tx2)">Nama / NIP</p></div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;padding-top:12px;border-top:1px dashed rgba(0,0,0,.2);font-size:10px;color:var(--jp-muted)">
+      <span>Draf otomatis JalanPantau · Estimasi acuan, bukan RAB resmi · Dimensi dari bounding box kamera mono yang wajib terkalibrasi.</span>
+    </div>
+    {% else %}
+    <p style="font-size:14px;color:var(--jp-tx2)">Sesi #{{ sid }} tidak ditemukan.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block skrip %}
+<script>
+(function(){
+  var currentScale = 1.0;
+  var paper = document.getElementById('paper-doc');
+  var zoomDisplay = document.getElementById('zoom-level');
+  function applyScale(scale){
+    currentScale = Math.min(Math.max(scale, 0.6), 1.4);
+    paper.style.transform = 'scale(' + currentScale + ')';
+    zoomDisplay.textContent = Math.round(currentScale * 100) + '%';
+  }
+  var zin = document.getElementById('zoom-in-btn');
+  var zout = document.getElementById('zoom-out-btn');
+  var zfit = document.getElementById('zoom-fit-btn');
+  if(zin) zin.addEventListener('click', function(){ applyScale(currentScale + 0.1); });
+  if(zout) zout.addEventListener('click', function(){ applyScale(currentScale - 0.1); });
+  if(zfit) zfit.addEventListener('click', function(){ applyScale(1.0); });
+})();
+</script>
+{% endblock %}

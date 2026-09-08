@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Disposisi Kirim Laporan{% endblock %}
+
+{% block konten %}
+<div class="jp-wrap">
+  <!-- Banner Header -->
+  <div class="disp-header">
+    <div class="disp-header-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>
+    </div>
+    <div class="disp-header-text">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <h1>Disposisi & Transmisi Laporan Kedinasan</h1>
+        <span class="disp-badge">API Gateway V2 Aktif</span>
+      </div>
+      <p>Integrasi Surat Perintah Kerja (SPK) Elektronik</p>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="disp-grid">
+    <!-- Left Column: Pilih BAP -->
+    <div class="disp-col">
+      <div class="jp-card disp-card">
+        <div class="disp-card-head">
+          <h2>Pilih Berkas Berita Acara Lapangan (BAP)</h2>
+          <span id="bap-count" class="disp-count">Memuat...</span>
+        </div>
+        <div class="disp-table-wrap">
+          <table class="disp-table">
+            <thead>
+              <tr>
+                <th style="width:28px"></th>
+                <th>Nomor BAP</th>
+                <th>Lokasi</th>
+                <th class="hide-mobile">Titik</th>
+                <th>Waktu</th>
+                <th style="text-align:center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="bap-table-body">
+              <tr><td colspan="6" style="padding:24px;text-align:center;color:var(--jp-muted)">Memuat data BAP...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="bap-pagination" class="disp-pagination" style="display:none">
+          <span id="bap-page-info"></span>
+          <div>
+            <button type="button" id="bap-prev" class="disp-page-btn">&laquo;</button>
+            <button type="button" id="bap-next" class="disp-page-btn">&raquo;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Form & Preview -->
+    <div class="disp-col">
+      <!-- Rekapitulasi -->
+      <div class="jp-card disp-card">
+        <h3 class="disp-card-title">Rekapitulasi Kerusakan (YOLOv11)</h3>
+        <div class="disp-kpi-grid">
+          <div class="disp-kpi kpi-red">
+            <span class="disp-kpi-label">LUBANG KRITIS</span>
+            <span class="disp-kpi-val" id="rekap-lubang">-</span>
+          </div>
+          <div class="disp-kpi kpi-yellow">
+            <span class="disp-kpi-label">RETAK BUAYA</span>
+            <span class="disp-kpi-val" id="rekap-retak">-</span>
+          </div>
+          <div class="disp-kpi kpi-gray">
+            <span class="disp-kpi-label">RETAK GARIS (MEMANJANG + MELINTANG)</span>
+            <span class="disp-kpi-val" id="rekap-melintang">-</span>
+          </div>
+          <div class="disp-kpi kpi-blue">
+            <span class="disp-kpi-label">ESTIMASI BIAYA</span>
+            <span class="disp-kpi-val" id="rekap-biaya">-</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tujuan Instansi -->
+      <div class="jp-card disp-card">
+        <h3 class="disp-card-title">Tujuan Instansi & Balai Wilayah</h3>
+        <div id="instansi-rekomendasi" class="disp-rekomendasi">
+          <div class="disp-rekomendasi-head">
+            <span class="disp-badge-rekom">Rekomendasi</span>
+            <span style="font-size:11px;color:var(--jp-muted)">Berdasarkan koordinat BAP</span>
+          </div>
+          <div id="instansi-nama" style="font-weight:600;margin-top:4px">Memuat...</div>
+          <div id="instansi-alamat" style="font-size:12px;color:var(--jp-tx2)">-</div>
+        </div>
+        <div class="disp-search-box">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="instansi-search" placeholder="Cari instansi lain..." class="disp-search-input">
+        </div>
+        <div id="instansi-list" class="disp-instansi-list" style="display:none"></div>
+      </div>
+
+      <!-- Tingkat Urgensi -->
+      <div class="jp-card disp-card">
+        <label class="disp-label">Tingkat Urgensi Penanganan (SLA):</label>
+        <div class="disp-urgensi-grid">
+          <label class="disp-urgensi-btn">
+            <input type="radio" name="urgensi" value="kritis" checked>
+            <span>Kritis (&lt; 24 Jam)</span>
+          </label>
+          <label class="disp-urgensi-btn">
+            <input type="radio" name="urgensi" value="rutin">
+            <span>Rutin (&lt; 7 Hari)</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Catatan -->
+      <div class="jp-card disp-card">
+        <label class="disp-label">Catatan Pengantar & Rekomendasi:</label>
+        <textarea id="catatan-disposisi" class="disp-textarea" rows="3">Berdasarkan hasil inspeksi computer vision, terdeteksi kerusakan struktural lubang kritis. Disarankan penanganan segera.</textarea>
+      </div>
+
+      <!-- Tombol Aksi -->
+      <div class="disp-actions">
+        <button type="button" id="btn-preview-bap" class="jp-btn-demo">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span>Preview BAP</span>
+        </button>
+        <button type="button" class="jp-btn-demo">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          <span>Simpan Draf</span>
+        </button>
+      </div>
+      <button type="button" id="btn-kirim-disposisi" class="jp-btn-primary disp-btn-kirim">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>
+        <span>Kirim Laporan Resmi ke Dinas</span>
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block skrip %}
+<script src="{{ url_for('static', filename='js/lokasi_dinamis.js') }}?v={{ static_v }}"></script>
+<script src="{{ url_for('static', filename='js/disposisi.js') }}?v={{ static_v }}"></script>
+{% endblock skrip %}

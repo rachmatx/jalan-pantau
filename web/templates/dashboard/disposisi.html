@@ -1,0 +1,182 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Disposisi{% endblock %}
+
+{% block content %}
+<div class="dash-header">
+  <div>
+    <h1 class="dash-title">Daftar Disposisi</h1>
+    <p class="dash-subtitle">Laporan kerusakan jalan yang masuk ke {{ nama_daerah }}</p>
+  </div>
+</div>
+
+<!-- Filter -->
+<div class="dash-card" style="margin-bottom:12px;padding:12px">
+  <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+    <div>
+      <label style="font-size:11px;color:var(--dash-muted);display:block;margin-bottom:4px">STATUS</label>
+      <select id="filter-status" class="dash-select">
+        <option value="">Semua</option>
+        <option value="Terkirim">Terkirim</option>
+        <option value="Diproses">Diproses</option>
+        <option value="Selesai">Selesai</option>
+      </select>
+    </div>
+    <div>
+      <label style="font-size:11px;color:var(--dash-muted);display:block;margin-bottom:4px">URGENSI</label>
+      <select id="filter-urgensi" class="dash-select">
+        <option value="">Semua</option>
+        <option value="Kritis">Kritis</option>
+        <option value="Tinggi">Tinggi</option>
+        <option value="Rutin">Rutin</option>
+      </select>
+    </div>
+    <button type="button" class="dash-btn-apply" onclick="applyFilter()">Filter</button>
+  </div>
+</div>
+
+  <!-- Tabel -->
+  <div class="dash-card">
+    <div class="dash-table-wrap">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th>No. Tiket</th>
+            <th>Waktu</th>
+            <th>Lokasi</th>
+            <th>Temuan</th>
+            <th>Urgensi</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="disposisi-tbody">
+          <tr><td colspan="7" class="dash-loading">Memuat...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- Paginasi -->
+    <div id="disposisi-paginasi" style="display:none;align-items:center;justify-content:center;gap:4px;margin-top:12px;flex-wrap:wrap"></div>
+    <!-- Info overflow -->
+    <p class="dash-hint" id="disposisi-overflow-info" aria-live="polite"></p>
+  </div>
+{% endblock %}
+
+{% block skrip %}
+<script>
+(function(){
+  var daerah = "{{ daerah }}";
+  // P4 XSS: escape sebelum innerHTML (data disposisi dari server).
+  function esc(v) {
+    return String(v == null ? "" : v).replace(/[&<>"'`=]/g, function(c) {
+      return {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;",
+              "'": "&#39;", "`": "&#96;", "=": "&#61;"}[c];
+    });
+  }
+
+  // Pagination state
+  var semuaData = [];
+  var halaman = 1;
+  var PER_HALAMAN = 25;
+  var totalDb = 0;
+  var overflow = false;
+
+  function renderPaginasi(total) {
+    var totalHal = Math.ceil(total / PER_HALAMAN);
+    var pagEl = document.getElementById("disposisi-paginasi");
+    if (!pagEl) return;
+    if (totalHal <= 1) { pagEl.style.display = "none"; return; }
+    pagEl.style.display = "flex";
+    var html = '<button type="button" class="dash-btn-light" id="disposisi-pag-prev"' + (halaman <= 1 ? " disabled" : "") + ">‹ Sebelumnya</button>";
+    for (var i = 1; i <= totalHal; i++) {
+      html += '<button type="button" class="dash-btn-light disposisi-pag-num' + (i === halaman ? " aktif" : "") + '" data-hal="' + i + '">' + i + "</button>";
+    }
+    html += '<button type="button" class="dash-btn-light" id="disposisi-pag-next"' + (halaman >= totalHal ? " disabled" : "") + ">Berikutnya ›</button>";
+    pagEl.innerHTML = html;
+    var btnPrev = document.getElementById("disposisi-pag-prev");
+    var btnNext = document.getElementById("disposisi-pag-next");
+    if (btnPrev) btnPrev.onclick = function() { if (halaman > 1) { halaman--; renderTabel(); }};
+    if (btnNext) btnNext.onclick = function() { if (halaman < totalHal) { halaman++; renderTabel(); }};
+    var nums = document.querySelectorAll(".disposisi-pag-num");
+    for (var j = 0; j < nums.length; j++) {
+      (function(idx) {
+        nums[j].onclick = function() { halaman = idx + 1; renderTabel(); };
+      })(j);
+    }
+  }
+
+  function renderTabel() {
+    var tbody = document.getElementById("disposisi-tbody");
+    if (!semuaData.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="dash-empty">Tidak ada laporan.</td></tr>';
+      document.getElementById("disposisi-paginasi").style.display = "none";
+      document.getElementById("disposisi-overflow-info").textContent = "";
+      return;
+    }
+    var start = (halaman - 1) * PER_HALAMAN;
+    var end = start + PER_HALAMAN;
+    var pageRows = semuaData.slice(start, end);
+    tbody.innerHTML = pageRows.map(function(r) {
+      var statusClass = r.status === 'Terkirim' ? 'terkirim' : r.status === 'Diproses' ? 'diproses' : 'selesai';
+      var urgensiClass = r.urgensi === 'Kritis' ? 'kritis' : r.urgensi === 'Tinggi' ? 'tinggi' : 'rutin';
+      return '<tr>'
+        + '<td><span class="dash-tiket">' + esc(r.bap_nomor) + '</span></td>'
+        + '<td>' + esc(new Date(r.waktu).toLocaleString('id-ID', {dateStyle:'short', timeStyle:'short'})) + '</td>'
+        + '<td>' + esc(r.lokasi || '-') + '</td>'
+        + '<td style="font-family:var(--dash-mono)">' + esc(r.n_temuan) + '</td>'
+        + '<td><span class="urgency urgency-' + urgensiClass + '">' + esc(r.urgensi) + '</span></td>'
+        + '<td><span class="badge-status status-' + statusClass + '">' + esc(r.status) + '</span></td>'
+        + '<td><a href="/pupr-' + esc(daerah) + '/dashboard/disposisi/' + Number(r.id) + '" class="dash-btn-detail">Detail</a></td>'
+        + '</tr>';
+    }).join("");
+    renderPaginasi(semuaData.length);
+
+    // Overflow info
+    var infoEl = document.getElementById("disposisi-overflow-info");
+    if (infoEl) {
+      if (overflow) {
+        infoEl.innerHTML = '<span style="color:#B45309;font-weight:600">⚠ Menampilkan ' + semuaData.length + ' dari ' + totalDb + ' laporan.</span> Gunakan filter status/urgensi untuk mempersempit.';
+      } else if (semuaData.length > PER_HALAMAN) {
+        infoEl.textContent = "Menampilkan " + (start + 1) + "-" + Math.min(end, semuaData.length) + " dari " + semuaData.length + " laporan (Halaman " + halaman + "/" + Math.ceil(semuaData.length / PER_HALAMAN) + ").";
+      } else {
+        infoEl.textContent = "";
+      }
+    }
+  }
+
+  function loadData() {
+    var status = document.getElementById("filter-status").value;
+    var urgensi = document.getElementById("filter-urgensi").value;
+    var params = new URLSearchParams({daerah: daerah, limit: "201", exact: "1"});
+    if (status) params.set("status", status);
+    if (urgensi) params.set("urgensi", urgensi);
+
+    // Skeleton loading selama fetch
+    var tb = document.getElementById("disposisi-tbody");
+    if (tb) {
+      tb.innerHTML = Array(4).fill(
+        '<tr><td colspan="7" style="padding:12px"><span class="skel" style="width:100%;height:16px"></span></td></tr>'
+      ).join("");
+    }
+
+    // Fetch data + stats secara paralel
+    Promise.all([
+      fetch("/api/disposisi?" + params).then(function(r) { return r.json(); }),
+      fetch("/api/disposisi/stats?daerah=" + daerah + "&exact=1" + (status ? "&status=" + status : "") + (urgensi ? "&urgensi=" + urgensi : "")).then(function(r) { return r.json(); })
+    ]).then(function(results) {
+      var rows = results[0];
+      var stats = results[1];
+      overflow = rows.length > 200;
+      semuaData = overflow ? rows.slice(0, 200) : rows;
+      totalDb = stats.total || semuaData.length;
+      halaman = 1;
+      renderTabel();
+    }).catch(function() {
+      document.getElementById("disposisi-tbody").innerHTML = '<tr><td colspan="7" class="dash-empty">Gagal memuat.</td></tr>';
+    });
+  }
+
+  window.applyFilter = loadData;
+  loadData();
+})();
+</script>
+{% endblock %}

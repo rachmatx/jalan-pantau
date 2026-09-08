@@ -1,0 +1,572 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      "colors": {
+        "severity-low-border": "#A7F3D0",
+        "on-background": "#0b1c30",
+        "text-secondary": "#475569",
+        "primary-container": "#007bb9",
+        "inverse-on-surface": "#eaf1ff",
+        "on-secondary": "#ffffff",
+        "tertiary": "#894d00",
+        "text-primary": "#0F172A",
+        "surface-container": "#e5eeff",
+        "surface-container-low": "#eff4ff",
+        "tertiary-fixed": "#ffdcc0",
+        "secondary": "#006399",
+        "tertiary-container": "#ac6200",
+        "error": "#ba1a1a",
+        "inverse-surface": "#213145",
+        "outline": "#707881",
+        "surface-variant": "#d3e4fe",
+        "on-primary-fixed": "#001d31",
+        "on-secondary-container": "#004f7b",
+        "severity-low-text": "#059669",
+        "surface-container-highest": "#d3e4fe",
+        "surface-tint": "#006398",
+        "bg-main": "#F8FAFC",
+        "surface-dim": "#cbdbf5",
+        "on-surface": "#0b1c30",
+        "error-container": "#ffdad6",
+        "on-primary-container": "#fdfcff",
+        "severity-med-border": "#FDE68A",
+        "text-muted": "#64748B",
+        "surface-container-lowest": "#ffffff",
+        "on-primary": "#ffffff",
+        "on-error-container": "#93000a",
+        "on-primary-fixed-variant": "#004b73",
+        "surface-bright": "#f8f9ff",
+        "on-error": "#ffffff",
+        "primary-fixed": "#cce5ff",
+        "secondary-container": "#7bc2ff",
+        "on-surface-variant": "#3f4850",
+        "surface-container-high": "#dce9ff",
+        "secondary-fixed": "#cde5ff",
+        "severity-high-bg": "#FEF2F2",
+        "on-tertiary-fixed": "#2d1600",
+        "severity-high-text": "#DC2626",
+        "inverse-primary": "#93ccff",
+        "on-tertiary": "#ffffff",
+        "background": "#f8f9ff",
+        "on-secondary-fixed-variant": "#004b74",
+        "on-tertiary-container": "#fffbff",
+        "severity-med-text": "#D97706",
+        "severity-high-border": "#FECACA",
+        "surface": "#FFFFFF",
+        "border-subtle": "#E2E8F0",
+        "on-secondary-fixed": "#001d32",
+        "outline-variant": "#bfc7d2",
+        "secondary-fixed-dim": "#94ccff",
+        "on-tertiary-fixed-variant": "#6b3b00",
+        "tertiary-fixed-dim": "#ffb875",
+        "primary": "#006194",
+        "severity-med-bg": "#FFFBEB",
+        "primary-fixed-dim": "#93ccff",
+        "severity-low-bg": "#ECFDF5"
+      },
+      "borderRadius": {
+        "DEFAULT": "0.125rem",
+        "lg": "0.25rem",
+        "xl": "0.5rem",
+        "full": "0.75rem"
+      },
+      "spacing": {
+        "space-xs": "0.5rem",
+        "space-xl": "2rem",
+        "space-sm": "0.75rem",
+        "space-2xs": "0.25rem",
+        "gutter-app": "1rem",
+        "space-lg": "1.5rem",
+        "space-md": "1rem",
+        "workbench-gap": "1.5rem"
+      },
+      "fontFamily": {
+        "data-mono-md": ["JetBrains Mono"],
+        "label-md": ["Inter"],
+        "data-mono-sm": ["JetBrains Mono"],
+        "headline-sm": ["Inter"],
+        "headline-lg": ["Inter"],
+        "body-sm": ["Inter"],
+        "body-md": ["Inter"],
+        "label-caps": ["Inter"],
+        "headline-xl": ["Inter"]
+      },
+      "fontSize": {
+        "data-mono-md": ["13px", {"lineHeight": "18px", "fontWeight": "500"}],
+        "label-md": ["13px", {"lineHeight": "16px", "fontWeight": "600"}],
+        "data-mono-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
+        "headline-sm": ["18px", {"lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+        "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+        "label-caps": ["11px", {"lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+        "headline-xl": ["30px", {"lineHeight": "36px", "letterSpacing": "-0.025em", "fontWeight": "700"}]
+      }
+    }
+  }
+}</script></head><body class="bg-bg-main text-on-surface font-body-md text-body-md min-h-screen"><header class="fixed top-0 w-full z-50 bg-surface/95 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 w-full px-gutter-app flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs"><img alt="JalanPantau Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UtcA_1fkyo_y_bO1b__NpqQNyghMKrrDUveJRn__6RbHgcRllW2v9BHRm8VRhUelk_qAQ8jnAbUcMjCelkVRgT_qG024RSW7M3ftrfoB3HLWyZIKo7HZgO-7KJpQzyoGbNgPA0SWNIe0IjaWfRBd-0xqTVRL1KomoMFZncFb3jiLU8nFF_X3qdn9l9ffM0MqMNMkzz_QF5IuFl-vv4Irl7nwXVZHX02_dwVDAn0kL_swwQ--Vnidqyqg"><div class="flex flex-col"><span class="font-label-md text-label-md text-text-primary tracking-tight">JalanPantau</span><span class="font-label-caps text-label-caps text-text-muted">SISTEM INSPEKSI JALAN</span></div></div><div class="hidden sm:flex items-center gap-space-xs px-space-xs py-space-2xs rounded-full bg-surface-container-low"><span class="font-data-mono-sm text-data-mono-sm text-text-secondary">YOLOv11n • TA 2025</span><div class="flex items-center gap-1.5 px-space-2xs py-0.5 rounded-full bg-severity-low-bg"><span class="w-1.5 h-1.5 rounded-full bg-severity-low-text"></span><span class="font-data-mono-sm text-data-mono-sm text-severity-low-text">Model Siap</span></div></div></div><nav class="hidden md:flex items-center gap-space-xs" data-active-classes="bg-primary-container text-on-primary-container font-label-md"><a aria-current="page" class="px-space-sm py-1.5 rounded transition-colors bg-primary-container text-on-primary-container font-label-md" data-path="deteksi" href="#">Deteksi</a><a class="px-space-sm py-1.5 rounded text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="peta" href="#">Peta</a><a class="px-space-sm py-1.5 rounded text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="riwayat" href="#">Riwayat</a><a class="px-space-sm py-1.5 rounded text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="tentang" href="#">Tentang</a></nav><div class="flex items-center gap-space-sm"><div class="hidden lg:flex items-center gap-space-xs px-space-xs py-1 rounded bg-surface-container"><span class="material-symbols-outlined text-severity-low-text text-[16px]">wifi</span><span class="font-data-mono-sm text-data-mono-sm text-text-secondary">Lokal / Offline-Ready</span></div><div class="hidden xl:flex items-center gap-space-2xs text-text-muted"><span class="material-symbols-outlined text-[16px]">schedule</span><span class="font-data-mono-sm text-data-mono-sm">SHIFT 01 • WIB</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-16 bg-bg-main min-h-screen" id="main-content"><div class="flex flex-col w-full relative">
+<div aria-hidden="true" class="w-full px-gutter-app py-space-lg select-none opacity-40 pointer-events-none filter blur-[1.5px]">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-space-md mb-space-lg">
+<div class="flex flex-col gap-space-2xs">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-caps text-label-caps text-text-muted">REPOSITORI AUDIT LAPANGAN</span>
+<span class="w-1.5 h-1.5 rounded-full bg-border-subtle"></span>
+<span class="font-data-mono-sm text-data-mono-sm text-primary">KOTA BANDUNG SEKTOR PUSAT</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-text-primary tracking-tight">Riwayat Inspeksi Kondisi Jalan</h1>
+<p class="font-body-sm text-body-sm text-text-secondary">Arsip resmi log telemetri AI dan validasi fisik pengawas Bina Marga.</p>
+</div>
+<div class="flex items-center gap-space-xs">
+<div class="flex items-center gap-space-xs bg-surface-container-lowest px-space-sm py-1.5 rounded-lg shadow-sm">
+<span class="material-symbols-outlined text-text-muted text-[18px]">calendar_today</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-secondary">1 Feb 2025 – 18 Feb 2025</span>
+</div>
+<div class="flex items-center gap-space-xs bg-surface-container-lowest px-space-sm py-1.5 rounded-lg shadow-sm">
+<span class="material-symbols-outlined text-text-muted text-[18px]">filter_list</span>
+<span class="font-body-sm text-body-sm font-medium text-text-secondary">Semua Sektor</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md mb-space-lg">
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-2xs">
+<span class="font-label-caps text-label-caps text-text-muted">TOTAL RUAS DIAUDIT</span>
+<div class="flex items-baseline justify-between">
+<span class="font-headline-lg text-headline-lg text-text-primary">142</span>
+<span class="font-data-mono-sm text-data-mono-sm text-severity-low-text">+12 pekan ini</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-2xs">
+<span class="font-label-caps text-label-caps text-text-muted">TEMUAN ANOMALI KRITIS</span>
+<div class="flex items-baseline justify-between">
+<span class="font-headline-lg text-headline-lg text-severity-high-text">38</span>
+<span class="font-data-mono-sm text-data-mono-sm text-severity-high-text">Prioritas 1</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-2xs">
+<span class="font-label-caps text-label-caps text-text-muted">TOTAL ESTIMASI PERBAIKAN</span>
+<div class="flex items-baseline justify-between">
+<span class="font-headline-lg text-headline-lg text-text-primary font-data-mono-md">Rp 184,2M</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">RAB AI</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-2xs">
+<span class="font-label-caps text-label-caps text-text-muted">STATUS VERIFIKASI SAH</span>
+<div class="flex items-baseline justify-between">
+<span class="font-headline-lg text-headline-lg text-severity-low-text">94.2%</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-secondary">Disetujui PPK</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden">
+<div class="px-space-md py-space-sm bg-surface-container-low flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted">LOG BERITA ACARA INSPEKSI LAPANGAN</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">Menampilkan 10 dari 84 Berkas</span>
+</div>
+<div class="w-full overflow-x-auto">
+<table class="w-full text-left font-body-sm text-body-sm">
+<thead class="bg-surface-container-low/60 text-text-muted font-label-caps text-label-caps">
+<tr>
+<th class="py-space-sm px-space-md">No. Registrasi</th>
+<th class="py-space-sm px-space-md">Ruas Jalan &amp; STA</th>
+<th class="py-space-sm px-space-md">Tanggal / Waktu</th>
+<th class="py-space-sm px-space-md">Petugas Surveyor</th>
+<th class="py-space-sm px-space-md">Status</th>
+<th class="py-space-sm px-space-md text-right">Tindakan</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-subtle">
+<tr class="bg-surface-container-high/30 font-medium">
+<td class="py-space-sm px-space-md font-data-mono-sm text-primary">BA/BM-BDG/2025/02/084</td>
+<td class="py-space-sm px-space-md text-text-primary">STA 02+410 (Jl. Asia Afrika)</td>
+<td class="py-space-sm px-space-md text-text-secondary font-data-mono-sm">18 Feb 2025, 10:14 WIB</td>
+<td class="py-space-sm px-space-md text-text-secondary">Rian Hidayat, S.T.</td>
+<td class="py-space-sm px-space-md"><span class="px-2 py-0.5 rounded-full bg-severity-low-bg text-severity-low-text font-label-caps text-label-caps">Terverifikasi</span></td>
+<td class="py-space-sm px-space-md text-right"><span class="text-primary font-label-md">Buka Berkas</span></td>
+</tr>
+<tr>
+<td class="py-space-sm px-space-md font-data-mono-sm text-text-secondary">BA/BM-BDG/2025/02/083</td>
+<td class="py-space-sm px-space-md text-text-primary">STA 05+120 (Jl. Jend. Sudirman)</td>
+<td class="py-space-sm px-space-md text-text-secondary font-data-mono-sm">18 Feb 2025, 08:30 WIB</td>
+<td class="py-space-sm px-space-md text-text-secondary">Farhan Maulana, A.Md.</td>
+<td class="py-space-sm px-space-md"><span class="px-2 py-0.5 rounded-full bg-severity-med-bg text-severity-med-text font-label-caps text-label-caps">Pending Review</span></td>
+<td class="py-space-sm px-space-md text-right"><span class="text-text-muted font-label-md">Detail</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="fixed inset-0 z-50 bg-inverse-surface/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-space-md md:p-space-lg overflow-y-auto" id="modal-backdrop">
+<div class="relative w-full max-w-5xl my-auto bg-surface rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] transition-all" id="detail">
+<div class="w-full bg-surface-container-low px-space-md sm:px-space-lg py-2.5 flex flex-wrap items-center justify-between gap-space-xs" id="d-status">
+<div class="flex items-center gap-space-xs flex-wrap">
+<div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-severity-low-bg">
+<span class="w-2 h-2 rounded-full bg-severity-low-text animate-pulse"></span>
+<span class="font-label-caps text-label-caps text-severity-low-text uppercase">Terverifikasi / Sah</span>
+</div>
+<span class="text-text-muted text-xs">•</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-secondary font-semibold">BA/BM-BDG/2025/02/084</span>
+<span class="text-text-muted text-xs hidden sm:inline">•</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted hidden sm:inline">SK REG: DISBIMA-JB-IV-2025</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="px-2 py-0.5 rounded bg-surface-container font-data-mono-sm text-data-mono-sm text-text-secondary">SHA-256: e3b0c442...9821</span>
+<span class="font-label-caps text-label-caps text-primary uppercase bg-primary-fixed/40 px-2 py-0.5 rounded">PPK Wilayah I</span>
+</div>
+</div>
+<div class="px-space-md sm:px-space-lg py-space-md bg-surface flex items-start justify-between gap-space-md">
+<div class="flex flex-col gap-1 min-w-0">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-caps text-label-caps text-text-muted tracking-wider">BERITA ACARA AUDIT VISUAL KERUSAKAN JALAN</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-text-primary tracking-tight truncate" id="d-judul">
+            Detail Berita Acara Inspeksi — STA 02+410 (Jl. Asia Afrika)
+          </h2>
+<p class="font-body-sm text-body-sm text-text-secondary flex items-center gap-space-xs flex-wrap">
+<span>Sektor Sumur Bandung</span>
+<span class="text-outline-variant">•</span>
+<span>Klasifikasi Jalan: Arteri Primer</span>
+<span class="text-outline-variant">•</span>
+<span>Konstruksi: Hotmix AC-WC 2021</span>
+</p>
+</div>
+<button aria-label="Tutup jendela modal" class="p-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-text-secondary hover:text-text-primary transition-colors flex items-center justify-center" id="d-x" type="button">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<div class="overflow-y-auto px-space-md sm:px-space-lg py-space-md space-y-space-md flex-1 bg-bg-main">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-sm bg-surface p-space-sm sm:p-space-md rounded-xl shadow-sm">
+<div class="flex items-start gap-space-xs">
+<div class="p-2 rounded-lg bg-surface-container-low text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">schedule</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-caps text-label-caps text-text-muted">WAKTU AUDIT</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-primary font-medium">18 Feb 2025, 10:14 WIB</span>
+<span class="font-body-sm text-[11px] text-text-muted">Durasi Scan: 14.2 Detik</span>
+</div>
+</div>
+<div class="flex items-start gap-space-xs">
+<div class="p-2 rounded-lg bg-surface-container-low text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">badge</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-caps text-label-caps text-text-muted">SURVEYOR LAPANGAN</span>
+<span class="font-label-md text-label-md text-text-primary truncate">Rian Hidayat, S.T.</span>
+<span class="font-body-sm text-[11px] text-text-muted">NIP. 19880415 201101 1 004</span>
+</div>
+</div>
+<div class="flex items-start gap-space-xs">
+<div class="p-2 rounded-lg bg-surface-container-low text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">directions_car</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-caps text-label-caps text-text-muted">PERANGKAT &amp; RIG SENSOR</span>
+<span class="font-body-sm text-body-sm text-text-primary font-medium truncate">Mobil Survei 01 / IMX708 HDR</span>
+<span class="font-data-mono-sm text-[11px] text-text-muted">YOLOv11n-seg (FP16 TensorRT)</span>
+</div>
+</div>
+<div class="flex items-start gap-space-xs">
+<div class="p-2 rounded-lg bg-surface-container-low text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">pin_drop</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-caps text-label-caps text-text-muted">KOORDINAT GNSS RTK</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-primary font-medium">-6.921840, 107.608390</span>
+<span class="font-data-mono-sm text-[11px] text-severity-low-text">Akurasi ± 0.04m (Fix RTK)</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-space-2xs">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-secondary uppercase flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-primary">camera</span>
+              Bukti Tangkapan Citra Teranotasi AI
+            </span>
+<div class="flex items-center gap-2">
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">Frame #1104 / Sensor 01</span>
+<button class="font-label-caps text-label-caps text-primary hover:underline flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]">fullscreen</span>
+                Resolusi Penuh
+              </button>
+</div>
+</div>
+<div class="relative w-full rounded-xl overflow-hidden bg-on-background shadow-md group" id="d-foto">
+<div class="w-full aspect-[16/8.8] sm:aspect-[16/8] max-h-[380px] relative overflow-hidden bg-inverse-surface">
+<img class="w-full h-full object-cover" data-alt="High-resolution roadway engineering camera view of an asphalt street in urban Bandung Asia Afrika with road defect damage, clear daytime lighting, photorealistic asphalt texture, photogrammetric HUD overlays with thin crisp bounding boxes, precise technological measurement data tags, cinematic architectural perspective, muted technical tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBQAMd6IFqSPtDvvzzFoNzx9VcXOP1MYr343T19NASrkKM_8Ka3YxKEF8cR8CN7LGkffzrITrbiyRpHP0QRbM-jyx9nP-VrEhUteyGO3xUgnLL2KZFIkNfcEH3ReNnAeG6yFG4twFkuJBMLGoGPnSeeRfI9HTTuRcRRSK11YOGLg-GdibipKbTSWP1Vhr1591KVIHNgsOAgnSreABe4jZhx0OMBkogbKakYPcI0cw2D9WEEAuUBK7Pp">
+<div class="absolute inset-0 bg-gradient-to-t from-on-background/80 via-transparent to-on-background/20 pointer-events-none"></div>
+<div class="absolute top-[32%] left-[41%] w-[26%] h-[38%] rounded pointer-events-none shadow-[0_0_0_2px_#DC2626]">
+<div class="absolute -top-7 left-0 flex items-center gap-1 px-2 py-0.5 bg-severity-high-text text-white rounded font-data-mono-sm text-data-mono-sm shadow-md whitespace-nowrap">
+<span class="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+<span>pothole 0.89 [D: ~58cm]</span>
+</div>
+<div class="absolute inset-0 bg-severity-high-text/10"></div>
+<div class="absolute bottom-1 right-1 font-data-mono-sm text-[10px] text-white bg-on-background/80 px-1 rounded">
+                  Area: 0.26 m² | Kedalaman: 6.2cm
+                </div>
+</div>
+<div class="absolute top-[52%] left-[16%] w-[19%] h-[24%] rounded pointer-events-none shadow-[0_0_0_1.5px_#D97706]">
+<div class="absolute -top-6 left-0 px-1.5 py-0.5 bg-severity-med-text text-white rounded font-data-mono-sm text-[10px] shadow-sm whitespace-nowrap">
+                  alligator_crack 0.76 [A: ~1.4m²]
+                </div>
+<div class="absolute inset-0 bg-severity-med-text/10"></div>
+</div>
+<div class="absolute top-space-sm left-space-sm flex flex-col gap-1">
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-inverse-surface/85 backdrop-blur-md text-white font-data-mono-sm text-data-mono-sm shadow">
+<span class="material-symbols-outlined text-[14px] text-primary-fixed">satellite_alt</span>
+<span>LAT -6.921840° / LON 107.608390° • ELEV 724m</span>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-inverse-surface/80 text-white font-data-mono-sm text-[10px]">
+<span>HEADING 284° WNW • SPEED 24.8 km/h</span>
+</div>
+</div>
+<div class="absolute top-space-sm right-space-sm flex items-center gap-1 px-2.5 py-1 rounded-md bg-severity-low-text/90 backdrop-blur-md text-white font-label-caps text-label-caps shadow">
+<span class="material-symbols-outlined text-[14px]">verified</span>
+<span>SHA-256 AI-TAMPERPROOF LOCK</span>
+</div>
+<div class="absolute bottom-space-sm left-space-sm right-space-sm flex items-end justify-between text-white pointer-events-none">
+<div class="flex flex-col">
+<span class="font-data-mono-sm text-data-mono-sm text-white/90">JL. ASIA AFRIKA STA 02+410 (LAJUR KANAN CEPAT)</span>
+<span class="font-body-sm text-[11px] text-white/70">Waktu Paparan Sensor: 1/1200s • Aperture f/1.8 • ISO 100</span>
+</div>
+<div class="px-2 py-1 rounded bg-inverse-surface/85 backdrop-blur-md font-data-mono-sm text-[11px] text-white/90">
+                  Confidence Rata-rata: <span class="text-severity-low-border font-semibold">82.5%</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-space-2xs">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-secondary uppercase flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-primary">data_table</span>
+              Inventarisasi Temuan &amp; Rencana Anggaran Biaya (RAB) Penanganan
+            </span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">Standar Spesifikasi Umum Bina Marga 2018 (Rev. 2)</span>
+</div>
+<div class="bg-surface rounded-xl shadow-sm overflow-hidden">
+<div class="w-full overflow-x-auto">
+<table class="w-full text-left font-body-sm text-body-sm" id="d-tabel">
+<thead class="bg-surface-container-low text-text-muted font-label-caps text-label-caps">
+<tr>
+<th class="py-space-sm px-space-md w-12 text-center">No</th>
+<th class="py-space-sm px-space-md">Kategori Kerusakan</th>
+<th class="py-space-sm px-space-md">Tingkat Keparahan</th>
+<th class="py-space-sm px-space-md">Dimensi / Estimasi</th>
+<th class="py-space-sm px-space-md">Rekomendasi Teknis Penanganan</th>
+<th class="py-space-sm px-space-md text-right">Estimasi Biaya</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-subtle text-text-primary">
+<tr class="hover:bg-surface-container-low/40 transition-colors">
+<td class="py-space-sm px-space-md text-center font-data-mono-sm text-text-muted">01</td>
+<td class="py-space-sm px-space-md">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-text-primary">Lubang Jalan Dalam (Pothole)</span>
+<span class="font-data-mono-sm text-[11px] text-text-muted">Kode Bina Marga: D-01/PH</span>
+</div>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-severity-high-bg text-severity-high-text">
+<span class="w-1.5 h-1.5 rounded-full bg-severity-high-text"></span>
+<span class="font-label-caps text-label-caps font-bold">Kritis / Berat</span>
+</div>
+</td>
+<td class="py-space-sm px-space-md font-data-mono-sm text-data-mono-sm">
+<div class="flex flex-col">
+<span>⌀ 58 cm • Tebal 6.2 cm</span>
+<span class="text-text-muted text-[11px]">Vol: ~0.016 m³</span>
+</div>
+</td>
+<td class="py-space-sm px-space-md text-text-secondary">
+                      Tamping compaction, tack coat emulsi, patching dingin darurat dilanjutkan hotmix AC-WC
+                    </td>
+<td class="py-space-sm px-space-md text-right font-data-mono-md text-data-mono-md text-text-primary font-semibold">
+                      Rp 3.200.000
+                    </td>
+</tr>
+<tr class="hover:bg-surface-container-low/40 transition-colors">
+<td class="py-space-sm px-space-md text-center font-data-mono-sm text-text-muted">02</td>
+<td class="py-space-sm px-space-md">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-text-primary">Retak Buaya (Alligator Cracking)</span>
+<span class="font-data-mono-sm text-[11px] text-text-muted">Kode Bina Marga: D-03/AC</span>
+</div>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-severity-med-bg text-severity-med-text">
+<span class="w-1.5 h-1.5 rounded-full bg-severity-med-text"></span>
+<span class="font-label-caps text-label-caps font-bold">Sedang</span>
+</div>
+</td>
+<td class="py-space-sm px-space-md font-data-mono-sm text-data-mono-sm">
+<div class="flex flex-col">
+<span>Luas ~1.40 m²</span>
+<span class="text-text-muted text-[11px]">Blok retak 10-20mm</span>
+</div>
+</td>
+<td class="py-space-sm px-space-md text-text-secondary">
+                      Cold milling 4cm, perbaikan lapis pondasi agregat A lokal, overlay HRS-Base
+                    </td>
+<td class="py-space-sm px-space-md text-right font-data-mono-md text-data-mono-md text-text-primary font-semibold">
+                      Rp 4.150.000
+                    </td>
+</tr>
+<tr class="hover:bg-surface-container-low/40 transition-colors">
+<td class="py-space-sm px-space-md text-center font-data-mono-sm text-text-muted">03</td>
+<td class="py-space-sm px-space-md">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-text-primary">Pelepasan Butir (Raveling Edge)</span>
+<span class="font-data-mono-sm text-[11px] text-text-muted">Kode Bina Marga: D-07/RV</span>
+</div>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-severity-low-bg text-severity-low-text">
+<span class="w-1.5 h-1.5 rounded-full bg-severity-low-text"></span>
+<span class="font-label-caps text-label-caps font-bold">Ringan</span>
+</div>
+</td>
+<td class="py-space-sm px-space-md font-data-mono-sm text-data-mono-sm">
+<div class="flex flex-col">
+<span>Panjang 2.1 m</span>
+<span class="text-text-muted text-[11px]">Bibir trotoar barat</span>
+</div>
+</td>
+<td class="py-space-sm px-space-md text-text-secondary">
+                      Fog seal bitumen emulsi kationik &amp; sand sheet cover
+                    </td>
+<td class="py-space-sm px-space-md text-right font-data-mono-md text-data-mono-md text-text-primary font-semibold">
+                      Rp 1.100.000
+                    </td>
+</tr>
+</tbody>
+<tfoot class="bg-surface-container-low/80 font-label-md">
+<tr>
+<td class="py-space-sm px-space-md text-right font-label-caps text-label-caps text-text-secondary" colspan="5">
+                      TOTAL ESTIMASI BIAYA PEMULIHAN (RAB INDIKATIF):
+                    </td>
+<td class="py-space-sm px-space-md text-right font-headline-sm text-headline-sm text-primary font-data-mono-md font-bold">
+                      Rp 8.450.000
+                    </td>
+</tr>
+</tfoot>
+</table>
+</div>
+</div>
+</div>
+<div class="p-space-sm bg-surface-container-low rounded-xl flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-text-muted text-[20px] mt-0.5">info</span>
+<div class="flex flex-col gap-0.5">
+<span class="font-label-caps text-label-caps text-text-secondary uppercase">CATATAN LEGALISASI &amp; AUDIT TRAIL</span>
+<p class="font-body-sm text-body-sm text-text-muted">
+              Data telemetri ini telah divalidasi silang secara geospasial terhadap GIS Jaringan Jalan Kota Bandung. Nilai taksiran merupakan harga satuan standar pemeliharaan rutin Dinas Bina Marga Provinsi Jawa Barat Tahun Anggaran 2025.
+            </p>
+</div>
+</div>
+</div>
+<div class="px-space-md sm:px-space-lg py-space-sm bg-surface flex flex-wrap items-center justify-between gap-space-sm shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
+<div class="flex items-center gap-space-xs">
+<button class="px-3.5 py-2 rounded-lg bg-surface hover:bg-severity-high-bg text-severity-high-text font-label-md text-label-md transition-colors flex items-center gap-1.5" id="d-hapus" type="button">
+<span class="material-symbols-outlined text-[18px]">delete_forever</span>
+<span>Hapus Rekaman</span>
+</button>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="px-4 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-text-primary font-label-md text-label-md transition-colors" id="d-tutup" type="button">
+            Tutup (Esc)
+          </button>
+<button class="px-4 py-2 rounded-lg bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md transition-all shadow-sm hover:shadow flex items-center gap-2" id="d-pdf" type="button">
+<svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+<path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"></path>
+</svg>
+<span>Unduh Dokumen Berita Acara PDF</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<script>
+    (function initAuditModal() {
+      const modalBackdrop = document.getElementById('modal-backdrop');
+      const closeBtn = document.getElementById('d-tutup');
+      const xBtn = document.getElementById('d-x');
+      const deleteBtn = document.getElementById('d-hapus');
+      const downloadPdfBtn = document.getElementById('d-pdf');
+      const toastContainer = document.getElementById('toast-container');
+
+      function showToast(message, type = 'info') {
+        if (!toastContainer) return;
+        const toast = document.createElement('div');
+        toast.className = 'px-4 py-2.5 rounded-lg shadow-lg text-body-sm font-label-md flex items-center gap-2 pointer-events-auto transition-all transform duration-200 bg-inverse-surface text-inverse-on-surface';
+        
+        let iconName = 'info';
+        if (type === 'success') iconName = 'check_circle';
+        if (type === 'warning') iconName = 'warning';
+
+        toast.innerHTML = `
+          <span class="material-symbols-outlined text-[18px]">${iconName}</span>
+          <span>${message}</span>
+        `;
+        toastContainer.appendChild(toast);
+        setTimeout(() => {
+          toast.classList.add('opacity-0', 'translate-y-2');
+          setTimeout(() => toast.remove(), 300);
+        }, 3200);
+      }
+
+      function closeModal() {
+        if (modalBackdrop) {
+          modalBackdrop.classList.add('opacity-0', 'pointer-events-none');
+          setTimeout(() => {
+            showToast('Jendela Berita Acara ditutup. Kembali ke daftar audit.', 'info');
+          }, 150);
+        }
+      }
+
+      if (closeBtn) closeBtn.addEventListener('click', closeModal);
+      if (xBtn) xBtn.addEventListener('click', closeModal);
+
+      if (modalBackdrop) {
+        modalBackdrop.addEventListener('click', (e) => {
+          if (e.target === modalBackdrop) {
+            closeModal();
+          }
+        });
+      }
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modalBackdrop && !modalBackdrop.classList.contains('pointer-events-none')) {
+          closeModal();
+        }
+      });
+
+      if (downloadPdfBtn) {
+        downloadPdfBtn.addEventListener('click', () => {
+          const originalText = downloadPdfBtn.innerHTML;
+          downloadPdfBtn.innerHTML = `
+            <span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+            <span>Mempersiapkan Dokumen...</span>
+          `;
+          downloadPdfBtn.disabled = true;
+
+          setTimeout(() => {
+            downloadPdfBtn.innerHTML = originalText;
+            downloadPdfBtn.disabled = false;
+            showToast('Dokumen BA/BM-BDG/2025/02/084 berhasil diekspor ke PDF (Format Standar PU).', 'success');
+          }, 1200);
+        });
+      }
+
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', () => {
+          const confirmed = window.confirm('Peringatan: Apakah Anda yakin ingin menghapus arsip Berita Acara ini dari repositori lokal? Tindakan ini memerlukan otorisasi Supervisor.');
+          if (confirmed) {
+            showToast('Permintaan penghapusan rekaman dikirimkan ke Kepala Seksi Preservasi.', 'warning');
+          }
+        });
+      }
+    })();
+  </script>
+</div></main><footer class="w-full bg-surface py-space-md shadow-[0_-1px_6px_rgba(0,0,0,0.03)]"><div class="w-full px-gutter-app flex flex-col sm:flex-row items-center justify-between gap-space-xs text-text-muted font-body-sm text-body-sm"><span>© 2025 JalanPantau • Platform Kecerdasan Artifisial Inspeksi Kerusakan Permukaan Jalan</span><span class="font-data-mono-sm text-data-mono-sm">Infrastruktur Bina Marga &amp; Transportasi Cerdas</span></div></footer><div class="fixed bottom-space-md right-space-md z-50 flex flex-col gap-space-xs pointer-events-none" id="toast-container"></div></body></html>

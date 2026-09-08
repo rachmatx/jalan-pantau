@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login Admin | JalanPantau</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    html{scrollbar-gutter:stable}
+    body{font-family:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+      min-height:100vh;display:flex;align-items:center;justify-content:center;
+      padding:24px;color:#0F172A;
+      background:linear-gradient(135deg,#002D62 0%,#001f45 100%);position:relative}
+    body::before{content:"";position:absolute;inset:0;
+      background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);
+      background-size:28px 28px;pointer-events:none}
+    .login-wrap{width:100%;max-width:420px;margin:auto}
+    .login-card{position:relative;z-index:1;background:#fff;border-radius:12px;
+      box-shadow:0 12px 40px rgba(0,0,0,.35);padding:40px 36px;width:100%}
+    .login-logo{display:flex;justify-content:center;margin-bottom:14px}
+    .login-card h1{font-size:22px;text-align:center;margin:0 0 4px}
+    .login-sub{font-size:13px;color:#64748B;text-align:center;margin:0 0 20px}
+    .login-galat{background:#FEF2F2;color:#B91C1C;border:1px solid #FECACA;
+      border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:16px;text-align:center;
+      overflow-wrap:break-word}
+    .login-card label{display:block;font-size:13px;font-weight:600;color:#334155;margin:14px 0 6px}
+    .login-card input{width:100%;padding:11px 14px;border:1px solid #CBD5E1;
+      border-radius:8px;font-size:14px;background:#F8FAFC}
+    .login-card input:focus{outline:2px solid rgba(0,102,204,.35);border-color:#003366}
+    .login-btn{width:100%;margin-top:22px;padding:12px;background:#003366;color:#fff;
+      border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;
+      transition:background .15s}
+    .login-btn:hover{background:#00264d}
+    .login-back{text-align:center;margin:18px 0 0;font-size:13px}
+    .login-back a{color:#003366;text-decoration:none;font-weight:600}
+    .login-back a:hover{text-decoration:underline}
+  </style>
+</head>
+<body>
+  <main class="login-wrap">
+    <section class="login-card">
+      <div class="login-logo">
+        <svg width="44" height="44" viewBox="0 0 32 32" aria-hidden="true">
+          <rect x="2" y="2" width="28" height="28" rx="7" fill="#003366"/>
+          <path d="M10 22 L14 10 L18 10 L14 22 Z" fill="#fff"/>
+        </svg>
+      </div>
+      <h1>Login Admin Dinas</h1>
+      <p class="login-sub">Dashboard PUPR hanya untuk akun resmi dinas.</p>
+
+      {% if galat %}<div class="login-galat" role="alert">{{ galat }}</div>{% endif %}
+
+      <form method="post" action="/login">
+        <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" required autofocus
+               autocomplete="username" placeholder="admin">
+
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required
+               autocomplete="current-password" placeholder="Password">
+
+        <button type="submit" class="login-btn">Masuk</button>
+      </form>
+
+      <p class="login-back"><a href="/">Kembali ke halaman utama</a></p>
+    </section>
+  </main>
+</body>
+</html>

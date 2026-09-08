@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}Detail Disposisi{% endblock %}
+
+{% block konten %}
+<div class="jp-wrap">
+  {% if not disposisi and not sesi %}
+  <div class="jp-card" style="padding:32px;text-align:center">
+    <p>Disposisi tidak ditemukan.</p>
+    <a href="/disposisi" style="color:var(--jp-primary)">Kembali ke disposisi</a>
+  </div>
+  {% else %}
+  <!-- Header -->
+  <div style="width:100%;background:var(--jp-surface);box-shadow:0 1px 3px rgba(0,0,0,.03);padding:16px;margin-bottom:16px;border-radius:12px">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:center;gap:8px;font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-muted)">
+        <a href="/disposisi" style="color:var(--jp-muted);text-decoration:none">Disposisi Kedinasan</a>
+        <span>></span>
+        <span style="color:var(--jp-ink)">{% if disposisi %}{{ disposisi.bap_nomor }}{% else %}BAP #{{ sid }}{% endif %}</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px">
+        <h1 style="font-size:22px;font-weight:700;letter-spacing:-.02em;color:var(--jp-ink);margin:0;flex:1">Detail & Jejak Audit Penanganan Tiket Kedinasan</h1>
+        {% if disposisi %}
+        <span style="padding:4px 12px;border-radius:9999px;background:{% if disposisi.status == 'Terkirim' %}var(--jp-sev-h-bg){% elif disposisi.status == 'Diproses' %}var(--jp-sev-m-bg){% else %}var(--jp-sev-h-bg){% endif %};font-size:11px;font-weight:700;letter-spacing:.05em;color:{% if disposisi.status == 'Terkirim' %}#047857{% elif disposisi.status == 'Diproses' %}var(--jp-sev-m-tx){% else %}#047857{% endif %};white-space:nowrap">{{ disposisi.status }}</span>
+        {% endif %}
+      </div>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;font-size:12px;color:var(--jp-tx2)">
+        <span style="display:flex;align-items:center;gap:4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--jp-muted)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>{% if disposisi %}{{ disposisi.lokasi or 'Tidak ada lokasi' }}{% elif sesi %}{{ sesi.lokasi or 'Tidak ada lokasi' }}{% endif %}</span>
+        {% if disposisi %}
+        <span style="display:flex;align-items:center;gap:4px;color:var(--jp-primary)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>{{ disposisi.instansi_nama }}</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- SLA Progress -->
+  {% if disposisi %}
+  <div style="width:100%;background:var(--jp-surface);padding:16px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.03);margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+      <div style="width:36px;height:36px;border-radius:8px;background:var(--jp-sev-m-bg);display:flex;align-items:center;justify-content:center;color:var(--jp-sev-m-tx)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div style="flex:1">
+        <div style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-muted)">Target Pemulihan (SLA)</div>
+        <div style="font-size:13px;color:var(--jp-ink)">Reaksi Cepat Kerusakan Struktural Jalan • <span style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-sev-m-tx);font-weight:600">{{ disposisi.urgensi|capitalize }}</span></div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-family:var(--jp-mono);font-size:11px;margin-bottom:6px">
+      <span style="color:var(--jp-muted)">Waktu Berjalan: -</span>
+      <span style="color:var(--jp-sev-m-tx);font-weight:600">{% if disposisi.status == 'Terkirim' %}0{% elif disposisi.status == 'Diproses' %}50{% else %}100{% endif %}% dari Alokasi {{ '24' if disposisi.urgensi == 'Kritis' else '48' }} Jam</span>
+    </div>
+    <div style="width:100%;height:8px;border-radius:9999px;background:var(--jp-container);overflow:hidden">
+      <div style="height:100%;width:{% if disposisi.status == 'Terkirim' %}5{% elif disposisi.status == 'Diproses' %}50{% else %}100{% endif %};background:{% if disposisi.status == 'Selesai' %}var(--jp-sev-h-tx){% else %}var(--jp-sev-m-tx){% endif %};border-radius:9999px"></div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Main Grid: 70% Left, 30% Right -->
+  <div style="display:grid;grid-template-columns:1fr;gap:16px">
+    <!-- LEFT COLUMN: Timeline -->
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <!-- Timeline -->
+      <div class="jp-card" style="padding:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--jp-line)">
+          <div style="display:flex;align-items:center;gap:8px">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--jp-primary)" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>
+            <h2 style="font-size:16px;font-weight:600;color:var(--jp-ink);margin:0">Alur Siklus Penanganan (Audit Lifecycle)</h2>
+          </div>
+          {% if disposisi %}
+          <span style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-muted)">Sinkron: {{ disposisi.pembaruan_terakhir or disposisi.waktu }}</span>
+          {% endif %}
+        </div>
+        <div style="position:relative;padding-left:28px">
+          <div style="position:absolute;left:10px;top:8px;bottom:8px;width:2px;background:var(--jp-line)"></div>
+          <!-- Step 1 -->
+          <div style="position:relative;margin-bottom:20px">
+            <div style="position:absolute;left:-22px;top:4px;width:24px;height:24px;border-radius:50%;background:{% if disposisi %}var(--jp-sev-h-bg){% else %}var(--jp-container){% endif %};display:flex;align-items:center;justify-content:center;border:3px solid var(--jp-surface)">
+              {% if disposisi %}<svg width="14" height="14" viewBox="0 0 24 24" fill="var(--jp-sev-h-tx)"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>{% endif %}
+            </div>
+            <div style="background:var(--jp-container-low);padding:12px;border-radius:8px">
+              <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px;margin-bottom:4px">
+                <span style="font-size:13px;font-weight:600;color:var(--jp-ink)">1. Disposisi Dibuat & Dikirim</span>
+                {% if disposisi %}<span style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-muted)">{{ disposisi.waktu }}</span>{% endif %}
+              </div>
+              <p style="font-size:12px;color:var(--jp-tx2);margin:0">{% if disposisi %}Terkirim ke {{ disposisi.instansi_nama }}{% else %}Menunggu pengiriman{% endif %}</p>
+              {% if disposisi %}<div style="margin-top:8px"><span style="display:inline-flex;align-items:center;gap:4px;font-family:var(--jp-mono);font-size:10px;padding:2px 8px;border-radius:4px;background:var(--jp-sev-h-bg);color:#047857">TIKET: {{ disposisi.bap_nomor }}</span></div>{% endif %}
+            </div>
+          </div>
+          <!-- Step 2 -->
+          <div style="position:relative;margin-bottom:20px">
+            <div style="position:absolute;left:-22px;top:4px;width:24px;height:24px;border-radius:50%;background:{% if disposisi and disposisi.status in ['Diproses','Selesai'] %}var(--jp-sev-h-bg){% elif disposisi and disposisi.status == 'Terkirim' %}var(--jp-primary-container){% else %}var(--jp-container){% endif %};display:flex;align-items:center;justify-content:center;border:3px solid var(--jp-surface)">
+              {% if disposisi and disposisi.status == 'Terkirim' %}<span style="width:8px;height:8px;border-radius:50%;background:#fff;animation:jp-pulse 1.6s infinite"></span>{% elif disposisi and disposisi.status in ['Diproses','Selesai'] %}<svg width="14" height="14" viewBox="0 0 24 24" fill="var(--jp-sev-h-tx)"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>{% endif %}
+            </div>
+            <div style="background:{% if disposisi and disposisi.status == 'Terkirim' %}var(--jp-surface);box-shadow:0 1px 3px rgba(0,0,0,.1);border-left:4px solid var(--jp-primary){% else %}var(--jp-container-low){% endif %};padding:12px;border-radius:8px">
+              <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px;margin-bottom:4px">
+                <span style="font-size:13px;font-weight:600;color:var(--jp-ink)">2. Verifikasi Berkas & Penerimaan Balai</span>
+                {% if disposisi and disposisi.status == 'Terkirim' %}<span style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-primary)">Menunggu</span>{% elif disposisi and disposisi.status in ['Diproses','Selesai'] %}<span style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-muted)">Selesai</span>{% endif %}
+              </div>
+              <p style="font-size:12px;color:var(--jp-tx2);margin:0">{% if disposisi and disposisi.status in ['Diproses','Selesai'] %}Diverifikasi oleh Kasi Preservasi Jalan{% else %}Menunggu verifikasi{% endif %}</p>
+            </div>
+          </div>
+          <!-- Step 3 -->
+          <div style="position:relative;margin-bottom:20px;{% if not disposisi or disposisi.status == 'Terkirim' %}opacity:0.6{% endif %}">
+            <div style="position:absolute;left:-22px;top:4px;width:24px;height:24px;border-radius:50%;background:{% if disposisi and disposisi.status in ['Diproses','Selesai'] %}var(--jp-sev-m-bg){% else %}var(--jp-container){% endif %};display:flex;align-items:center;justify-content:center;border:3px solid var(--jp-surface)">
+              {% if disposisi and disposisi.status == 'Diproses' %}<span style="width:8px;height:8px;border-radius:50%;background:var(--jp-sev-m-tx);animation:jp-pulse 1.6s infinite"></span>{% elif disposisi and disposisi.status == 'Selesai' %}<svg width="14" height="14" viewBox="0 0 24 24" fill="var(--jp-sev-h-tx)"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>{% endif %}
+            </div>
+            <div style="background:{% if disposisi and disposisi.status == 'Diproses' %}var(--jp-surface);box-shadow:0 1px 3px rgba(0,0,0,.1);border-left:4px solid var(--jp-sev-m-tx){% else %}var(--jp-container-low){% endif %};padding:12px;border-radius:8px">
+              <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px;margin-bottom:4px">
+                <span style="font-size:13px;font-weight:600;color:{% if disposisi and disposisi.status in ['Diproses','Selesai'] %}var(--jp-ink){% else %}var(--jp-muted){% endif %}">3. Pekerjaan Penanganan</span>
+                {% if disposisi and disposisi.status == 'Diproses' %}<span style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-sev-m-tx)">Berlangsung</span>{% elif disposisi and disposisi.status == 'Selesai' %}<span style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-muted)">Selesai</span>{% endif %}
+              </div>
+              <p style="font-size:12px;color:var(--jp-tx2);margin:0">{% if disposisi and disposisi.status in ['Diproses','Selesai'] %}Tim TRC sedang bekerja{% else %}Menunggu{% endif %}</p>
+            </div>
+          </div>
+          <!-- Step 4 -->
+          <div style="position:relative;{% if not disposisi or disposisi.status != 'Selesai' %}opacity:0.6{% endif %}">
+            <div style="position:absolute;left:-22px;top:4px;width:24px;height:24px;border-radius:50%;background:{% if disposisi and disposisi.status == 'Selesai' %}var(--jp-sev-h-bg){% else %}var(--jp-container){% endif %};display:flex;align-items:center;justify-content:center;border:3px solid var(--jp-surface)">
+              {% if disposisi and disposisi.status == 'Selesai' %}<svg width="14" height="14" viewBox="0 0 24 24" fill="var(--jp-sev-h-tx)"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>{% endif %}
+            </div>
+            <div style="background:var(--jp-container-low);padding:12px;border-radius:8px">
+              <span style="font-size:13px;color:{% if disposisi and disposisi.status == 'Selesai' %}var(--jp-ink);font-weight:600{% else %}var(--jp-muted){% endif %}">4. Penutupan Tiket & BAP Selesai</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Log Koordinasi -->
+      {% if disposisi and disposisi.catatan %}
+      <div class="jp-card" style="padding:16px">
+        <div style="display:flex;align-items:center;gap:8px;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--jp-line)">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--jp-primary)" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          <h2 style="font-size:16px;font-weight:600;color:var(--jp-ink);margin:0">Catatan Pengantar</h2>
+        </div>
+        <div style="padding:12px;border-radius:8px;background:var(--jp-container-low)">
+          <p style="font-size:13px;color:var(--jp-tx2);margin:0;line-height:1.6">{{ disposisi.catatan }}</p>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- RIGHT COLUMN: Info -->
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <!-- Ringkasan SPK -->
+      <div class="jp-card" style="padding:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--jp-line)">
+          <div style="display:flex;align-items:center;gap:8px">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--jp-primary)" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <h3 style="font-size:13px;font-weight:600;letter-spacing:.05em;color:var(--jp-ink);text-transform:uppercase;margin:0">Ringkasan Laporan</h3>
+          </div>
+          {% if disposisi %}
+          <span style="padding:2px 8px;border-radius:4px;background:var(--jp-sev-h-bg);font-family:var(--jp-mono);font-size:10px;color:#047857;font-weight:600">TERKIRIM</span>
+          {% endif %}
+        </div>
+        {% if disposisi %}
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:13px">
+          <div><span style="color:var(--jp-muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em">Instansi Tujuan</span><div style="font-weight:500;color:var(--jp-ink);margin-top:2px">{{ disposisi.instansi_nama }}</div></div>
+          <div><span style="color:var(--jp-muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em">Urgensi</span><div style="font-weight:500;color:var(--jp-ink);margin-top:2px">{{ disposisi.urgensi|capitalize }}</div></div>
+          <div><span style="color:var(--jp-muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em">Jumlah Temuan</span><div style="font-weight:500;color:var(--jp-ink);margin-top:2px">{{ disposisi.n_temuan }} titik</div></div>
+          <div><span style="color:var(--jp-muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em">Estimasi Biaya</span><div style="font-family:var(--jp-mono);font-size:16px;font-weight:700;color:var(--jp-primary);margin-top:2px">Rp{{ '{:,.0f}'.format(disposisi.total_rp) }}</div></div>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Info Laporan -->
+      {% if disposisi %}
+      <div class="jp-card" style="padding:16px">
+        <div style="display:flex;align-items:center;gap:8px;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--jp-line)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--jp-primary)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <h3 style="font-size:13px;font-weight:600;letter-spacing:.05em;color:var(--jp-ink);text-transform:uppercase;margin:0">Info Laporan</h3>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:12px">
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--jp-muted)">Nomor BAP</span><span style="font-family:var(--jp-mono);font-weight:600">{{ disposisi.bap_nomor }}</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--jp-muted)">Waktu</span><span>{{ disposisi.waktu }}</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--jp-muted)">Status</span><span style="font-weight:600;color:var(--jp-primary)">{{ disposisi.status }}</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--jp-muted)">Lokasi</span><span>{{ disposisi.lokasi or '-' }}</span></div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

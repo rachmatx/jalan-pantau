@@ -1,0 +1,315 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Instansi{% endblock %}
+
+{% block content %}
+<div class="dash-header">
+  <div>
+    <h1 class="dash-title">Manajemen Instansi</h1>
+    <p class="dash-subtitle">Daftar dinas pemeliharaan jalan yang menerima disposisi</p>
+  </div>
+  {% if superadmin %}
+  <button type="button" class="dash-btn-apply" onclick="toggleForm()">+ Tambah Instansi</button>
+  {% endif %}
+</div>
+{% if not superadmin %}
+<div class="dash-card" style="margin-bottom:12px;padding:12px 16px;font-size:12px;color:var(--dash-muted)">
+  Tambah/hapus instansi dan kelola sandi akun hanya bisa dilakukan <b>superadmin</b>.
+</div>
+{% endif %}
+
+<!-- Form tambah (superadmin saja) -->
+{% if superadmin %}
+<div class="dash-card" id="form-card" style="display:none;margin-bottom:12px;padding:16px">
+  <h3 style="font-size:13px;margin:0 0 12px">Instansi Baru</h3>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">
+    <div>
+      <label style="font-size:11px;color:var(--dash-muted);display:block;margin-bottom:4px">NAMA *</label>
+      <input id="f-nama" type="text" class="dash-select" placeholder="Dinas Bina Marga ..." style="width:100%">
+    </div>
+    <div>
+      <label style="font-size:11px;color:var(--dash-muted);display:block;margin-bottom:4px">DAERAH *</label>
+      <input id="f-daerah" type="text" class="dash-select" placeholder="Kabupaten Bogor" style="width:100%">
+    </div>
+    <div>
+      <label style="font-size:11px;color:var(--dash-muted);display:block;margin-bottom:4px">EMAIL *</label>
+      <input id="f-email" type="email" class="dash-select" placeholder="dinas@daerah.go.id" style="width:100%">
+    </div>
+    <div>
+      <label style="font-size:11px;color:var(--dash-muted);display:block;margin-bottom:4px">TELEPON *</label>
+      <input id="f-telepon" type="text" class="dash-select" placeholder="0251-..." style="width:100%">
+    </div>
+    <div style="grid-column:1/-1">
+      <label style="font-size:11px;color:var(--dash-muted);display:block;margin-bottom:4px">ALAMAT *</label>
+      <input id="f-alamat" type="text" class="dash-select" placeholder="Jl. ..." style="width:100%">
+    </div>
+    <div>
+      <label style="font-size:11px;color:var(--dash-muted);display:block;margin-bottom:4px">LATITUDE</label>
+      <input id="f-lat" type="number" step="any" class="dash-select" placeholder="-6.6" style="width:100%">
+    </div>
+    <div>
+      <label style="font-size:11px;color:var(--dash-muted);display:block;margin-bottom:4px">LONGITUDE</label>
+      <input id="f-lon" type="number" step="any" class="dash-select" placeholder="106.8" style="width:100%">
+    </div>
+  </div>
+  <div style="margin-top:12px;display:flex;gap:8px">
+    <button type="button" class="dash-btn-apply" onclick="simpanInstansi()">Simpan</button>
+    <button type="button" class="dash-btn-detail" onclick="toggleForm()">Batal</button>
+  </div>
+</div>
+{% endif %}
+
+<!-- Tabel -->
+<div class="dash-card">
+  <div class="dash-table-wrap">
+    <table class="dash-table">
+      <thead>
+        <tr>
+          <th>Nama Instansi</th>
+          <th>Daerah</th>
+          <th>Email</th>
+          <th>Telepon</th>
+          <th>Koordinat</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="instansi-tbody">
+        <tr><td colspan="6" class="dash-loading">Memuat...</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- Paginasi -->
+  <div id="instansi-paginasi" style="display:none;align-items:center;justify-content:center;gap:4px;margin-top:12px;flex-wrap:wrap"></div>
+  <p class="dash-hint" id="instansi-page-info" aria-live="polite"></p>
+</div>
+
+{% if superadmin %}
+<!-- Kelola akun login (superadmin saja, global semua daerah) -->
+<div class="dash-card" style="margin-top:12px">
+  <div style="padding:12px 16px;border-bottom:1px solid var(--dash-border)">
+    <h3 style="font-size:13px;font-weight:600;margin:0">Kelola Akun Login</h3>
+    <p style="font-size:11px;color:var(--dash-muted);margin:4px 0 0">
+      Akun <span style="font-family:var(--dash-mono)">pupr_&lt;slug&gt;</span> (mis. <span style="font-family:var(--dash-mono)">pupr_bogor</span>,
+      <span style="font-family:var(--dash-mono)">pupr_kab-bogor</span>) otomatis masuk ke dashboard daerahnya.
+      Akun <b>Belum diatur</b> belum bisa dipakai sampai sandinya diisi (min 8 karakter).
+    </p>
+  </div>
+  <div class="dash-table-wrap">
+    <table class="dash-table">
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Daerah</th>
+          <th>Status Sandi</th>
+          <th>Sandi Baru</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="akun-tbody">
+        <tr><td colspan="5" class="dash-loading">Memuat...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block skrip %}
+<script>
+(function(){
+  var SUPERADMIN = {{ 'true' if superadmin else 'false' }};
+  function esc(s){
+    return String(s == null ? "-" : s).replace(/[&<>"']/g, function(m){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m];
+    });
+  }
+
+  // Pagination state
+  var semuaInstansi = [];
+  var halamanInstansi = 1;
+  var PER_HALAMAN_INSTANSI = 20;
+
+  function renderPaginasiInstansi(total){
+    var totalHal = Math.ceil(total / PER_HALAMAN_INSTANSI);
+    var pagEl = document.getElementById("instansi-paginasi");
+    if (!pagEl) return;
+    if (totalHal <= 1) { pagEl.style.display = "none"; return; }
+    pagEl.style.display = "flex";
+    var html = '<button type="button" class="dash-btn-light" id="inst-pag-prev"' + (halamanInstansi <= 1 ? " disabled" : "") + ">‹ Sebelumnya</button>";
+    for (var i = 1; i <= totalHal; i++) {
+      html += '<button type="button" class="dash-btn-light inst-pag-num' + (i === halamanInstansi ? " aktif" : "") + '" data-hal="' + i + '">' + i + "</button>";
+    }
+    html += '<button type="button" class="dash-btn-light" id="inst-pag-next"' + (halamanInstansi >= totalHal ? " disabled" : "") + ">Berikutnya ›</button>";
+    pagEl.innerHTML = html;
+    document.getElementById("inst-pag-prev").onclick = function() { if (halamanInstansi > 1) { halamanInstansi--; renderTabelInstansi(); }};
+    document.getElementById("inst-pag-next").onclick = function() { if (halamanInstansi < totalHal) { halamanInstansi++; renderTabelInstansi(); }};
+    var nums = document.querySelectorAll(".inst-pag-num");
+    for (var j = 0; j < nums.length; j++) {
+      (function(idx) { nums[j].onclick = function() { halamanInstansi = idx + 1; renderTabelInstansi(); }; })(j);
+    }
+  }
+
+  function renderTabelInstansi(){
+    var tb = document.getElementById("instansi-tbody");
+    if (!semuaInstansi.length){
+      tb.innerHTML = '<tr><td colspan="6" class="dash-empty">Belum ada instansi.</td></tr>';
+      document.getElementById("instansi-paginasi").style.display = "none";
+      document.getElementById("instansi-page-info").textContent = "";
+      return;
+    }
+    var start = (halamanInstansi - 1) * PER_HALAMAN_INSTANSI;
+    var end = Math.min(start + PER_HALAMAN_INSTANSI, semuaInstansi.length);
+    var pageRows = semuaInstansi.slice(start, end);
+    tb.innerHTML = pageRows.map(function(r){
+      var koor = (r.lat != null && r.lon != null)
+        ? esc(r.lat + ", " + r.lon) : "-";
+      var aksi = SUPERADMIN
+        ? "<td><button type=\"button\" class=\"dash-btn-detail\" style=\"color:#DC2626\" onclick=\"hapusInstansi(" + r.id + ",'" + esc(r.nama).replace(/'/g,"\\'") + "')\">Hapus</button></td>"
+        : "<td style=\"color:var(--dash-muted);font-size:11px\">khusus superadmin</td>";
+      return "<tr>"
+        + "<td><b>" + esc(r.nama) + "</b></td>"
+        + "<td>" + esc(r.daerah) + "</td>"
+        + "<td>" + esc(r.email) + "</td>"
+        + "<td>" + esc(r.telepon) + "</td>"
+        + "<td style=\"font-family:var(--dash-mono)\">" + koor + "</td>"
+        + aksi
+        + "</tr>";
+    }).join("");
+    renderPaginasiInstansi(semuaInstansi.length);
+    var infoEl = document.getElementById("instansi-page-info");
+    if (infoEl && semuaInstansi.length > PER_HALAMAN_INSTANSI) {
+      infoEl.textContent = "Menampilkan " + (start + 1) + "-" + end + " dari " + semuaInstansi.length + " instansi (Halaman " + halamanInstansi + "/" + Math.ceil(semuaInstansi.length / PER_HALAMAN_INSTANSI) + ").";
+    }
+  }
+
+  function loadData(){
+    var tb = document.getElementById("instansi-tbody");
+    tb.innerHTML = Array(4).fill(
+      '<tr><td colspan="6" style="padding:12px"><span class="skel" style="width:100%;height:16px"></span></td></tr>'
+    ).join("");
+    fetch("/api/instansi")
+      .then(function(r){ return r.json(); })
+      .then(function(rows){
+        semuaInstansi = rows;
+        halamanInstansi = 1;
+        renderTabelInstansi();
+      })
+      .catch(function(){
+        tb.innerHTML = '<tr><td colspan="6" class="dash-empty">Gagal memuat.</td></tr>';
+      });
+  }
+
+  window.toggleForm = function(){
+    var f = document.getElementById("form-card");
+    f.style.display = (f.style.display === "none") ? "block" : "none";
+  };
+
+  window.simpanInstansi = function(){
+    if (!SUPERADMIN){ alert("Hanya superadmin yang boleh menambah instansi."); return; }
+    var wajib = ["nama","daerah","email","telepon","alamat"];
+    var body = {};
+    for (var i = 0; i < wajib.length; i++){
+      var v = document.getElementById("f-" + wajib[i]).value.trim();
+      if (!v){
+        alert("Field " + wajib[i] + " wajib diisi.");
+        return;
+      }
+      body[wajib[i]] = v;
+    }
+    var lat = parseFloat(document.getElementById("f-lat").value);
+    var lon = parseFloat(document.getElementById("f-lon").value);
+    if (!isNaN(lat)) body.lat = lat;
+    if (!isNaN(lon)) body.lon = lon;
+
+    fetch("/api/instansi", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(body)
+    })
+    .then(function(r){ return r.json().then(function(j){ return {ok: r.ok, j: j}; }); })
+    .then(function(res){
+      if (!res.ok){
+        alert("Gagal: " + (res.j.error || "coba lagi"));
+        return;
+      }
+      document.getElementById("form-card").style.display = "none";
+      ["nama","daerah","email","telepon","alamat","lat","lon"].forEach(function(id){
+        document.getElementById("f-" + id).value = "";
+      });
+      loadData();
+    })
+    .catch(function(){ alert("Gagal menyimpan. Periksa koneksi."); });
+  };
+
+  window.hapusInstansi = function(id, nama){
+    if (!SUPERADMIN){ alert("Hanya superadmin yang boleh menghapus instansi."); return; }
+    if (!confirm("Hapus instansi \"" + nama + "\"?")) return;
+    fetch("/api/instansi/" + id, {method: "DELETE"})
+      .then(function(r){ return r.json().then(function(j){ return {ok: r.ok, j: j}; }); })
+      .then(function(res){
+        if (!res.ok){
+          alert("Gagal: " + (res.j.error || "coba lagi"));
+          return;
+        }
+        loadData();
+      })
+      .catch(function(){ alert("Gagal menghapus."); });
+  };
+
+  loadData();
+  if (SUPERADMIN) loadAkun();
+
+  function loadAkun(){
+    var tb = document.getElementById("akun-tbody");
+    if (!tb) return;
+    fetch("/api/admin")
+      .then(function(r){ return r.json().then(function(j){ return {ok: r.ok, j: j}; }); })
+      .then(function(res){
+        if (!res.ok){
+          tb.innerHTML = '<tr><td colspan="5" class="dash-empty">Gagal memuat.</td></tr>';
+          return;
+        }
+        tb.innerHTML = res.j.map(function(a){
+          var st = a.sandi_diatur
+            ? '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:#ECFDF5;color:#059669">Sudah diatur</span>'
+            : '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:#FEF2F2;color:#DC2626">Belum diatur</span>';
+          return "<tr>"
+            + "<td style=\"font-family:var(--dash-mono)\">" + esc(a.username) + "</td>"
+            + "<td>" + esc(a.daerah) + "</td>"
+            + "<td>" + st + "</td>"
+            + "<td><input type=\"password\" id=\"sandi-" + a.id + "\" class=\"dash-select\" placeholder=\"min 8 karakter\" style=\"width:160px\" autocomplete=\"new-password\"></td>"
+            + "<td><button type=\"button\" class=\"dash-btn-apply\" onclick=\"simpanSandi(" + a.id + ",'" + esc(a.username).replace(/'/g,"\\'") + "')\">Simpan</button></td>"
+            + "</tr>";
+        }).join("");
+      })
+      .catch(function(){
+        tb.innerHTML = '<tr><td colspan="5" class="dash-empty">Gagal memuat.</td></tr>';
+      });
+  }
+
+  window.simpanSandi = function(id, username){
+    var el = document.getElementById("sandi-" + id);
+    var sandi = el ? el.value : "";
+    if (!sandi || sandi.length < 8){
+      alert("Sandi minimal 8 karakter.");
+      return;
+    }
+    fetch("/api/admin/sandi", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({username: username, sandi_baru: sandi})
+    })
+    .then(function(r){ return r.json().then(function(j){ return {ok: r.ok, j: j}; }); })
+    .then(function(res){
+      if (!res.ok){
+        alert("Gagal: " + (res.j.error || "coba lagi"));
+        return;
+      }
+      alert("Sandi " + username + " berhasil diatur.");
+      if (el) el.value = "";
+      loadAkun();
+    })
+    .catch(function(){ alert("Gagal menyimpan sandi."); });
+  };
+})();
+</script>
+{% endblock %}

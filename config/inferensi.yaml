@@ -1,0 +1,60 @@
+# Parameter inferensi YOLO — EDITABLE tanpa ubah kode.
+# Diagnosis 2026-09-07 (3 foto 12 MP, best.pt CPU):
+# - imgsz 960 menemukan 1,5-5x lebih banyak temuan vs 640, biaya hanya +0,2-0,4 dtk.
+# - conf rendah (<0,25) menambah duplikat bertumpuk -> iou 0,5 menggabungkannya.
+# Benchmark 2026-09-08 (paritas pt vs onnx dinamis: skor IDENTIK 4 desimal;
+# 1 box bisa flip di batas NMS — wajar, acak, kecil):
+# - gambar = best_yolo11s.pt + TTA (YOLOv11s: test RDD 0,470->0,526; OOD Bandung
+#   seri vs n 0,4497->0,4516; recall naik, precision turun sedikit);
+#   live = best.onnx n (0,1-0,3s, track+ByteTrack OK).
+#   ONNX mengabaikan TTA, jadi TTA hanya untuk backend pt.
+# Berlaku mulai start/deteksi berikutnya (live baca ulang tiap start).
+model_gambar: best_yolo11s.pt
+model_live: best.onnx
+imgsz_gambar: 960
+imgsz_live: 480  # 480 untuk webcam (lebih cepat ~2x), 960 untuk akurasi maksimal
+iou: 0.5
+tta: true  # augment=True; trial 3 foto: conf top naik konsisten (0.4x->0.8x), biaya 0.3s->0.7s. Matikan bila terlalu PD.
+teliti:
+  aktif_default: false
+  tile: 640
+  overlap: 0.25
+  iou_gabung: 0.5
+  metode_gabung: nms  # nms | wbf (weighted box fusion, lebih halus untuk box bertumpuk)
+  buang_tepi_tile: true  # buang box terpotong tepi-dalam tile (duplikat lintas tile)
+  iou_agnostik: 0.6  # NMS lintas kelas: satu kerusakan = satu box kelas pemenang
+# Ensemble 2 model (tab Gambar saja): gabung box model_gambar + model_kedua
+# via WBF/NMS per kelas. Default MATI (biaya ~2x waktu). Nyalakan bila butuh
+# recall maksimal; komplemen s (recall) + n (precision) terbukti di OOD lokal.
+ensemble:
+  aktif: false
+  model_kedua: best.pt
+  iou: 0.5
+  metode: wbf  # wbf | nms
+# Saring akhir: buang box mungil (noise) + pagu baris per gambar.
+saring:
+  luas_min_px: 900  # luas box minimum dalam px citra asli (30x30); 0 = mati
+  maks_temuan: 20  # simpan N conf tertinggi; 0 = tanpa batas
+# Lebur fragmen: kepingan satu kerusakan besar digabung jadi satu box utuh
+# (severity + biaya dihitung ulang; menghentikan dobel-hitung fragmen).
+gabung_fragmen:
+  aktif: true
+  iou_min: 0.05
+  inter_min: 0.3
+  lintas_kelas: true
+# Toleransi per kelas (relatif terhadap slider — slider tetap batas mutlak).
+# Efektif = slider - toleransi. Retak tipis boleh lolos di bawah slider,
+# tapi menaikkan slider selalu memperketat semua kelas.
+toleransi_kelas:
+  longitudinal_crack: 0.13
+  transverse_crack: 0.13
+  alligator_crack: 0.10
+  other_corruption: 0.10
+  pothole: 0.0
+live:
+  min_frames: 1  # track sah untuk snapshot bila terlihat >= N frame (redam kedip)
+# Prior ukuran dari kalibrasi: tolak box yang mustahil secara fisik.
+batas_ukuran:
+  diameter_maks_cm: 300
+  lebar_retak_maks_cm: 100
+  luas_maks_m2: 100

@@ -1,0 +1,6 @@
+path: /kaggle/working/bpid_eval
+train: images
+val: images
+test: images
+nc: 5
+names: ['longitudinal_crack', 'transverse_crack', 'alligator_crack', 'other_corruption', 'pothole']

@@ -1,0 +1,1210 @@
+/* ============================================================
+   civic.css — port visual Stitch "civic precision" ke Flask.
+   Dimuat SETELAH style.css; menang by order. Token dari
+   tailwind-config Stitch, di-port 1:1 agar setia pada desain.
+   ============================================================ */
+:root {
+  --jp-primary: #006194;
+  --jp-primary-container: #007bb9;
+  --jp-secondary: #006399;
+  --jp-bg: #F8FAFC;
+  --jp-surface: #FFFFFF;
+  --jp-container: #e5eeff;
+  --jp-container-low: #eff4ff;
+  --jp-high: #dce9ff;
+  --jp-highest: #d3e4fe;
+  --jp-ink: #0F172A;
+  --jp-ink2: #0b1c30;
+  --jp-tx2: #475569;
+  --jp-muted: #64748B;
+  --jp-line: #E2E8F0;
+  --jp-sev-r-bg: #FEF2F2;
+  --jp-sev-r-tx: #DC2626;
+  --jp-sev-r-bd: #FECACA;
+  --jp-sev-m-bg: #FFFBEB;
+  --jp-sev-m-tx: #D97706;
+  --jp-sev-m-bd: #FDE68A;
+  --jp-sev-h-bg: #ECFDF5;
+  --jp-sev-h-tx: #059669;
+  --jp-sev-h-bd: #A7F3D0;
+  --jp-err: #ba1a1a;
+  --jp-font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --jp-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+body {
+  font-family: var(--jp-font);
+  background: var(--jp-bg);
+  color: var(--jp-ink2);
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+h1, h2, h3, p, a, button, input, select, table { font-feature-settings: normal; }
+main { padding: 0; }
+
+/* Pico CSS sudah dihapus — civic.css adalah satu-satunya otoritas styling. */
+
+/* ---- Topbar ---- */
+.jp-topbar {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 2000;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.04);
+}
+.jp-topbar-in {
+  height: 64px;
+  width: 100%;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.jp-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.jp-brand:hover { text-decoration: none; }
+.jp-brand svg { height: 30px; width: auto; }
+.jp-brand-name { font-size: 15px; font-weight: 600; color: var(--jp-ink); letter-spacing: -0.01em; display: block; line-height: 18px; }
+.jp-brand-sub { font-size: 11px; letter-spacing: 0.05em; font-weight: 600; color: var(--jp-muted); display: block; line-height: 13px; }
+.jp-model-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 8px;
+  border-radius: 9999px;
+  background: var(--jp-container-low);
+  font-family: var(--jp-mono);
+  font-size: 11px;
+  color: var(--jp-tx2);
+}
+.jp-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--jp-sev-h-tx); flex-shrink: 0; }
+.jp-dot.pulse { animation: jp-pulse 1.6s ease-in-out infinite; }
+@keyframes jp-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+.jp-model-ok {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: var(--jp-sev-h-bg);
+  color: #047857;
+  font-family: var(--jp-mono);
+  font-size: 11px;
+}
+.jp-nav { display: flex; align-items: center; gap: 4px; }
+.jp-nav a {
+  padding: 6px 14px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #3f4850;
+  text-decoration: none;
+  transition: background 150ms, color 150ms;
+}
+.jp-nav a:hover { background: var(--jp-high); color: var(--jp-ink2); text-decoration: none; }
+.jp-nav a.aktif { background: var(--jp-primary-container); color: #fdfcff; }
+.jp-meta { display: flex; align-items: center; gap: 8px; }
+.jp-meta-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--jp-container);
+  color: var(--jp-tx2);
+  font-family: var(--jp-mono);
+  font-size: 11px;
+}
+.jp-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--jp-primary);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+}
+body { padding-top: 0; }
+
+/* ---- Workspace bar (tab + status) ---- */
+.jp-workbar {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--jp-surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+@media (min-width: 768px) {
+  .jp-workbar { flex-direction: row; align-items: center; justify-content: space-between; }
+}
+.jp-tabs { display: inline-flex; padding: 4px; border-radius: 8px; background: var(--jp-container-low); gap: 4px; }
+.jp-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--jp-tx2);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 150ms, color 150ms;
+}
+.jp-tab:hover { color: var(--jp-ink); }
+.jp-tab.aktif { background: var(--jp-surface); color: var(--jp-ink); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+.jp-tab svg { width: 15px; height: 15px; }
+.jp-realtime {
+  margin-left: 4px;
+  padding: 2px 6px;
+  border-radius: 9999px;
+  background: var(--jp-sev-h-bg);
+  color: #047857;
+  font-family: var(--jp-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+}
+.jp-modeline { display: none; align-items: center; gap: 8px; color: var(--jp-muted); font-size: 11px; }
+@media (min-width: 1024px) { .jp-modeline { display: flex; } }
+.jp-statusbar { display: flex; align-items: center; gap: 10px; }
+.jp-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: 7px;
+  background: var(--jp-container-low);
+  color: var(--jp-tx2);
+  font-size: 12px;
+  min-height: 28px;
+  margin: 0;
+}
+.jp-status.galat { background: #fdecea; color: var(--jp-err); border: 1px solid var(--jp-err); }
+.jp-chip-model {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--jp-container);
+  color: var(--jp-muted);
+  font-family: var(--jp-mono);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/* ---- Workbench grid ---- */
+.jp-wrap { width: 100%; padding: 24px 24px 32px; display: flex; flex-direction: column; gap: 24px; max-width: 1400px; margin: 0 auto; }
+.jp-grid { display: grid; grid-template-columns: 1fr; gap: 24px; align-items: start; }
+@media (min-width: 1024px) { .jp-grid { grid-template-columns: repeat(12, 1fr); } .jp-grid > .jp-col-main { grid-column: span 7; } .jp-grid > .jp-col-side { grid-column: span 5; } }
+.jp-card {
+  width: 100%;
+  border-radius: 12px;
+  background: var(--jp-surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.jp-card-head {
+  padding: 12px 16px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--jp-line);
+}
+.jp-card-title { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.05em; color: var(--jp-tx2); }
+.jp-card-title svg { width: 18px; height: 18px; }
+.jp-live-flag { display: flex; align-items: center; gap: 6px; font-family: var(--jp-mono); font-size: 11px; color: var(--jp-tx2); }
+
+/* ---- Viewer ---- */
+.jp-viewport { position: relative; width: 100%; aspect-ratio: 16/10; background: #020617; overflow: hidden; }
+.jp-viewport::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.15;
+  pointer-events: none;
+  background-image: radial-gradient(#94A3B8 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+.jp-viewmeta {
+  padding: 3px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--jp-mono);
+  font-size: 11px;
+  color: var(--jp-muted);
+}
+/* zoom.js hooks, gaya civic terang (tinggi eksplisit: % dari parent auto = 0!) */
+.viewer.zoomable { border: none; border-radius: 0; height: min(62vh, 560px); min-height: 380px; position: relative; }
+.viewer.zoomable .viewer-placeholder { color: #CBD5E1; }
+.viewer.zoomable .viewer-placeholder-icon { border-color: rgba(0, 191, 255, 0.5); }
+.zoom-bar {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border: 1px solid var(--jp-line) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
+  bottom: 5px !important;
+  right: 5px !important;
+  left: auto !important;
+  transform: none !important;
+  border-radius: 6px !important;
+  padding: 0 2px !important;
+}
+.zoom-bar button {
+  color: var(--jp-tx2) !important;
+  font-size: 12px !important;
+  min-width: 20px !important;
+  height: 18px !important;
+  font-weight: 600;
+}
+.zoom-bar button:hover { background: var(--jp-high) !important; color: var(--jp-ink) !important; }
+.zoom-pct { color: var(--jp-ink) !important; min-width: 38px !important; font-size: 10px !important; }
+.zoom-sep { background: var(--jp-high) !important; }
+.jp-geostamp {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-family: var(--jp-mono);
+  font-size: 11px;
+  pointer-events: none;
+}
+
+/* ---- Panel parameter ---- */
+.jp-params { padding: 20px; gap: 16px; }
+.jp-params-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; }
+.jp-params-title { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 600; color: var(--jp-ink); }
+.jp-params-title svg { width: 20px; height: 20px; color: var(--jp-primary); }
+.jp-tag {
+  padding: 3px 10px;
+  border-radius: 7px;
+  background: var(--jp-container);
+  color: var(--jp-tx2);
+  font-family: var(--jp-mono);
+  font-size: 11px;
+}
+.jp-field label, .jp-label { font-size: 13px; font-weight: 600; color: var(--jp-ink); display: flex; align-items: center; justify-content: space-between; }
+.jp-hint { font-size: 12px; color: var(--jp-muted); }
+.jp-dropzone {
+  position: relative;
+  border-radius: 10px;
+  background: var(--jp-container-low);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transition: background 150ms;
+}
+.jp-dropzone:hover { background: var(--jp-container); }
+.jp-dropzone.dragover { background: var(--jp-high); box-shadow: 0 0 0 2px var(--jp-primary) inset; }
+.jp-dropzone input[type="file"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.jp-drop-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--jp-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--jp-primary);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  margin-bottom: 8px;
+}
+.jp-drop-icon svg { width: 24px; height: 24px; }
+.jp-drop-name { font-size: 13px; font-weight: 600; color: var(--jp-ink); }
+.jp-drop-sub { font-size: 12px; color: var(--jp-muted); margin: 4px 0 0; }
+.jp-drop-btn {
+  margin-top: 10px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  background: var(--jp-surface);
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  pointer-events: none;
+}
+.jp-box { padding: 12px; border-radius: 8px; background: #fff; display: flex; flex-direction: column; gap: 4px; }
+.jp-conf-out {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--jp-surface);
+  font-family: var(--jp-mono);
+  font-size: 13px;
+  color: var(--jp-primary);
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.jp-range-row { display: flex; justify-content: space-between; font-family: var(--jp-mono); font-size: 11px; color: var(--jp-muted); }
+.jp-check { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; padding: 12px; border-radius: 8px; background: #fff; }
+.jp-check input { margin-top: 4px; width: 16px; height: 16px; accent-color: var(--jp-primary); cursor: pointer; }
+.jp-check b { font-size: 13px; font-weight: 600; color: var(--jp-ink); display: block; }
+.jp-check small { font-size: 12px; color: var(--jp-tx2); }
+.jp-input, .jp-select {
+  /* Netralkan reset Pico (padding 15px + margin-bottom 20px) yang membuat
+     input tanggal/filter terlalu tinggi. Nilai di bawah adalah spesifikasi civic. */
+  margin: 0 !important;
+  width: 100%;
+  height: auto !important;
+  padding: 8px 12px !important;
+  border-radius: 6px;
+  background: var(--jp-surface);
+  color: var(--jp-ink);
+  border: 1px solid transparent;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  font-size: 13px;
+  min-height: 38px;
+  line-height: 20px;
+  box-sizing: border-box;
+}
+/* Pico menargetkan input berbasis type (date/search/number) dengan padding
+   & height khusus — netralkan agar konsisten dengan .jp-input. */
+.jp-wrap input[type="date"],
+.jp-wrap input[type="search"],
+.jp-wrap input[type="number"],
+.jp-wrap input[type="text"],
+.jp-wrap input:not([type]),
+.jp-mapstage input,
+.jp-filtergrid input,
+.jp-filtergrid select {
+  height: auto !important;
+  padding: 8px 12px !important;
+  margin: 0 !important;
+  min-height: 38px !important;
+}
+.jp-input:focus, .jp-select:focus { outline: none; box-shadow: 0 0 0 2px var(--jp-primary); }
+.jp-input::placeholder { color: var(--jp-muted); }
+.jp-mono-input { font-family: var(--jp-mono); font-size: 13px; }
+.jp-gps-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: none;
+  color: var(--jp-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+.jp-gps-btn:hover { color: var(--jp-secondary); }
+.jp-gps-btn svg { width: 15px; height: 15px; }
+.jp-btn-primary {
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--jp-primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: background 150ms, transform 100ms;
+}
+.jp-btn-primary:hover { background: var(--jp-secondary); }
+.jp-btn-primary:active { transform: scale(0.99); }
+.jp-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+.jp-btn-primary svg { width: 20px; height: 20px; }
+
+/* ---- Hasil ---- */
+.jp-result-head { display: flex; flex-direction: column; gap: 12px; padding-bottom: 12px; }
+@media (min-width: 640px) { .jp-result-head { flex-direction: row; align-items: center; justify-content: space-between; } }
+.jp-result-title { display: flex; align-items: center; gap: 8px; font-size: 24px; font-weight: 700; letter-spacing: -0.02em; color: var(--jp-ink); margin: 0; }
+.jp-result-sub { font-size: 12px; color: var(--jp-muted); margin: 2px 0 0; }
+.jp-result-actions { display: flex; align-items: center; gap: 8px; }
+.jp-btn-light, .jp-btn-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border: none;
+  transition: background 150ms;
+}
+.jp-btn-light { background: var(--jp-surface); color: var(--jp-ink); text-decoration: none; }
+.jp-btn-light:hover { background: var(--jp-container); text-decoration: none; }
+.jp-btn-light:hover { background: var(--jp-container); }
+.jp-btn-save { background: var(--jp-primary-container); color: #fdfcff; }
+.jp-btn-save:hover { background: var(--jp-primary); color: #fff; }
+.jp-btn-light svg, .jp-btn-save svg { width: 18px; height: 18px; }
+.jp-kpis { display: grid; grid-template-columns: 1fr; gap: 16px; }
+@media (min-width: 768px) { .jp-kpis { grid-template-columns: repeat(3, 1fr); } }
+.jp-kpi { padding: 16px; border-radius: 12px; display: flex; flex-direction: column; justify-content: space-between; gap: 4px; }
+.jp-kpi-top { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: var(--jp-muted); }
+.jp-kpi-top svg { width: 20px; height: 20px; color: var(--jp-primary); }
+.jp-kpi-val { font-size: 30px; line-height: 36px; font-weight: 700; letter-spacing: -0.025em; color: var(--jp-ink); margin: 4px 0; }
+.jp-kpi-val.mono { font-family: var(--jp-mono); }
+.jp-kpi-sub { font-size: 12px; color: var(--jp-muted); margin: 0; display: flex; align-items: center; gap: 4px; }
+.jp-kpi-sub svg { width: 14px; height: 14px; }
+.jp-kpi-blue { background: var(--jp-container-low); }
+.jp-kpi-red { background: var(--jp-sev-r-bg); }
+.jp-kpi-red .jp-kpi-top { color: var(--jp-sev-r-tx); }
+.jp-kpi-red .jp-kpi-top svg { color: var(--jp-sev-r-tx); }
+.jp-kpi-red .jp-kpi-sub { color: var(--jp-sev-r-tx); }
+.jp-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  background: var(--jp-sev-r-tx);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ---- Tabel civic ---- */
+.jp-table-title { display: flex; align-items: center; justify-content: space-between; }
+.jp-table-title h3 { font-size: 18px; font-weight: 600; color: var(--jp-ink); margin: 0; }
+.jp-table-count { font-family: var(--jp-mono); font-size: 11px; color: var(--jp-muted); }
+.jp-table-scroll { width: 100%; overflow-x: auto; border-radius: 8px; background: var(--jp-surface); box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+table.jp-table { width: 100%; text-align: left; border-collapse: collapse; font-size: 14px; }
+.jp-table thead tr { background: var(--jp-container-low); color: var(--jp-muted); font-size: 11px; font-weight: 600; letter-spacing: 0.05em; }
+.jp-table th { padding: 12px 16px; white-space: nowrap; }
+.jp-table td { padding: 12px 16px; border-top: 1px solid var(--jp-line); vertical-align: top; }
+.jp-table tbody tr { transition: background 150ms; }
+.jp-table tbody tr:hover { background: var(--jp-container-low); }
+.jp-cell-main { font-size: 13px; font-weight: 600; color: var(--jp-ink); display: block; }
+.jp-cell-sub { font-family: var(--jp-mono); font-size: 11px; color: var(--jp-muted); display: block; }
+.jp-num { font-family: var(--jp-mono); font-size: 13px; color: var(--jp-ink); }
+.jp-num-right { font-family: var(--jp-mono); font-size: 13px; font-weight: 700; color: var(--jp-ink); text-align: right; white-space: nowrap; }
+th.jp-num-right { font-weight: 600; }
+.jp-note { display: flex; align-items: center; gap: 8px; color: var(--jp-muted); font-size: 12px; padding-top: 4px; margin: 0; }
+.jp-note svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+/* severity pill + badge kompatibel (dipakai badge() di JS) */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+.badge .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.badge-ringan { background: var(--jp-sev-h-bg); color: #047857; }
+.badge-sedang { background: var(--jp-sev-m-bg); color: #92400e; }
+.badge-berat { background: var(--jp-sev-r-bg); color: #ba1a1a; }
+
+/* ---- Live ---- */
+.jp-live-head .jp-dot { background: var(--jp-err); }
+.jp-live-flag.galat { color: var(--jp-err); }
+#stat-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 12px 16px; }
+@media (min-width: 640px) { #stat-cards { grid-template-columns: repeat(4, 1fr); } }
+.jp-stat-mini { padding: 8px; border-radius: 6px; background: var(--jp-surface); box-shadow: 0 1px 3px rgba(0,0,0,0.08); display: flex; flex-direction: column; }
+.jp-stat-mini span:first-child { font-size: 11px; letter-spacing: 0.05em; font-weight: 600; color: var(--jp-muted); }
+.jp-stat-mini span:last-child { font-family: var(--jp-mono); font-size: 13px; font-weight: 700; color: var(--jp-ink); }
+.jp-btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.jp-btn-go, .jp-btn-stop, .jp-btn-demo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.jp-btn-go { background: #065f46; color: #fff; width: 100%; padding: 10px 12px; }
+.jp-btn-go:hover { opacity: 0.9; }
+.jp-btn-go:disabled { opacity: 0.6; cursor: not-allowed; }
+.jp-btn-stop { background: var(--jp-err); color: #fff; }
+.jp-btn-stop:disabled { opacity: 0.5; cursor: not-allowed; }
+.jp-btn-demo { background: var(--jp-surface); color: var(--jp-ink); }
+.jp-btn-demo:hover { background: var(--jp-container); }
+.jp-btn-go svg, .jp-btn-stop svg, .jp-btn-demo svg { width: 18px; height: 18px; }
+
+/* ---- Footer civic ---- */
+.jp-footer { width: 100%; background: var(--jp-surface); padding: 16px 0; box-shadow: 0 -1px 6px rgba(0,0,0,0.03); margin-top: 24px; }
+.jp-footer-in {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--jp-muted);
+}
+@media (min-width: 640px) { .jp-footer-in { flex-direction: row; } }
+.jp-footer-links { display: flex; gap: 12px; }
+.jp-footer-links a { color: var(--jp-muted); text-decoration: none; font-size: 12px; }
+.jp-footer-links a:hover { color: var(--jp-ink); }
+.jp-footer-mono { font-family: var(--jp-mono); font-size: 11px; }
+
+/* ---- Peta fullscreen + panel melayang (Stitch Layar 2) ---- */
+.jp-mapstage { position: relative; width: 100%; height: calc(100vh - 64px); min-height: 520px; overflow: hidden; background: var(--jp-bg); }
+.jp-mapstage #map { position: absolute; inset: 0; z-index: 0; height: 100%; min-height: 0; border: none; border-radius: 0; }
+.jp-mapfilter {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 500;
+  width: min(560px, calc(100% - 32px));
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.jp-mapfilter-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.jp-mapfilter-title { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; color: var(--jp-ink); }
+.jp-mapfilter-title svg { width: 20px; height: 20px; color: var(--jp-primary); }
+.jp-mapfilter-sub { font-family: var(--jp-mono); font-size: 11px; color: var(--jp-muted); margin-top: 2px; }
+.jp-countpill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--jp-container);
+  font-family: var(--jp-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: #3f4850;
+  white-space: nowrap;
+}
+.jp-mapfilter-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.jp-caps { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: var(--jp-muted); }
+.jp-sevchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+.jp-sevchip input { width: 12px; height: 12px; accent-color: currentColor; cursor: pointer; }
+.jp-sevchip b { font-family: var(--jp-mono); font-size: 10px; padding: 0 4px; border-radius: 9999px; background: #fff; }
+.sev-berat { color: #ba1a1a; background: var(--jp-sev-r-bg); }
+.sev-sedang { color: #92400e; background: var(--jp-sev-m-bg); }
+.sev-ringan { color: #047857; background: var(--jp-sev-h-bg); }
+.jp-search { position: relative; flex: 1; min-width: 180px; }
+.jp-search svg { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--jp-muted); pointer-events: none; }
+.jp-search input {
+  width: 100%;
+  padding: 8px 36px 8px 12px;
+  border-radius: 6px;
+  border: none;
+  background: var(--jp-surface);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  font-size: 12px;
+  color: var(--jp-ink);
+}
+.jp-search input:focus { outline: none; box-shadow: 0 0 0 2px var(--jp-primary); }
+
+/* === GPS Marker (seperti Google Maps) === */
+.gps-marker { position: relative; width: 24px; height: 24px; }
+.gps-dot { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 16px; height: 16px; border-radius: 50%; background: #1a73e8; border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.4); z-index: 2; }
+.gps-pulse { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 24px; height: 24px; border-radius: 50%; background: rgba(26,115,232,.4); animation: gps-pulse 2s ease-out infinite; z-index: 1; }
+@keyframes gps-pulse { 0% { transform: translate(-50%,-50%) scale(1); opacity: .8; } 100% { transform: translate(-50%,-50%) scale(2.5); opacity: 0; } }
+/* Pico men-style [role=button] (marker Leaflet!) — netralkan */
+.leaflet-marker-icon[role="button"] {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+/* Popup Leaflet ala civic */
+.leaflet-popup-content-wrapper { border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.18); }
+.leaflet-popup-content { font-family: var(--jp-font); font-size: 12px; line-height: 1.5; margin: 12px 16px; }
+.leaflet-popup-close-button { top: 6px !important; right: 8px !important; color: var(--jp-muted) !important; font-size: 16px !important; }
+#peta-reset-filter {
+  padding: 6px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--jp-tx2);
+  cursor: pointer;
+  display: inline-flex;
+}
+#peta-reset-filter:hover { background: var(--jp-container); color: var(--jp-ink); }
+#peta-reset-filter svg { width: 18px; height: 18px; }
+.jp-mapempty {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(520px, 92%);
+  background: #fff;
+  border: 1px solid var(--jp-line);
+  border-left: 4px solid var(--jp-primary);
+  border-radius: 10px;
+  padding: 12px 16px;
+  box-shadow: 0 8px 28px rgba(0, 45, 98, 0.22);
+}
+.jp-mapempty strong { display: block; font-size: 13px; }
+.jp-mapempty p { margin: 2px 0 0; font-size: 12px; color: var(--jp-tx2); }
+.jp-mapempty button {
+  flex-shrink: 0;
+  border: 1px solid var(--jp-line);
+  background: #fff;
+  border-radius: 9999px;
+  width: 32px;
+  height: 32px;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--jp-muted);
+}
+.jp-mapctrl { position: absolute; top: 16px; right: 16px; z-index: 500; display: flex; flex-direction: column; gap: 6px; }
+.jp-mapctrl button {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  color: var(--jp-tx2);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.jp-mapctrl button:hover { color: var(--jp-primary); }
+.jp-mapctrl button[aria-pressed="true"] { color: var(--jp-primary); box-shadow: 0 0 0 2px var(--jp-primary); }
+.jp-mapctrl svg { width: 20px; height: 20px; }
+.jp-drawer {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  z-index: 500;
+  width: min(384px, calc(100% - 32px));
+  max-height: calc(100% - 32px);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.jp-drawer-head { padding: 12px; background: var(--jp-container); display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.jp-drawer-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: var(--jp-ink); }
+.jp-drawer-title svg { width: 20px; height: 20px; color: var(--jp-primary); }
+#toggle-drawer-btn {
+  border: none;
+  background: transparent;
+  color: var(--jp-muted);
+  font-size: 18px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+#toggle-drawer-btn:hover { background: var(--jp-high); color: var(--jp-ink); }
+#drawer-body { display: flex; flex-direction: column; gap: 12px; padding: 12px; overflow-y: auto; }
+.jp-drawer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.jp-drawer-box { padding: 8px; border-radius: 6px; background: var(--jp-container-low); display: flex; flex-direction: column; gap: 2px; }
+.jp-drawer-box strong { font-size: 20px; font-weight: 700; color: var(--jp-ink); }
+.jp-drawer-box strong.mono { font-family: var(--jp-mono); font-size: 16px; color: var(--jp-primary); }
+.jp-drawer-box small { font-size: 12px; font-weight: 400; color: var(--jp-tx2); }
+.jp-drawer-box p { margin: 4px 0 0; font-size: 12px; color: var(--jp-tx2); display: flex; align-items: center; gap: 8px; }
+.jp-prop-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.jp-prop-head .mono { font-family: var(--jp-mono); font-size: 11px; color: var(--jp-tx2); }
+.jp-propbar { display: flex; height: 8px; border-radius: 9999px; overflow: hidden; background: var(--jp-container); }
+.jp-propbar span { height: 100%; transition: width 300ms; }
+.seg-berat { background: #DC2626; }
+.seg-sedang { background: #D97706; }
+.seg-ringan { background: #059669; }
+.jp-prop-legend { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 6px; font-family: var(--jp-mono); font-size: 11px; text-align: center; }
+.jp-prop-legend i, .jp-drawer-box i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; }
+.dot-berat { background: #DC2626; }
+.dot-sedang { background: #D97706; }
+.dot-ringan { background: #059669; }
+.jp-prio {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: var(--jp-surface);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  cursor: pointer;
+  text-align: left;
+  transition: background 150ms;
+}
+.jp-prio:hover { background: var(--jp-container-low); }
+.jp-prio .titik { flex-shrink: 0; }
+.jp-prio-teks { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.jp-prio-teks strong { font-size: 13px; font-weight: 600; color: var(--jp-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.jp-prio-teks small { font-family: var(--jp-mono); font-size: 11px; color: var(--jp-muted); }
+.jp-prio-rp { font-family: var(--jp-mono); font-size: 11px; font-weight: 600; color: var(--jp-primary); white-space: nowrap; }
+.jp-popup { font-family: var(--jp-font); font-size: 12px; }
+.jp-popup .badge { margin: 4px 0; }
+.jp-linkbtn {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--jp-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.jp-linkbtn:hover { text-decoration: underline; }
+.jp-foto-dialog { padding: 12px; background: #020617; border: none; }
+.jp-foto-dialog #foto-img { display: block; max-width: min(860px, 88vw); max-height: 80vh; object-fit: contain; border-radius: 8px; }
+.jp-foto-dialog .dialog-x { background: rgba(255,255,255,0.9); }
+@media (max-width: 768px) {
+  .jp-drawer { display: none; }
+  .jp-mapfilter { max-width: calc(100% - 32px); }
+}
+
+/* ---- Riwayat civic (Stitch Layar 3) ---- */
+.jp-crumb { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: var(--jp-muted); }
+.jp-crumb-aktif { color: var(--jp-primary); }
+.jp-pagehead { display: flex; flex-direction: column; gap: 12px; }
+@media (min-width: 768px) { .jp-pagehead { flex-direction: row; align-items: center; justify-content: space-between; } }
+.jp-pagehead h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; color: var(--jp-ink); margin: 0; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.jp-countchip { font-family: var(--jp-mono); font-size: 11px; font-weight: 400; color: var(--jp-tx2); background: var(--jp-container); padding: 2px 8px; border-radius: 9999px; }
+.jp-pageactions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.jp-btn-primary-sm {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--jp-primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.jp-btn-primary-sm:hover { background: var(--jp-secondary); color: #fff; text-decoration: none; }
+.jp-btn-primary-sm svg { width: 18px; height: 18px; }
+.jp-kpi4 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+@media (min-width: 1024px) { .jp-kpi4 { grid-template-columns: repeat(4, 1fr); } }
+.jp-kpi4-card { padding: 16px; background: var(--jp-surface); border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); display: flex; flex-direction: column; justify-content: space-between; }
+.jp-kpi4-card strong { font-size: 24px; font-weight: 700; color: var(--jp-ink); margin-top: 8px; }
+.jp-kpi4-card strong small { font-family: var(--jp-mono); font-size: 11px; font-weight: 400; color: var(--jp-tx2); }
+.jp-kpi4-card strong.mono { font-family: var(--jp-mono); font-size: 20px; }
+.sev-tx-berat { color: #ba1a1a !important; }
+.sev-tx-sedang { color: #92400e !important; }
+.jp-filtercard { padding: 14px 16px; }
+.jp-filtergrid { display: grid; grid-template-columns: 1fr; gap: 12px; align-items: end; }
+.jp-filtergrid .jp-caps { margin-bottom: 5px; }
+label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label dari Pico */
+.jp-filtergrid .jp-input, .jp-filtergrid .jp-select { min-height: 38px; }
+.jp-filtergrid .jp-btn-primary-sm, .jp-filtergrid .jp-btn-light { min-height: 38px; }
+@media (min-width: 640px) { .jp-filtergrid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1024px) { .jp-filtergrid { grid-template-columns: 1fr 1fr 1fr 1.4fr auto; } }
+.jp-filterbtns { display: flex; gap: 8px; }
+.jp-empty { padding: 32px 24px; text-align: center; }
+.jp-empty strong { display: block; font-size: 15px; margin-bottom: 4px; }
+.jp-empty p { margin: 0; font-size: 13px; color: var(--jp-tx2); }
+.jp-idlink { font-family: var(--jp-mono); font-size: 13px; font-weight: 600; color: var(--jp-primary); text-decoration: none; }
+.jp-idlink:hover { text-decoration: underline; }
+.jp-rowact { display: inline-flex; gap: 4px; }
+.jp-rowact button {
+  border: 1px solid transparent;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.jp-rowact button[data-act="detail"] { background: var(--jp-container-low); color: var(--jp-primary); }
+.jp-rowact button[data-act="detail"]:hover { background: var(--jp-high); }
+.jp-rowact button[data-act="pdf"] { background: var(--jp-primary); color: #fff; }
+.jp-rowact button[data-act="pdf"]:hover { background: var(--jp-secondary); }
+.jp-rowact button[data-act="hapus"] { background: var(--jp-sev-r-bg); color: #ba1a1a; }
+.jp-rowact button[data-act="hapus"]:hover { background: #fbd5d5; }
+.jp-dialog:not([open]) { display: none; }
+.jp-dialog { min-width: 0; margin: auto; border: none; border-radius: 12px; padding: 0; max-width: min(900px, 94vw); width: 900px; max-height: 92vh; height: 92vh; display: flex; flex-direction: column; overflow: hidden; position: relative; background: #fff; color: var(--jp-ink2); }
+.jp-dialog::backdrop { background: rgba(11, 28, 48, 0.55); }
+.jp-dialog > div { display: flex; flex-direction: column; height: 100%; max-height: 92vh; overflow: hidden; }
+.jp-dialog .dialog-body { flex: 1; overflow-y: auto; min-height: 0; }
+.jp-dialog .dialog-footer { flex-shrink: 0; }
+.jp-dialog h2 { font-size: 20px; font-weight: 700; margin: 4px 40px 12px 0; }
+.jp-dialog h3 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; }
+.jp-meta4 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 12px; border-radius: 8px; background: var(--jp-container-low); }
+@media (min-width: 640px) { .jp-meta4 { grid-template-columns: repeat(4, 1fr); } }
+.jp-meta4 span { display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: var(--jp-muted); }
+.jp-meta4 b { font-size: 13px; font-weight: 600; }
+.jp-meta4 b.mono { font-family: var(--jp-mono); }
+#d-foto img { display: block; width: 100%; max-height: 44vh; object-fit: contain; background: #020617; border-radius: 8px; }
+.jp-dialog-total { display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding: 12px 16px; background: var(--jp-container-low); border-radius: 8px; margin-top: 12px; font-size: 14px; }
+.jp-dialog-total strong { font-family: var(--jp-mono); font-size: 18px; color: var(--jp-primary); }
+.jp-dialog-actions { display: flex; align-items: center; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+
+/* ---- Paginasi ---- */
+#riwayat-paginasi button { min-width: 36px; height: 36px; padding: 0 12px; border: 1px solid var(--jp-line); border-radius: 8px; background: var(--jp-surface); color: var(--jp-ink); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 150ms; }
+#riwayat-paginasi button:hover:not(:disabled) { background: var(--jp-container); border-color: var(--jp-primary); }
+#riwayat-paginasi button.aktif { background: var(--jp-primary); color: #fff; border-color: var(--jp-primary); }
+#riwayat-paginasi button:disabled { opacity: 0.5; cursor: not-allowed; }
+#riwayat-paginasi button.pag-num { min-width: 32px; padding: 0 8px; }
+.jp-btn-danger {
+  border: none;
+  border-radius: 8px;
+  background: var(--jp-sev-r-bg);
+  color: #ba1a1a;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+.jp-btn-danger:hover { background: #fbd5d5; }
+
+/* ---- Navbar & Nav tray ---- */
+.jp-topbar { position: sticky; top: 0; z-index: 1000; }
+.nav-tray { position: sticky; top: 56px; z-index: 999; max-height: calc(100vh - 56px); overflow-y: auto; }
+.nav-tray a { display: block; padding: 12px 16px; border-bottom: 1px solid var(--jp-line); }
+.jp-status::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--jp-sev-h-tx);
+}
+.jp-status.galat::before { background: var(--jp-err); }
+.nav-toggle { display: none; }
+
+/* ---- Loading overlay ---- */
+.jp-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; width: 100%; height: 100%; min-height: 300px; color: var(--jp-muted); font-size: 15px; font-weight: 500; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.95); z-index: 10; border-radius: 8px; }
+.jp-loading-spinner { width: 64px; height: 64px; border: 5px solid var(--jp-container); border-top-color: var(--jp-primary); border-radius: 50%; animation: jp-spin 0.8s linear infinite; }
+.jp-loading p { margin: 0; font-weight: 600; color: var(--jp-ink); }
+@keyframes jp-spin { to { transform: rotate(360deg); } }
+@keyframes jp-skeleton { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.skel { display: block; border-radius: 6px; background: linear-gradient(90deg, var(--jp-container) 25%, var(--jp-container-low) 50%, var(--jp-container) 75%); background-size: 200% 100%; animation: jp-skeleton 1.5s infinite; }
+@media (max-width: 900px) {
+  .jp-nav, .jp-meta-chip, .jp-model-chip { display: none; }
+  .nav-toggle { display: flex; }
+}
+.nav-toggle span { background: #0b1c30; }
+.nav-tray { background: #fff; border-bottom: 1px solid var(--jp-line); padding: 8px 16px 12px; }
+.nav-tray a { color: var(--jp-ink2); border-bottom-color: var(--jp-line); }
+.nav-tray a.aktif { color: var(--jp-primary); font-weight: 700; }
+
+/* util */
+[hidden] { display: none ! important; }
+
+/* ============================================================
+   RESPONSIVE MOBILE (< 768px)
+   ============================================================ */
+@media (max-width: 768px) {
+  /* ---- Topbar ---- */
+  .jp-topbar-in { height: 56px; padding: 0 12px; }
+  .jp-brand-name { font-size: 14px; }
+  .jp-brand-sub { font-size: 9px; }
+  .jp-brand svg { height: 24px; }
+  .jp-meta { gap: 4px; }
+  .jp-meta-chip { display: none; }
+  .jp-avatar { width: 28px; height: 28px; font-size: 12px; }
+
+  /* ---- Navigasi Mobile ---- */
+  .jp-nav { display: none; }
+  .nav-toggle { display: flex; }
+
+  /* ---- Workbar ---- */
+  .jp-workbar { padding: 8px 12px; gap: 6px; }
+  .jp-tabs { padding: 3px; }
+  .jp-tab { padding: 6px 10px; font-size: 11px; gap: 4px; }
+  .jp-tab svg { width: 14px; height: 14px; }
+  .jp-realtime { font-size: 9px; padding: 1px 4px; }
+  .jp-modeline { display: none; }
+  .jp-statusbar { gap: 6px; }
+  .jp-status { font-size: 10px; padding: 4px 8px; }
+  .jp-chip-model { font-size: 10px; padding: 2px 6px; }
+
+  /* ---- Workbench Grid ---- */
+  .jp-wrap { padding: 12px; gap: 16px; }
+  .jp-grid { gap: 12px; }
+  .jp-card { border-radius: 10px; }
+  .jp-card-head { padding: 8px 12px; }
+  .jp-card-title { font-size: 10px; gap: 6px; }
+  .jp-card-title svg { width: 14px; height: 14px; }
+
+  /* ---- Viewer ---- */
+  .viewer.zoomable { height: 45vh; min-height: 280px; }
+  .jp-viewport { aspect-ratio: 4/3; }
+  .jp-viewmeta { padding: 6px 10px; font-size: 10px; flex-wrap: wrap; gap: 8px; }
+  .zoom-bar { padding: 2px 4px; bottom: 8px; }
+  .zoom-bar button { min-width: 24px; height: 24px; font-size: 11px; }
+  .zoom-pct { min-width: 32px; font-size: 9px; }
+
+  /* ---- Panel Parameter ---- */
+  .jp-params { padding: 12px; gap: 12px; }
+  .jp-params-title { font-size: 16px; }
+  .jp-params-title svg { width: 18px; height: 18px; }
+  .jp-field label, .jp-label { font-size: 12px; }
+  .jp-hint { font-size: 11px; }
+  .jp-dropzone { padding: 12px; }
+  .jp-drop-icon { width: 36px; height: 36px; }
+  .jp-drop-icon svg { width: 20px; height: 20px; }
+  .jp-drop-name { font-size: 12px; }
+  .jp-drop-sub { font-size: 11px; }
+  .jp-box { padding: 10px; }
+  .jp-conf-out { font-size: 12px; padding: 2px 6px; }
+  .jp-range-row { font-size: 10px; }
+  .jp-check { padding: 10px; gap: 6px; }
+  .jp-check b { font-size: 12px; }
+  .jp-check small { font-size: 11px; }
+  .jp-input, .jp-select { padding: 8px 10px; font-size: 13px; }
+  .jp-mono-input { font-size: 12px; }
+  .jp-gps-btn { font-size: 12px; }
+  .jp-btn-primary { padding: 10px 14px; font-size: 13px; }
+  .jp-btn-primary svg { width: 18px; height: 18px; }
+
+  /* ---- Hasil Deteksi ---- */
+  .jp-result-head { flex-direction: column; align-items: flex-start; gap: 8px; padding-bottom: 8px; }
+  .jp-result-title { font-size: 18px; gap: 6px; }
+  .jp-result-sub { font-size: 11px; }
+  .jp-result-actions { width: 100%; gap: 6px; }
+  .jp-result-actions button { flex: 1; padding: 8px 12px; font-size: 12px; justify-content: center; }
+  .jp-kpis { gap: 8px; }
+  .jp-kpi { padding: 12px; }
+  .jp-kpi-top { font-size: 10px; }
+  .jp-kpi-top svg { width: 16px; height: 16px; }
+  .jp-kpi-val { font-size: 22px; line-height: 28px; }
+  .jp-kpi-sub { font-size: 11px; }
+  .jp-pill { font-size: 11px; padding: 3px 10px; }
+  .jp-table-title h3 { font-size: 15px; }
+  .jp-table-count { font-size: 10px; }
+  .jp-table-scroll { font-size: 12px; }
+  .jp-table th, .jp-table td { padding: 8px 10px; }
+  .jp-cell-main { font-size: 12px; }
+  .jp-cell-sub { font-size: 10px; }
+  .jp-num, .jp-num-right { font-size: 11px; }
+  .jp-note { font-size: 11px; gap: 6px; }
+
+  /* ---- Live Streaming ---- */
+  .jp-stat-mini { padding: 6px; }
+  .jp-stat-mini span:first-child { font-size: 9px; }
+  .jp-stat-mini span:last-child { font-size: 11px; }
+  .jp-btn-go, .jp-btn-stop, .jp-btn-demo { padding: 8px 10px; font-size: 12px; }
+  .jp-btn-go { padding: 10px; }
+  .jp-btn-row { gap: 6px; }
+
+  /* ---- Peta ---- */
+  .jp-mapstage { height: calc(100vh - 56px); min-height: 400px; }
+  .jp-mapfilter { top: 8px; left: 8px; right: 8px; width: auto; padding: 10px; gap: 6px; }
+  .jp-mapfilter-top { gap: 8px; }
+  .jp-mapfilter-title { font-size: 14px; }
+  .jp-mapfilter-title svg { width: 18px; height: 18px; }
+  .jp-mapfilter-sub { font-size: 10px; }
+  .jp-countpill { font-size: 10px; padding: 3px 6px; }
+  .jp-mapfilter-row { gap: 6px; }
+  .jp-caps { font-size: 10px; }
+  .jp-sevchip { padding: 2px 6px; font-size: 10px; gap: 3px; }
+  .jp-sevchip input { width: 11px; height: 11px; }
+  .jp-sevchip b { font-size: 9px; padding: 0 3px; }
+  .jp-search input { padding: 6px 32px 6px 10px; font-size: 12px; }
+  .jp-search svg { right: 10px; width: 14px; height: 14px; }
+  .jp-mapctrl { top: 8px; right: 8px; gap: 4px; }
+  .jp-mapctrl button { width: 28px; height: 28px; }
+  .jp-mapctrl svg { width: 16px; height: 16px; }
+  .jp-drawer { bottom: 8px; right: 8px; left: 8px; width: auto; max-height: 45vh; }
+  .jp-drawer-head { padding: 10px; }
+  .jp-drawer-title { font-size: 13px; }
+  .jp-drawer-title svg { width: 18px; height: 18px; }
+  #drawer-body { padding: 10px; gap: 8px; }
+  .jp-drawer-box { padding: 8px; }
+  .jp-drawer-box strong { font-size: 16px; }
+  .jp-drawer-box strong.mono { font-size: 13px; }
+  .jp-prop-head { font-size: 10px; }
+  .jp-propbar { height: 6px; }
+  .jp-prop-legend { font-size: 10px; }
+
+  /* ---- Riwayat ---- */
+  .jp-crumb { font-size: 10px; }
+  .jp-pagehead { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .jp-pagehead h1 { font-size: 18px; gap: 8px; }
+  .jp-countchip { font-size: 10px; }
+  .jp-pageactions { width: 100%; gap: 6px; flex-wrap: wrap; }
+  .jp-pageactions a, .jp-pageactions button { flex: 1; min-width: 80px; padding: 6px 10px; font-size: 11px; justify-content: center; }
+  .jp-kpi4 { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .jp-kpi4-card { padding: 12px; }
+  .jp-kpi4-card strong { font-size: 18px; }
+  .jp-kpi4-card strong small { font-size: 9px; }
+  .jp-filtercard { padding: 12px; }
+  .jp-filtergrid { gap: 8px; }
+  .jp-filtergrid .jp-input, .jp-filtergrid .jp-select { min-height: 36px; font-size: 12px; }
+  .jp-filtergrid .jp-btn-primary-sm, .jp-filtergrid .jp-btn-light { min-height: 36px; font-size: 12px; }
+  .jp-filterbtns { flex-direction: column; }
+  .jp-filterbtns button { width: 100%; }
+  .jp-idlink { font-size: 12px; }
+  .jp-rowact button { padding: 4px 8px; font-size: 11px; }
+  #riwayat-paginasi { gap: 3px; }
+  #riwayat-paginasi button { min-width: 32px; height: 32px; padding: 0 8px; font-size: 12px; }
+
+  /* ---- Modal Detail ---- */
+  .jp-dialog { max-width: 95vw; width: 95vw; padding: 16px; border-radius: 10px; }
+  .jp-dialog h2 { font-size: 16px; margin: 4px 32px 8px 0; }
+  .jp-dialog h3 { font-size: 13px; margin: 12px 0 6px; }
+  .jp-meta4 { grid-template-columns: repeat(2, 1fr); gap: 6px; padding: 10px; }
+  .jp-meta4 span { font-size: 10px; }
+  .jp-meta4 b { font-size: 12px; }
+  #d-foto img { max-height: 30vh; }
+  .jp-dialog-total { padding: 10px; font-size: 13px; }
+  .jp-dialog-total strong { font-size: 16px; }
+  .jp-dialog-actions { gap: 6px; }
+  .jp-dialog-actions button { padding: 8px 12px; font-size: 12px; flex: 1; }
+
+  /* ---- Tentang ---- */
+  .jp-table-title h3 { font-size: 14px; }
+  .jp-table-title .jp-table-count { font-size: 10px; }
+  .badge { font-size: 10px; padding: 2px 6px; }
+
+  /* ---- Footer ---- */
+  .jp-footer { padding: 12px 0; }
+  .jp-footer-in { font-size: 11px; gap: 6px; }
+  .jp-footer-links { gap: 8px; }
+  .jp-footer-links a { font-size: 11px; }
+  .jp-footer-mono { font-size: 10px; }
+
+  /* ---- Toast ---- */
+  .toast-container { top: 60px; right: 8px; left: 8px; }
+  .toast { min-width: auto; max-width: 100%; font-size: 12px; padding: 10px 12px; }
+
+  /* ---- Disposisi ---- */
+  .jp-wrap > div[style*="grid-template-columns:1fr 1fr"] { grid-template-columns: 1fr !important; }
+  #instansi-search { font-size: 13px; }
+
+  /* ---- Dashboard PUPR ---- */
+  .dash-sidebar { position: fixed; left: -280px; transition: left 0.3s; z-index: 1000; }
+  .dash-sidebar.show { left: 0; }
+  .dash-main { margin-left: 0 !important; }
+  .dash-kpis { grid-template-columns: repeat(2, 1fr) !important; }
+  .dash-header { flex-direction: column; align-items: flex-start; }
+
+  /* ---- Fix overflow mobile ---- */
+  body { overflow-x: hidden; }
+  table { max-width: 100%; }
+  .jp-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  img { max-width: 100%; height: auto; }
+  #deteksi-paginasi { gap: 3px; }
+  #deteksi-paginasi button { min-width: 32px; height: 32px; padding: 0 8px; font-size: 12px; }
+
+  /* ---- Live Stream Mobile ---- */
+  .jp-wrap > div[style*="grid-template-columns:1fr 1fr"] > div > div[style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+  #panel-live .jp-card { padding: 12px; }
+  #panel-live .jp-card > div[style*="grid-template-columns"] { grid-template-columns: 1fr !important; gap: 8px; }
+
+/* ---- Navbar Mobile ---- */
+  .jp-topbar-in { height: 48px; padding: 0 12px; gap: 8px; }
+  .jp-brand-name { font-size: 13px; }
+  .jp-brand-sub { font-size: 9px; }
+  .jp-brand svg { width: 20px; height: 20px; }
+  .nav-tray { top: 48px; max-height: calc(100vh - 48px); }
+  .nav-tray a { padding: 14px 16px; font-size: 14px; }
+}
+
+/* ---- Disposisi Page (Desktop First) ---- */
+.disp-header { display: flex; align-items: center; gap: 12px; background: var(--jp-surface); box-shadow: 0 1px 3px rgba(0,0,0,.03); padding: 12px 16px; margin-bottom: 16px; border-radius: 8px; }
+.disp-header-icon { width: 36px; height: 36px; border-radius: 8px; background: rgba(0,123,185,.1); display: flex; align-items: center; justify-content: center; color: var(--jp-primary); flex-shrink: 0; }
+.disp-header-icon svg { width: 20px; height: 20px; }
+.disp-header-text h1 { font-size: 16px; font-weight: 600; color: var(--jp-ink); margin: 0; }
+.disp-header-text p { font-size: 11px; color: var(--jp-tx2); margin: 2px 0 0; }
+.disp-badge { padding: 2px 8px; border-radius: 9999px; background: var(--jp-sev-h-bg); font-family: var(--jp-mono); font-size: 10px; color: #047857; white-space: nowrap; }
+.disp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.disp-col { display: flex; flex-direction: column; gap: 12px; }
+.disp-card { padding: 14px; }
+.disp-card-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; margin-bottom: 10px; border-bottom: 1px solid var(--jp-line); }
+.disp-card-head h2 { font-size: 12px; font-weight: 600; letter-spacing: .05em; color: var(--jp-ink); text-transform: uppercase; margin: 0; }
+.disp-count { font-family: var(--jp-mono); font-size: 11px; color: var(--jp-muted); }
+.disp-table-wrap { overflow-x: auto; }
+.disp-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.disp-table th, .disp-table td { padding: 8px 6px; text-align: left; border-bottom: 1px solid var(--jp-line); }
+.disp-table th { font-size: 10px; font-weight: 600; letter-spacing: .05em; color: var(--jp-muted); text-transform: uppercase; }
+.disp-pagination { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--jp-line); font-size: 11px; color: var(--jp-muted); }
+.disp-page-btn { padding: 6px 10px; border: 1px solid var(--jp-line); border-radius: 6px; background: var(--jp-surface); font-size: 12px; cursor: pointer; }
+.disp-card-title { font-size: 12px; font-weight: 600; letter-spacing: .05em; color: var(--jp-ink); text-transform: uppercase; margin: 0 0 10px; }
+.disp-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.disp-kpi { padding: 10px; border-radius: 8px; display: flex; flex-direction: column; }
+.disp-kpi-label { font-size: 10px; font-weight: 600; letter-spacing: .05em; }
+.disp-kpi-val { font-size: 20px; font-weight: 700; margin-top: 2px; }
+.kpi-red { background: var(--jp-sev-r-bg); color: var(--jp-sev-r-tx); }
+.kpi-yellow { background: var(--jp-sev-m-bg); color: var(--jp-sev-m-tx); }
+.kpi-gray { background: var(--jp-container-low); color: var(--jp-ink); }
+.kpi-blue { background: rgba(204,229,255,.3); color: var(--jp-primary); }
+.disp-rekomendasi { padding: 10px; border-radius: 8px; border: 2px solid var(--jp-primary); background: var(--jp-container); }
+.disp-rekomendasi-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.disp-badge-rekom { padding: 2px 8px; border-radius: 6px; background: var(--jp-primary-container); font-family: var(--jp-mono); font-size: 10px; color: #fdfcff; }
+.disp-search-box { position: relative; margin-top: 10px; }
+.disp-search-box svg { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--jp-muted); }
+.disp-search-input { width: 100%; padding: 8px 36px 8px 12px; border: 1px solid var(--jp-line); border-radius: 8px; font-size: 13px; background: var(--jp-surface); }
+.disp-search-input:focus { outline: none; border-color: var(--jp-primary); }
+.disp-instansi-list { max-height: 120px; overflow-y: auto; border: 1px solid var(--jp-line); border-radius: 8px; background: var(--jp-surface); }
+.disp-label { font-size: 12px; font-weight: 600; color: var(--jp-ink); display: block; margin-bottom: 8px; }
+.disp-urgensi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.disp-urgensi-btn { display: flex; align-items: center; padding: 10px; border-radius: 8px; background: var(--jp-sev-r-bg); cursor: pointer; border: 1px solid transparent; }
+.disp-urgensi-btn input { accent-color: var(--jp-sev-r-tx); }
+.disp-urgensi-btn span { font-size: 12px; font-weight: 600; margin-left: 8px; }
+.disp-textarea { width: 100%; resize: none; font-size: 13px; padding: 10px; border: 1px solid var(--jp-line); border-radius: 8px; background: var(--jp-surface); }
+.disp-textarea:focus { outline: none; border-color: var(--jp-primary); }
+.disp-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.disp-actions button { height: 40px; justify-content: center; }
+.disp-btn-kirim { width: 100%; height: 42px; margin-top: 8px; }
+
+/* ---- Disposisi Mobile (must be after desktop) ---- */
+@media (max-width: 768px) {
+  .disp-header { padding: 10px 12px !important; }
+  .disp-header-icon { width: 32px !important; height: 32px !important; }
+  .disp-header-icon svg { width: 16px !important; height: 16px !important; }
+  .disp-header-text h1 { font-size: 14px !important; }
+  .disp-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
+  .disp-card { padding: 10px !important; }
+  .disp-table th, .disp-table td { padding: 6px 4px !important; font-size: 11px !important; }
+  .hide-mobile { display: none !important; }
+  .disp-kpi-val { font-size: 16px !important; }
+  .disp-urgensi-grid { grid-template-columns: 1fr !important; }
+  .disp-actions { grid-template-columns: 1fr !important; }
+}

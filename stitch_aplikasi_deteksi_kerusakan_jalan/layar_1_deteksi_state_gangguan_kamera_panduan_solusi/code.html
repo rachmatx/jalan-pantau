@@ -1,0 +1,685 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      "colors": {
+        "severity-low-border": "#A7F3D0",
+        "on-background": "#0b1c30",
+        "text-secondary": "#475569",
+        "primary-container": "#007bb9",
+        "inverse-on-surface": "#eaf1ff",
+        "on-secondary": "#ffffff",
+        "tertiary": "#894d00",
+        "text-primary": "#0F172A",
+        "surface-container": "#e5eeff",
+        "surface-container-low": "#eff4ff",
+        "tertiary-fixed": "#ffdcc0",
+        "secondary": "#006399",
+        "tertiary-container": "#ac6200",
+        "error": "#ba1a1a",
+        "inverse-surface": "#213145",
+        "outline": "#707881",
+        "surface-variant": "#d3e4fe",
+        "on-primary-fixed": "#001d31",
+        "on-secondary-container": "#004f7b",
+        "severity-low-text": "#059669",
+        "surface-container-highest": "#d3e4fe",
+        "surface-tint": "#006398",
+        "bg-main": "#F8FAFC",
+        "surface-dim": "#cbdbf5",
+        "on-surface": "#0b1c30",
+        "error-container": "#ffdad6",
+        "on-primary-container": "#fdfcff",
+        "severity-med-border": "#FDE68A",
+        "text-muted": "#64748B",
+        "surface-container-lowest": "#ffffff",
+        "on-primary": "#ffffff",
+        "on-error-container": "#93000a",
+        "on-primary-fixed-variant": "#004b73",
+        "surface-bright": "#f8f9ff",
+        "on-error": "#ffffff",
+        "primary-fixed": "#cce5ff",
+        "secondary-container": "#7bc2ff",
+        "on-surface-variant": "#3f4850",
+        "surface-container-high": "#dce9ff",
+        "secondary-fixed": "#cde5ff",
+        "severity-high-bg": "#FEF2F2",
+        "on-tertiary-fixed": "#2d1600",
+        "severity-high-text": "#DC2626",
+        "inverse-primary": "#93ccff",
+        "on-tertiary": "#ffffff",
+        "background": "#f8f9ff",
+        "on-secondary-fixed-variant": "#004b74",
+        "on-tertiary-container": "#fffbff",
+        "severity-med-text": "#D97706",
+        "severity-high-border": "#FECACA",
+        "surface": "#FFFFFF",
+        "border-subtle": "#E2E8F0",
+        "on-secondary-fixed": "#001d32",
+        "outline-variant": "#bfc7d2",
+        "secondary-fixed-dim": "#94ccff",
+        "on-tertiary-fixed-variant": "#6b3b00",
+        "tertiary-fixed-dim": "#ffb875",
+        "primary": "#006194",
+        "severity-med-bg": "#FFFBEB",
+        "primary-fixed-dim": "#93ccff",
+        "severity-low-bg": "#ECFDF5"
+      },
+      "borderRadius": {
+        "DEFAULT": "0.125rem",
+        "lg": "0.25rem",
+        "xl": "0.5rem",
+        "full": "0.75rem"
+      },
+      "spacing": {
+        "space-xs": "0.5rem",
+        "space-xl": "2rem",
+        "space-sm": "0.75rem",
+        "space-2xs": "0.25rem",
+        "gutter-app": "1rem",
+        "space-lg": "1.5rem",
+        "space-md": "1rem",
+        "workbench-gap": "1.5rem"
+      },
+      "fontFamily": {
+        "data-mono-md": ["JetBrains Mono"],
+        "label-md": ["Inter"],
+        "data-mono-sm": ["JetBrains Mono"],
+        "headline-sm": ["Inter"],
+        "headline-lg": ["Inter"],
+        "body-sm": ["Inter"],
+        "body-md": ["Inter"],
+        "label-caps": ["Inter"],
+        "headline-xl": ["Inter"]
+      },
+      "fontSize": {
+        "data-mono-md": ["13px", {"lineHeight": "18px", "fontWeight": "500"}],
+        "label-md": ["13px", {"lineHeight": "16px", "fontWeight": "600"}],
+        "data-mono-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
+        "headline-sm": ["18px", {"lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+        "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+        "label-caps": ["11px", {"lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+        "headline-xl": ["30px", {"lineHeight": "36px", "letterSpacing": "-0.025em", "fontWeight": "700"}]
+      }
+    }
+  }
+}</script></head><body class="bg-bg-main text-on-surface font-body-md text-body-md min-h-screen"><header class="fixed top-0 w-full z-50 bg-surface/95 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 w-full px-gutter-app flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs"><img alt="JalanPantau Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UtcA_1fkyo_y_bO1b__NpqQNyghMKrrDUveJRn__6RbHgcRllW2v9BHRm8VRhUelk_qAQ8jnAbUcMjCelkVRgT_qG024RSW7M3ftrfoB3HLWyZIKo7HZgO-7KJpQzyoGbNgPA0SWNIe0IjaWfRBd-0xqTVRL1KomoMFZncFb3jiLU8nFF_X3qdn9l9ffM0MqMNMkzz_QF5IuFl-vv4Irl7nwXVZHX02_dwVDAn0kL_swwQ--Vnidqyqg"><div class="flex flex-col"><span class="font-label-md text-label-md text-text-primary tracking-tight">JalanPantau</span><span class="font-label-caps text-label-caps text-text-muted">SISTEM INSPEKSI JALAN</span></div></div><div class="hidden sm:flex items-center gap-space-xs px-space-xs py-space-2xs rounded-full bg-surface-container-low"><span class="font-data-mono-sm text-data-mono-sm text-text-secondary">YOLOv11n • TA 2025</span><div class="flex items-center gap-1.5 px-space-2xs py-0.5 rounded-full bg-severity-low-bg"><span class="w-1.5 h-1.5 rounded-full bg-severity-low-text"></span><span class="font-data-mono-sm text-data-mono-sm text-severity-low-text">Model Siap</span></div></div></div><nav class="hidden md:flex items-center gap-space-xs" data-active-classes="bg-primary-container text-on-primary-container font-label-md"><a aria-current="page" class="px-space-sm py-1.5 rounded transition-colors bg-primary-container text-on-primary-container font-label-md" data-path="deteksi" href="#">Deteksi</a><a class="px-space-sm py-1.5 rounded text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="peta" href="#">Peta</a><a class="px-space-sm py-1.5 rounded text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="riwayat" href="#">Riwayat</a><a class="px-space-sm py-1.5 rounded text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="tentang" href="#">Tentang</a></nav><div class="flex items-center gap-space-sm"><div class="hidden lg:flex items-center gap-space-xs px-space-xs py-1 rounded bg-surface-container"><span class="material-symbols-outlined text-severity-low-text text-[16px]">wifi</span><span class="font-data-mono-sm text-data-mono-sm text-text-secondary">Lokal / Offline-Ready</span></div><div class="hidden xl:flex items-center gap-space-2xs text-text-muted"><span class="material-symbols-outlined text-[16px]">schedule</span><span class="font-data-mono-sm text-data-mono-sm">SHIFT 01 • WIB</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-16 bg-bg-main min-h-screen" id="main-content"><div class="flex flex-col w-full">
+<!-- System Alert Banner for Field Dispatch -->
+<div class="w-full bg-severity-high-bg px-gutter-app py-space-sm shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-8 h-8 rounded-full bg-error text-on-error flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]">warning</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-space-xs flex-wrap">
+<span class="font-label-caps text-label-caps text-severity-high-text">STATUS KRITIS INSPEKSI</span>
+<span class="font-data-mono-sm text-data-mono-sm px-space-2xs py-0.5 rounded bg-error-container text-on-error-container">BUS-TIMEOUT: /dev/video0</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary truncate">
+          Frame buffer terhenti di Ruas Jl. Raya Tajem KM 4.2. Ingestion pipeline ditangguhkan secara otomatis.
+        </p>
+</div>
+</div>
+<div class="flex items-center gap-space-xs shrink-0 self-end md:self-auto">
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">CACHE TERSIMPAN: 1.428 FRAME</span>
+<button class="px-space-sm py-1 rounded bg-surface shadow-sm font-label-md text-label-md text-text-primary hover:bg-surface-container transition-colors flex items-center gap-1.5" onclick="triggerToast('Menyinkronkan log darurat ke storage internal...')" type="button">
+<span class="material-symbols-outlined text-[16px] text-text-secondary">sync</span>
+        Sinkronkan Buffer
+      </button>
+</div>
+</div>
+<div class="px-gutter-app py-space-md space-y-space-md max-w-[1600px] mx-auto w-full">
+<!-- Mode Sub-Navigation Tabs -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm pb-space-xs">
+<div class="flex items-center gap-space-2xs p-1 rounded-xl bg-surface-container shadow-sm w-fit">
+<button class="px-space-md py-1.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md shadow-sm flex items-center gap-2 transition-all" id="tab-live" type="button">
+<span class="w-2 h-2 rounded-full bg-severity-high-text animate-ping"></span>
+          Live Streaming (Aktif)
+        </button>
+<button class="px-space-md py-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface font-label-md text-label-md transition-all flex items-center gap-2" type="button">
+<span class="material-symbols-outlined text-[16px]">video_file</span>
+          Unggah Rekaman MP4
+        </button>
+<button class="px-space-md py-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface font-label-md text-label-md transition-all flex items-center gap-2" type="button">
+<span class="material-symbols-outlined text-[16px]">photo_library</span>
+          Batch Citra Frame
+        </button>
+</div>
+<div class="flex items-center gap-space-sm">
+<div class="flex items-center gap-2 px-space-sm py-1 rounded-full bg-surface shadow-sm">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+<span class="font-data-mono-sm text-data-mono-sm text-severity-high-text">INFERENCE IDLE (STALL)</span>
+</div>
+<div class="hidden sm:flex items-center gap-1.5 text-text-muted font-data-mono-sm text-data-mono-sm">
+<span class="material-symbols-outlined text-[16px]">pin_drop</span>
+<span>-7.758392, 110.428391</span>
+</div>
+</div>
+</div>
+<!-- Top KPI Dashboard Summary -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md" id="stat-cards">
+<!-- KPI 1: Streaming FPS (Error State) -->
+<div class="p-space-md rounded-xl bg-surface shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">STREAMING FPS</span>
+<span class="inline-flex items-center gap-1.5 px-space-2xs py-0.5 rounded-full bg-severity-high-bg">
+<span class="w-1.5 h-1.5 rounded-full bg-severity-high-text"></span>
+<span class="font-data-mono-sm text-data-mono-sm text-severity-high-text font-medium">Terputus</span>
+</span>
+</div>
+<div class="my-space-xs flex items-baseline gap-space-xs">
+<span class="font-data-mono-md text-headline-xl text-severity-high-text font-bold" id="fps-stat">0.0</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">FPS / Target: 30.0</span>
+</div>
+<div class="flex items-center justify-between pt-space-xs">
+<span class="font-body-sm text-body-sm text-text-secondary">Dropped Frame Window</span>
+<span class="font-data-mono-sm text-data-mono-sm text-severity-high-text">100% Loss (5.2s)</span>
+</div>
+<div class="absolute bottom-0 left-0 right-0 h-1 bg-severity-high-border">
+<div class="h-full bg-error w-full"></div>
+</div>
+</div>
+<!-- KPI 2: Unique Points Mapped (Preserved in Cache) -->
+<div class="p-space-md rounded-xl bg-surface shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">TITIK UNIK TERPETAKAN</span>
+<span class="inline-flex items-center gap-1.5 px-space-2xs py-0.5 rounded-full bg-severity-low-bg">
+<span class="w-1.5 h-1.5 rounded-full bg-severity-low-text"></span>
+<span class="font-data-mono-sm text-data-mono-sm text-severity-low-text font-medium">Cache Aman</span>
+</span>
+</div>
+<div class="my-space-xs flex items-baseline gap-space-xs">
+<span class="font-data-mono-md text-headline-xl text-text-primary font-bold" id="unik-stat">14</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">Titik Lokasi Geospasial</span>
+</div>
+<div class="flex items-center justify-between pt-space-xs">
+<span class="font-body-sm text-body-sm text-text-secondary">Spatial Cluster ID</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-primary">RTK-FIX #09-TJ</span>
+</div>
+<div class="absolute bottom-0 left-0 right-0 h-1 bg-surface-container">
+<div class="h-full bg-primary w-2/3"></div>
+</div>
+</div>
+<!-- KPI 3: Live Detection Queue -->
+<div class="p-space-md rounded-xl bg-surface shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">DETEKSI FRAME AKTIF</span>
+<span class="inline-flex items-center gap-1.5 px-space-2xs py-0.5 rounded-full bg-severity-med-bg">
+<span class="w-1.5 h-1.5 rounded-full bg-severity-med-text"></span>
+<span class="font-data-mono-sm text-data-mono-sm text-severity-med-text font-medium">Standby</span>
+</span>
+</div>
+<div class="my-space-xs flex items-baseline gap-space-xs">
+<span class="font-data-mono-md text-headline-xl text-text-secondary font-bold" id="deteksi-stat">0</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">Objek dalam Buffer</span>
+</div>
+<div class="flex items-center justify-between pt-space-xs">
+<span class="font-body-sm text-body-sm text-text-secondary">Model Tensor Runtime</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">YOLOv11n (Paused)</span>
+</div>
+<div class="absolute bottom-0 left-0 right-0 h-1 bg-surface-container">
+<div class="h-full bg-severity-med-text w-0"></div>
+</div>
+</div>
+<!-- KPI 4: Total Processed Frames (Safe Prior to Disconnect) -->
+<div class="p-space-md rounded-xl bg-surface shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">TOTAL FRAME DIPROSES</span>
+<span class="inline-flex items-center gap-1.5 px-space-2xs py-0.5 rounded-full bg-surface-container-low">
+<span class="w-1.5 h-1.5 rounded-full bg-text-secondary"></span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-secondary font-medium">Tersimpan</span>
+</span>
+</div>
+<div class="my-space-xs flex items-baseline gap-space-xs">
+<span class="font-data-mono-md text-headline-xl text-text-primary font-bold" id="frame-stat">1.428</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">Frame Terarsip</span>
+</div>
+<div class="flex items-center justify-between pt-space-xs">
+<span class="font-body-sm text-body-sm text-text-secondary">Integritas Storage SQLite</span>
+<span class="font-data-mono-sm text-data-mono-sm text-severity-low-text">100% OK (WAL Active)</span>
+</div>
+<div class="absolute bottom-0 left-0 right-0 h-1 bg-surface-container">
+<div class="h-full bg-primary-container w-full"></div>
+</div>
+</div>
+</div>
+<!-- Main Workbench Split: Left Visualizer (65%) & Right Telemetry Controls (35%) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md items-start">
+<!-- Left Visual Analysis Viewer (Slot Live) -->
+<div class="lg:col-span-8 flex flex-col gap-space-xs" id="slot-live">
+<div class="flex items-center justify-between px-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-md text-label-md text-text-primary">Monitor Visual Lapangan: Kanal 01</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">V4L2 Device Handler</span>
+</div>
+<div class="flex items-center gap-space-xs text-text-muted font-data-mono-sm text-data-mono-sm">
+<span>RES: 1920x1080</span>
+<span>•</span>
+<span class="text-severity-high-text">BITRATE: 0 KB/s</span>
+</div>
+</div>
+<!-- Camera Viewport / Monitor Shell -->
+<div class="relative w-full aspect-video rounded-xl bg-inverse-surface overflow-hidden shadow-md flex items-center justify-center p-space-md" id="viewer-live">
+<!-- Static Scanline & Technical Noise Pattern Overlay -->
+<div class="absolute inset-0 opacity-20 pointer-events-none" style="background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.08) 2px, rgba(255,255,255,0.08) 4px);"></div>
+<!-- Background Telemetry Grids (Subtle Wireframe HUD) -->
+<div class="absolute inset-4 pointer-events-none flex flex-col justify-between">
+<div class="flex justify-between items-start font-data-mono-sm text-data-mono-sm text-outline-variant/40">
+<div>
+<p>DEV: /dev/v4l/by-id/usb-Sony_IMX708_CSI-video-index0</p>
+<p>SYNC_PHASE: TIMEOUT_ABORT (CODE: -110 ETIMEDOUT)</p>
+</div>
+<div class="text-right">
+<p>BUFFER_HEALTH: CRITICAL [0/32 FRAMES]</p>
+<p class="text-severity-high-text animate-pulse">NO_CARRIER_DETECTED</p>
+</div>
+</div>
+<div class="flex justify-between items-end font-data-mono-sm text-data-mono-sm text-outline-variant/40">
+<p>HW_ADDR: 0x2A:0x04 • GPIO-PIN 18 HIGH</p>
+<p>LOCAL_RING_BUFFER: DUMPED TO DISK</p>
+</div>
+</div>
+<!-- Floating Error & Troubleshooting Hub Modal -->
+<div class="relative z-10 w-full max-w-xl bg-surface/95 backdrop-blur-md rounded-xl shadow-xl p-space-lg">
+<!-- Modal Header -->
+<div class="flex items-start gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-severity-high-bg text-error flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[24px]">videocam_off</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-space-xs flex-wrap">
+<span class="font-label-caps text-label-caps text-severity-high-text">HARDWARE I/O ERROR</span>
+<span class="font-data-mono-sm text-data-mono-sm px-space-2xs py-0.5 rounded bg-surface-container-high text-on-surface">DRV_FAIL_504</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-text-primary mt-1">Koneksi Kamera Inspeksi Terputus (/dev/video0)</h2>
+<p class="font-data-mono-sm text-data-mono-sm text-text-muted mt-0.5">ERR_CAMERA_TIMEOUT_CODE_504 | Baudrate Loss on RTK-GNSS Receiver</p>
+</div>
+</div>
+<!-- Error Diagnostic Body -->
+<div class="my-space-md p-space-sm rounded-lg bg-surface-container-low text-text-secondary">
+<p class="font-body-sm text-body-sm leading-relaxed text-on-surface" id="status-live">
+<strong class="font-medium text-text-primary">Diagnosa Sensor:</strong> Sensor Sony IMX708 tidak merespons frame buffer selama <span class="font-data-mono-sm text-severity-high-text font-bold">5.200 ms</span>. Aliran inferensi YOLOv11n dijeda otomatis untuk mencegah anomali data dan distorsi geolokasi.
+              </p>
+</div>
+<!-- Troubleshooting Steps Accordion / List -->
+<div class="space-y-space-xs mb-space-lg">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">3 Langkah Troubleshooting Cepat Lapangan</span>
+<div class="flex items-start gap-space-xs p-space-xs rounded bg-surface shadow-sm">
+<span class="font-data-mono-sm text-data-mono-sm w-5 h-5 rounded-full bg-surface-container-high text-text-primary flex items-center justify-center shrink-0">1</span>
+<p class="font-body-sm text-body-sm text-text-secondary">
+                  Periksa sambungan kabel <strong class="text-text-primary">USB 3.0 Type-C</strong> atau port bus USB host di kabin kendaraan survei. Pastikan indikator LED power modul optik menyala biru solid.
+                </p>
+</div>
+<div class="flex items-start gap-space-xs p-space-xs rounded bg-surface shadow-sm">
+<span class="font-data-mono-sm text-data-mono-sm w-5 h-5 rounded-full bg-surface-container-high text-text-primary flex items-center justify-center shrink-0">2</span>
+<p class="font-body-sm text-body-sm text-text-secondary">
+                  Restart daemon penangkap frame V4L2 dengan mengklik opsi <strong class="text-primary">Inisialisasi Ulang Driver</strong> di bawah ini untuk merilis lock mutex OS.
+                </p>
+</div>
+<div class="flex items-start gap-space-xs p-space-xs rounded bg-surface shadow-sm">
+<span class="font-data-mono-sm text-data-mono-sm w-5 h-5 rounded-full bg-surface-container-high text-text-primary flex items-center justify-center shrink-0">3</span>
+<p class="font-body-sm text-body-sm text-text-secondary">
+                  Beralih sementara ke mode <strong class="text-text-primary">Berkas MP4</strong> atau pilih <strong class="text-text-primary">Kamera Cadangan (IP-Cam RTSP)</strong> di dashboard kontrol sisi kanan untuk melanjutkan survei.
+                </p>
+</div>
+</div>
+<!-- Action Buttons Hub -->
+<div class="flex flex-col sm:flex-row items-center gap-space-xs pt-space-xs">
+<button class="w-full sm:w-auto px-space-md py-2 rounded-lg bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md flex items-center justify-center gap-2 shadow-sm transition-all" id="btn-retry" onclick="retryConnection()" type="button">
+<span class="material-symbols-outlined text-[18px]">refresh</span>
+                Coba Hubungkan Ulang (Retry)
+              </button>
+<button class="w-full sm:w-auto px-space-md py-2 rounded-lg bg-surface-container-high hover:bg-surface-container text-on-surface font-label-md text-label-md flex items-center justify-center gap-2 shadow-sm transition-all" onclick="switchBackupCam()" type="button">
+<span class="material-symbols-outlined text-[18px]">cell_tower</span>
+                Beralih ke Kamera Cadangan
+              </button>
+<button class="w-full sm:w-auto sm:ml-auto px-space-sm py-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface-container font-label-md text-label-md flex items-center justify-center gap-1.5 transition-all" onclick="downloadLog()" type="button">
+<span class="material-symbols-outlined text-[18px]">download_for_offline</span>
+                Unduh Log Error (.log)
+              </button>
+</div>
+</div>
+<!-- Bottom Viewer Controls Overlay (Micro elevation bar) -->
+<div class="absolute bottom-3 left-3 right-3 flex items-center justify-between pointer-events-none">
+<div class="px-space-sm py-1 rounded bg-inverse-surface/80 backdrop-blur-md text-inverse-on-surface font-data-mono-sm text-data-mono-sm flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-severity-high-text"></span>
+              STREAM HALTED • AUTO-SAFE PROTOCOL ENGAGED
+            </div>
+<div class="flex items-center gap-1 pointer-events-auto">
+<button class="p-1.5 rounded bg-surface/90 text-text-secondary hover:text-text-primary shadow-sm" title="Kamera Snapshot Terakhir" type="button">
+<span class="material-symbols-outlined text-[16px]">photo_camera</span>
+</button>
+<button class="p-1.5 rounded bg-surface/90 text-text-secondary hover:text-text-primary shadow-sm" title="Pengaturan Lensa" type="button">
+<span class="material-symbols-outlined text-[16px]">tune</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Control & Telemetry Panel (35%) -->
+<div class="lg:col-span-4 flex flex-col gap-space-md">
+<!-- Configuration & Device Selection Card -->
+<div class="p-space-md rounded-xl bg-surface shadow-sm space-y-space-md">
+<div class="flex items-center justify-between pb-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">videocam</span>
+<h3 class="font-headline-sm text-headline-sm text-text-primary">Konfigurasi Perangkat</h3>
+</div>
+<span class="px-space-2xs py-0.5 rounded bg-severity-high-bg text-severity-high-text font-data-mono-sm text-data-mono-sm">Offline</span>
+</div>
+<!-- Device Source Dropdown -->
+<div class="space-y-1">
+<label class="font-label-caps text-label-caps text-text-muted uppercase" for="sumber">Sumber Aliran Sensor (Video Input)</label>
+<div class="relative">
+<select class="w-full px-space-sm py-2 rounded-lg bg-surface-container-low text-text-primary font-body-md text-body-md shadow-sm focus:outline-none focus:bg-surface transition-colors cursor-pointer appearance-none" id="sumber">
+<option selected="" value="cam-0">[Offline] Kamera Depan Sony IMX708 (USB 3.0 - /dev/video0)</option>
+<option value="cam-1">Kamera Cadangan Rooftop IP-Cam (rtsp://192.168.1.120:554/live)</option>
+<option value="cam-2">Kamera Sudut Samping Basler acA1920 (GigE Vision)</option>
+<option value="file">Impor Berkas Video Lapangan (.mp4 / .avi)</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-2.5 text-text-muted pointer-events-none text-[18px]">expand_more</span>
+</div>
+<p class="font-data-mono-sm text-data-mono-sm text-severity-high-text pt-1">
+              • Sensor IMX708 tidak merespons (Timeout 504)
+            </p>
+</div>
+<!-- Sampling Parameters -->
+<div class="grid grid-cols-2 gap-space-sm pt-space-xs">
+<div>
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Confidence Thresh</span>
+<div class="font-data-mono-md text-data-mono-md text-text-primary mt-1">0.45 (45%)</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full mt-1.5 overflow-hidden">
+<div class="bg-primary h-full w-[45%]"></div>
+</div>
+</div>
+<div>
+<span class="font-label-caps text-label-caps text-text-muted uppercase">IoU NMS Window</span>
+<div class="font-data-mono-md text-data-mono-md text-text-primary mt-1">0.50 (50%)</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full mt-1.5 overflow-hidden">
+<div class="bg-primary-container h-full w-[50%]"></div>
+</div>
+</div>
+</div>
+<!-- Operational Controls (Disabled / Adapted State) -->
+<div class="space-y-space-xs pt-space-xs">
+<div class="flex items-center gap-space-xs">
+<button class="flex-1 px-space-md py-2.5 rounded-lg bg-surface-container-high text-text-muted font-label-md text-label-md cursor-not-allowed flex items-center justify-center gap-2" disabled="" id="mulai" type="button">
+<span class="material-symbols-outlined text-[18px]">play_circle</span>
+                Mulai Inspeksi
+              </button>
+<button class="px-space-md py-2.5 rounded-lg bg-error text-on-error hover:bg-error/90 font-label-md text-label-md shadow-sm flex items-center justify-center gap-2 transition-all" id="berhenti" type="button">
+<span class="material-symbols-outlined text-[18px]">stop_circle</span>
+                Hentikan Alur
+              </button>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted text-center pt-1">
+              Tombol "Mulai Inspeksi" dinonaktifkan sampai koneksi frame stream berhasil dipulihkan.
+            </p>
+</div>
+<!-- GNSS / Hardware Status Grid -->
+<div class="pt-space-sm space-y-space-xs">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Telemetri RTK &amp; Komputasi Host</span>
+<div class="p-space-sm rounded-lg bg-surface-container-low space-y-2 font-data-mono-sm text-data-mono-sm">
+<div class="flex items-center justify-between">
+<span class="text-text-secondary">RTK-GNSS Sync:</span>
+<span class="text-severity-med-text font-bold">DEGRADED (FLOAT 2.5m)</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-text-secondary">Jetson Orin Temp:</span>
+<span class="text-severity-low-text font-bold">48.2°C (Normal)</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-text-secondary">V4L2 Video Node:</span>
+<span class="text-severity-high-text font-bold">UNRESPONSIVE</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-text-secondary">Drive Storage Free:</span>
+<span class="text-text-primary font-bold">182.4 GB / 512 GB</span>
+</div>
+</div>
+</div>
+<!-- Driver Action Trigger -->
+<button class="w-full py-2 rounded-lg bg-surface shadow-sm hover:bg-surface-container font-label-md text-label-md text-text-primary flex items-center justify-center gap-2 transition-colors" onclick="restartDriver()" type="button">
+<span class="material-symbols-outlined text-[16px] text-text-secondary">terminal</span>
+            Inisialisasi Ulang Driver (systemctl restart v4l2)
+          </button>
+</div>
+<!-- Recent Snapshot Preview of Road Surface Before Disconnect -->
+<div class="p-space-md rounded-xl bg-surface shadow-sm space-y-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Frame Terakhir Tersimpan (#1428)</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">11:42:18 WIB</span>
+</div>
+<div class="relative w-full h-28 rounded-lg overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="High angle inspection camera photo of an Indonesian asphalt roadway with longitudinal cracks and minor pothole marked by bounding box overlay, bright midday sunlight casting sharp shadows on asphalt texture, road survey technical vehicle POV" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVlTKrhYyFxLaUnQwXrwAf4VdpGxtOfNuoHLdX3vs-nPpfcCEX4P3jAF--Rm9xvXxDPJ6SyJYYBdSlRjwK0i0HRfHCdGSd8RDzmOIaqgUTK4SFP48992ZQr4U15cgo4M3gyjNV-vOIY1PFqm1BdPs0M4qjJdCkMH6fG0XvDUhzDoY6U4f4KfVnR_E9YXZ5m3c9L6wH3N3BdJqgMsZ-eTlPpQ4i08SBcO6ITDJTUTBrTAwhBzl_hhdj">
+<div class="absolute inset-0 bg-gradient-to-t from-inverse-surface/80 via-transparent to-transparent flex items-end p-2">
+<span class="font-data-mono-sm text-data-mono-sm text-inverse-on-surface">STA 04+210 • 2 Anomali Retak Buaya</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Preservation Section: Safe Inspection Route Data & Export Safeguard (id="hasil-live") -->
+<div class="w-full p-space-md rounded-xl bg-surface shadow-sm space-y-space-md" id="hasil-live">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm pb-space-xs">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-surface-container-high text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">inventory_2</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-text-primary">Data Rute Tersimpan Sebelum Crash (14 Titik)</h3>
+<p class="font-body-sm text-body-sm text-text-secondary">Log akumulasi tetap tersimpan aman di memory cache browser dan penyimpanan disk lokal SQLite.</p>
+</div>
+</div>
+<div class="flex items-center gap-space-xs shrink-0">
+<button class="px-space-md py-2 rounded-lg bg-surface shadow-sm hover:bg-surface-container text-text-primary font-label-md text-label-md flex items-center gap-2 transition-colors" id="unduh-live" onclick="downloadDatasetCSV()" type="button">
+<span class="material-symbols-outlined text-[18px] text-text-secondary">table_view</span>
+            Unduh Data CSV
+          </button>
+<button class="px-space-md py-2 rounded-lg bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md flex items-center gap-2 shadow-sm transition-colors" id="simpan-live" onclick="commitToGeoJSON()" type="button">
+<span class="material-symbols-outlined text-[18px]">save</span>
+            Simpan Rute GeoJSON
+          </button>
+</div>
+</div>
+<!-- Preserved Records Table -->
+<div class="overflow-x-auto rounded-lg">
+<table class="w-full text-left font-body-sm text-body-sm">
+<thead class="bg-surface-container-low font-label-caps text-label-caps text-text-muted uppercase">
+<tr>
+<th class="py-2.5 px-space-md">Frame #</th>
+<th class="py-2.5 px-space-md">Waktu Lapangan</th>
+<th class="py-2.5 px-space-md">Klasifikasi Kerusakan</th>
+<th class="py-2.5 px-space-md">Tingkat Keparahan</th>
+<th class="py-2.5 px-space-md">Koordinat GNSS</th>
+<th class="py-2.5 px-space-md">Dimensi Estimasi</th>
+<th class="py-2.5 px-space-md text-right">Status Penyimpanan</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-subtle font-body-md text-body-md">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-3 px-space-md font-data-mono-sm text-data-mono-sm text-text-secondary">#1428</td>
+<td class="py-3 px-space-md font-data-mono-sm text-data-mono-sm text-text-primary">11:42:18.420</td>
+<td class="py-3 px-space-md">
+<span class="font-label-md text-label-md text-text-primary">D00: Retak Memanjang (Longitudinal)</span>
+</td>
+<td class="py-3 px-space-md">
+<span class="inline-flex items-center gap-1.5 px-space-2xs py-0.5 rounded-full bg-severity-med-bg">
+<span class="w-1.5 h-1.5 rounded-full bg-severity-med-text"></span>
+<span class="font-data-mono-sm text-data-mono-sm text-severity-med-text">Sedang</span>
+</span>
+</td>
+<td class="py-3 px-space-md font-data-mono-sm text-data-mono-sm text-text-muted">-7.758392, 110.428391</td>
+<td class="py-3 px-space-md font-data-mono-sm text-data-mono-sm text-text-secondary">1.82 m × 0.05 m</td>
+<td class="py-3 px-space-md text-right">
+<span class="font-data-mono-sm text-data-mono-sm text-severity-low-text flex items-center justify-end gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                  Cached SQLite
+                </span>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-3 px-space-md font-data-mono-sm text-data-mono-sm text-text-secondary">#1412</td>
+<td class="py-3 px-space-md font-data-mono-sm text-data-mono-sm text-text-primary">11:41:59.102</td>
+<td class="py-3 px-space-md">
+<span class="font-label-md text-label-md text-text-primary">D40: Lubang Dangkal (Pothole)</span>
+</td>
+<td class="py-3 px-space-md">
+<span class="inline-flex items-center gap-1.5 px-space-2xs py-0.5 rounded-full bg-severity-high-bg">
+<span class="w-1.5 h-1.5 rounded-full bg-severity-high-text"></span>
+<span class="font-data-mono-sm text-data-mono-sm text-severity-high-text">Berat</span>
+</span>
+</td>
+<td class="py-3 px-space-md font-data-mono-sm text-data-mono-sm text-text-muted">-7.758210, 110.428120</td>
+<td class="py-3 px-space-md font-data-mono-sm text-data-mono-sm text-text-secondary">0.45 m × 0.38 m (Kedalaman: 4cm)</td>
+<td class="py-3 px-space-md text-right">
+<span class="font-data-mono-sm text-data-mono-sm text-severity-low-text flex items-center justify-end gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                  Cached SQLite
+                </span>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-3 px-space-md font-data-mono-sm text-data-mono-sm text-text-secondary">#1390</td>
+<td class="py-3 px-space-md font-data-mono-sm text-data-mono-sm text-text-primary">11:41:20.880</td>
+<td class="py-3 px-space-md">
+<span class="font-label-md text-label-md text-text-primary">D10: Retak Melintang (Transverse)</span>
+</td>
+<td class="py-3 px-space-md">
+<span class="inline-flex items-center gap-1.5 px-space-2xs py-0.5 rounded-full bg-severity-low-bg">
+<span class="w-1.5 h-1.5 rounded-full bg-severity-low-text"></span>
+<span class="font-data-mono-sm text-data-mono-sm text-severity-low-text">Ringan</span>
+</span>
+</td>
+<td class="py-3 px-space-md font-data-mono-sm text-data-mono-sm text-text-muted">-7.757904, 110.427845</td>
+<td class="py-3 px-space-md font-data-mono-sm text-data-mono-sm text-text-secondary">2.10 m × 0.02 m</td>
+<td class="py-3 px-space-md text-right">
+<span class="font-data-mono-sm text-data-mono-sm text-severity-low-text flex items-center justify-end gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                  Cached SQLite
+                </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Pagination and Cache Safeguard Notice -->
+<div class="flex flex-col sm:flex-row items-center justify-between gap-space-sm pt-space-xs font-body-sm text-body-sm text-text-muted">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-severity-low-text"></span>
+<span>14 rekaman anomali tersimpan secara aman dalam Local Storage. Tidak ada kehilangan data selama sesi ini.</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="px-space-xs py-1 rounded bg-surface-container text-text-primary text-body-sm hover:bg-surface-container-high transition-colors" type="button">Lihat 11 Data Lainnya...</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  function triggerToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = 'pointer-events-auto px-space-md py-space-sm rounded-lg bg-inverse-surface text-inverse-on-surface shadow-xl flex items-center gap-space-xs text-body-sm font-body-sm transition-all transform translate-y-2 opacity-0 duration-200';
+    
+    let icon = 'info';
+    if (type === 'error') icon = 'error';
+    if (type === 'success') icon = 'check_circle';
+    
+    toast.innerHTML = `
+      <span class="material-symbols-outlined text-[18px] text-secondary-container">${icon}</span>
+      <span>${message}</span>
+    `;
+
+    container.appendChild(toast);
+
+    requestAnimationFrame(() => {
+      toast.classList.remove('translate-y-2', 'opacity-0');
+    });
+
+    setTimeout(() => {
+      toast.classList.add('opacity-0', 'translate-y-2');
+      setTimeout(() => toast.remove(), 300);
+    }, 4000);
+  }
+
+  function retryConnection() {
+    const btn = document.getElementById('btn-retry');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="material-symbols-outlined text-[18px] animate-spin">refresh</span> Menghubungi /dev/video0...`;
+
+    triggerToast('Melakukan handshake ulang USB bus dan me-reset buffer frame...', 'info');
+
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+      triggerToast('Gagal: Perangkat kamera masih tidak merespons (ETIMEDOUT 504). Periksa fisik konektor kabel.', 'error');
+    }, 2800);
+  }
+
+  function switchBackupCam() {
+    const select = document.getElementById('sumber');
+    if (select) {
+      select.value = 'cam-1';
+      triggerToast('Beralih ke Kamera Cadangan Rooftop IP-Cam RTSP...', 'info');
+      setTimeout(() => {
+        triggerToast('Membuka stream RTSP cadangan: 192.168.1.120:554/live', 'success');
+      }, 1000);
+    }
+  }
+
+  function downloadLog() {
+    const logContent = `=== JALANPANTAU SYSTEM CRASH LOG ===\n` +
+      `Timestamp: ${new Date().toISOString()}\n` +
+      `Session ID: JP-2025-SURV-09A\n` +
+      `Sensor: Sony IMX708 via V4L2 (/dev/video0)\n` +
+      `Status: ERR_CAMERA_TIMEOUT_CODE_504\n` +
+      `Failure: V4L2_CID_EXPOSURE buffer dequeue timeout after 5200ms\n` +
+      `Telemetry Coordinates: -7.758392, 110.428391 (Tajen KM 4.2)\n` +
+      `Inference Engine: YOLOv11n (ONNX Runtime / TensorRT 10.2)\n` +
+      `Buffer Status: Dropped 156 frames. Active state halted.\n` +
+      `Recovery Recommendation: Power-cycle vehicle USB Hub or switch to RTSP fallback.`;
+
+    const blob = new Blob([logContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `jalanpantau_error_log_${Date.now()}.log`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    triggerToast('File error log (.log) berhasil diunduh ke perangkat.', 'success');
+  }
+
+  function restartDriver() {
+    triggerToast('Mengirim sinyal SIGTERM ke daemon penangkap frame v4l2...', 'info');
+    setTimeout(() => {
+      triggerToast('Driver gagal memulihkan state hardware (Device Busy). Disarankan cabut-pasang kabel USB.', 'error');
+    }, 2000);
+  }
+
+  function downloadDatasetCSV() {
+    triggerToast('Mengekspor 14 titik anomali ke format CSV Terstandar Bina Marga...', 'info');
+    setTimeout(() => {
+      triggerToast('Unduhan data_survei_tajem_km4.csv siap disimpan.', 'success');
+    }, 800);
+  }
+
+  function commitToGeoJSON() {
+    triggerToast('Mengompilasi 14 titik koordinat ke file GeoJSON layer peta...', 'info');
+    setTimeout(() => {
+      triggerToast('Rute dan titik kerusakan berhasil dikomit ke database lokal.', 'success');
+    }, 1000);
+  }
+</script></main><footer class="w-full bg-surface py-space-md shadow-[0_-1px_6px_rgba(0,0,0,0.03)]"><div class="w-full px-gutter-app flex flex-col sm:flex-row items-center justify-between gap-space-xs text-text-muted font-body-sm text-body-sm"><span>© 2025 JalanPantau • Platform Kecerdasan Artifisial Inspeksi Kerusakan Permukaan Jalan</span><span class="font-data-mono-sm text-data-mono-sm">Infrastruktur Bina Marga &amp; Transportasi Cerdas</span></div></footer><div class="fixed bottom-space-md right-space-md z-50 flex flex-col gap-space-xs pointer-events-none" id="toast-container"></div></body></html>

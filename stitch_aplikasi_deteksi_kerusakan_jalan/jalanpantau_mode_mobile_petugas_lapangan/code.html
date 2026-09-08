@@ -1,0 +1,447 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      "colors": {
+        "severity-low-border": "#A7F3D0",
+        "on-background": "#0b1c30",
+        "text-secondary": "#475569",
+        "primary-container": "#007bb9",
+        "inverse-on-surface": "#eaf1ff",
+        "on-secondary": "#ffffff",
+        "tertiary": "#894d00",
+        "text-primary": "#0F172A",
+        "surface-container": "#e5eeff",
+        "surface-container-low": "#eff4ff",
+        "tertiary-fixed": "#ffdcc0",
+        "secondary": "#006399",
+        "tertiary-container": "#ac6200",
+        "error": "#ba1a1a",
+        "inverse-surface": "#213145",
+        "outline": "#707881",
+        "surface-variant": "#d3e4fe",
+        "on-primary-fixed": "#001d31",
+        "on-secondary-container": "#004f7b",
+        "severity-low-text": "#059669",
+        "surface-container-highest": "#d3e4fe",
+        "surface-tint": "#006398",
+        "bg-main": "#F8FAFC",
+        "surface-dim": "#cbdbf5",
+        "on-surface": "#0b1c30",
+        "error-container": "#ffdad6",
+        "on-primary-container": "#fdfcff",
+        "severity-med-border": "#FDE68A",
+        "text-muted": "#64748B",
+        "surface-container-lowest": "#ffffff",
+        "on-primary": "#ffffff",
+        "on-error-container": "#93000a",
+        "on-primary-fixed-variant": "#004b73",
+        "surface-bright": "#f8f9ff",
+        "on-error": "#ffffff",
+        "primary-fixed": "#cce5ff",
+        "secondary-container": "#7bc2ff",
+        "on-surface-variant": "#3f4850",
+        "surface-container-high": "#dce9ff",
+        "secondary-fixed": "#cde5ff",
+        "severity-high-bg": "#FEF2F2",
+        "on-tertiary-fixed": "#2d1600",
+        "severity-high-text": "#DC2626",
+        "inverse-primary": "#93ccff",
+        "on-tertiary": "#ffffff",
+        "background": "#f8f9ff",
+        "on-secondary-fixed-variant": "#004b74",
+        "on-tertiary-container": "#fffbff",
+        "severity-med-text": "#D97706",
+        "severity-high-border": "#FECACA",
+        "surface": "#FFFFFF",
+        "border-subtle": "#E2E8F0",
+        "on-secondary-fixed": "#001d32",
+        "outline-variant": "#bfc7d2",
+        "secondary-fixed-dim": "#94ccff",
+        "on-tertiary-fixed-variant": "#6b3b00",
+        "tertiary-fixed-dim": "#ffb875",
+        "primary": "#006194",
+        "severity-med-bg": "#FFFBEB",
+        "primary-fixed-dim": "#93ccff",
+        "severity-low-bg": "#ECFDF5"
+      },
+      "borderRadius": {
+        "DEFAULT": "0.125rem",
+        "lg": "0.25rem",
+        "xl": "0.5rem",
+        "full": "0.75rem"
+      },
+      "spacing": {
+        "space-xs": "0.5rem",
+        "space-xl": "2rem",
+        "space-sm": "0.75rem",
+        "space-2xs": "0.25rem",
+        "gutter-app": "1rem",
+        "space-lg": "1.5rem",
+        "space-md": "1rem",
+        "workbench-gap": "1.5rem"
+      },
+      "fontFamily": {
+        "data-mono-md": ["JetBrains Mono"],
+        "label-md": ["Inter"],
+        "data-mono-sm": ["JetBrains Mono"],
+        "headline-sm": ["Inter"],
+        "headline-lg": ["Inter"],
+        "body-sm": ["Inter"],
+        "body-md": ["Inter"],
+        "label-caps": ["Inter"],
+        "headline-xl": ["Inter"]
+      },
+      "fontSize": {
+        "data-mono-md": ["13px", {"lineHeight": "18px", "fontWeight": "500"}],
+        "label-md": ["13px", {"lineHeight": "16px", "fontWeight": "600"}],
+        "data-mono-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
+        "headline-sm": ["18px", {"lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+        "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+        "label-caps": ["11px", {"lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+        "headline-xl": ["30px", {"lineHeight": "36px", "letterSpacing": "-0.025em", "fontWeight": "700"}]
+      }
+    }
+  }
+}</script></head><body class="bg-bg-main text-on-surface font-body-md text-body-md min-h-screen"><header class="fixed top-0 w-full z-50 bg-surface/95 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 w-full px-gutter-app flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs"><img alt="JalanPantau Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UtcA_1fkyo_y_bO1b__NpqQNyghMKrrDUveJRn__6RbHgcRllW2v9BHRm8VRhUelk_qAQ8jnAbUcMjCelkVRgT_qG024RSW7M3ftrfoB3HLWyZIKo7HZgO-7KJpQzyoGbNgPA0SWNIe0IjaWfRBd-0xqTVRL1KomoMFZncFb3jiLU8nFF_X3qdn9l9ffM0MqMNMkzz_QF5IuFl-vv4Irl7nwXVZHX02_dwVDAn0kL_swwQ--Vnidqyqg"><div class="flex flex-col"><span class="font-label-md text-label-md text-text-primary tracking-tight">JalanPantau</span><span class="font-label-caps text-label-caps text-text-muted">SISTEM INSPEKSI JALAN</span></div></div><div class="hidden sm:flex items-center gap-space-xs px-space-xs py-space-2xs rounded-full bg-surface-container-low"><span class="font-data-mono-sm text-data-mono-sm text-text-secondary">YOLOv11n • TA 2025</span><div class="flex items-center gap-1.5 px-space-2xs py-0.5 rounded-full bg-severity-low-bg"><span class="w-1.5 h-1.5 rounded-full bg-severity-low-text"></span><span class="font-data-mono-sm text-data-mono-sm text-severity-low-text">Model Siap</span></div></div></div><nav class="hidden md:flex items-center gap-space-xs" data-active-classes="bg-primary-container text-on-primary-container font-label-md"><a aria-current="page" class="px-space-sm py-1.5 rounded transition-colors bg-primary-container text-on-primary-container font-label-md" data-path="deteksi" href="#">Deteksi</a><a class="px-space-sm py-1.5 rounded text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="peta" href="#">Peta</a><a class="px-space-sm py-1.5 rounded text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="riwayat" href="#">Riwayat</a><a class="px-space-sm py-1.5 rounded text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="tentang" href="#">Tentang</a></nav><div class="flex items-center gap-space-sm"><div class="hidden lg:flex items-center gap-space-xs px-space-xs py-1 rounded bg-surface-container"><span class="material-symbols-outlined text-severity-low-text text-[16px]">wifi</span><span class="font-data-mono-sm text-data-mono-sm text-text-secondary">Lokal / Offline-Ready</span></div><div class="hidden xl:flex items-center gap-space-2xs text-text-muted"><span class="material-symbols-outlined text-[16px]">schedule</span><span class="font-data-mono-sm text-data-mono-sm">SHIFT 01 • WIB</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-16 bg-bg-main min-h-screen" id="main-content"><div class="flex flex-col w-full pb-8">
+<!-- Status Bar Sub-header Lapangan (Device & Telemetry Strip) -->
+<section class="w-full bg-surface-container-high px-gutter-app py-space-xs flex flex-col gap-1.5 shadow-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-sm text-headline-sm text-text-primary tracking-tight">Survei Lapangan</span>
+<div class="flex items-center gap-1 px-space-xs py-0.5 rounded-full bg-severity-low-bg text-severity-low-text">
+<span class="w-2 h-2 rounded-full bg-severity-low-text animate-ping"></span>
+<span class="font-label-caps text-label-caps">LIVE AKTIF</span>
+</div>
+</div>
+<div class="flex items-center gap-space-xs">
+<div class="flex items-center gap-1 bg-surface px-space-xs py-0.5 rounded shadow-sm text-text-secondary">
+<span class="material-symbols-outlined text-[15px] text-severity-low-text">sensors</span>
+<span class="font-data-mono-sm text-data-mono-sm">RTK Fix ±0.08m</span>
+</div>
+<div class="flex items-center gap-1 bg-surface px-space-xs py-0.5 rounded shadow-sm text-text-secondary">
+<span class="material-symbols-outlined text-[15px] text-primary">battery_charging_full</span>
+<span class="font-data-mono-sm text-data-mono-sm">94% • 34°C</span>
+</div>
+</div>
+</div>
+<!-- Telemetry Sub-strip -->
+<div class="flex items-center justify-between font-data-mono-sm text-data-mono-sm text-text-secondary bg-surface-container px-space-xs py-1 rounded">
+<div class="flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-severity-low-text"></span>
+<span>Flask API: 192.168.4.1:5000</span>
+</div>
+<div class="flex items-center gap-2">
+<span>GSD: 1.8mm/px</span>
+<span>AZ: 284° W</span>
+</div>
+</div>
+</section>
+<!-- Main Viewfinder Section (Mobile Camera Feed + OSD) -->
+<section class="w-full px-gutter-app pt-space-xs flex flex-col">
+<div class="relative w-full aspect-[4/5] sm:aspect-[16/10] bg-inverse-surface rounded-xl overflow-hidden shadow-md">
+<!-- Road Surface Viewfinder Feed (Placeholder) -->
+<div class="absolute inset-0 bg-cover bg-center" data-alt="First-person dashboard camera viewpoint looking down at urban asphalt road surface in Bandung, high resolution daytime pavement inspection with cracked road asphalt and potholes, engineering telemetry overlay aesthetic, realistic road maintenance civic photo." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCEtjYyqKyBEd24Jaesci4FFojwRMIfp5TasfS0m8qmxrRPeMW83Jf61umDezV9Xgjkm2PcIDI3UkKpsYwa-efTc7zYe4AkGn0CLjMGbpI8PMVl6Ce8nZHfeJPdDh6Albs2qOvWQafXcPAk4i9eqAvevTxslz1OR88PWPSTACkxuBDABT3DqU18IgSvFAdF1N6RWFBn4FtCOm48T3vgQKvWW1FgrCoBiAVN4E7I7sEG2Ft1g3i3L4BL')">
+</div>
+<!-- Live Reticle Grid Overlay (Toggleable) -->
+<div class="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none opacity-40" id="camera-grid">
+<div class="shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)]"></div>
+<div class="shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)]"></div>
+<div class="shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)]"></div>
+<div class="shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)]"></div>
+<div class="shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)]"></div>
+<div class="shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)]"></div>
+<div class="shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)]"></div>
+<div class="shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)]"></div>
+<div class="shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)]"></div>
+</div>
+<!-- YOLO Live Bounding Box 1: Pothole (High Severity) -->
+<div class="absolute top-[48%] left-[22%] w-[42%] h-[26%] pointer-events-none">
+<div class="w-full h-full bg-severity-high-bg/30 rounded shadow-[inset_0_0_0_2px_#DC2626] relative">
+<div class="absolute -top-6 left-0 bg-severity-high-text text-on-error px-1.5 py-0.5 rounded font-data-mono-sm text-data-mono-sm tracking-tight flex items-center gap-1 shadow-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-surface"></span>
+<span>pothole: 0.88</span>
+</div>
+<!-- Corner reticles -->
+<span class="absolute -top-1 -left-1 w-2.5 h-2.5 bg-severity-high-text"></span>
+<span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-severity-high-text"></span>
+<span class="absolute -bottom-1 -left-1 w-2.5 h-2.5 bg-severity-high-text"></span>
+<span class="absolute -bottom-1 -right-1 w-2.5 h-2.5 bg-severity-high-text"></span>
+</div>
+</div>
+<!-- YOLO Live Bounding Box 2: Alligator Crack (Medium Severity) -->
+<div class="absolute top-[28%] right-[12%] w-[32%] h-[18%] pointer-events-none">
+<div class="w-full h-full bg-severity-med-bg/30 rounded shadow-[inset_0_0_0_2px_#D97706] relative">
+<div class="absolute -top-6 left-0 bg-severity-med-text text-on-tertiary px-1.5 py-0.5 rounded font-data-mono-sm text-data-mono-sm tracking-tight flex items-center gap-1 shadow-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-surface"></span>
+<span>alligator_crack: 0.72</span>
+</div>
+<!-- Corner reticles -->
+<span class="absolute -top-1 -left-1 w-2 h-2 bg-severity-med-text"></span>
+<span class="absolute -top-1 -right-1 w-2 h-2 bg-severity-med-text"></span>
+<span class="absolute -bottom-1 -left-1 w-2 h-2 bg-severity-med-text"></span>
+<span class="absolute -bottom-1 -right-1 w-2 h-2 bg-severity-med-text"></span>
+</div>
+</div>
+<!-- OSD Telemetry HUD (Heads-Up Display) -->
+<div class="absolute top-2 left-2 flex flex-col gap-1 pointer-events-none">
+<div class="bg-inverse-surface/85 backdrop-blur-sm text-inverse-on-surface px-2 py-1 rounded shadow-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-secondary-container">speed</span>
+<span class="font-data-mono-md text-data-mono-md font-semibold">32 km/h</span>
+<span class="text-outline-variant font-data-mono-sm text-data-mono-sm">|</span>
+<span class="font-data-mono-sm text-data-mono-sm text-secondary-fixed">STA 02+140</span>
+</div>
+<div class="bg-inverse-surface/85 backdrop-blur-sm text-inverse-on-surface px-2 py-1 rounded shadow-sm font-data-mono-sm text-data-mono-sm">
+<span>Lat: -6.91746 • Lon: 107.61912</span>
+</div>
+</div>
+<!-- OSD Inference Latency Indicator -->
+<div class="absolute top-2 right-2 pointer-events-none">
+<div class="bg-inverse-surface/85 backdrop-blur-sm text-inverse-on-surface px-2 py-1 rounded shadow-sm flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-severity-low-text"></span>
+<span class="font-data-mono-sm text-data-mono-sm">YOLOv11n 34ms</span>
+</div>
+</div>
+<!-- Floating In-View Quick Controls (Ergonomic for Dashboard / Glove Use) -->
+<div class="absolute bottom-3 right-3 flex flex-col items-center gap-2 z-10">
+<!-- Night / CLAHE Enhancer Mode Toggle -->
+<button class="w-11 h-11 rounded-full bg-surface/90 text-text-primary backdrop-blur-md shadow-md flex items-center justify-center active:scale-95 transition-transform" id="btn-filter" onclick="toggleFilterState()" title="Enhance Filter/Night CLAHE" type="button">
+<span class="material-symbols-outlined text-[20px] text-text-secondary" id="icon-filter">light_mode</span>
+</button>
+<!-- Reticle Grid Toggle -->
+<button class="w-11 h-11 rounded-full bg-surface/90 text-text-primary backdrop-blur-md shadow-md flex items-center justify-center active:scale-95 transition-transform" onclick="toggleGridOverlay()" title="Toggle Grid Guide" type="button">
+<span class="material-symbols-outlined text-[20px] text-text-secondary">grid_4x4</span>
+</button>
+<!-- Big Snapshot Trigger (Glove-Friendly Touch Area) -->
+<button class="w-14 h-14 rounded-full bg-primary text-on-primary shadow-lg flex items-center justify-center active:scale-90 transition-transform ring-4 ring-primary/30" onclick="triggerSnapshot()" title="Ambil Foto Cepat" type="button">
+<span class="material-symbols-outlined text-[28px]">photo_camera</span>
+</button>
+</div>
+<!-- Live GPS Fix Quality Indicator Badge Bottom Left -->
+<div class="absolute bottom-3 left-3 pointer-events-none">
+<div class="bg-surface/90 backdrop-blur-md px-2 py-1 rounded text-text-primary shadow-sm flex items-center gap-1.5 font-data-mono-sm text-data-mono-sm">
+<span class="material-symbols-outlined text-severity-low-text text-[14px]">satellite_alt</span>
+<span>18 Satelit (DGPS L1/L2)</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Segment Path Selector -->
+<section class="w-full px-gutter-app pt-space-xs">
+<div class="bg-surface rounded-xl p-space-xs shadow-sm flex items-center justify-between gap-space-xs">
+<div class="flex items-center gap-space-xs min-w-0">
+<div class="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center shrink-0 text-primary">
+<span class="material-symbols-outlined text-[20px]">add_road</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-caps text-label-caps text-text-muted">SEGMEN RUAS AKTIF</span>
+<span class="font-label-md text-label-md text-text-primary truncate">Jl. Asia Afrika (Segmen Barat - Jalur A)</span>
+</div>
+</div>
+<button class="shrink-0 px-space-xs py-1.5 rounded bg-surface-container hover:bg-surface-container-high text-primary font-label-md text-label-md flex items-center gap-1 shadow-sm transition-colors" onclick="switchSegment()" type="button">
+<span class="material-symbols-outlined text-[16px]">swap_horiz</span>
+<span class="hidden sm:inline">Ganti</span>
+</button>
+</div>
+</section>
+<!-- 3 Core KPI Metrics Grid -->
+<section class="w-full px-gutter-app pt-space-xs">
+<div class="grid grid-cols-3 gap-space-xs">
+<!-- FPS Metric -->
+<div class="bg-surface rounded-xl p-space-xs shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-text-muted">
+<span class="font-label-caps text-label-caps">FRAME RATE</span>
+<span class="material-symbols-outlined text-[15px] text-text-secondary">videocam</span>
+</div>
+<div class="my-1">
+<span class="font-headline-lg text-headline-lg text-text-primary tracking-tight">29.2</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">FPS</span>
+</div>
+<span class="font-data-mono-sm text-data-mono-sm text-severity-low-text">Sinkron 100%</span>
+</div>
+<!-- Findings Count Metric -->
+<div class="bg-surface rounded-xl p-space-xs shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-text-muted">
+<span class="font-label-caps text-label-caps">TEMUAN</span>
+<span class="material-symbols-outlined text-[15px] text-severity-high-text">report</span>
+</div>
+<div class="my-1">
+<span class="font-headline-lg text-headline-lg text-text-primary tracking-tight">8</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">Titik</span>
+</div>
+<span class="font-data-mono-sm text-data-mono-sm text-severity-high-text">3 Kategori Berat</span>
+</div>
+<!-- Cost Estimation Metric -->
+<div class="bg-surface rounded-xl p-space-xs shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-text-muted">
+<span class="font-label-caps text-label-caps">EST. BIAYA</span>
+<span class="material-symbols-outlined text-[15px] text-tertiary">payments</span>
+</div>
+<div class="my-1">
+<span class="font-headline-lg text-headline-lg text-text-primary tracking-tight">4.65</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">Juta</span>
+</div>
+<span class="font-data-mono-sm text-data-mono-sm text-text-secondary">Patching 12 m²</span>
+</div>
+</div>
+</section>
+<!-- Drawer Mini: Temuan Terakhir (Last Detected Anomaly Card) -->
+<section class="w-full px-gutter-app pt-space-xs">
+<div class="bg-surface rounded-xl p-space-sm shadow-sm flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-severity-high-text"></span>
+<span class="font-label-caps text-label-caps text-text-muted">TEMUAN TERAKHIR (BARUSAN)</span>
+</div>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">10 detik lalu</span>
+</div>
+<div class="flex items-center gap-space-sm bg-surface-container-low p-space-xs rounded-lg">
+<!-- Finding Thumbnail -->
+<div class="relative w-16 h-16 rounded-md overflow-hidden shrink-0 shadow-sm bg-inverse-surface">
+<div class="w-full h-full bg-cover bg-center" data-alt="Close up photographic view of severe asphalt road pothole filled with fractured debris on city street Bandung, engineering surface damage inspection catalog preview." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBkGLTObzmDOUvz6a22wCT8n9bU-plYPKMFhQE2lpPvkXaP7WPCWgCHYJXX3lFzbVH0phnVIf2QE5ZFa0Easxcn7D7oVz2Vfyg8I6UJV7CFLCXrKwm4Wnpk9ywCDfFfuhEvYPdabijr0Ns5wnXyigH-6p0xd02BJQRTAZUDf4A1S710isYL8GlE5FKpAk3pkKnAgMgHYVJlUzdLKoFED4lzOaDasx6vfdAgqIFGCqKftIKQP2MVkFVu')">
+</div>
+<span class="absolute bottom-0 right-0 bg-severity-high-text text-on-error font-data-mono-sm text-[9px] px-1 rounded-tl">
+            P-08
+          </span>
+</div>
+<!-- Finding Details -->
+<div class="flex flex-col min-w-0 flex-1 justify-center">
+<div class="flex items-center justify-between gap-1">
+<span class="font-label-md text-label-md text-text-primary truncate">Lubang Amblas (Pothole)</span>
+<div class="px-2 py-0.5 rounded-full bg-severity-high-bg text-severity-high-text font-label-caps text-label-caps">
+              BERAT
+            </div>
+</div>
+<div class="flex items-center gap-2 mt-1 font-data-mono-sm text-data-mono-sm text-text-secondary">
+<span>STA 02+120</span>
+<span>•</span>
+<span>Kedalaman ~8.4 cm</span>
+</div>
+<div class="flex items-center gap-1 font-data-mono-sm text-data-mono-sm text-text-muted truncate">
+<span class="material-symbols-outlined text-[13px]">pin_drop</span>
+<span class="truncate">-6.91751, 107.61895 (±0.06m)</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Sticky Tactical Bottom Operational Action Bar -->
+<section class="sticky bottom-0 left-0 w-full px-gutter-app pt-space-xs pb-space-xs bg-surface/95 backdrop-blur-md shadow-md z-30 flex flex-col gap-space-xs">
+<!-- Main Thumb-Friendly Control Buttons (H >= 48px for Field Drivers) -->
+<div class="grid grid-cols-2 gap-space-xs">
+<!-- Stop / Pause Session (Red) -->
+<button class="h-12 w-full px-space-sm rounded-lg bg-severity-high-bg hover:bg-error-container text-severity-high-text font-label-md text-label-md flex items-center justify-center gap-space-xs shadow-sm active:scale-98 transition-transform" id="btn-record-toggle" onclick="toggleRecording()" type="button">
+<span class="material-symbols-outlined text-[22px]" id="icon-record">pause_circle</span>
+<span id="label-record">Jeda Rekam</span>
+</button>
+<!-- Flag Critical Point Instant Manual Tagging (Primary Blue) -->
+<button class="h-12 w-full px-space-sm rounded-lg bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md flex items-center justify-center gap-space-xs shadow-md active:scale-98 transition-transform" onclick="flagCriticalPoint()" type="button">
+<span class="material-symbols-outlined text-[22px]">flag</span>
+<span>Tandai Kritis</span>
+</button>
+</div>
+<!-- Secondary Full Width Route Log Explorer Button -->
+<button class="h-11 w-full px-space-sm rounded-lg bg-surface-container hover:bg-surface-container-high text-text-primary font-label-md text-label-md flex items-center justify-between shadow-sm transition-colors" onclick="openRouteLogs()" type="button">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[20px] text-primary">format_list_bulleted</span>
+<span>Lihat Log Rute Lengkap</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="px-2 py-0.5 rounded-full bg-primary text-on-primary font-data-mono-sm text-data-mono-sm">8 Temuan</span>
+<span class="material-symbols-outlined text-[18px] text-text-muted">chevron_right</span>
+</div>
+</button>
+</section>
+</div>
+<script>
+  let isRecording = true;
+  let isFilterActive = false;
+  let isGridVisible = true;
+
+  function showToastNotification(message, iconName = 'check_circle') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = 'pointer-events-auto flex items-center gap-2 bg-inverse-surface text-inverse-on-surface px-4 py-2.5 rounded-lg shadow-xl font-label-md text-label-md transition-all duration-300 translate-y-4 opacity-0';
+    toast.innerHTML = `
+      <span class="material-symbols-outlined text-[18px] text-secondary-fixed">${iconName}</span>
+      <span>${message}</span>
+    `;
+
+    container.appendChild(toast);
+    requestAnimationFrame(() => {
+      toast.classList.remove('translate-y-4', 'opacity-0');
+    });
+
+    setTimeout(() => {
+      toast.classList.add('opacity-0', 'translate-y-2');
+      setTimeout(() => toast.remove(), 300);
+    }, 2800);
+  }
+
+  function toggleRecording() {
+    isRecording = !isRecording;
+    const label = document.getElementById('label-record');
+    const icon = document.getElementById('icon-record');
+    const btn = document.getElementById('btn-record-toggle');
+
+    if (isRecording) {
+      label.innerText = 'Jeda Rekam';
+      icon.innerText = 'pause_circle';
+      btn.className = 'h-12 w-full px-space-sm rounded-lg bg-severity-high-bg hover:bg-error-container text-severity-high-text font-label-md text-label-md flex items-center justify-center gap-space-xs shadow-sm active:scale-98 transition-transform';
+      showToastNotification('Perekaman survei AI dilanjutkan', 'play_arrow');
+    } else {
+      label.innerText = 'Lanjut Rekam';
+      icon.innerText = 'play_arrow';
+      btn.className = 'h-12 w-full px-space-sm rounded-lg bg-surface-container-high text-primary font-label-md text-label-md flex items-center justify-center gap-space-xs shadow-sm active:scale-98 transition-transform';
+      showToastNotification('Survei dijeda sementara', 'pause');
+    }
+  }
+
+  function triggerSnapshot() {
+    showToastNotification('Snapshot STA 02+140 tersimpan resolusi tinggi', 'camera');
+  }
+
+  function toggleFilterState() {
+    isFilterActive = !isFilterActive;
+    const icon = document.getElementById('icon-filter');
+    const btn = document.getElementById('btn-filter');
+    
+    if (isFilterActive) {
+      icon.classList.remove('text-text-secondary');
+      icon.classList.add('text-primary');
+      btn.classList.add('ring-2', 'ring-primary');
+      showToastNotification('Filter CLAHE Kontras Rendah Aktif', 'hdr_on');
+    } else {
+      icon.classList.remove('text-primary');
+      icon.classList.add('text-text-secondary');
+      btn.classList.remove('ring-2', 'ring-primary');
+      showToastNotification('Filter Kamera Normal', 'hdr_off');
+    }
+  }
+
+  function toggleGridOverlay() {
+    isGridVisible = !isGridVisible;
+    const grid = document.getElementById('camera-grid');
+    if (grid) {
+      grid.style.display = isGridVisible ? 'grid' : 'none';
+      showToastNotification(isGridVisible ? 'Grid Kalibrasi Ditampilkan' : 'Grid Kalibrasi Disembunyikan', 'grid_4x4');
+    }
+  }
+
+  function flagCriticalPoint() {
+    showToastNotification('Titik Kritis STA 02+140 ditandai untuk atensi Bina Marga!', 'flag');
+  }
+
+  function switchSegment() {
+    showToastNotification('Memuat daftar ruas jalan kota Bandung...', 'swap_horiz');
+  }
+
+  function openRouteLogs() {
+    showToastNotification('Membuka detail 8 titik anomali rute...', 'list_alt');
+  }
+</script></main><footer class="w-full bg-surface py-space-md shadow-[0_-1px_6px_rgba(0,0,0,0.03)]"><div class="w-full px-gutter-app flex flex-col sm:flex-row items-center justify-between gap-space-xs text-text-muted font-body-sm text-body-sm"><span>© 2025 JalanPantau • Platform Kecerdasan Artifisial Inspeksi Kerusakan Permukaan Jalan</span><span class="font-data-mono-sm text-data-mono-sm">Infrastruktur Bina Marga &amp; Transportasi Cerdas</span></div></footer><div class="fixed bottom-space-md right-space-md z-50 flex flex-col gap-space-xs pointer-events-none" id="toast-container"></div></body></html>

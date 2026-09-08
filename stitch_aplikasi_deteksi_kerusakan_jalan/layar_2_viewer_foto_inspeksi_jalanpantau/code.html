@@ -1,0 +1,508 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      "colors": {
+        "severity-low-border": "#A7F3D0",
+        "on-background": "#0b1c30",
+        "text-secondary": "#475569",
+        "primary-container": "#007bb9",
+        "inverse-on-surface": "#eaf1ff",
+        "on-secondary": "#ffffff",
+        "tertiary": "#894d00",
+        "text-primary": "#0F172A",
+        "surface-container": "#e5eeff",
+        "surface-container-low": "#eff4ff",
+        "tertiary-fixed": "#ffdcc0",
+        "secondary": "#006399",
+        "tertiary-container": "#ac6200",
+        "error": "#ba1a1a",
+        "inverse-surface": "#213145",
+        "outline": "#707881",
+        "surface-variant": "#d3e4fe",
+        "on-primary-fixed": "#001d31",
+        "on-secondary-container": "#004f7b",
+        "severity-low-text": "#059669",
+        "surface-container-highest": "#d3e4fe",
+        "surface-tint": "#006398",
+        "bg-main": "#F8FAFC",
+        "surface-dim": "#cbdbf5",
+        "on-surface": "#0b1c30",
+        "error-container": "#ffdad6",
+        "on-primary-container": "#fdfcff",
+        "severity-med-border": "#FDE68A",
+        "text-muted": "#64748B",
+        "surface-container-lowest": "#ffffff",
+        "on-primary": "#ffffff",
+        "on-error-container": "#93000a",
+        "on-primary-fixed-variant": "#004b73",
+        "surface-bright": "#f8f9ff",
+        "on-error": "#ffffff",
+        "primary-fixed": "#cce5ff",
+        "secondary-container": "#7bc2ff",
+        "on-surface-variant": "#3f4850",
+        "surface-container-high": "#dce9ff",
+        "secondary-fixed": "#cde5ff",
+        "severity-high-bg": "#FEF2F2",
+        "on-tertiary-fixed": "#2d1600",
+        "severity-high-text": "#DC2626",
+        "inverse-primary": "#93ccff",
+        "on-tertiary": "#ffffff",
+        "background": "#f8f9ff",
+        "on-secondary-fixed-variant": "#004b74",
+        "on-tertiary-container": "#fffbff",
+        "severity-med-text": "#D97706",
+        "severity-high-border": "#FECACA",
+        "surface": "#FFFFFF",
+        "border-subtle": "#E2E8F0",
+        "on-secondary-fixed": "#001d32",
+        "outline-variant": "#bfc7d2",
+        "secondary-fixed-dim": "#94ccff",
+        "on-tertiary-fixed-variant": "#6b3b00",
+        "tertiary-fixed-dim": "#ffb875",
+        "primary": "#006194",
+        "severity-med-bg": "#FFFBEB",
+        "primary-fixed-dim": "#93ccff",
+        "severity-low-bg": "#ECFDF5"
+      },
+      "borderRadius": {
+        "DEFAULT": "0.125rem",
+        "lg": "0.25rem",
+        "xl": "0.5rem",
+        "full": "0.75rem"
+      },
+      "spacing": {
+        "space-xs": "0.5rem",
+        "space-xl": "2rem",
+        "space-sm": "0.75rem",
+        "space-2xs": "0.25rem",
+        "gutter-app": "1rem",
+        "space-lg": "1.5rem",
+        "space-md": "1rem",
+        "workbench-gap": "1.5rem"
+      },
+      "fontFamily": {
+        "data-mono-md": ["JetBrains Mono"],
+        "label-md": ["Inter"],
+        "data-mono-sm": ["JetBrains Mono"],
+        "headline-sm": ["Inter"],
+        "headline-lg": ["Inter"],
+        "body-sm": ["Inter"],
+        "body-md": ["Inter"],
+        "label-caps": ["Inter"],
+        "headline-xl": ["Inter"]
+      },
+      "fontSize": {
+        "data-mono-md": ["13px", {"lineHeight": "18px", "fontWeight": "500"}],
+        "label-md": ["13px", {"lineHeight": "16px", "fontWeight": "600"}],
+        "data-mono-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
+        "headline-sm": ["18px", {"lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+        "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+        "label-caps": ["11px", {"lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+        "headline-xl": ["30px", {"lineHeight": "36px", "letterSpacing": "-0.025em", "fontWeight": "700"}]
+      }
+    }
+  }
+}</script></head><body class="bg-bg-main text-on-surface font-body-md text-body-md min-h-screen"><header class="fixed top-0 w-full z-50 bg-surface/95 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 w-full px-gutter-app flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs"><img alt="JalanPantau Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UtcA_1fkyo_y_bO1b__NpqQNyghMKrrDUveJRn__6RbHgcRllW2v9BHRm8VRhUelk_qAQ8jnAbUcMjCelkVRgT_qG024RSW7M3ftrfoB3HLWyZIKo7HZgO-7KJpQzyoGbNgPA0SWNIe0IjaWfRBd-0xqTVRL1KomoMFZncFb3jiLU8nFF_X3qdn9l9ffM0MqMNMkzz_QF5IuFl-vv4Irl7nwXVZHX02_dwVDAn0kL_swwQ--Vnidqyqg"><div class="flex flex-col"><span class="font-label-md text-label-md text-text-primary tracking-tight">JalanPantau</span><span class="font-label-caps text-label-caps text-text-muted">SISTEM INSPEKSI JALAN</span></div></div><div class="hidden sm:flex items-center gap-space-xs px-space-xs py-space-2xs rounded-full bg-surface-container-low"><span class="font-data-mono-sm text-data-mono-sm text-text-secondary">YOLOv11n • TA 2025</span><div class="flex items-center gap-1.5 px-space-2xs py-0.5 rounded-full bg-severity-low-bg"><span class="w-1.5 h-1.5 rounded-full bg-severity-low-text"></span><span class="font-data-mono-sm text-data-mono-sm text-severity-low-text">Model Siap</span></div></div></div><nav class="hidden md:flex items-center gap-space-xs" data-active-classes="bg-primary-container text-on-primary-container font-label-md"><a aria-current="page" class="px-space-sm py-1.5 rounded transition-colors bg-primary-container text-on-primary-container font-label-md" data-path="deteksi" href="#">Deteksi</a><a class="px-space-sm py-1.5 rounded text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="peta" href="#">Peta</a><a class="px-space-sm py-1.5 rounded text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="riwayat" href="#">Riwayat</a><a class="px-space-sm py-1.5 rounded text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="tentang" href="#">Tentang</a></nav><div class="flex items-center gap-space-sm"><div class="hidden lg:flex items-center gap-space-xs px-space-xs py-1 rounded bg-surface-container"><span class="material-symbols-outlined text-severity-low-text text-[16px]">wifi</span><span class="font-data-mono-sm text-data-mono-sm text-text-secondary">Lokal / Offline-Ready</span></div><div class="hidden xl:flex items-center gap-space-2xs text-text-muted"><span class="material-symbols-outlined text-[16px]">schedule</span><span class="font-data-mono-sm text-data-mono-sm">SHIFT 01 • WIB</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-16 bg-bg-main min-h-screen" id="main-content"><div class="flex flex-col w-full relative">
+<!-- Background Screen 2 (Map Context Simulation) -->
+<div class="w-full min-h-[calc(100vh-4rem)] relative overflow-hidden bg-surface-container-low flex flex-col">
+<!-- Top Map Status Bar in Background -->
+<div class="w-full px-space-md py-space-xs bg-surface flex items-center justify-between shadow-sm z-0">
+<div class="flex items-center gap-space-sm">
+<div class="flex items-center gap-1.5 px-space-2xs py-0.5 rounded bg-surface-container">
+<span class="material-symbols-outlined text-primary text-[18px]">location_on</span>
+<span class="font-label-md text-label-md text-text-primary">Wilayah Kota Bandung • Sektor Sumur Bandung</span>
+</div>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">Total Titik: 84 Terpetakan</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-data-mono-sm text-data-mono-sm text-text-secondary">Peta Jalan Aktif: OpenStreetMap Layer Bina Marga</span>
+</div>
+</div>
+<!-- Map Viewport with Simulated Geographic Backdrop & Markers -->
+<div class="relative flex-1 w-full h-full" style="min-height: 720px;">
+<div class="w-full h-full absolute inset-0 bg-cover bg-center" data-location="Jl. Asia Afrika No. 65, Sumur Bandung, Kota Bandung, Jawa Barat" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCxBFX__BTIXxqUVvPi_GhiW07rOqLMSNveMwbBDZ2VuKR8ABNrJKzJSMKfSpxpAjQDMjXAeue8eiAN8i_J_bo-83YVWYhYP4UbirCFJmYrHYPcznaXuGvtXcFXMgMSilZO_3NY85LFflau8q66a9WeJPGBbWzeP7Z-TpkEljn2bPnkBHCnrCvVWPnWMZEZ4H_MI5-03czvLZvNT7F0z94Hu_o7D-_xQVsx7CVZA_iorIuqZ-AzVQpQ')"></div>
+<!-- Marker Points in Background (leaflet style visual) -->
+<div class="absolute top-1/3 left-1/4 flex flex-col items-center pointer-events-none opacity-40">
+<span class="w-4 h-4 rounded-full bg-severity-med-text shadow-md"></span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-primary bg-surface px-1 rounded shadow-sm mt-0.5">JP-041</span>
+</div>
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-none">
+<div class="relative flex items-center justify-center">
+<span class="animate-ping absolute inline-flex h-8 w-8 rounded-full bg-severity-high-text opacity-40"></span>
+<span class="relative inline-flex rounded-full h-5 w-5 bg-severity-high-text shadow-lg"></span>
+</div>
+<span class="font-data-mono-sm text-data-mono-sm font-semibold text-severity-high-text bg-surface px-1.5 py-0.5 rounded shadow mt-1">Jl. Asia Afrika #65</span>
+</div>
+<div class="absolute bottom-1/4 right-1/3 flex flex-col items-center pointer-events-none opacity-40">
+<span class="w-3.5 h-3.5 rounded-full bg-severity-low-text shadow-md"></span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-primary bg-surface px-1 rounded shadow-sm mt-0.5">JP-039</span>
+</div>
+</div>
+<!-- Semi-Transparent Dark Modal Backdrop -->
+<div class="fixed inset-0 top-16 bg-slate-900/70 backdrop-blur-sm z-40 flex items-center justify-center p-space-xs sm:p-space-md lg:p-space-lg transition-opacity duration-200" id="modal-backdrop">
+<!-- Primary Inspection Modal Dialog Container -->
+<div aria-labelledby="modal-inspection-title" aria-modal="true" class="bg-surface rounded-xl shadow-2xl w-full max-w-7xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150" role="dialog">
+<!-- MODAL HEADER -->
+<header class="w-full bg-surface px-space-md lg:px-space-lg py-space-sm flex flex-col gap-space-2xs shadow-sm z-10 shrink-0">
+<div class="flex items-start justify-between gap-space-md">
+<div class="flex flex-col gap-1">
+<div class="flex flex-wrap items-center gap-space-xs">
+<span class="inline-flex items-center gap-1.5 px-space-xs py-0.5 rounded-full bg-severity-high-bg text-severity-high-text font-label-md text-label-md">
+<span class="w-2 h-2 rounded-full bg-severity-high-text"></span>
+                  Prioritas 1 (Berat)
+                </span>
+<span class="px-space-2xs py-0.5 rounded bg-surface-container font-data-mono-sm text-data-mono-sm text-text-primary">ID: JP-20250218-0042</span>
+<span class="text-text-muted font-body-sm text-body-sm">•</span>
+<span class="font-body-sm text-body-sm text-text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-text-muted">calendar_today</span>
+                  18 Feb 2025 • 14:23 WIB
+                </span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-text-primary tracking-tight" id="modal-inspection-title">
+                Foto Bukti Lapangan — Jl. Asia Afrika No. 65, Bandung
+              </h2>
+</div>
+<!-- Close Action Button -->
+<button aria-label="Tutup Jendela Inspeksi" class="p-space-2xs text-text-secondary hover:text-text-primary hover:bg-surface-container rounded-lg transition-colors flex items-center justify-center" id="btn-close-modal" type="button">
+<span class="material-symbols-outlined text-[24px]">close</span>
+</button>
+</div>
+<!-- Secondary Telemetry / AI Subheader Strip -->
+<div class="flex flex-wrap items-center justify-between gap-x-space-md gap-y-1 pt-1 text-text-muted font-data-mono-sm text-data-mono-sm">
+<div class="flex flex-wrap items-center gap-space-sm">
+<span class="flex items-center gap-1 text-text-secondary">
+<span class="material-symbols-outlined text-[14px] text-primary">my_location</span>
+                GPS: -6.921845, 107.608392 (Akurasi ±1.2m)
+              </span>
+<span class="hidden sm:inline text-outline-variant">|</span>
+<span class="flex items-center gap-1 text-text-secondary">
+<span class="material-symbols-outlined text-[14px] text-primary">analytics</span>
+                Inference: YOLOv11n Terkonfirmasi (IoU 0.65, Latency 14.8ms)
+              </span>
+</div>
+<div class="flex items-center gap-space-2xs text-severity-low-text bg-severity-low-bg px-space-xs py-0.5 rounded">
+<span class="material-symbols-outlined text-[14px]">verified</span>
+<span>Geotag Valid &amp; Kriptografis SHA-256 Valid</span>
+</div>
+</div>
+</header>
+<!-- MODAL BODY: HIGH-RES VIEWER & DIAGNOSTICS ASYMMETRIC GRID -->
+<div class="flex-1 overflow-y-auto grid grid-cols-1 lg:grid-cols-12 bg-bg-main">
+<!-- LEFT / TOP: High-Resolution Photographic Canvas (Col 8) -->
+<div class="lg:col-span-8 p-space-md flex flex-col gap-space-sm">
+<!-- Viewer Frame with Floating OSD and Controls -->
+<div class="relative w-full aspect-[16/10] sm:aspect-[16/9] bg-slate-950 rounded-lg overflow-hidden flex items-center justify-center shadow-inner select-none" id="viewport-container">
+<!-- Real High-Resolution Surface Photographic Asset -->
+<div class="w-full h-full relative transition-transform duration-100 ease-out origin-center" id="image-transform-target">
+<img class="w-full h-full object-cover" data-alt="High-resolution close-up photograph of asphalt pavement roadway on Jalan Asia Afrika Bandung taken by inspection vehicle camera. A deep pothole with rough fractured edges and exposed aggregate gravel is clearly visible alongside adjacent alligator cracking patterns under natural daylight with sharp focus and accurate pavement textures." id="primary-inspection-image" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAhS6dITPeXxbqNDG7j7lHpoOO82DPOBGgZkhgjRI9peqd9OkGvfKD9WLGulUb4MXH7AKYBCPyZYsQ7qeYD_owd4lzE5q4dHM4x3yN0hVRGRDNbYazaUthWmGBiB9EN6_2tetHqCxxiBmOV12lf58d60VvNeNTaLDYHfXUrAKlKsnf9oRV_I_NvZ5SwIAvuu0SdLUyCiegRtNxSJ1Tj7scPzSDphOrA8qO73pemFmPPzF7pBAfyOE6w">
+<!-- AI Annotations Layer (Bounding Boxes with SVG Overlays) -->
+<div class="absolute inset-0 pointer-events-none transition-opacity duration-200" id="ai-annotation-layer">
+<!-- Detection Box 1: Pothole (Severity High) -->
+<div class="absolute top-[38%] left-[28%] w-[38%] h-[42%] border-2 border-severity-high-text rounded-sm shadow-[0_0_0_1px_rgba(0,0,0,0.4)]">
+<!-- Box Header Tag -->
+<div class="absolute -top-7 left-0 bg-severity-high-text text-on-error px-space-xs py-0.5 rounded-t text-data-mono-sm font-data-mono-sm flex items-center gap-1 shadow">
+<span class="w-1.5 h-1.5 rounded-full bg-surface animate-pulse"></span>
+<span>pothole 0.84 (45×30 cm, depth ~7.4cm)</span>
+</div>
+<!-- Dimension Indicators -->
+<div class="absolute bottom-1 right-1 bg-slate-900/85 text-surface px-1 rounded text-data-mono-sm font-data-mono-sm">
+                      Vol: ~9.99 dm³
+                    </div>
+</div>
+<!-- Detection Box 2: Alligator Crack (Severity Medium) -->
+<div class="absolute top-[18%] left-[64%] w-[28%] h-[34%] border-2 border-severity-med-text rounded-sm border-dashed shadow-[0_0_0_1px_rgba(0,0,0,0.4)]">
+<!-- Box Header Tag -->
+<div class="absolute -top-6 left-0 bg-severity-med-text text-on-error px-space-2xs py-0.5 rounded-t text-data-mono-sm font-data-mono-sm flex items-center gap-1 shadow">
+<span>alligator_crack 0.76 (luas ~1.45 m²)</span>
+</div>
+</div>
+<!-- Calibrated Target Crosshair at Centroid of Critical Pothole -->
+<div class="absolute top-[59%] left-[47%] -translate-x-1/2 -translate-y-1/2 w-8 h-8 pointer-events-none flex items-center justify-center text-severity-high-text">
+<span class="material-symbols-outlined text-[24px]">filter_center_focus</span>
+</div>
+</div>
+</div>
+<!-- Top-Left Floating Inspection Toolbar -->
+<div class="absolute top-space-xs left-space-xs z-20 flex items-center gap-1 bg-surface/90 backdrop-blur-md px-1.5 py-1 rounded-lg shadow-md">
+<button class="p-1 rounded text-text-secondary hover:text-text-primary hover:bg-surface transition-colors flex items-center justify-center" id="btn-zoom-in" title="Perbesar (Zoom In)" type="button">
+<span class="material-symbols-outlined text-[18px]">zoom_in</span>
+</button>
+<button class="p-1 rounded text-text-secondary hover:text-text-primary hover:bg-surface transition-colors flex items-center justify-center" id="btn-zoom-out" title="Perkecil (Zoom Out)" type="button">
+<span class="material-symbols-outlined text-[18px]">zoom_out</span>
+</button>
+<button class="px-1.5 py-0.5 rounded text-data-mono-sm font-data-mono-sm text-text-secondary hover:text-text-primary hover:bg-surface transition-colors" id="btn-zoom-100" title="Ukuran Asli 1:1" type="button">
+                  1:1
+                </button>
+<button class="p-1 rounded text-text-secondary hover:text-text-primary hover:bg-surface transition-colors flex items-center justify-center" id="btn-zoom-fit" title="Sesuaikan Layar" type="button">
+<span class="material-symbols-outlined text-[18px]">fit_screen</span>
+</button>
+<span class="w-px h-4 bg-border-subtle mx-0.5"></span>
+<!-- Toggle Bounding Box Layer -->
+<button class="flex items-center gap-1 px-space-2xs py-0.5 rounded bg-primary text-on-primary text-data-mono-sm font-data-mono-sm transition-colors" id="btn-toggle-box" type="button">
+<span class="material-symbols-outlined text-[14px]">layers</span>
+<span>Box: ON</span>
+</button>
+<!-- Toggle CLAHE / Contrast Mode -->
+<button class="flex items-center gap-1 px-space-2xs py-0.5 rounded bg-surface-container text-text-primary hover:bg-surface-container-high text-data-mono-sm font-data-mono-sm transition-colors" id="btn-toggle-clahe" title="Tingkatkan Kontras Pavement (CLAHE)" type="button">
+<span class="material-symbols-outlined text-[14px]">contrast</span>
+<span>CLAHE</span>
+</button>
+</div>
+<!-- Top-Right Real-time Zoom Indicator -->
+<div class="absolute top-space-xs right-space-xs z-20 px-space-xs py-1 rounded bg-slate-900/80 text-surface backdrop-blur-sm font-data-mono-sm text-data-mono-sm flex items-center gap-1">
+<span class="text-text-muted">SKALA:</span>
+<span class="text-severity-low-text font-bold" id="zoom-level-text">100%</span>
+</div>
+<!-- Bottom OSD (On-Screen Display) Telemetry Bar -->
+<div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-950/95 via-slate-950/70 to-transparent pt-6 pb-2 px-3 z-20 flex flex-wrap items-center justify-between gap-y-1 font-data-mono-sm text-data-mono-sm text-slate-300 pointer-events-none">
+<div class="flex items-center gap-space-sm tracking-wide">
+<span class="text-white font-semibold">LAT: -6.921845</span>
+<span class="text-white font-semibold">LON: 107.608392</span>
+<span class="hidden sm:inline text-slate-400">ELEV: 712m</span>
+<span class="hidden md:inline text-slate-400">SPEED: 0.0 KM/H</span>
+</div>
+<div class="flex items-center gap-space-sm text-slate-400">
+<span class="hidden sm:inline">RES: 1920x1080 • RAW_JPG</span>
+<span>SENSOR: SONY IMX708 12MP CALIB</span>
+</div>
+</div>
+</div>
+<!-- Image Metadata Micro Strip below viewer -->
+<div class="w-full flex items-center justify-between px-space-xs py-1 text-text-muted font-body-sm text-body-sm">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px]">info</span>
+                Gunakan kursor atau scroll mouse untuk zoom dan geser pada area foto jalan.
+              </span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-secondary">Piksel GSD: 0.82 mm/px</span>
+</div>
+</div>
+<!-- RIGHT / BOTTOM: Diagnostics, Damage List & Rapid Costing Panel (Col 4) -->
+<div class="lg:col-span-4 p-space-md lg:pl-0 flex flex-col gap-space-sm">
+<!-- Summary Metric Card -->
+<div class="bg-surface p-space-md rounded-lg shadow-sm flex flex-col gap-space-2xs">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted">RINGKASAN DIAGNOSTIK AI</span>
+<span class="px-space-2xs py-0.5 rounded bg-severity-high-bg text-severity-high-text font-data-mono-sm text-data-mono-sm font-semibold">Kondisi Kritis</span>
+</div>
+<div class="flex items-baseline gap-space-xs mt-1">
+<span class="font-headline-lg text-headline-lg text-text-primary">2 Kerusakan</span>
+<span class="font-body-sm text-body-sm text-text-secondary">terpetakan di segmen STA 0+420</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary">
+                1 Lubang Jalan Dalam (kedalaman kritis &gt; 7 cm berisiko tinggi terhadap kendaraan roda dua) dan 1 Formasi Retak Kulit Buaya sekunder.
+              </p>
+</div>
+<!-- Damage Items Breakdown Table/List -->
+<div class="bg-surface rounded-lg shadow-sm overflow-hidden flex flex-col">
+<div class="bg-surface-container-low px-space-md py-space-xs flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted">TABEL KLASIFIKASI KERUSAKAN</span>
+<span class="font-data-mono-sm text-data-mono-sm text-text-muted">ISO 9001 / Bina Marga</span>
+</div>
+<div class="p-space-sm flex flex-col gap-space-xs">
+<!-- Item 1 -->
+<div class="p-space-xs rounded bg-surface-container-lowest hover:bg-surface-container-low transition-colors flex flex-col gap-1 shadow-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-severity-high-text"></span>
+<span class="font-label-md text-label-md text-text-primary">Lubang Jalan (Pothole)</span>
+</div>
+<span class="font-data-mono-sm text-data-mono-sm px-1.5 py-0.5 rounded bg-severity-high-bg text-severity-high-text font-bold">Conf: 84.2%</span>
+</div>
+<div class="grid grid-cols-2 gap-1 text-data-mono-sm font-data-mono-sm text-text-secondary pt-0.5">
+<span>Dimensi: 45 x 30 cm</span>
+<span>Kedalaman: ~7.4 cm</span>
+<span>Tingkat: Berat (High)</span>
+<span>Penyebab: Rembesan Air</span>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="p-space-xs rounded bg-surface-container-lowest hover:bg-surface-container-low transition-colors flex flex-col gap-1 shadow-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-severity-med-text"></span>
+<span class="font-label-md text-label-md text-text-primary">Retak Buaya (Alligator)</span>
+</div>
+<span class="font-data-mono-sm text-data-mono-sm px-1.5 py-0.5 rounded bg-severity-med-bg text-severity-med-text font-bold">Conf: 76.5%</span>
+</div>
+<div class="grid grid-cols-2 gap-1 text-data-mono-sm font-data-mono-sm text-text-secondary pt-0.5">
+<span>Luas Area: ~1.45 m²</span>
+<span>Lebar Celah: 3-5 mm</span>
+<span>Tingkat: Sedang (Med)</span>
+<span>Fatigue Base Course</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Bina Marga Estimated Repair & Prescription -->
+<div class="bg-surface p-space-md rounded-lg shadow-sm flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted">ESTIMASI BIAYA RUTIN BINA MARGA</span>
+<span class="material-symbols-outlined text-primary text-[18px]">payments</span>
+</div>
+<div class="flex items-baseline gap-space-2xs">
+<span class="font-headline-lg text-headline-lg text-primary font-bold">Rp 1.300.000</span>
+<span class="font-body-sm text-body-sm text-text-muted">(±10% HPS 2025)</span>
+</div>
+<div class="p-space-xs rounded bg-surface-container-low flex flex-col gap-1 mt-1">
+<div class="flex items-center gap-1 text-text-primary font-label-md text-label-md">
+<span class="material-symbols-outlined text-primary text-[16px]">build</span>
+<span>Rekomendasi Penanganan Teknis:</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary leading-snug">
+                  Metode <strong>Cold Mix Asphalt</strong> dengan perapian selektif tack coat dalam waktu <strong>1x24 jam</strong> guna mencegah insiden fatal pengendara roda dua di jalur utama kota.
+                </p>
+</div>
+</div>
+</div>
+</div>
+<!-- MODAL FOOTER ACTIONS -->
+<footer class="w-full bg-surface px-space-md lg:px-space-lg py-space-sm flex flex-col sm:flex-row items-center justify-between gap-space-sm shadow-sm z-10 shrink-0">
+<!-- Back to Map Trigger -->
+<button class="w-full sm:w-auto px-space-md py-2 rounded-lg bg-surface-container-low text-text-primary hover:bg-surface-container transition-colors font-label-md text-label-md flex items-center justify-center gap-1.5 shadow-sm" id="btn-back-to-map" type="button">
+<span class="material-symbols-outlined text-[18px]">arrow_back</span>
+<span>Kembali ke Peta</span>
+</button>
+<!-- Action Buttons Group -->
+<div class="w-full sm:w-auto flex flex-wrap items-center justify-end gap-space-xs">
+<!-- Navigate to Full History Sheet -->
+<a class="w-full sm:w-auto px-space-md py-2 rounded-lg bg-surface-container text-primary hover:bg-surface-container-high transition-colors font-label-md text-label-md flex items-center justify-center gap-1.5" data-path="riwayat" href="#">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+<span>Buka Lembar Riwayat Lengkap</span>
+</a>
+<!-- Download JPG Full Res -->
+<button class="w-full sm:w-auto px-space-md py-2 rounded-lg bg-surface-container text-text-primary hover:bg-surface-container-high transition-colors font-label-md text-label-md flex items-center justify-center gap-1.5" id="btn-download-jpg" type="button">
+<span class="material-symbols-outlined text-[18px]">photo_camera</span>
+<span>Unduh Foto Asli (JPG)</span>
+</button>
+<!-- Download Official PDF Report (Primary Action) -->
+<button class="w-full sm:w-auto px-space-md py-2 rounded-lg bg-primary hover:bg-primary-container text-on-primary transition-colors font-label-md text-label-md flex items-center justify-center gap-1.5 shadow-sm" id="btn-download-pdf" type="button">
+<span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+<span>Unduh Berita Acara PDF</span>
+</button>
+</div>
+</footer>
+</div>
+</div>
+</div>
+</div>
+<script>
+  (function() {
+    let currentZoom = 1;
+    let isClaheActive = false;
+    let isBoxVisible = true;
+
+    const imgTarget = document.getElementById('image-transform-target');
+    const zoomText = document.getElementById('zoom-level-text');
+    const boxLayer = document.getElementById('ai-annotation-layer');
+    const btnBox = document.getElementById('btn-toggle-box');
+    const btnClahe = document.getElementById('btn-toggle-clahe');
+    const toastBox = document.getElementById('toast-container');
+
+    function updateZoomDisplay() {
+      if (imgTarget) {
+        imgTarget.style.transform = `scale(${currentZoom})`;
+      }
+      if (zoomText) {
+        zoomText.textContent = `${Math.round(currentZoom * 100)}%`;
+      }
+    }
+
+    function triggerToast(message) {
+      if (!toastBox) return;
+      const toast = document.createElement('div');
+      toast.className = 'px-4 py-2 bg-slate-900 text-white rounded-lg shadow-lg font-body-sm text-body-sm flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-150';
+      toast.innerHTML = `<span class="material-symbols-outlined text-[18px] text-severity-low-text">check_circle</span><span>${message}</span>`;
+      toastBox.appendChild(toast);
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
+    }
+
+    // Zoom Handlers
+    document.getElementById('btn-zoom-in')?.addEventListener('click', () => {
+      if (currentZoom < 3) {
+        currentZoom = parseFloat((currentZoom + 0.25).toFixed(2));
+        updateZoomDisplay();
+      }
+    });
+
+    document.getElementById('btn-zoom-out')?.addEventListener('click', () => {
+      if (currentZoom > 0.75) {
+        currentZoom = parseFloat((currentZoom - 0.25).toFixed(2));
+        updateZoomDisplay();
+      }
+    });
+
+    document.getElementById('btn-zoom-100')?.addEventListener('click', () => {
+      currentZoom = 1;
+      updateZoomDisplay();
+    });
+
+    document.getElementById('btn-zoom-fit')?.addEventListener('click', () => {
+      currentZoom = 1;
+      updateZoomDisplay();
+    });
+
+    // Box Toggle
+    btnBox?.addEventListener('click', () => {
+      isBoxVisible = !isBoxVisible;
+      if (boxLayer) {
+        boxLayer.style.opacity = isBoxVisible ? '1' : '0';
+      }
+      if (btnBox) {
+        btnBox.innerHTML = `<span class="material-symbols-outlined text-[14px]">layers</span><span>Box: ${isBoxVisible ? 'ON' : 'OFF'}</span>`;
+        if (isBoxVisible) {
+          btnBox.classList.remove('bg-slate-700');
+          btnBox.classList.add('bg-primary');
+        } else {
+          btnBox.classList.remove('bg-primary');
+          btnBox.classList.add('bg-slate-700');
+        }
+      }
+    });
+
+    // CLAHE contrast enhancement toggle
+    btnClahe?.addEventListener('click', () => {
+      isClaheActive = !isClaheActive;
+      const primaryImg = document.getElementById('primary-inspection-image');
+      if (primaryImg) {
+        primaryImg.style.filter = isClaheActive ? 'contrast(1.45) brightness(0.95) saturate(1.15)' : 'none';
+      }
+      if (btnClahe) {
+        if (isClaheActive) {
+          btnClahe.classList.add('bg-primary', 'text-on-primary');
+          btnClahe.classList.remove('bg-surface-container', 'text-text-primary');
+          triggerToast('Filter Kontras Tekstur Aspal (CLAHE) Aktif');
+        } else {
+          btnClahe.classList.remove('bg-primary', 'text-on-primary');
+          btnClahe.classList.add('bg-surface-container', 'text-text-primary');
+        }
+      }
+    });
+
+    // Close & Back Simulation
+    const handleClose = () => {
+      const backdrop = document.getElementById('modal-backdrop');
+      if (backdrop) {
+        backdrop.classList.add('opacity-0', 'pointer-events-none');
+        triggerToast('Kembali ke tampilan peta interaktif');
+      }
+    };
+
+    document.getElementById('btn-close-modal')?.addEventListener('click', handleClose);
+    document.getElementById('btn-back-to-map')?.addEventListener('click', handleClose);
+
+    // Download simulated actions
+    document.getElementById('btn-download-jpg')?.addEventListener('click', () => {
+      triggerToast('Mengunduh foto resolusi asli (JP-20250218-0042.jpg)...');
+    });
+
+    document.getElementById('btn-download-pdf')?.addEventListener('click', () => {
+      triggerToast('Membuat Berita Acara Kerusakan Lapangan (PDF)...');
+    });
+  })();
+</script></main><footer class="w-full bg-surface py-space-md shadow-[0_-1px_6px_rgba(0,0,0,0.03)]"><div class="w-full px-gutter-app flex flex-col sm:flex-row items-center justify-between gap-space-xs text-text-muted font-body-sm text-body-sm"><span>© 2025 JalanPantau • Platform Kecerdasan Artifisial Inspeksi Kerusakan Permukaan Jalan</span><span class="font-data-mono-sm text-data-mono-sm">Infrastruktur Bina Marga &amp; Transportasi Cerdas</span></div></footer><div class="fixed bottom-space-md right-space-md z-50 flex flex-col gap-space-xs pointer-events-none" id="toast-container"></div></body></html>
