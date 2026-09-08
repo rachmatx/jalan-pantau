@@ -3,7 +3,7 @@
 # Keterbatasan jujur: kamera mono tidak mengukur kedalaman; tebal = asumsi per severity.
 # Kalibrasi rutin via halaman /kalibrasi (nilai langsung / foto penggaris klik
 # 2 titik) atau edit manual; blok "kalibrasi:" di bawah ditulis otomatis UI.
-pixels_per_cm: 8.0000  # WAJIB kalibrasi ulang per pemasangan
+pixels_per_cm: 11.4342  # WAJIB kalibrasi ulang per pemasangan
 crack_width_mm:
   ringan_max: 10
   sedang_max: 75
@@ -22,6 +22,6 @@ bahan:
   Sedang: hotmix AC-WC
   Berat: beton + lapis pondasi
 kalibrasi:
-  metode: manual
-  diperbarui: "2026-09-08 16:22 SE Asia Standard Time"
-  catatan: "-"
+  metode: penggaris
+  diperbarui: "2026-09-09 05:16 SE Asia Standard Time"
+  catatan: "foto penggaris via UI"

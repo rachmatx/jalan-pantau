@@ -566,19 +566,23 @@ def create_app():
         host = (u.hostname or "").lower().strip(".")
         if not host:
             return "URL IP-camera tidak valid."
+        # Untuk penggunaan lokal/izin IP privat (192.168.x.x, 10.x.x.x, dll)
+        # Hanya blokir localhost dan alamat yang benar-benar tidak valid
         if host in ("localhost", "ip6-localhost"):
-            return "URL IP-camera tidak boleh localhost."
+            return "URL IP-camera tidak boleh localhost. Gunakan IP privat (192.168.x.x) atau IP publik."
         import ipaddress as _ip
         try:
             ip = _ip.ip_address(host)
-            if (ip.is_private or ip.is_loopback or ip.is_link_local
-                    or ip.is_multicast or ip.is_reserved or ip.is_unspecified):
-                return "URL IP-camera tidak boleh alamat privat/lokal."
+            # Hanya blokir loopback, multicast, reserved, dan unspecified
+            # IP privat (192.168.x.x, 10.x.x.x, 172.16-31.x.x) DIIZINKAN untuk penggunaan lokal
+            if (ip.is_loopback or ip.is_multicast or ip.is_reserved
+                    or ip.is_unspecified):
+                return "URL IP-camera tidak boleh alamat loopback/multicast."
             if ip == _ip.ip_address("169.254.169.254"):
                 return "URL IP-camera tidak boleh metadata cloud."
         except ValueError:
-            # hostname biasa: tolak suffix lokal
-            if host.endswith((".local", ".internal", ".lan", ".home")):
+            # hostname biasa: hanya blokir suffix yang jelas-jelas lokal
+            if host.endswith((".local", ".internal")):
                 return "URL IP-camera tidak boleh host lokal."
         return None
 
