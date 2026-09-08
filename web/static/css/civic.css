@@ -250,6 +250,7 @@ body { padding-top: 0; }
 }
 /* zoom.js hooks, gaya civic terang (tinggi eksplisit: % dari parent auto = 0!) */
 .viewer.zoomable { border: none; border-radius: 0; height: min(62vh, 560px); min-height: 380px; position: relative; }
+#viewer-live.zoomable { height: min(55vh, 480px); min-height: 320px; max-height: 520px; }
 .viewer.zoomable .viewer-placeholder { color: #CBD5E1; }
 .viewer.zoomable .viewer-placeholder-icon { border-color: rgba(0, 191, 255, 0.5); }
 .zoom-bar {
@@ -974,6 +975,7 @@ label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label da
 
   /* ---- Viewer ---- */
   .viewer.zoomable { height: 45vh; min-height: 280px; }
+  #viewer-live.zoomable { height: min(50vh, 400px); min-height: 280px; max-height: 450px; }
   .jp-viewport { aspect-ratio: 4/3; }
   .jp-viewmeta { padding: 6px 10px; font-size: 10px; flex-wrap: wrap; gap: 8px; }
   .zoom-bar { padding: 2px 4px; bottom: 8px; }
