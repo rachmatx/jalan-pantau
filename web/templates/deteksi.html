@@ -239,45 +239,45 @@
             <span style="font-size:12px;color:var(--jp-ink)">Stream terhubung • YOLOv11n aktif</span>
           </div>
         </div>
-      </div>
-      <!-- State Gangguan Kamera (hidden by default) -->
-      <div id="camera-error-state" style="display:none;margin-top:16px">
-        <div style="background:var(--jp-sev-r-bg);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px">
-          <div style="display:flex;align-items:flex-start;gap:12px">
-            <div style="width:40px;height:40px;border-radius:8px;background:var(--jp-err);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-            </div>
-            <div style="flex:1">
-              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-                <span style="font-size:11px;font-weight:600;letter-spacing:0.05em;color:var(--jp-sev-r-tx)">HARDWARE I/O ERROR</span>
-                <span style="padding:2px 8px;border-radius:6px;background:var(--jp-container);font-family:var(--jp-mono);font-size:11px;color:var(--jp-ink)">DRV_FAIL_504</span>
+        <!-- State Gangguan Kamera (hidden by default) - DI DALAM jp-col-main -->
+        <div id="camera-error-state" style="display:none;margin-top:16px">
+          <div style="background:var(--jp-sev-r-bg);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:flex-start;gap:12px">
+              <div style="width:40px;height:40px;border-radius:8px;background:var(--jp-err);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
               </div>
-              <h3 style="font-size:18px;font-weight:600;color:var(--jp-ink);margin:4px 0">Koneksi Kamera Inspeksi Terputus (/dev/video0)</h3>
-              <p style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-muted)">ERR_CAMERA_TIMEOUT_CODE_504 | Frame buffer terhenti</p>
+              <div style="flex:1">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  <span style="font-size:11px;font-weight:600;letter-spacing:0.05em;color:var(--jp-sev-r-tx)">HARDWARE I/O ERROR</span>
+                  <span style="padding:2px 8px;border-radius:6px;background:var(--jp-container);font-family:var(--jp-mono);font-size:11px;color:var(--jp-ink)">DRV_FAIL_504</span>
+                </div>
+                <h3 style="font-size:18px;font-weight:600;color:var(--jp-ink);margin:4px 0">Koneksi Kamera Inspeksi Terputus (/dev/video0)</h3>
+                <p style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-muted)">ERR_CAMERA_TIMEOUT_CODE_504 | Frame buffer terhenti</p>
+              </div>
             </div>
-          </div>
-          <div style="padding:12px;border-radius:8px;background:var(--jp-container-low);font-size:12px;color:var(--jp-tx2)">
-            <strong style="color:var(--jp-ink)">Diagnosa:</strong> Sensor kamera tidak merespons frame buffer. Aliran inferensi YOLOv11n dijeda otomatis untuk mencegah anomali data.
-          </div>
-          <div style="display:flex;flex-direction:column;gap:8px">
-            <span style="font-size:11px;font-weight:600;letter-spacing:0.05em;color:var(--jp-muted)">3 Langkah Troubleshooting Cepat</span>
-            <div style="display:flex;align-items:flex-start;gap:8px;padding:8px;border-radius:8px;background:var(--jp-surface)">
-              <span style="width:20px;height:20px;border-radius:50%;background:var(--jp-container);font-family:var(--jp-mono);font-size:11px;color:var(--jp-ink);display:flex;align-items:center;justify-content:center;flex-shrink:0">1</span>
-              <p style="font-size:12px;color:var(--jp-tx2);margin:0">Periksa sambungan kabel <strong style="color:var(--jp-ink)">USB 3.0 Type-C</strong> atau port bus USB host.</p>
+            <div style="padding:12px;border-radius:8px;background:var(--jp-container-low);font-size:12px;color:var(--jp-tx2)">
+              <strong style="color:var(--jp-ink)">Diagnosa:</strong> Sensor kamera tidak merespons frame buffer. Aliran inferensi YOLOv11n dijeda otomatis untuk mencegah anomali data.
             </div>
-            <div style="display:flex;align-items:flex-start;gap:8px;padding:8px;border-radius:8px;background:var(--jp-surface)">
-              <span style="width:20px;height:20px;border-radius:50%;background:var(--jp-container);font-family:var(--jp-mono);font-size:11px;color:var(--jp-ink);display:flex;align-items:center;justify-content:center;flex-shrink:0">2</span>
-              <p style="font-size:12px;color:var(--jp-tx2);margin:0">Restart daemon penangkap frame dengan klik <strong style="color:var(--jp-primary)">Coba Hubungkan Ulang</strong>.</p>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <span style="font-size:11px;font-weight:600;letter-spacing:0.05em;color:var(--jp-muted)">3 Langkah Troubleshooting Cepat</span>
+              <div style="display:flex;align-items:flex-start;gap:8px;padding:8px;border-radius:8px;background:var(--jp-surface)">
+                <span style="width:20px;height:20px;border-radius:50%;background:var(--jp-container);font-family:var(--jp-mono);font-size:11px;color:var(--jp-ink);display:flex;align-items:center;justify-content:center;flex-shrink:0">1</span>
+                <p style="font-size:12px;color:var(--jp-tx2);margin:0">Periksa sambungan kabel <strong style="color:var(--jp-ink)">USB 3.0 Type-C</strong> atau port bus USB host.</p>
+              </div>
+              <div style="display:flex;align-items:flex-start;gap:8px;padding:8px;border-radius:8px;background:var(--jp-surface)">
+                <span style="width:20px;height:20px;border-radius:50%;background:var(--jp-container);font-family:var(--jp-mono);font-size:11px;color:var(--jp-ink);display:flex;align-items:center;justify-content:center;flex-shrink:0">2</span>
+                <p style="font-size:12px;color:var(--jp-tx2);margin:0">Restart daemon penangkap frame dengan klik <strong style="color:var(--jp-primary)">Coba Hubungkan Ulang</strong>.</p>
+              </div>
+              <div style="display:flex;align-items:flex-start;gap:8px;padding:8px;border-radius:8px;background:var(--jp-surface)">
+                <span style="width:20px;height:20px;border-radius:50%;background:var(--jp-container);font-family:var(--jp-mono);font-size:11px;color:var(--jp-ink);display:flex;align-items:center;justify-content:center;flex-shrink:0">3</span>
+                <p style="font-size:12px;color:var(--jp-tx2);margin:0">Beralih sementara ke mode <strong style="color:var(--jp-ink)">Berkas MP4</strong> atau <strong style="color:var(--jp-ink)">Kamera Cadangan (IP-Cam RTSP)</strong>.</p>
+              </div>
             </div>
-            <div style="display:flex;align-items:flex-start;gap:8px;padding:8px;border-radius:8px;background:var(--jp-surface)">
-              <span style="width:20px;height:20px;border-radius:50%;background:var(--jp-container);font-family:var(--jp-mono);font-size:11px;color:var(--jp-ink);display:flex;align-items:center;justify-content:center;flex-shrink:0">3</span>
-              <p style="font-size:12px;color:var(--jp-tx2);margin:0">Beralih sementara ke mode <strong style="color:var(--jp-ink)">Berkas MP4</strong> atau <strong style="color:var(--jp-ink)">Kamera Cadangan (IP-Cam RTSP)</strong>.</p>
+            <div style="display:flex;flex-wrap:wrap;gap:8px">
+              <button type="button" id="btn-retry-cam" class="jp-btn-primary" style="padding:8px 16px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg><span>Coba Hubungkan Ulang</span></button>
+              <button type="button" id="btn-switch-backup" class="jp-btn-demo" style="padding:8px 16px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><span>Beralih Kamera Cadangan</span></button>
+              <button type="button" id="btn-download-log" class="jp-btn-demo" style="padding:8px 16px;margin-left:auto"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Unduh Log Error</span></button>
             </div>
-          </div>
-          <div style="display:flex;flex-wrap:wrap;gap:8px">
-            <button type="button" id="btn-retry-cam" class="jp-btn-primary" style="padding:8px 16px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg><span>Coba Hubungkan Ulang</span></button>
-            <button type="button" id="btn-switch-backup" class="jp-btn-demo" style="padding:8px 16px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><span>Beralih Kamera Cadangan</span></button>
-            <button type="button" id="btn-download-log" class="jp-btn-demo" style="padding:8px 16px;margin-left:auto"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Unduh Log Error</span></button>
           </div>
         </div>
       </div>
