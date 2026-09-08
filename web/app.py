@@ -382,6 +382,7 @@ def create_app():
         conf = min(max(conf, CONF_MIN), CONF_MAX)
         malam = request.form.get("malam", "") in ("1", "true", "on")
         teliti = request.form.get("teliti", "") in ("1", "true", "on")
+        segmentasi = request.form.get("segmentasi", "") in ("1", "true", "on")
         data = f.read(MAX_IMG_BYTES + 1)
         if len(data) > MAX_IMG_BYTES:
             return jsonify({"error": "Ukuran gambar maks 15MB. "
@@ -391,7 +392,7 @@ def create_app():
             return jsonify({"error": "Berkas bukan gambar JPG/PNG yang valid."}), 400
         try:
             hasil = analisis_gambar(data, conf=conf, malam=malam,
-                                    teliti=teliti)
+                                    teliti=teliti, segmentasi=segmentasi)
         except ValueError as e:
             return jsonify({"error": str(e)}), 400
         except Exception:

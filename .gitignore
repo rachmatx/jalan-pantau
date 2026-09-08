@@ -80,6 +80,7 @@ Czech_*.jpg
 # Stitch exports (large HTML/CSS files)
 # ============================================================
 stitch_aplikasi_deteksi_kerusakan_jalan*.zip
+stitch_aplikasi_deteksi_kerusakan_jalan*.*
 stitch_aplikasi_deteksi_kerusalan_jalan/code.html
 
 # ============================================================
