@@ -625,8 +625,15 @@ def pseudo_segmentation(frame, box, img_hash=None):
             best_iou = iou
             best_mask = mask_np
 
-    # Minimal IoU 0.1 untuk dianggap cocok (FastSAM mask sering tidak persis di box)
-    if best_mask is None or best_iou < 0.1:
+    # Minimal IoU 0.05 untuk dianggap cocok (sangat permisif)
+    if best_mask is None or best_iou < 0.05:
+        # Fallback: gunakan area box sebagai mask
+        crop_mask = box_mask[y1:y2, x1:x2]
+        contours, _ = cv2.findContours(crop_mask, cv2.RETR_EXTERNAL,
+                                       cv2.CHAIN_APPROX_SIMPLE)
+        if contours:
+            largest = max(contours, key=cv2.contourArea)
+            return crop_mask, largest, int(cv2.contourArea(largest))
         return None, None, 0
 
     # Crop mask ke area box untuk contour detection
@@ -637,14 +644,21 @@ def pseudo_segmentation(frame, box, img_hash=None):
                                    cv2.CHAIN_APPROX_SIMPLE)
 
     if not contours:
+        # Fallback: gunakan area box
+        crop_mask = box_mask[y1:y2, x1:x2]
+        contours, _ = cv2.findContours(crop_mask, cv2.RETR_EXTERNAL,
+                                       cv2.CHAIN_APPROX_SIMPLE)
+        if contours:
+            largest = max(contours, key=cv2.contourArea)
+            return crop_mask, largest, int(cv2.contourArea(largest))
         return None, None, 0
 
     # Ambil kontur terbesar
     largest = max(contours, key=cv2.contourArea)
     area_px = cv2.contourArea(largest)
 
-    # Skip jika area terlalu kecil (< 20% box area)
-    if area_px < box_area * 0.2:
+    # Skip jika area terlalu kecil (< 2% box area)
+    if area_px < box_area * 0.02:
         return None, None, 0
 
     return crop_mask, largest, int(area_px)
