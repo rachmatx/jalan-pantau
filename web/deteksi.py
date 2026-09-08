@@ -538,62 +538,104 @@ def decode_image(raw: bytes):
     return img
 
 
+_fast_sam_model = None
+
+
+def _get_fast_sam():
+    """Lazy load FastSAM model (singleton)."""
+    global _fast_sam_model
+    if _fast_sam_model is None:
+        try:
+            from ultralytics import FastSAM
+            # FastSAM-s adalah model ringan (~21MB), cocok untuk CPU
+            _fast_sam_model = FastSAM("FastSAM-s.pt")
+        except Exception as e:
+            print(f"[FastSAM] Gagal load model: {e}")
+            return None
+    return _fast_sam_model
+
+
 def pseudo_segmentation(frame, box, padding=8):
     """
-    Generate segmentation mask dari bounding box menggunakan kontur detection.
-    Hybrid approach: Otsu threshold + morphological ops + contour filtering.
+    Generate segmentation mask dari bounding box menggunakan FastSAM.
+    Pendekatan A: SAM post-processing di atas bbox (tanpa retrain).
+
+    Args:
+        frame: BGR image (numpy array)
+        box: [x1, y1, x2, y2] bounding box dari YOLO
+        padding: pixel padding untuk konteks
+
+    Returns:
+        mask: binary mask (0 atau 255) atau None
+        contour: contour points atau None
+        area_px: area dalam pixel
     """
     import numpy as np
+
+    model = _get_fast_sam()
+    if model is None:
+        return None, None, 0
+
     h, w = frame.shape[:2]
     x1, y1, x2, y2 = map(int, box)
-    # Add padding untuk konteks
-    x1 = max(0, x1 - padding)
-    y1 = max(0, y1 - padding)
-    x2 = min(w, x2 + padding)
-    y2 = min(h, y2 + padding)
 
-    crop = frame[y1:y2, x1:x2]
+    # Crop area box + padding untuk input SAM
+    x1_crop = max(0, x1 - padding)
+    y1_crop = max(0, y1 - padding)
+    x2_crop = min(w, x2 + padding)
+    y2_crop = min(h, y2 + padding)
+
+    crop = frame[y1_crop:y2_crop, x1_crop:x2_crop]
     if crop.size == 0:
         return None, None, 0
 
-    # Convert ke grayscale
-    gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+    try:
+        # Jalankan FastSAM pada crop
+        results = model(crop, device="cpu", imgsz=640, conf=0.4, iou=0.9,
+                        verbose=False)
 
-    # Gaussian blur untuk reduce noise
-    blur = cv2.GaussianBlur(gray, (5, 5), 0)
+        if not results or not results[0].masks:
+            return None, None, 0
 
-    # Adaptive threshold - lebih baik untuk pencahayaan tidak merata
-    thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                   cv2.THRESH_BINARY_INV, 11, 2)
+        # Ambil mask dengan area terbesar
+        masks = results[0].masks.data
+        if len(masks) == 0:
+            return None, None, 0
 
-    # Morphological operations untuk clean up
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-    thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel, iterations=2)
-    thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=1)
+        # Pilih mask terbesar
+        best_mask = None
+        best_area = 0
+        for mask_tensor in masks:
+            mask_np = mask_tensor.cpu().numpy().astype(np.uint8) * 255
+            area = np.count_nonzero(mask_np)
+            if area > best_area:
+                best_area = area
+                best_mask = mask_np
 
-    # Find contours
-    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if best_mask is None:
+            return None, None, 0
 
-    if not contours:
+        # Resize mask ke ukuran crop jika berbeda
+        if best_mask.shape != crop.shape[:2]:
+            best_mask = cv2.resize(best_mask, (crop.shape[1], crop.shape[0]),
+                                   interpolation=cv2.INTER_NEAREST)
+
+        # Find contour dari mask
+        contours, _ = cv2.findContours(best_mask, cv2.RETR_EXTERNAL,
+                                       cv2.CHAIN_APPROX_SIMPLE)
+
+        if not contours:
+            return None, None, 0
+
+        # Ambil kontur terbesar
+        largest = max(contours, key=cv2.contourArea)
+        area_px = cv2.contourArea(largest)
+
+        return best_mask, largest, int(area_px)
+
+    except Exception as e:
+        print(f"[FastSAM] Error: {e}")
         return None, None, 0
-
-    # Filter kontur kecil (noise) - ambil yang > 10% area box
-    box_area = (x2 - x1) * (y2 - y1)
-    min_area = box_area * 0.1
-    valid_contours = [c for c in contours if cv2.contourArea(c) > min_area]
-
-    if not valid_contours:
-        return None, None, 0
-
-    # Ambil kontur terbesar
-    largest = max(valid_contours, key=cv2.contourArea)
-    area_px = cv2.contourArea(largest)
-
-    # Buat mask
-    mask = np.zeros(crop.shape[:2], dtype=np.uint8)
-    cv2.drawContours(mask, [largest], -1, 255, -1)
-
-    return mask, largest, area_px
 
 
 def exif_gps(raw: bytes):
