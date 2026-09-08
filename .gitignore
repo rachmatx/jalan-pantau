@@ -7,7 +7,6 @@
 *.tflite
 app/weights/*.pt
 app/weights/*.onnx
-FastSAM*.pt
 !app/weights-README.md
 
 # ============================================================

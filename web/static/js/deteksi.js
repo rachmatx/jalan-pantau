@@ -266,11 +266,7 @@ form.addEventListener("submit", async (e) => {
     if (document.getElementById("malam").checked) data.append("malam", "1");
     const teliti = document.getElementById("teliti") && document.getElementById("teliti").checked;
     if (teliti) data.append("teliti", "1");
-    const segmentasi = document.getElementById("segmentasi") && document.getElementById("segmentasi").checked;
-    if (segmentasi) data.append("segmentasi", "1");
-    if (teliti && segmentasi) status.textContent = "Mendeteksi (mode teliti + segmentasi — lebih lama)…";
-    else if (teliti) status.textContent = "Mendeteksi (mode teliti — lebih lama)…";
-    else if (segmentasi) status.textContent = "Mendeteksi (dengan segmentasi)…";
+    if (teliti) status.textContent = "Mendeteksi (mode teliti — lebih lama)…";
     const res = await fetch("/api/detect", { method: "POST", body: data });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error || "Deteksi gagal.");
@@ -288,7 +284,7 @@ form.addEventListener("submit", async (e) => {
       status.classList.remove("galat");
     }
     if (!json.rows.length) {
-      status.textContent = "Tidak ada kerusakan terdeteksi pada confidence ini. Coba turunkan confidence, centang mode malam untuk foto gelap, centang mode teliti untuk retak kecil, centang segmentasi untuk deteksi bentuk, atau gunakan foto siang hari.";
+      status.textContent = "Tidak ada kerusakan terdeteksi pada confidence ini. Coba turunkan confidence, centang mode malam untuk foto gelap, centang mode teliti untuk retak kecil, atau gunakan foto siang hari.";
       return;
     }
     barisAsli = json.rows;

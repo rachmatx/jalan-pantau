@@ -538,130 +538,62 @@ def decode_image(raw: bytes):
     return img
 
 
-_fast_sam_model = None
-_fast_sam_cache = {}  # cache hasil SAM per gambar
-
-
-def _get_fast_sam():
-    """Lazy load FastSAM model (singleton)."""
-    global _fast_sam_model
-    if _fast_sam_model is None:
-        try:
-            from ultralytics import FastSAM
-            _fast_sam_model = FastSAM("FastSAM-s.pt")
-        except Exception as e:
-            print(f"[FastSAM] Gagal load model: {e}")
-            return None
-    return _fast_sam_model
-
-
-def _run_fast_sam_full_image(img):
-    """Jalankan FastSAM pada gambar penuh, return masks atau None."""
-    import numpy as np
-    model = _get_fast_sam()
-    if model is None:
-        return None
-
-    try:
-        results = model(img, device="cpu", imgsz=640, conf=0.3, iou=0.9,
-                        verbose=False)
-        if not results or not results[0].masks:
-            return None
-        return results[0].masks.data  # tensor mask
-    except Exception as e:
-        print(f"[FastSAM] Error: {e}")
-        return None
-
-
-def pseudo_segmentation(frame, box, img_hash=None):
+def pseudo_segmentation(frame, box, padding=8):
     """
-    Generate segmentation mask dari bounding box menggunakan FastSAM.
-    Pendekatan A: SAM post-processing di atas bbox (tanpa retrain).
-
-    Strategi: Jalankan FastSAM pada gambar penuh, lalu cocokkan mask dengan box
-    berdasarkan IoU tertinggi.
-
-    Args:
-        frame: BGR image (numpy array)
-        box: [x1, y1, x2, y2] bounding box dari YOLO
-        img_hash: hash gambar untuk cache (optional)
-
-    Returns:
-        mask: binary mask (0 atau 255) atau None
-        contour: contour points atau None
-        area_px: area dalam pixel
+    Generate segmentation mask dari bounding box menggunakan kontur detection.
+    Hybrid approach: Otsu threshold + morphological ops + contour filtering.
     """
     import numpy as np
-
     h, w = frame.shape[:2]
     x1, y1, x2, y2 = map(int, box)
-    box_area = (x2 - x1) * (y2 - y1)
+    # Add padding untuk konteks
+    x1 = max(0, x1 - padding)
+    y1 = max(0, y1 - padding)
+    x2 = min(w, x2 + padding)
+    y2 = min(h, y2 + padding)
 
-    # Jalankan FastSAM pada gambar penuh (atau ambil dari cache)
-    masks = _run_fast_sam_full_image(frame)
-    if masks is None:
+    crop = frame[y1:y2, x1:x2]
+    if crop.size == 0:
         return None, None, 0
 
-    # Buat binary mask untuk box YOLO (ground truth kotak)
-    box_mask = np.zeros((h, w), dtype=np.uint8)
-    box_mask[y1:y2, x1:x2] = 255
+    # Convert ke grayscale
+    gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
 
-    best_mask = None
-    best_iou = 0
+    # Gaussian blur untuk reduce noise
+    blur = cv2.GaussianBlur(gray, (5, 5), 0)
 
-    # Cari mask yang paling overlap dengan box
-    for mask_tensor in masks:
-        mask_np = mask_tensor.cpu().numpy().astype(np.uint8) * 255
-        # Resize mask ke ukuran frame jika berbeda
-        if mask_np.shape != (h, w):
-            mask_np = cv2.resize(mask_np, (w, h), interpolation=cv2.INTER_NEAREST)
+    # Adaptive threshold - lebih baik untuk pencahayaan tidak merata
+    thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                   cv2.THRESH_BINARY_INV, 11, 2)
 
-        # Hitung IoU antara mask dan box
-        intersection = np.logical_and(mask_np > 0, box_mask > 0).sum()
-        union = np.logical_or(mask_np > 0, box_mask > 0).sum()
-        iou = intersection / union if union > 0 else 0
+    # Morphological operations untuk clean up
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel, iterations=2)
+    thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=1)
 
-        if iou > best_iou:
-            best_iou = iou
-            best_mask = mask_np
-
-    # Minimal IoU 0.05 untuk dianggap cocok (sangat permisif)
-    if best_mask is None or best_iou < 0.05:
-        # Fallback: gunakan area box sebagai mask
-        crop_mask = box_mask[y1:y2, x1:x2]
-        contours, _ = cv2.findContours(crop_mask, cv2.RETR_EXTERNAL,
-                                       cv2.CHAIN_APPROX_SIMPLE)
-        if contours:
-            largest = max(contours, key=cv2.contourArea)
-            return crop_mask, largest, int(cv2.contourArea(largest))
-        return None, None, 0
-
-    # Crop mask ke area box untuk contour detection
-    crop_mask = best_mask[y1:y2, x1:x2]
-
-    # Find contour dari mask
-    contours, _ = cv2.findContours(crop_mask, cv2.RETR_EXTERNAL,
-                                   cv2.CHAIN_APPROX_SIMPLE)
+    # Find contours
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     if not contours:
-        # Fallback: gunakan area box
-        crop_mask = box_mask[y1:y2, x1:x2]
-        contours, _ = cv2.findContours(crop_mask, cv2.RETR_EXTERNAL,
-                                       cv2.CHAIN_APPROX_SIMPLE)
-        if contours:
-            largest = max(contours, key=cv2.contourArea)
-            return crop_mask, largest, int(cv2.contourArea(largest))
+        return None, None, 0
+
+    # Filter kontur kecil (noise) - ambil yang > 10% area box
+    box_area = (x2 - x1) * (y2 - y1)
+    min_area = box_area * 0.1
+    valid_contours = [c for c in contours if cv2.contourArea(c) > min_area]
+
+    if not valid_contours:
         return None, None, 0
 
     # Ambil kontur terbesar
-    largest = max(contours, key=cv2.contourArea)
+    largest = max(valid_contours, key=cv2.contourArea)
     area_px = cv2.contourArea(largest)
 
-    # Skip jika area terlalu kecil (< 2% box area)
-    if area_px < box_area * 0.02:
-        return None, None, 0
+    # Buat mask
+    mask = np.zeros(crop.shape[:2], dtype=np.uint8)
+    cv2.drawContours(mask, [largest], -1, 255, -1)
 
-    return crop_mask, largest, int(area_px)
+    return mask, largest, area_px
 
 
 def exif_gps(raw: bytes):
@@ -867,12 +799,12 @@ def anotasi_dari_rows(img_bgr, rows):
         if r.get("contour") is not None:
             try:
                 contour = np.array(r["contour"], dtype=np.int32)
-                # Offset contour ke posisi asli (contour relatif ke box)
+                # Offset contour ke posisi asli (contour relatif ke crop)
                 contour_offset = contour + np.array([x1, y1])
                 # Overlay semi-transparent
                 overlay = out.copy()
                 cv2.drawContours(overlay, [contour_offset], -1, warna, -1)
-                cv2.addWeighted(overlay, 0.35, out, 0.65, 0, out)
+                cv2.addWeighted(overlay, 0.3, out, 0.7, 0, out)
                 # Outline contour
                 cv2.drawContours(out, [contour_offset], -1, warna, 2, cv2.LINE_AA)
             except Exception:
