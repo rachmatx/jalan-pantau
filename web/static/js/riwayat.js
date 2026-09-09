@@ -303,13 +303,28 @@ async function unduhPdf(data) {
   URL.revokeObjectURL(a.href);
 }
 
-async function hapusId(id) {
-  if (!confirm(`Hapus riwayat #${id}?`)) return;
-  const res = await fetch(`/api/riwayat/${id}`, { method: "DELETE" });
-  if (!res.ok) return;
-  if (aktif && aktif.sesi.id === id && detail.open) detail.close();
-  aktif = null;
-  muat();
+function hapusId(id) {
+  // Custom confirm modal untuk aksi destruktif
+  window.jpConfirm("Hapus Riwayat", "Apakah Anda yakin ingin menghapus riwayat #" + id + "? Tindakan ini tidak bisa dibatalkan.", {type:"danger"}).then(function(yakin){
+    if (!yakin) return;
+    fetch(`/api/riwayat/${id}`, { method: "DELETE" })
+      .then(function(r){ return r.json().then(function(j){ return {ok: r.ok, j: j, status: r.status}; }); })
+      .then(function(res){
+        if (!res.ok) {
+          if (res.status === 401) {
+            window.jpToast("error", "Login Diperlukan", "Silakan login sebagai admin dinas untuk menghapus riwayat.");
+          } else {
+            window.jpToast("error", "Gagal Menghapus", "Tidak dapat menghapus riwayat.");
+          }
+          return;
+        }
+        if (aktif && aktif.sesi.id === id && detail.open) detail.close();
+        aktif = null;
+        muat();
+        window.jpToast("success", "Berhasil", "Riwayat #" + id + " telah dihapus.");
+      })
+      .catch(function(){ window.jpToast("error", "Gagal", "Gagal menghapus riwayat."); });
+  });
 }
 
 function eksporCsv() {

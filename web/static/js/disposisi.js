@@ -205,12 +205,12 @@
   // Preview BAP button
   document.getElementById("btn-preview-bap").addEventListener("click", function() {
     if (latestBAP) window.open("/laporan/preview/" + latestBAP.id, "_blank");
-    else alert("Belum ada BAP untuk dipreview.");
+    else window.jpToast("warning", "Tidak Ada BAP", "Belum ada BAP untuk dipreview.");
   });
 
   // Tombol Kirim Disposisi
   document.getElementById("btn-kirim-disposisi").addEventListener("click", function() {
-    if (!latestBAP) { alert("Belum ada BAP."); return; }
+    if (!latestBAP) { window.jpToast("warning", "Tidak Ada BAP", "Belum ada BAP."); return; }
     var btn = this;
     var original = btn.innerHTML;
     btn.disabled = true;
@@ -245,15 +245,15 @@
       btn.innerHTML = original;
       btn.disabled = false;
       if (j.ok) {
-        showToast("success", "Disposisi Berhasil Dikirimkan", "ID: " + j.id + " Ke: " + nama + " • SLA 24 Jam");
+        window.jpToast("success", "Disposisi Berhasil", "ID: " + j.id + " Ke: " + nama + " • SLA 24 Jam");
       } else {
-        alert("Gagal: " + (j.error || "Unknown error"));
+        window.jpToast("error", "Gagal Mengirim", j.error || "Unknown error");
       }
     })
     .catch(function(e) {
       btn.innerHTML = original;
       btn.disabled = false;
-      alert("Gagal mengirim: " + e.message);
+      window.jpToast("error", "Gagal Mengirim", e.message);
     });
   });
 })();

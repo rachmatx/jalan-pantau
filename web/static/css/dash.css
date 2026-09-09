@@ -346,6 +346,103 @@ body.dash {
 }
 .dash-btn-apply:hover { background: var(--dash-accent-hover); }
 
+/* ---- Action Buttons (icon/text actions) ---- */
+.dash-btn-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: 1px solid var(--dash-border);
+  border-radius: 6px;
+  background: var(--dash-surface);
+  color: var(--dash-text);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms;
+}
+.dash-btn-action:hover {
+  background: var(--dash-surface-2);
+  border-color: var(--dash-accent);
+  color: var(--dash-accent);
+}
+
+/* ---- Secondary Button (Batal) ---- */
+.dash-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border: 1px solid var(--dash-border);
+  border-radius: 8px;
+  background: var(--dash-surface);
+  color: var(--dash-muted);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms;
+}
+.dash-btn-secondary:hover {
+  background: var(--dash-surface-2);
+  border-color: var(--dash-text);
+  color: var(--dash-text);
+}
+
+/* ---- Danger Button (Hapus) ---- */
+.dash-btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border: 1px solid var(--dash-danger);
+  border-radius: 8px;
+  background: var(--dash-surface);
+  color: var(--dash-danger);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms;
+}
+.dash-btn-danger:hover {
+  background: var(--dash-danger);
+  color: #fff;
+}
+
+/* ---- Pagination ---- */
+.dash-btn-light {
+  padding: 6px 12px;
+  border: 1px solid var(--dash-border);
+  border-radius: 6px;
+  background: var(--dash-surface);
+  color: var(--dash-text);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms;
+  min-width: 36px;
+  text-align: center;
+}
+.dash-btn-light:hover:not(:disabled) {
+  background: var(--dash-surface-2);
+  border-color: var(--dash-accent);
+}
+.dash-btn-light:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.dash-btn-light.aktif {
+  background: var(--dash-accent);
+  color: #fff;
+  border-color: var(--dash-accent);
+}
+#dash-paginasi { margin-top: 16px; }
+#dash-paginasi-info {
+  font-size: 11px;
+  color: var(--dash-muted);
+  text-align: center;
+  margin-top: 8px;
+}
+
 /* ---- Timeline ---- */
 .timeline { display: flex; flex-direction: column; gap: 0; }
 .timeline-item {

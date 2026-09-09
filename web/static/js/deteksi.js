@@ -291,6 +291,11 @@ form.addEventListener("submit", async (e) => {
     verHapus = new Set();
     verSev = {};
     await syncVerifikasi();
+    // Simpan ke localStorage dengan timestamp untuk restore saat navigasi/refresh
+    try {
+      localStorage.setItem("jp_deteksi_terakhir", JSON.stringify({ ...json, namaBerkas: berkas.name }));
+      localStorage.setItem("jp_deteksi_time", Date.now().toString());
+    } catch (e) {}
   } catch (err) {
     status.textContent = err.message;
     status.classList.add("galat");
@@ -402,23 +407,23 @@ function showToast(title, message, type) {
   setTimeout(function () { toast.style.opacity = "0"; toast.style.transform = "translateX(100%)"; setTimeout(function () { toast.remove(); }, 300); }, 4000);
 }
 
-/* === Session Storage: Simpan hasil deteksi sementara === */
-// Simpan hasil deteksi ke sessionStorage setiap kali selesai deteksi
-var origSubmit = form.addEventListener;
-form.addEventListener("submit", async function(e) {
-  // Handler asli sudah ada di atas, ini tambahan untuk sessionStorage
-});
-
-// Restore hasil deteksi dari sessionStorage saat halaman dimuat
+// Restore hasil deteksi dari localStorage dengan TTL 10 detik
+// Normal refresh/navigasi dalam 10 detik = data tersimpan
+// Hard refresh setelah idle = data hilang
 (function restoreDeteksi() {
   try {
-    var saved = sessionStorage.getItem("jp_deteksi_terakhir");
+    var saved = localStorage.getItem("jp_deteksi_terakhir");
+    var savedTime = localStorage.getItem("jp_deteksi_time");
     if (!saved) return;
+    // Cek TTL: hapus jika lebih dari 10 detik
+    if (savedTime && (Date.now() - parseInt(savedTime)) > 10000) {
+      localStorage.removeItem("jp_deteksi_terakhir");
+      localStorage.removeItem("jp_deteksi_time");
+      return;
+    }
     var data = JSON.parse(saved);
     if (!data || !data.rows) return;
-    // Restore ke variabel global
     terakhir = data;
-    // Restore tampilan
     var slot = document.getElementById("slot-gambar");
     var hasil = document.getElementById("hasil");
     var status = document.getElementById("status");
@@ -436,8 +441,7 @@ form.addEventListener("submit", async function(e) {
       deteksiHalaman = 1;
       renderTabelDeteksi();
       hasil.hidden = false;
-      if (status) { status.textContent = data.rows.length + " temuan (dipulihkan dari sesi sebelumnya)."; status.classList.remove("galat"); }
-      // Normalisasi agar aksi verifikasi aktif: jadikan basis + tandai AI.
+      if (status) { status.textContent = data.rows.length + " temuan (dipulihkan)."; status.classList.remove("galat"); }
       barisAsli = data.rows;
       verHapus = new Set();
       verSev = {};
@@ -446,20 +450,12 @@ form.addEventListener("submit", async function(e) {
   } catch (e) { /* abaikan */ }
 })();
 
-// Override: simpan ke sessionStorage setiap deteksi selesai
-var origFetch = window.fetch;
-window.fetch = function(url, opts) {
-  return origFetch.apply(this, arguments).then(function(res) {
-    if (String(url).includes("/api/detect") && res.ok) {
-      res.clone().json().then(function(json) {
-        if (json && json.rows) {
-          sessionStorage.setItem("jp_deteksi_terakhir", JSON.stringify(json));
-        }
-      }).catch(function() {});
-    }
-    return res;
-  });
-};
+// Update timestamp setiap 3 detik saat page aktif (keep-alive)
+setInterval(function() {
+  if (localStorage.getItem("jp_deteksi_terakhir")) {
+    localStorage.setItem("jp_deteksi_time", Date.now().toString());
+  }
+}, 3000);
 
 /* === GPS & Reverse Geocoding === */
 // Ambil GPS saat ini

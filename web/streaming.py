@@ -238,9 +238,7 @@ class StreamManager:
                 cv2.rectangle(out, (x1, y1), (x2, y2), warna, 2)
                 cv2.putText(out, f"{tid} {cls} {sev}", (x1, max(y1 - 8, 12)),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.55, warna, 2)
-        info = f"FPS {self.fps_ema:.1f} | unik {len(self.tracks)} | frame {self.n_frame}"
-        cv2.putText(out, info, (10, 26), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-        cv2.putText(out, info, (10, 26), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 1)
+        # OSD teks dihapus - data FPS/unik/frame sudah ada di KPI cards UI
         return out
 
     # ---- baca (dipakai routes) ----

@@ -91,6 +91,9 @@ async function mulai() {
   statusLive.textContent = "Membuka sumber…";
   hasilLive.hidden = true;
   snapshot = null;
+  // Hentikan stream yang sedang berjalan sebelum mulai yang baru
+  if (polling) { clearInterval(polling); polling = null; }
+  await fetch("/api/stream/stop", { method: "POST" }).catch(() => {});
   try {
     if (sumber.value === "file") {
       const berkas = document.getElementById("video").files[0];
@@ -122,7 +125,9 @@ async function mulai() {
       if (!res.ok) throw new Error(json.error || "Gagal membuka stream.");
     }
     slotLive.classList.remove("kosong");
-    slotLive.innerHTML = `<img src="/api/stream" alt="Stream deteksi live">`;
+    // Cache-buster: timestamp untuk force browser fetch stream baru
+    const ts = Date.now();
+    slotLive.innerHTML = `<img src="/api/stream?t=${ts}" alt="Stream deteksi live">`;
     btnBerhenti.disabled = false;
     statusLive.textContent = "Stream berjalan…";
     polling = setInterval(refreshStats, 1000);
@@ -378,6 +383,16 @@ document.getElementById("unduh-live").addEventListener("click", async () => {
       .catch(function() {
         showToast("Log", "Gagal mengambil log dari server.", "galat");
       });
+  });
+
+  // Stop stream saat page di-refresh/tutup
+  window.addEventListener("beforeunload", function() {
+    if (polling) {
+      // Gunakan sendBeacon untuk reliable request saat page unload
+      navigator.sendBeacon("/api/stream/stop");
+      clearInterval(polling);
+      polling = null;
+    }
   });
 
   // Expose function to show error state (for live.js error handling)

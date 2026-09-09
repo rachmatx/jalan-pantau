@@ -207,23 +207,11 @@
               <button type="button" id="btn-toggle-box" title="Toggle Anotasi Box" style="width:32px;height:32px;border:none;border-radius:6px;background:var(--jp-primary);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
               </button>
-              <button type="button" id="btn-toggle-osd" title="Toggle Telemetri OSD" style="width:32px;height:32px;border:none;border-radius:6px;background:var(--jp-container);color:var(--jp-tx2);cursor:pointer;display:flex;align-items:center;justify-content:center">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              </button>
               <button type="button" id="btn-fullscreen" title="Layar Penuh" style="width:32px;height:32px;border:none;border-radius:6px;background:var(--jp-container);color:var(--jp-tx2);cursor:pointer;display:flex;align-items:center;justify-content:center">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg>
               </button>
             </div>
-            <!-- OSD Telemetry Bottom -->
-            <div id="live-osd" style="position:absolute;bottom:8px;left:8px;right:8px;display:flex;align-items:center;justify-content:space-between;pointer-events:none;z-index:10">
-              <div style="background:rgba(30,41,59,.85);backdrop-filter:blur(8px);padding:4px 8px;border-radius:6px;color:#eaf1ff;font-family:var(--jp-mono);font-size:11px;display:flex;align-items:center;gap:8px">
-                <span style="width:8px;height:8px;border-radius:50%;background:var(--jp-sev-r-tx);animation:jp-pulse 1.6s infinite"></span>
-                <span>LIVE REC</span>
-              </div>
-              <div style="background:rgba(30,41,59,.85);backdrop-filter:blur(8px);padding:4px 8px;border-radius:6px;color:#eaf1ff;font-family:var(--jp-mono);font-size:11px">
-                <span id="osd-fps">0 FPS</span> • <span id="osd-infer">18ms</span>
-              </div>
-            </div>
+            <!-- OSD dihapus - data FPS/unik/frame sudah ada di KPI cards atas -->
             <div class="zoom-bar" role="toolbar" aria-label="Kontrol zoom live">
               <button type="button" data-z="out" aria-label="Perkecil">−</button>
               <button type="button" data-z="in" aria-label="Perbesar">+</button>

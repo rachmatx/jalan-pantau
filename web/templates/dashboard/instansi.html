@@ -53,7 +53,7 @@
   </div>
   <div style="margin-top:12px;display:flex;gap:8px">
     <button type="button" class="dash-btn-apply" onclick="simpanInstansi()">Simpan</button>
-    <button type="button" class="dash-btn-detail" onclick="toggleForm()">Batal</button>
+    <button type="button" class="dash-btn-secondary" onclick="toggleForm()">Batal</button>
   </div>
 </div>
 {% endif %}
@@ -163,7 +163,7 @@
       var koor = (r.lat != null && r.lon != null)
         ? esc(r.lat + ", " + r.lon) : "-";
       var aksi = SUPERADMIN
-        ? "<td><button type=\"button\" class=\"dash-btn-detail\" style=\"color:#DC2626\" onclick=\"hapusInstansi(" + r.id + ",'" + esc(r.nama).replace(/'/g,"\\'") + "')\">Hapus</button></td>"
+        ? "<td><button type=\"button\" class=\"dash-btn-danger\" onclick=\"hapusInstansi(" + r.id + ",'" + esc(r.nama).replace(/'/g,"\\'") + "')\">Hapus</button></td>"
         : "<td style=\"color:var(--dash-muted);font-size:11px\">khusus superadmin</td>";
       return "<tr>"
         + "<td><b>" + esc(r.nama) + "</b></td>"
@@ -204,13 +204,13 @@
   };
 
   window.simpanInstansi = function(){
-    if (!SUPERADMIN){ alert("Hanya superadmin yang boleh menambah instansi."); return; }
+    if (!SUPERADMIN){ window.jpToast("error", "Akses Ditolak", "Hanya superadmin yang boleh menambah instansi."); return; }
     var wajib = ["nama","daerah","email","telepon","alamat"];
     var body = {};
     for (var i = 0; i < wajib.length; i++){
       var v = document.getElementById("f-" + wajib[i]).value.trim();
       if (!v){
-        alert("Field " + wajib[i] + " wajib diisi.");
+        window.jpToast("warning", "Field Wajib", "Field " + wajib[i] + " wajib diisi.");
         return;
       }
       body[wajib[i]] = v;
@@ -228,31 +228,35 @@
     .then(function(r){ return r.json().then(function(j){ return {ok: r.ok, j: j}; }); })
     .then(function(res){
       if (!res.ok){
-        alert("Gagal: " + (res.j.error || "coba lagi"));
+        window.jpToast("error", "Gagal", res.j.error || "coba lagi");
         return;
       }
+      window.jpToast("success", "Berhasil", "Instansi baru telah ditambahkan.");
       document.getElementById("form-card").style.display = "none";
       ["nama","daerah","email","telepon","alamat","lat","lon"].forEach(function(id){
         document.getElementById("f-" + id).value = "";
       });
       loadData();
     })
-    .catch(function(){ alert("Gagal menyimpan. Periksa koneksi."); });
+    .catch(function(){ window.jpToast("error", "Gagal", "Gagal menyimpan. Periksa koneksi."); });
   };
 
   window.hapusInstansi = function(id, nama){
-    if (!SUPERADMIN){ alert("Hanya superadmin yang boleh menghapus instansi."); return; }
-    if (!confirm("Hapus instansi \"" + nama + "\"?")) return;
-    fetch("/api/instansi/" + id, {method: "DELETE"})
-      .then(function(r){ return r.json().then(function(j){ return {ok: r.ok, j: j}; }); })
-      .then(function(res){
-        if (!res.ok){
-          alert("Gagal: " + (res.j.error || "coba lagi"));
-          return;
-        }
-        loadData();
-      })
-      .catch(function(){ alert("Gagal menghapus."); });
+    if (!SUPERADMIN){ window.jpToast("error", "Akses Ditolak", "Hanya superadmin yang boleh menghapus instansi."); return; }
+    window.jpConfirm("Hapus Instansi", "Apakah Anda yakin ingin menghapus instansi \"" + nama + "\"? Tindakan ini tidak bisa dibatalkan.", {type:"danger"}).then(function(yakin){
+      if (!yakin) return;
+      fetch("/api/instansi/" + id, {method: "DELETE"})
+        .then(function(r){ return r.json().then(function(j){ return {ok: r.ok, j: j}; }); })
+        .then(function(res){
+          if (!res.ok){
+            window.jpToast("error", "Gagal", res.j.error || "coba lagi");
+            return;
+          }
+          window.jpToast("success", "Berhasil", "Instansi telah dihapus.");
+          loadData();
+        })
+        .catch(function(){ window.jpToast("error", "Gagal", "Gagal menghapus."); });
+    });
   };
 
   loadData();
@@ -290,7 +294,7 @@
     var el = document.getElementById("sandi-" + id);
     var sandi = el ? el.value : "";
     if (!sandi || sandi.length < 8){
-      alert("Sandi minimal 8 karakter.");
+      window.jpToast("warning", "Sandi Terlalu Pendek", "Sandi minimal 8 karakter.");
       return;
     }
     fetch("/api/admin/sandi", {
@@ -301,14 +305,14 @@
     .then(function(r){ return r.json().then(function(j){ return {ok: r.ok, j: j}; }); })
     .then(function(res){
       if (!res.ok){
-        alert("Gagal: " + (res.j.error || "coba lagi"));
+        window.jpToast("error", "Gagal", res.j.error || "coba lagi");
         return;
       }
-      alert("Sandi " + username + " berhasil diatur.");
+      window.jpToast("success", "Berhasil", "Sandi " + username + " berhasil diatur.");
       if (el) el.value = "";
       loadAkun();
     })
-    .catch(function(){ alert("Gagal menyimpan sandi."); });
+    .catch(function(){ window.jpToast("error", "Gagal", "Gagal menyimpan sandi."); });
   };
 })();
 </script>

@@ -98,7 +98,48 @@
   </script>
   <style>
     @keyframes jp-toast-in { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+    @keyframes jp-modal-in { from { opacity:0; transform:scale(.95); } to { opacity:1; transform:scale(1); } }
   </style>
+  <script>
+    // Custom confirm modal (pengganti confirm() bawaan browser)
+    window.jpConfirm = function(title, message, opts) {
+      opts = opts || {};
+      return new Promise(function(resolve) {
+        // Remove existing modal
+        var existing = document.getElementById("jp-confirm-modal");
+        if (existing) existing.remove();
+
+        var overlay = document.createElement("div");
+        overlay.id = "jp-confirm-modal";
+        overlay.style.cssText = "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);backdrop-filter:blur(2px);";
+
+        var modal = document.createElement("div");
+        modal.style.cssText = "background:#fff;border-radius:12px;padding:24px;max-width:400px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2);animation:jp-modal-in .2s ease;";
+
+        var iconColor = opts.type === "danger" ? "#DC2626" : "#0284C7";
+        var icon = opts.type === "danger" ? "⚠" : "?";
+
+        modal.innerHTML =
+          '<div style="display:flex;align-items:flex-start;gap:16px">' +
+          '<div style="width:40px;height:40px;border-radius:50%;background:' + iconColor + ';color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">' + icon + '</div>' +
+          '<div style="flex:1">' +
+          '<div style="font-size:16px;font-weight:600;color:#0F172A;margin-bottom:4px">' + (title || 'Konfirmasi') + '</div>' +
+          '<div style="font-size:13px;color:#64748B">' + (message + '') + '</div>' +
+          '</div></div>' +
+          '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px">' +
+          '<button type="button" id="jp-confirm-cancel" style="padding:8px 16px;border:1px solid #E2E8F0;border-radius:8px;background:#fff;color:#64748B;font-size:13px;font-weight:500;cursor:pointer">' + (opts.cancelText || 'Batal') + '</button>' +
+          '<button type="button" id="jp-confirm-ok" style="padding:8px 16px;border:none;border-radius:8px;background:' + iconColor + ';color:#fff;font-size:13px;font-weight:500;cursor:pointer">' + (opts.okText || 'Ya, Hapus') + '</button>' +
+          '</div>';
+
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+
+        document.getElementById("jp-confirm-ok").onclick = function() { overlay.remove(); resolve(true); };
+        document.getElementById("jp-confirm-cancel").onclick = function() { overlay.remove(); resolve(false); };
+        overlay.onclick = function(e) { if (e.target === overlay) { overlay.remove(); resolve(false); } };
+      });
+    };
+  </script>
   {% block skrip %}{% endblock %}
 </body>
 </html>

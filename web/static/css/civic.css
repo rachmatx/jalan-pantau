@@ -251,6 +251,7 @@ body { padding-top: 0; }
 /* zoom.js hooks, gaya civic terang (tinggi eksplisit: % dari parent auto = 0!) */
 .viewer.zoomable { border: none; border-radius: 0; height: min(62vh, 560px); min-height: 380px; position: relative; }
 #viewer-live.zoomable { height: min(55vh, 480px); min-height: 320px; max-height: 520px; }
+#live-toolbar { position: absolute !important; top: 8px !important; right: 8px !important; left: auto !important; bottom: auto !important; }
 .viewer.zoomable .viewer-placeholder { color: #CBD5E1; }
 .viewer.zoomable .viewer-placeholder-icon { border-color: rgba(0, 191, 255, 0.5); }
 .zoom-bar {
@@ -525,9 +526,9 @@ th.jp-num-right { font-weight: 600; }
 .jp-live-flag.galat { color: var(--jp-err); }
 #stat-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 12px 16px; }
 @media (min-width: 640px) { #stat-cards { grid-template-columns: repeat(4, 1fr); } }
-.jp-stat-mini { padding: 8px; border-radius: 6px; background: var(--jp-surface); box-shadow: 0 1px 3px rgba(0,0,0,0.08); display: flex; flex-direction: column; }
-.jp-stat-mini span:first-child { font-size: 11px; letter-spacing: 0.05em; font-weight: 600; color: var(--jp-muted); }
-.jp-stat-mini span:last-child { font-family: var(--jp-mono); font-size: 13px; font-weight: 700; color: var(--jp-ink); }
+.jp-stat-mini { padding: 10px; border-radius: 8px; background: var(--jp-surface); box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 4px; border: 1px solid var(--jp-line); }
+.jp-stat-mini span:first-child { font-size: 11px; letter-spacing: 0.05em; font-weight: 600; color: var(--jp-tx2); text-transform: uppercase; }
+.jp-stat-mini span:last-child { font-family: var(--jp-mono); font-size: 15px; font-weight: 700; color: var(--jp-ink); }
 .jp-btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .jp-btn-go, .jp-btn-stop, .jp-btn-demo {
   display: inline-flex;
@@ -976,6 +977,7 @@ label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label da
   /* ---- Viewer ---- */
   .viewer.zoomable { height: 45vh; min-height: 280px; }
   #viewer-live.zoomable { height: min(50vh, 400px); min-height: 280px; max-height: 450px; }
+  #live-toolbar { position: absolute !important; top: 8px !important; right: 8px !important; left: auto !important; bottom: auto !important; }
   .jp-viewport { aspect-ratio: 4/3; }
   .jp-viewmeta { padding: 6px 10px; font-size: 10px; flex-wrap: wrap; gap: 8px; }
   .zoom-bar { padding: 2px 4px; bottom: 8px; }

@@ -24,7 +24,7 @@
     <div class="dash-card" style="padding:0;overflow:hidden">
       <div style="padding:12px 16px;border-bottom:1px solid var(--dash-border);display:flex;align-items:center;justify-content:space-between;gap:8px">
         <h3 style="font-size:13px;font-weight:600;margin:0">Foto Bukti Inspeksi AI</h3>
-        <button type="button" class="dash-btn-detail" id="btn-unduh-foto" style="background:none;border:none;cursor:pointer">Unduh Foto</button>
+        <button type="button" class="dash-btn-action" id="btn-unduh-foto">Unduh Foto</button>
       </div>
       {% if sesudah_b64 %}
       <div class="dash-ba-grid" style="background:#0f172a;padding:8px">
@@ -90,8 +90,8 @@
       <div id="map-detail" style="height:250px;background:var(--dash-surface-2)"></div>
       <div style="padding:10px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-family:monospace;font-size:11px;color:var(--dash-muted)">
         <span>Lat: {{ '%.6f'|format(sesi.lat) }}, Lon: {{ '%.6f'|format(sesi.lon) }}</span>
-        <a class="dash-btn-detail" target="_blank" rel="noopener" href="https://www.google.com/maps?q={{ sesi.lat }},{{ sesi.lon }}">Google Maps</a>
-        <button type="button" class="dash-btn-detail" id="btn-salin-koordinat" style="background:none;border:none;cursor:pointer;padding:0">Salin</button>
+        <a class="dash-btn-action" target="_blank" rel="noopener" href="https://www.google.com/maps?q={{ sesi.lat }},{{ sesi.lon }}">Google Maps</a>
+        <button type="button" class="dash-btn-action" id="btn-salin-koordinat">Salin</button>
       </div>
     </div>
     {% endif %}
@@ -103,7 +103,7 @@
     <div class="dash-card" style="padding:12px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px">
         <h3 style="font-size:13px;font-weight:600;margin:0">Ringkasan Laporan</h3>
-        <button type="button" class="dash-btn-detail" id="btn-cetak" style="background:none;border:none;cursor:pointer">Cetak</button>
+        <button type="button" class="dash-btn-action" id="btn-cetak">Cetak</button>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px;font-size:12px">
         <div style="display:flex;justify-content:space-between"><span style="color:var(--dash-muted)">Sumber</span><span style="font-weight:500">JalanPantau AI</span></div>
@@ -200,7 +200,7 @@ window.updateStatus = function() { if (window.__kirimUpdate) window.__kirimUpdat
     fetch('/api/disposisi/{{ item.id if item else 0 }}', {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({status: status, catatan: catatan, penanggung_jawab: pj})})
     .then(function(r) { return r.json(); })
     .then(function(j) {
-      if (!j.ok) { alert('Gagal: ' + (j.error || 'Unknown')); return; }
+      if (!j.ok) { window.jpToast("error", "Gagal Update", j.error || 'Unknown'); return; }
       var fi = document.getElementById('update-foto');
       if (fi && fi.files && fi.files.length) {
         var fd = new FormData();
@@ -208,13 +208,13 @@ window.updateStatus = function() { if (window.__kirimUpdate) window.__kirimUpdat
         fetch('/api/disposisi/{{ item.id if item else 0 }}/foto', {method: 'POST', body: fd})
         .then(function(r) { return r.json(); })
         .then(function(j2) {
-          alert(j2.ok ? 'Berhasil disimpan + foto sesudah!' : 'Status tersimpan, foto gagal: ' + (j2.error || ''));
+          window.jpToast(j2.ok ? "success" : "warning", "Update Status", j2.ok ? 'Berhasil disimpan + foto sesudah!' : 'Status tersimpan, foto gagal: ' + (j2.error || ''));
           location.reload();
         })
-        .catch(function() { alert('Status tersimpan, foto gagal terkirim.'); location.reload(); });
-      } else { alert('Status berhasil diupdate!'); location.reload(); }
+        .catch(function() { window.jpToast("warning", "Foto Gagal", 'Status tersimpan, foto gagal terkirim.'); location.reload(); });
+      } else { window.jpToast("success", "Berhasil", 'Status berhasil diupdate!'); location.reload(); }
     })
-    .catch(function() { alert('Gagal mengupdate status.'); });
+    .catch(function() { window.jpToast("error", "Gagal", 'Gagal mengupdate status.'); });
   };
 
   function segarkanSLA() {
@@ -258,10 +258,10 @@ window.updateStatus = function() { if (window.__kirimUpdate) window.__kirimUpdat
   var bS = document.getElementById('btn-salin-koordinat');
   if (bS) bS.addEventListener('click', function(){
     var t = '{{ sesi.lat if sesi else "" }}, {{ sesi.lon if sesi else "" }}';
-    function ok(){ alert('Koordinat tersalin: ' + t); }
+    function ok(){ window.jpToast("success", "Tersalin", 'Koordinat: ' + t); }
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(t).then(ok, function(){ prompt('Salin manual:', t); });
-    } else { prompt('Salin manual:', t); }
+      navigator.clipboard.writeText(t).then(ok, function(){ window.jpToast("info", "Salin Manual", t); });
+    } else { window.jpToast("info", "Salin Manual", t); }
   });
   var bC = document.getElementById('btn-cetak');
   if (bC) bC.addEventListener('click', function(){ window.print(); });

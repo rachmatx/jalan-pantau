@@ -261,7 +261,7 @@ document.getElementById("map-lokasi").addEventListener("click", () => {
       // Cari titik terdekat
       cariTerdekat(ll);
     },
-    () => alert("Tidak bisa mengakses lokasi. Pastikan izin lokasi diberikan."),
+    () => { if (window.jpToast) window.jpToast("error", "Gagal Lokasi", "Tidak bisa mengakses lokasi. Pastikan izin lokasi diberikan."); },
     { enableHighAccuracy: true, timeout: 10000 }
   );
 });
