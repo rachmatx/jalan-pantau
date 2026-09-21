@@ -161,10 +161,10 @@
     <!-- 4 KPI Cards (live streaming) -->
     <div class="jp-card" style="margin-bottom:16px;padding:12px">
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px" id="stat-cards">
-        <div class="jp-stat-mini"><span>FRAME RATE</span><span id="fps-stat" style="font-family:var(--jp-mono);font-size:13px;font-weight:700;color:var(--jp-sev-h-tx)">0 FPS</span><span style="font-family:var(--jp-mono);font-size:10px;color:var(--jp-muted);display:block;margin-top:4px">Target: 30 FPS</span></div>
+        <div class="jp-stat-mini"><span>FPS TAMPIL</span><span id="fps-stat" style="font-family:var(--jp-mono);font-size:13px;font-weight:700;color:var(--jp-sev-h-tx)">0</span><span style="font-family:var(--jp-mono);font-size:10px;color:var(--jp-muted);display:block;margin-top:4px">Preview halus</span></div>
+        <div class="jp-stat-mini"><span>FPS INFERENSI</span><span id="fps-infer-stat" style="font-family:var(--jp-mono);font-size:13px;font-weight:700;color:var(--jp-primary)">0</span><span style="font-family:var(--jp-mono);font-size:10px;color:var(--jp-muted);display:block;margin-top:4px">Model YOLO</span></div>
         <div class="jp-stat-mini"><span>TITIK UNIK</span><span id="unik-stat" style="font-family:var(--jp-mono);font-size:13px;font-weight:700;color:var(--jp-ink)">0</span><span style="font-family:var(--jp-mono);font-size:10px;color:var(--jp-muted);display:block;margin-top:4px">Terpetakan</span></div>
         <div class="jp-stat-mini"><span>DETEKSI AKTIF</span><span id="deteksi-stat" style="font-family:var(--jp-mono);font-size:13px;font-weight:700;color:var(--jp-primary)">0</span><span style="font-family:var(--jp-mono);font-size:10px;color:var(--jp-muted);display:block;margin-top:4px">Objek/frame</span></div>
-        <div class="jp-stat-mini"><span>TOTAL FRAME</span><span id="frame-stat" style="font-family:var(--jp-mono);font-size:13px;font-weight:700;color:var(--jp-ink)">0</span><span style="font-family:var(--jp-mono);font-size:10px;color:var(--jp-muted);display:block;margin-top:4px">Terproses</span></div>
       </div>
     </div>
     <!-- Tips Performa (collapsible) -->
@@ -177,7 +177,7 @@
         <button type="button" id="btn-toggle-tips" style="background:none;border:none;color:var(--jp-muted);cursor:pointer;font-size:11px">Sembunyikan</button>
       </div>
       <div id="tips-content" style="margin-top:8px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px">
-        <div style="font-size:11px;color:var(--jp-tx2)"><b>1. Naikkan Frame Skip</b><br>Skip 2-3 frame untuk CPU lama (default: 2)</div>
+        <div style="font-size:11px;color:var(--jp-tx2)"><b>1. Mode Performa</b><br>Pilih "Halus" untuk FPS tampil maksimal (inferensi lebih jarang)</div>
         <div style="font-size:11px;color:var(--jp-tx2)"><b>2. Turunkan Confidence</b><br>0.15-0.20 lebih sensitif untuk webcam</div>
         <div style="font-size:11px;color:var(--jp-tx2)"><b>3. Pencahayaan baik</b><br>Model dilatih siang hari, hindari bayangan</div>
         <div style="font-size:11px;color:var(--jp-tx2)"><b>4. Jarak optimal</b><br>Foto jalan dari jarak 2-5 meter</div>
@@ -298,15 +298,23 @@
             <p class="jp-hint">MP4, AVI, MOV, atau MKV (maks 200MB)</p>
           </div>
           <div class="jp-box">
+            <label for="performa">Mode Performa</label>
+            <select id="performa" class="jp-select">
+              <option value="halus">Halus (FPS tinggi, akurasi turun)</option>
+              <option value="seimbang" selected>Seimbang (disarankan)</option>
+              <option value="akurat">Akurat (FPS rendah)</option>
+            </select>
+          </div>
+          <div class="jp-box">
             <label for="conf-live"><span>Ambang Batas Conf</span><output class="jp-conf-out" id="conf-live-out" for="conf-live">0,25</output></label>
             <input type="range" id="conf-live" min="0.05" max="0.8" step="0.05" value="0.25" style="width:100%;accent-color:#006194;cursor:pointer">
           </div>
           <div class="jp-box">
-            <label for="skip">Frame Skip (Efisiensi CPU)</label>
+            <label for="skip">Interval Inferensi (frame)</label>
             <select id="skip" class="jp-select">
-              <option value="1">Skip 1 Frame</option>
-              <option value="2" selected>Skip 2 Frame (Optimal)</option>
-              <option value="3">Skip 3 Frame</option>
+              <option value="1">Tiap 1 Frame</option>
+              <option value="2" selected>Tiap 2 Frame (Optimal)</option>
+              <option value="3">Tiap 3 Frame</option>
             </select>
           </div>
           <label class="jp-check" for="malam-live">

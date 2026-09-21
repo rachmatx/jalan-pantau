@@ -53,6 +53,13 @@ toleransi_kelas:
   pothole: 0.0
 live:
   min_frames: 1  # track sah untuk snapshot bila terlihat >= N frame (redam kedip)
+  display_fps: 25   # batas atas laju TAMPIL preview (terpisah dari laju inferensi)
+  infer_interval: 2 # inferensi tiap N frame kamera (frame lain hanya ditampilkan)
+  jpeg_quality: 72  # kualitas JPEG preview (turun dari 85 -> encode lebih murah)
+  display_width: 640 # lebar frame proses+tampil (px); kamera di-resize ke ini
+  cam_width: 640     # resolusi capture webcam
+  cam_height: 480
+  cam_fps: 30
 # Prior ukuran dari kalibrasi: tolak box yang mustahil secara fisik.
 batas_ukuran:
   diameter_maks_cm: 300

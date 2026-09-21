@@ -10,7 +10,6 @@ import os
 import sys
 import tempfile
 import threading
-import time
 from pathlib import Path
 
 # Pastikan folder web/ ada di path untuk import lokal
@@ -273,7 +272,7 @@ def create_app():
         return redirect(url_for("login_form"))
 
     # Cache-buster: versi ini akan ditambahkan ke semua asset static
-    STATIC_VERSION = "30"
+    STATIC_VERSION = "31"
 
     @app.context_processor
     def inject_static_version():
@@ -531,18 +530,21 @@ def create_app():
     @_exempt
     def api_stream():
         def gen():
-            idle = 0
+            # Event-driven: kirim frame begitu compose selesai (tanpa batas 15 FPS
+            # dan tanpa mengirim ulang JPEG yang sama saat frame baru belum siap).
+            seq, idle = -1, 0
             try:
                 while True:
-                    jpg, running = MANAGER.get_frame()
-                    if jpg is not None:
+                    jpg, running, seq2 = MANAGER.wait_frame(seq, timeout=1.0)
+                    if jpg is not None and seq2 != seq:
+                        seq = seq2
                         idle = 0
-                        yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + jpg + b"\r\n")
+                        yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n"
+                               + jpg + b"\r\n")
                     elif not running:
                         idle += 1
                         if idle > 20:
                             break
-                    time.sleep(1 / 15)
             except GeneratorExit:
                 # P3: client putus -> hentikan generator segera, jangan loop sampai idle>20
                 pass
@@ -614,9 +616,15 @@ def create_app():
         conf = min(max(conf, CONF_MIN), CONF_MAX)
         skip = min(max(skip, FRAME_SKIP_MIN), FRAME_SKIP_MAX)
         malam = data.get("malam", False) in (True, 1, "1", "true", "on")
-        MANAGER.start(source, target, conf=conf, frame_skip=skip, malam=malam)
+        performa = str(data.get("performa", "") or "").strip().lower() or None
+        if performa not in (None, "halus", "seimbang", "akurat"):
+            performa = None
+        MANAGER.start(source, target, conf=conf, frame_skip=skip, malam=malam,
+                      performa=performa)
         return jsonify({"ok": True,
-                        "tips": "FPS rendah? Coba: naikkan frame_skip (2-3), turunkan confidence (0.15-0.2), atau gunakan video contoh."})
+                        "tips": "FPS tampil rendah? Coba Mode Performa 'Halus'. "
+                                "Deteksi jarang? Pakai 'Akurat' atau kecilkan "
+                                "interval inferensi."})
 
     @app.post("/api/stream/stop")
     def api_stream_stop():
@@ -664,8 +672,12 @@ def create_app():
         conf = min(max(conf, CONF_MIN), CONF_MAX)
         skip = min(max(skip, FRAME_SKIP_MIN), FRAME_SKIP_MAX)
         malam = data.get("malam", False) in (True, 1, "1", "true", "on")
+        performa = str(data.get("performa", "") or "").strip().lower() or None
+        if performa not in (None, "halus", "seimbang", "akurat"):
+            performa = None
         MANAGER.start("file", str(demo), conf=conf, frame_skip=skip,
-                      label="Video contoh (fallback sidang)", malam=malam)
+                      label="Video contoh (fallback sidang)", malam=malam,
+                      performa=performa)
         return jsonify({"ok": True})
 
     @app.post("/api/video")
@@ -700,7 +712,9 @@ def create_app():
                 os.remove(lama)
             except OSError:
                 pass
-        MANAGER.start("file", baru, conf=conf, frame_skip=skip, label=f.filename, malam=malam)
+        MANAGER.start("file", baru, conf=conf, frame_skip=skip, label=f.filename,
+                      malam=malam,
+                      performa=(request.form.get("performa") or None))
         return jsonify({"ok": True})
 
     # ---- riwayat + peta (Fase 3) ----

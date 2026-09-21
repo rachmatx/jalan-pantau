@@ -44,7 +44,9 @@ _INFER_FALLBACK = {
     "toleransi_kelas": {"longitudinal_crack": 0.13, "transverse_crack": 0.13,
                         "alligator_crack": 0.10, "other_corruption": 0.10,
                         "pothole": 0.0},
-    "live": {"min_frames": 1},
+    "live": {"min_frames": 1, "display_fps": 25, "infer_interval": 2,
+             "jpeg_quality": 72, "display_width": 640,
+             "cam_width": 640, "cam_height": 480, "cam_fps": 30},
     "batas_ukuran": {"diameter_maks_cm": 300, "lebar_retak_maks_cm": 100,
                      "luas_maks_m2": 100},
     "gabung_fragmen": {"aktif": True, "iou_min": 0.05, "inter_min": 0.3,
@@ -122,9 +124,31 @@ def get_inferensi(path=None):
         except (AttributeError, TypeError, ValueError):
             pass
         try:
-            mf = int((user.get("live") or {}).get("min_frames",
-                                                  data["live"]["min_frames"]))
+            lv = dict(user.get("live") or {})
+            lv_default = _INFER_FALLBACK["live"]
+            mf = int(lv.get("min_frames", lv_default["min_frames"]))
             data["live"]["min_frames"] = max(mf, 1)
+            data["live"]["display_fps"] = int(_klamp(
+                lv.get("display_fps", lv_default["display_fps"]), 5, 30,
+                lv_default["display_fps"]))
+            data["live"]["infer_interval"] = int(_klamp(
+                lv.get("infer_interval", lv_default["infer_interval"]), 1, 10,
+                lv_default["infer_interval"]))
+            data["live"]["jpeg_quality"] = int(_klamp(
+                lv.get("jpeg_quality", lv_default["jpeg_quality"]), 40, 95,
+                lv_default["jpeg_quality"]))
+            data["live"]["display_width"] = int(_klamp(
+                lv.get("display_width", lv_default["display_width"]), 320, 1280,
+                lv_default["display_width"]))
+            data["live"]["cam_width"] = int(_klamp(
+                lv.get("cam_width", lv_default["cam_width"]), 160, 1920,
+                lv_default["cam_width"]))
+            data["live"]["cam_height"] = int(_klamp(
+                lv.get("cam_height", lv_default["cam_height"]), 120, 1080,
+                lv_default["cam_height"]))
+            data["live"]["cam_fps"] = int(_klamp(
+                lv.get("cam_fps", lv_default["cam_fps"]), 5, 120,
+                lv_default["cam_fps"]))
         except (AttributeError, TypeError, ValueError):
             pass
         try:

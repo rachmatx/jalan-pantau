@@ -35,6 +35,17 @@ sumber.addEventListener("change", () => {
   document.getElementById("in-file").hidden = sumber.value !== "file";
 });
 
+// Mode Performa: selaraskan interval inferensi dengan preset saat dipilih.
+const performa = document.getElementById("performa");
+const PRESET_SKIP = { halus: "3", seimbang: "2", akurat: "1" };
+if (performa) performa.addEventListener("change", () => {
+  const s = document.getElementById("skip");
+  if (s && PRESET_SKIP[performa.value]) s.value = PRESET_SKIP[performa.value];
+});
+function performaLive() {
+  return performa ? performa.value : undefined;
+}
+
 function badge(sev) {
   const map = { ringan: "RINGAN", sedang: "SEDANG", berat: "BERAT" };
   const k = String(sev).toLowerCase();
@@ -70,14 +81,14 @@ async function refreshStats() {
     }
     statusLive.classList.remove("galat");
     statusLive.textContent =
-      `FPS ${s.fps} · ${s.unik} titik unik · ${s.deteksi} deteksi · frame ${s.frame} · ${s.source}`;
+      `Tampil ${s.fps_tampil} FPS · Inferensi ${s.fps_infer} FPS · ${s.unik} titik unik · ${s.deteksi} deteksi · frame ${s.frame} · ${s.source}`;
     // isi KPI cards (jika ada)
     const cards = document.getElementById("stat-cards");
     if (cards) {
-      if (document.getElementById("fps-stat"))  document.getElementById("fps-stat").textContent = s.fps;
+      if (document.getElementById("fps-stat"))  document.getElementById("fps-stat").textContent = s.fps_tampil;
+      if (document.getElementById("fps-infer-stat")) document.getElementById("fps-infer-stat").textContent = s.fps_infer;
       if (document.getElementById("unik-stat")) document.getElementById("unik-stat").textContent = s.unik;
       if (document.getElementById("deteksi-stat")) document.getElementById("deteksi-stat").textContent = s.deteksi;
-      if (document.getElementById("frame-stat")) document.getElementById("frame-stat").textContent = s.frame;
       cards.hidden = false;
     }
   } catch {
@@ -103,6 +114,7 @@ async function mulai() {
       data.append("video", berkas);
       data.append("conf", confLive.value);
       data.append("frame_skip", document.getElementById("skip").value);
+      if (performaLive()) data.append("performa", performaLive());
       if (document.getElementById("malam-live").checked) data.append("malam", "1");
       const up = await fetch("/api/video", { method: "POST", body: data });
       const jup = await up.json();
@@ -118,6 +130,7 @@ async function mulai() {
           source: sumber.value, target,
           conf: confLive.value,
           frame_skip: document.getElementById("skip").value,
+          performa: performaLive(),
           malam: document.getElementById("malam-live").checked,
         }),
       });
@@ -187,7 +200,7 @@ document.getElementById("demo").addEventListener("click", async () => {
     const res = await fetch("/api/demo", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ conf: confLive.value, frame_skip: document.getElementById("skip").value, malam: document.getElementById("malam-live").checked }),
+      body: JSON.stringify({ conf: confLive.value, frame_skip: document.getElementById("skip").value, performa: performaLive(), malam: document.getElementById("malam-live").checked }),
     });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error || "Gagal memutar video contoh.");

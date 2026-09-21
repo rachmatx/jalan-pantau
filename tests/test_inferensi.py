@@ -20,7 +20,7 @@ class TestConfigInferensi(unittest.TestCase):
         deteksi._infer = None
         inf = deteksi.get_inferensi()
         self.assertEqual(inf["imgsz_gambar"], 960)
-        self.assertEqual(inf["imgsz_live"], 960)
+        self.assertEqual(inf["imgsz_live"], 480)  # default webcam (lihat README)
         self.assertEqual(inf["iou"], 0.5)
         self.assertTrue(inf["tta"])  # default true sejak trial 3 foto 2026-09-07
         self.assertEqual(inf["teliti"]["tile"], 640)

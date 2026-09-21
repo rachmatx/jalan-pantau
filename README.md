@@ -160,10 +160,18 @@ curl -X POST http://127.0.0.1:5000/api/laporan \
 - Mode teliti (tiling) untuk retak kecil — lebih lambat tapi lebih akurat
 
 ### Untuk live webcam
-- `imgsz_live=480` (default) — bisa diubah ke 960 untuk akurasi maksimal
-- `frame_skip=2` default untuk webcam — naikkan ke 3 untuk FPS lebih tinggi
-- Frame differencing — skip inferensi jika frame statis (tidak berubah)
-- Tips performa tersedia di UI halaman deteksi
+- **Decouple capture/inferensi/tampilan** — capture, inferensi (YOLO+ByteTrack), dan
+  compose gambar jalan di thread terpisah. Tampilan (frame kamera segar + box terakhir)
+  berjalan di laju `display_fps`, terpisah dari laju inferensi — jadi preview tetap
+  mulus walau inferensi CPU lambat. `BUFFERSIZE=1` mencegah buffer kamera menumpuk.
+- **Mode Performa** di UI: Halus / Seimbang / Akurat (mengatur `imgsz` + interval
+  inferensi + batas FPS tampil sekaligus).
+- `imgsz_live=480` (default) — naikkan ke 960 untuk akurasi maksimal (lebih lambat).
+- `frame_skip` (kini "Interval Inferensi") = inferensi tiap N frame; frame lain tetap
+  ditampilkan.
+- Frame differencing — skip inferensi jika frame statis (tampilan tetap jalan).
+- Knob lain di `config/inferensi.yaml` blok `live:` (`display_fps`, `jpeg_quality`,
+  `display_width`, `cam_width/height/fps`).
 
 ### Untuk dataset besar
 - Pagination di semua tabel (10-25 entry per halaman)
