@@ -62,3 +62,9 @@ Gap OOD (±6–7 poin) LEBIH BESAR dari gap val/test (±2 poin) → baseline gen
 ## Artefak
 - `artifacts/hasil-ablasi-cbam-yolo26-20260904-1534/` (runs/ + artifacts_ablasi/ + zip)
 - Strategi: `docs/Strategi-Training.md` Tahap 2d
+
+## Supersede (2026-09-08)
+`model_gambar` pada `config/inferensi.yaml` diganti dari YOLOv11n ke **YOLOv11s**
+(`best_yolo11s.pt`, val 0,6483 / test 0,5262 / OOD 0,4516) untuk foto statis.
+YOLOv11n tetap dipakai untuk live (`best.onnx`). Vonis ablasi CBAM/YOLO26 di atas
+tetap berlaku sebagai perbandingan arsitektur pada baseline v11n, bukan pada v11s.

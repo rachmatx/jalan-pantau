@@ -1,0 +1,53 @@
+{
+  "dataset": "C:\\Users\\R\\Documents\\TA Machine Learning - Deteksi Kerusakan Jalan Real-Time\\data\\publik\\bpid\\test",
+  "n_gambar": 161,
+  "model": "best.onnx",
+  "imgsz": 640,
+  "remap": {
+    "0": 4
+  },
+  "iou": 0.5,
+  "dibuat": "2026-09-30T01:53:49",
+  "sapuan": [
+    {
+      "conf": 0.15,
+      "map50": 0.4875,
+      "map50_95": 0.247,
+      "precision": 0.571,
+      "recall": 0.5741,
+      "f1": 0.5726
+    },
+    {
+      "conf": 0.25,
+      "map50": 0.4492,
+      "map50_95": 0.2326,
+      "precision": 0.5894,
+      "recall": 0.5513,
+      "f1": 0.5697
+    },
+    {
+      "conf": 0.35,
+      "map50": 0.4053,
+      "map50_95": 0.2159,
+      "precision": 0.672,
+      "recall": 0.4829,
+      "f1": 0.5619
+    },
+    {
+      "conf": 0.45,
+      "map50": 0.3627,
+      "map50_95": 0.1972,
+      "precision": 0.7351,
+      "recall": 0.4221,
+      "f1": 0.5362
+    }
+  ],
+  "conf_terbaik_f1": {
+    "conf": 0.15,
+    "map50": 0.4875,
+    "map50_95": 0.247,
+    "precision": 0.571,
+    "recall": 0.5741,
+    "f1": 0.5726
+  }
+}

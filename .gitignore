@@ -81,7 +81,7 @@ Czech_*.jpg
 # ============================================================
 stitch_aplikasi_deteksi_kerusakan_jalan*.zip
 stitch_aplikasi_deteksi_kerusakan_jalan*.*
-stitch_aplikasi_deteksi_kerusalan_jalan/code.html
+stitch_aplikasi_deteksi_kerusakan_jalan/code.html
 
 # ============================================================
 # IDE & OS
@@ -149,9 +149,10 @@ Obsidian Vault/
 
 # ============================================================
 # Zip files (model backups, exports)
+# Catatan: jangan pernah pakai '!...' di sini. Git memakai last-match-wins,
+# jadi satu negate di bawah *.zip akan membatalkan seluruh aturan ini.
 # ============================================================
 *.zip
-!stitch_aplikasi_deteksi_kerusakan_jalan*.zip
 
 # ============================================================
 # Session & auth files (sensitive)
@@ -168,3 +169,26 @@ yolov11s-rdd-only/*.zip
 yolov11s-rdd-only/best.zip
 yolov11s-rdd-only/epoch90.zip
 yolov11s-rdd-only/last.zip
+
+# ============================================================
+# Aset offline (vendor) — JANGAN diabaikan (butuh untuk demo offline)
+# ============================================================
+!web/static/vendor/**
+
+# ============================================================
+# Bukti benchmark: folder artifacts/ di-ignore, tapi JSON ini ingin dilacak
+# (khusus folder artifacts/ di ROOT repo, bukan artifacts/ di lokasi lain)
+# ============================================================
+!/artifacts/
+/artifacts/*
+!/artifacts/benchmark-inferensi-*.json
+
+# ============================================================
+# Folder karantina lokal (tidak ikut repo)
+# ============================================================
+_arsip/
+
+# ============================================================
+# Backup database (lokal)
+# ============================================================
+backups/

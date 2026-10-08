@@ -4,12 +4,16 @@ Modul terverifikasi dipakai ulang TANPA diubah: app/severity.py, app/biaya.py,
 app/laporan.py. File ini hanya adaptor (I/O web) di atasnya.
 """
 import base64
+import logging
 import sys
 import tempfile
 import threading
 from pathlib import Path
 
 import cv2
+import yaml
+
+_log = logging.getLogger(__name__)
 
 WEB_DIR = Path(__file__).parent
 APP_DIR = WEB_DIR.parent / "app"
@@ -34,16 +38,19 @@ _infer = None
 _model_lock = threading.Lock()  # jaga load singleton dari Flask thread + worker stream
 _kalibrasi_lock = threading.Lock()  # P3: tulis severity.yaml atomik antar-thread
 
-# Fallback bila config/inferensi.yaml hilang/rusak (perilaku mendekati setelan lama).
+# Fallback bila config/inferensi.yaml hilang/rusak. NILAI HARUS MIRIP config/inferensi.yaml.
+# Kalau berbeda, mode degradasi diam-diam mengubah perilaku: tta False menurunkan
+# recall (0,69 -> 0,48 pada trial TTA) dan imgsz_live 960 memperlambat live ~2x.
+# config/inferensi.yaml: tta=true, imgsz_live=480 (komentar di sana: "480 untuk webcam").
 _INFER_FALLBACK = {
     "model_gambar": "best_yolo11s.pt", "model_live": "best.onnx",
-    "imgsz_gambar": 960, "imgsz_live": 960, "iou": 0.5, "tta": False,
+    "imgsz_gambar": 960, "imgsz_live": 480, "iou": 0.5, "tta": True,
     "teliti": {"aktif_default": False, "tile": 640, "overlap": 0.25,
                "iou_gabung": 0.5, "metode_gabung": "nms",
                "buang_tepi_tile": True, "iou_agnostik": 0.6},
     "toleransi_kelas": {"longitudinal_crack": 0.13, "transverse_crack": 0.13,
                         "alligator_crack": 0.10, "other_corruption": 0.10,
-                        "pothole": 0.0},
+                        "pothole": 0.08},
     "live": {"min_frames": 1, "display_fps": 25, "infer_interval": 2,
              "jpeg_quality": 72, "display_width": 640,
              "cam_width": 640, "cam_height": 480, "cam_fps": 30},
@@ -83,9 +90,15 @@ def get_inferensi(path=None):
                 "ensemble": dict(_INFER_FALLBACK["ensemble"])}
         user = {}
         try:
-            import yaml
             with open(str(path or INFER_DEFAULT), encoding="utf-8") as f:
                 user = yaml.safe_load(f) or {}
+        except (OSError, ValueError, yaml.YAMLError) as exc:
+            # PENTING: yaml.YAMLError menurunkan dari Exception, BUKAN ValueError.
+            # Kalau tidak ditangkap, satu indentasi salah di config/inferensi.yaml
+            # membuat setiap request /api/detect balasan 500.
+            _log.warning("config inferensi tidak terbaca (%s) - pakai default", exc)
+            user = {}
+        if isinstance(user, dict):
             for k in ("imgsz_gambar", "imgsz_live", "iou", "tta"):
                 if k in user:
                     data[k] = user[k]
@@ -96,8 +109,6 @@ def get_inferensi(path=None):
                     data[k] = nama
             if isinstance(user.get("teliti"), dict):
                 data["teliti"].update(user["teliti"])
-        except (OSError, ValueError):
-            pass
         data["imgsz_gambar"] = int(_klamp(data["imgsz_gambar"], 320, 1536, 960))
         data["imgsz_live"] = int(_klamp(data["imgsz_live"], 320, 1280, 960))
         data["iou"] = _klamp(data["iou"], 0.1, 0.95, 0.5)

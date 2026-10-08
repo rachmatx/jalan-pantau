@@ -1,0 +1,117 @@
+{% extends "kontraktor/base.html" %}
+{% block title %}SPK Saya{% endblock %}
+
+{% block content %}
+<div class="dash-header">
+  <div>
+    <h1 class="dash-title">SPK Saya</h1>
+    <p class="dash-subtitle">Semua perintah kerja yang ditugaskan kepada {{ profil.nama }}</p>
+  </div>
+  <div class="dash-head-right">
+    <a href="/kontraktor/peta" class="dash-btn-secondary">Lihat Peta Tugas</a>
+    <a href="/kontraktor/dashboard" class="dash-btn-action">Beranda</a>
+  </div>
+</div>
+
+<div class="dash-kpis">
+  <div class="dash-kpi kpi-total">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Total SPK</span><strong class="dash-kpi-val">{{ stats.total }}</strong></div>
+  </div>
+  <div class="dash-kpi kpi-proses">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Menunggu Diterima</span><strong class="dash-kpi-val">{{ stats.status.Diterbitkan }}</strong></div>
+  </div>
+  <div class="dash-kpi kpi-baru">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-6l-2 3h-4l-2-3H2"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Sedang Dikerjakan</span><strong class="dash-kpi-val">{{ stats.status.Diterima + stats.status.Dikerjakan }}</strong></div>
+  </div>
+  <div class="dash-kpi kpi-selesai">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Selesai</span><strong class="dash-kpi-val">{{ stats.status.Selesai }}</strong></div>
+  </div>
+  <div class="dash-kpi kpi-biaya">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0116 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Titik Dikerjakan</span><strong class="dash-kpi-val">{{ stats.n_tugas_selesai }}/{{ stats.n_tugas }}</strong></div>
+  </div>
+</div>
+
+<div class="dash-card" style="margin-top:18px">
+  <div class="dash-card-head">
+    <h2>Daftar SPK</h2>
+    <span style="font-size:11px;color:var(--dash-muted)">{{ items|length }} SPK</span>
+  </div>
+
+  <div class="dash-filter-bar" style="margin:10px 12px;border:none;padding:0">
+    <div class="dash-filter-group">
+      {% for label, nilai in [('Semua',''), ('Baru','Diterbitkan'), ('Diterima','Diterima'),
+                              ('Dikerjakan','Dikerjakan'), ('Selesai','Selesai'),
+                              ('Dibatalkan','Dibatalkan')] %}
+      <a class="dash-filter-btn {{ 'aktif' if status_aktif == nilai else '' }}"
+         href="/kontraktor/spk{% if nilai %}?status={{ nilai }}{% endif %}">{{ label }}</a>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% if items %}
+  <div class="dash-table-wrap">
+    <table class="dash-table">
+      <thead>
+        <tr>
+          <th>Nomor SPK</th>
+          <th>Judul Pekerjaan</th>
+          <th>Wilayah</th>
+          <th>Prioritas</th>
+          <th>Tenggat</th>
+          <th>Progres Titik</th>
+          <th>Status</th>
+          <th style="text-align:right">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in items %}
+        <tr>
+          <td><span class="dash-tiket">{{ s.nomor }}</span>
+            <span class="dash-kpi-label" style="display:block;text-transform:none;letter-spacing:0">{{ s.dibuat[:10] }}</span></td>
+          <td>{{ s.judul }}</td>
+          <td>{{ s.daerah }}</td>
+          <td><span class="urgency urgency-{{ s.prioritas|lower }}">{{ s.prioritas }}</span></td>
+          <td class="tenggat" data-tenggat="{{ s.tenggat or '' }}">-</td>
+          <td>{{ s.n_tugas_selesai }}/{{ s.n_tugas }}</td>
+          <td><span class="badge-status status-{{ s.status|lower }}">{{ s.status }}</span></td>
+          <td style="text-align:right">
+            <a class="dash-btn-detail" href="/kontraktor/spk/{{ s.id }}">Buka</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="dash-empty">
+    {% if status_aktif %}
+      Tidak ada SPK berstatus {{ status_aktif }}.
+    {% else %}
+      Belum ada SPK yang ditugaskan kepada {{ profil.nama }}.<br>
+      Halaman ini akan terisi setelah dinas menerbitkan SPK.
+    {% endif %}
+  </p>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block skrip %}
+<script>
+(function(){
+  function fmt(teks){
+    if (!teks) return "-";
+    var d = new Date(teks);
+    if (isNaN(d.getTime())) return "-";
+    return d.toLocaleDateString("id-ID", {day:"2-digit", month:"short", year:"numeric"});
+  }
+  document.querySelectorAll(".tenggat").forEach(function(el){
+    el.textContent = fmt(el.dataset.tenggat);
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,76 @@
+# Seed kontraktor untuk alur SPK (dinas -> kontraktor -> bukti perbaikan).
+#
+# Daftar kontraktor di bawah adalah data awal: dibaca sekali saat aplikasi
+# pertama kali jalan, lalu dapat disunting dari dashboard Dinas pada menu
+# Kontraktor. Menjalankan ulang aplikasi TIDAK menimpa perubahan Anda,
+# karena baris yang sudah ada dilewati.
+#
+# Kolom kontraktor:
+#   kode       kode unik, huruf besar (mis. KT-001)
+#   nama       nama badan usaha
+#   nonaktif   true -> kontraktor tidak bisa login dan tidak muncul di
+#              pilihan SPK pada dashboard Dinas
+#
+# Kolom akun:
+#   username  nama login kontraktor (huruf kecil, unik, jangan pakai awalan pupr_)
+#   sandi     isi bila ingin sandi tertentu. Kosongkan agar memakai sandi demo
+#             yang sama dengan akun admin (env JP_DEMO_PASS bisa mengaturnya).
+#   segel     true -> sandi acak tak-tertebak, akun TIDAK bisa login sampai
+#             superadmin mengaturnya dari dashboard Dinas.
+
+kontraktor:
+  - kode: KT-001
+    nama: CV. Mitra Karya Jalan
+    perusahaan: CV. Mitra Karya Jalan
+    alamat: Jl. Raya Bandung km 7, Bandung
+    telepon: "(022) 8801122"
+    email: mitrakarya@example.go.id
+    bidang: Pengaspalan dan perbaikan jalan
+    akun:
+      username: kt_mitrakarya
+      nama_kontak: Rizky Maulana
+
+  - kode: KT-002
+    nama: PT. JalanPresisi Nusantara
+    perusahaan: PT. JalanPresisi Nusantara
+    alamat: Jl. Ir. H. Juanda No. 45, Bandung
+    telepon: "(022) 7712340"
+    email: jalanpresisi@example.go.id
+    bidang: Rekonstruksi dan overlay aspal
+    akun:
+      username: kt_jalanpresisi
+      nama_kontak: Dewi Anggraini
+
+  - kode: KT-003
+    nama: CV. Sumber Rejek Utama
+    perusahaan: CV. Sumber Rejek Utama
+    alamat: Jl. Raya Cibaduyut No. 12, Bandung
+    telepon: "(022) 5890123"
+    email: sumberrejek@example.go.id
+    bidang: Drainase dan penanganan genangan
+    akun:
+      username: kt_sumberrejek
+      nama_kontak: Hendra Kusuma
+
+  - kode: KT-004
+    nama: CV. Bambu Hijau Lestari
+    perusahaan: CV. Bambu Hijau Lestari
+    alamat: Jl. Raya Sumedang km 4, Sumedang
+    telepon: "(0261) 345678"
+    email: bambuhijau@example.go.id
+    bidang: Workzone, marka, dan keselamatan jalan
+    akun:
+      username: kt_bambuhijau
+      nama_kontak: Siti Rahayu
+
+  - kode: KT-005
+    nama: CV. Togu Gede Beton
+    perusahaan: CV. Togu Gede Beton
+    alamat: Jl. Raya Bogor km 21, Bogor
+    telepon: "(0251) 8661234"
+    email: toggede@example.go.id
+    bidang: Perbaikan dan betonisasi jalan desa
+    nonaktif: true
+    akun:
+      username: kt_togugede
+      nama_kontak: Agus Setiawan

@@ -23,8 +23,12 @@
       container.style.cssText = "position:fixed;top:80px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px";
       document.body.appendChild(container);
     }
-    var colors = {success:"#059669",error:"#DC2626",info:"#2563EB"};
-    var icons = {success:"✓",error:"✕",info:"ℹ"};
+    var colors = {success:"#059669",error:"#DC2626",info:"#006194"};
+    var icons = {
+      success: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+      error: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+      info: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
+    };
     var toast = document.createElement("div");
     toast.style.cssText = "pointer-events:auto;padding:12px 16px;border-radius:8px;background:#fff;box-shadow:0 4px 16px rgba(0,0,0,.15);border-left:4px solid " + colors[type] + ";display:flex;align-items:center;gap:12px;font-size:13px;min-width:280px;animation:slideIn .3s ease";
     toast.innerHTML = '<span style="font-size:18px;font-weight:700;color:' + colors[type] + '">' + icons[type] + '</span><div style="display:flex;flex-direction:column;flex:1"><span style="font-weight:600;color:#0F172A">' + esc(title) + '</span>' + (message ? '<span style="font-size:11px;color:#64748B;margin-top:2px">' + esc(message) + '</span>' : '') + '</div>';
@@ -74,7 +78,7 @@
       var waktu = new Date(b.waktu).toLocaleString("id-ID", {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
       return '<tr data-bap-id="' + b.id + '" style="border-bottom:1px solid var(--jp-line);cursor:pointer" onclick="window.pilihBAP(' + b.id + ')">' +
         '<td style="padding:8px"><input type="radio" name="bap-pilih" value="' + b.id + '" ' + (b.id === (latestBAP ? latestBAP.id : semuaBAP[0].id) ? 'checked' : '') + ' style="accent-color:var(--jp-primary)" onclick="event.stopPropagation(); window.pilihBAP(' + b.id + ')"></td>' +
-        '<td style="padding:8px;font-family:var(--jp-mono);font-size:12px;font-weight:600;color:var(--jp-ink)">BA-INS/' + b.id + '/BM-KBDG/II/2025</td>' +
+        '<td style="padding:8px;font-family:var(--jp-mono);font-size:12px;font-weight:600;color:var(--jp-ink)">BA-INS/' + b.id + '</td>' +
         '<td style="padding:8px;color:var(--jp-tx2);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(b.lokasi || '-') + '</td>' +
         '<td style="padding:8px;text-align:center"><span style="padding:2px 6px;border-radius:4px;background:var(--jp-sev-r-bg);font-size:11px;font-weight:600;color:var(--jp-sev-r-tx)">' + esc(b.n_temuan) + '</span></td>' +
         '<td style="padding:8px;font-size:11px;color:var(--jp-muted)">' + esc(waktu) + '</td>' +
@@ -129,8 +133,12 @@
         document.getElementById("rekap-melintang").textContent = "-";
       });
     var gpsLat = b.lat, gpsLon = b.lon;
-    if (!gpsLat || !gpsLon) { gpsLat = -6.5956; gpsLon = 106.7916; }
-    updateInstansiByAPI(gpsLat, gpsLon);
+    if (gpsLat && gpsLon) {
+      updateInstansiByAPI(gpsLat, gpsLon);
+    } else {
+      document.getElementById("instansi-nama").textContent = "Pilih instansi manual";
+      document.getElementById("instansi-alamat").textContent = "BAP ini belum memiliki koordinat GPS.";
+    }
   };
   
   // Preview BAP
@@ -218,34 +226,57 @@
     btn.innerHTML = '<span style="width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:jp-spin .8s linear infinite"></span><span>Mentransmisikan ke ' + esc(nama) + '...</span>';
     
     var urgensiEl = document.querySelector('input[name="urgensi"]:checked');
-    var data = {
-      bap_id: latestBAP.id,
-      bap_nomor: "BA-INS/" + latestBAP.id + "/BM-KBDG/II/2025",
-      lokasi: latestBAP.lokasi,
-      lat: latestBAP.lat,
-      lon: latestBAP.lon,
-      n_temuan: latestBAP.n_temuan,
-      total_rp: latestBAP.total_rp,
-      worst: latestBAP.worst,
-      instansi_id: window.instansiId || null,
-      instansi_nama: nama,
-      instansi_daerah: window.instansiDaerah || "-",
-      instansi_email: window.instansiEmail || "-",
-      urgensi: urgensiEl ? urgensiEl.value : "Rutin",
-      catatan: document.getElementById("catatan-disposisi").value
-    };
+    var refKirim = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+      : ("disp-" + Date.now() + "-" + Math.random().toString(16).slice(2));
+    function kirim(izinkan) {
+      return fetch("/api/disposisi", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          bap_id: latestBAP.id,
+          bap_nomor: "BA-INS/" + latestBAP.id,
+          lokasi: latestBAP.lokasi,
+          lat: latestBAP.lat,
+          lon: latestBAP.lon,
+          n_temuan: latestBAP.n_temuan,
+          total_rp: latestBAP.total_rp,
+          worst: latestBAP.worst,
+          instansi_id: window.instansiId || null,
+          instansi_nama: nama,
+          instansi_daerah: window.instansiDaerah || "-",
+          instansi_email: window.instansiEmail || "-",
+          urgensi: urgensiEl ? urgensiEl.value : "Rutin",
+          catatan: document.getElementById("catatan-disposisi").value,
+          client_ref: refKirim, izinkan_duplikat: !!izinkan
+        })
+      });
+    }
     
-    fetch("/api/disposisi", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify(data)
+    kirim(false)
+    .then(function(r) { return r.json().then(function(j) { return {ok: r.ok, j: j}; }); })
+    .then(function(res) {
+      var j = res.j;
+      if (res.ok && j.duplikat && j.alasan === "bap_instansi") {
+        return window.jpConfirm("Disposisi Serupa",
+          "Disposisi untuk BAP ini ke instansi ini baru saja dikirim (ID " + j.id + "). Tetap kirim ulang?",
+          {okText: "Tetap Kirim"}).then(function(lanjut) {
+            if (!lanjut) {
+              window.jpToast("info", "Dibatalkan", "Disposisi serupa sudah ada (ID " + j.id + ").");
+              return null;
+            }
+            return kirim(true).then(function(r2) { return r2.json(); });
+          });
+      }
+      return j;
     })
-    .then(function(r) { return r.json(); })
     .then(function(j) {
       btn.innerHTML = original;
       btn.disabled = false;
-      if (j.ok) {
-        window.jpToast("success", "Disposisi Berhasil", "ID: " + j.id + " Ke: " + nama + " • SLA 24 Jam");
+      if (j === null) return;  // dibatalkan operator
+      if (j.duplikat) {
+        window.jpToast("info", "Sudah Terkirim", "ID: " + j.id + " Ke: " + nama);
+      } else if (j.ok) {
+        window.jpToast("success", "Disposisi Berhasil", "ID: " + j.id + " Ke: " + nama);
       } else {
         window.jpToast("error", "Gagal Mengirim", j.error || "Unknown error");
       }

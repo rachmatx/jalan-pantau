@@ -140,7 +140,7 @@ spacing:
 ## Palet Warna
 - **Background Utama**: `#F8FAFC` (Slate 50)
 - **Surface / Card**: `#FFFFFF` (Putih murni dengan border `#E2E8F0`)
-- **Primary / Brand**: `#0284C7` (Sky 600) / `#0369A1` (Sky 700) untuk aksi teknis dan akurasi
+- **Primary / Brand**: `#006194` (primary) / `#006399` (secondary) untuk aksi teknis dan akurasi
 - **Teks Utama**: `#0F172A` (Slate 900)
 - **Teks Sekunder**: `#475569` (Slate 600) / `#64748B` (Slate 500)
 - **Severity Colors (Standar Teknis Bina Marga / Jalan)**:

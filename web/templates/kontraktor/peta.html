@@ -1,0 +1,153 @@
+{% extends "kontraktor/base.html" %}
+{% block title %}Peta Tugas{% endblock %}
+
+{% block content %}
+<div class="dash-header">
+  <div>
+    <h1 class="dash-title">Peta Tugas</h1>
+    <p class="dash-subtitle">Titik kerusakan di dalam SPK milik {{ profil.nama }} saja</p>
+  </div>
+  <div class="dash-head-right">
+    <a href="/kontraktor/spk" class="dash-btn-secondary">Daftar SPK</a>
+  </div>
+</div>
+
+<div class="dash-card" style="padding:10px 14px;margin-bottom:12px;background:#EFF6FF;border:1px solid #BFDBFE">
+  <span style="font-size:12px;color:#1E3A8A">
+    Peta ini hanya berisi titik pekerjaan dari SPK Anda. Berbeda dengan
+    <a href="/peta" style="color:#1E3A8A">peta publik</a> yang menampilkan
+    seluruh riwayat inspeksi dari semua pengguna.
+  </span>
+</div>
+
+<div class="dash-kpis">
+  <div class="dash-kpi kpi-total">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0116 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Titik Ditugaskan</span><strong class="dash-kpi-val">{{ titik|length }}</strong></div>
+  </div>
+  <div class="dash-kpi kpi-proses">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Menunggu</span><strong class="dash-kpi-val" id="peta-menu">{{ titik|selectattr('status_tugas','equalto','Menunggu')|list|length }}</strong></div>
+  </div>
+  <div class="dash-kpi kpi-baru">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-6l-2 3h-4l-2-3H2"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Dikerjakan</span><strong class="dash-kpi-val" id="peta-kerja">{{ titik|selectattr('status_tugas','equalto','Dikerjakan')|list|length }}</strong></div>
+  </div>
+  <div class="dash-kpi kpi-selesai">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Selesai</span><strong class="dash-kpi-val" id="peta-selesai">{{ titik|selectattr('status_tugas','equalto','Selesai')|list|length }}</strong></div>
+  </div>
+</div>
+
+<div class="dash-card">
+  <div class="dash-card-head">
+    <h2>Peta Titik Pekerjaan</h2>
+    <div class="dash-head-right" style="gap:8px">
+      <button type="button" class="dash-btn-secondary" id="btn-sat">Satelit</button>
+      <button type="button" class="dash-btn-secondary" id="btn-fit">Paskan</button>
+      <span id="peta-info" style="font-size:11px;color:var(--dash-muted)"></span>
+    </div>
+  </div>
+  <div id="peta-tugas" class="spk-map spk-map-lg"></div>
+  <div class="dash-head-right" style="padding:8px 14px;gap:12px">
+    <span style="font-size:11px;color:var(--dash-muted)">STATUS TITIK:</span>
+    <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px"><i style="width:12px;height:12px;border-radius:50%;background:#64748B;display:inline-block"></i>Menunggu</span>
+    <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px"><i style="width:12px;height:12px;border-radius:50%;background:#D97706;display:inline-block"></i>Dikerjakan</span>
+    <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px"><i style="width:12px;height:12px;border-radius:50%;background:#059669;display:inline-block"></i>Selesai</span>
+  </div>
+</div>
+
+<div class="dash-card" style="margin-top:18px">
+  <div class="dash-card-head">
+    <h2>Daftar Titik ({{ titik|length }})</h2>
+    <span style="font-size:11px;color:var(--dash-muted)">Klik baris untuk menyorot di peta</span>
+  </div>
+  {% if titik %}
+  <div class="dash-table-wrap">
+    <table class="dash-table">
+      <thead>
+        <tr>
+          <th>No. Tiket</th><th>Lokasi</th><th>SPK</th><th>Urgensi</th>
+          <th>Status</th><th>Bukti</th><th style="text-align:right">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in titik %}
+        <tr>
+          <td><span class="dash-tiket">{{ t.bap_nomor }}</span></td>
+          <td>{{ t.lokasi }}
+            <span class="dash-kpi-label" style="display:block;text-transform:none;letter-spacing:0">
+              {{ '%.5f'|format(t.lat) }}, {{ '%.5f'|format(t.lon) }}</span></td>
+          <td><a class="dash-btn-detail" href="/kontraktor/spk/{{ t.spk_id }}">{{ t.spk_nomor }}</a></td>
+          <td><span class="urgency urgency-{{ t.urgensi|lower }}">{{ t.urgensi }}</span></td>
+          <td><span class="badge-status status-{{ t.status_tugas|lower }}">{{ t.status_tugas }}</span></td>
+          <td>
+            {% if t.ada_foto %}
+            <a class="dash-btn-detail" target="_blank" rel="noopener"
+               href="/api/kontraktor/spk/{{ t.spk_id }}/tugas/{{ t.tugas_id }}/foto">Foto bukti</a>
+            {% else %}
+            <span style="color:var(--dash-muted)">belum ada</span>
+            {% endif %}
+          </td>
+          <td style="text-align:right">
+            <button type="button" class="dash-btn-secondary" data-fokus="{{ t.tugas_id }}">Sorot</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="dash-empty">
+    Belum ada titik pekerjaan. Peta akan terisi setelah dinas menerbitkan
+    SPK yang menunjuk lokasi kerusakan.
+  </p>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block skrip %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}?v={{ static_v }}">
+<script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}?v={{ static_v }}"></script>
+<script src="{{ url_for('static', filename='js/kontraktor_peta.js') }}?v={{ static_v }}"></script>
+<script>
+(function(){
+  var TITIK = [
+    {% for t in titik %}
+    {id: {{ t.tugas_id }}, lat: {{ t.lat }}, lon: {{ t.lon }},
+     lokasi: {{ (t.lokasi or '-')|tojson }}, bap_nomor: {{ (t.bap_nomor or '-')|tojson }},
+     urgensi: {{ (t.urgensi or '-')|tojson }}, status: {{ (t.status_tugas or 'Menunggu')|tojson }},
+     n_temuan: {{ t.n_temuan|int }}, total_rp: {{ t.total_rp|int }},
+     punya_foto: {{ t.ada_foto|tojson }},
+     spk_id: {{ t.spk_id }}, spk_nomor: {{ t.spk_nomor|tojson }}}
+    {{ "," if not loop.last }}
+    {% endfor %}
+  ];
+
+  var peta = SPKPeta.buatPeta("peta-tugas", TITIK, {
+    // Foto bukti disimpan per titik di dalam SPK tertentu, jadi modul
+    // menyusun URL-nya sendiri memakai spk_id tiap titik.
+    urlFoto: "/api/kontraktor/spk/",
+    urlSpk: "/kontraktor/spk/"
+  });
+  var info = document.getElementById("peta-info");
+  if (info) info.textContent = (peta ? peta.jumlahTitik() : 0) + " titik ditampilkan";
+
+  var sat = false;
+  document.getElementById("btn-sat").addEventListener("click", function(e){
+    sat = !sat;
+    if (peta) peta.satelit(sat);
+    e.currentTarget.setAttribute("aria-pressed", String(sat));
+  });
+  document.getElementById("btn-fit").addEventListener("click", function(){
+    if (peta) peta.sesuaikan();
+  });
+
+  document.querySelectorAll("[data-fokus]").forEach(function(b){
+    b.addEventListener("click", function(){
+      if (peta) peta.fokus(Number(b.dataset.fokus));
+    });
+  });
+})();
+</script>
+{% endblock %}

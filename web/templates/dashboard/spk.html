@@ -1,0 +1,230 @@
+{% extends "dashboard/base.html" %}
+{% block title %}SPK{% endblock %}
+
+{% block content %}
+<div class="dash-header">
+  <div>
+    <h1 class="dash-title">SPK &mdash; {{ nama_daerah }}</h1>
+    <p class="dash-subtitle">Terbitkan perintah kerja ke kontraktor dari laporan kerusakan yang masuk</p>
+  </div>
+  <div class="dash-head-right">
+    <a href="/pupr-{{ daerah }}/dashboard/kontraktor" class="dash-btn-secondary">Kelola Kontraktor</a>
+  </div>
+</div>
+
+<div class="dash-kpis">
+  <div class="dash-kpi kpi-total">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Total SPK</span><strong class="dash-kpi-val">{{ stats.total }}</strong></div>
+  </div>
+  <div class="dash-kpi kpi-proses">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Diterbitkan</span><strong class="dash-kpi-val">{{ stats.status.Diterbitkan }}</strong></div>
+  </div>
+  <div class="dash-kpi kpi-baru">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-6l-2 3h-4l-2-3H2"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Dikerjakan</span><strong class="dash-kpi-val">{{ stats.status.Diterima + stats.status.Dikerjakan }}</strong></div>
+  </div>
+  <div class="dash-kpi kpi-selesai">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Selesai</span><strong class="dash-kpi-val">{{ stats.status.Selesai }}</strong></div>
+  </div>
+  <div class="dash-kpi kpi-total">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0116 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Titik Dikerjakan</span><strong class="dash-kpi-val">{{ stats.n_tugas_selesai }}/{{ stats.n_tugas }}</strong></div>
+  </div>
+</div>
+
+<div class="dash-card" style="margin-top:18px">
+  <div class="dash-card-head">
+    <h2>Daftar SPK</h2>
+    <span style="font-size:11px;color:var(--dash-muted)">{{ items|length }} SPK</span>
+  </div>
+  {% if items %}
+  <div class="dash-table-wrap">
+    <table class="dash-table">
+      <thead>
+        <tr>
+          <th>Nomor</th><th>Kontraktor</th><th>Judul</th><th>Prioritas</th>
+          <th>Progres Titik</th><th>Status</th><th style="text-align:right">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in items %}
+        <tr>
+          <td><span class="dash-tiket">{{ s.nomor }}</span>
+            <span class="dash-kpi-label" style="display:block;text-transform:none;letter-spacing:0">{{ s.dibuat[:10] }}</span></td>
+          <td>{{ s.kontraktor_nama }}
+            <span class="dash-kpi-label" style="display:block;text-transform:none;letter-spacing:0">{{ s.kontraktor_kode }}</span></td>
+          <td>{{ s.judul }}</td>
+          <td><span class="urgency urgency-{{ s.prioritas|lower }}">{{ s.prioritas }}</span></td>
+          <td>{{ s.n_tugas_selesai }}/{{ s.n_tugas }}</td>
+          <td><span class="badge-status status-{{ s.status|lower }}">{{ s.status }}</span></td>
+          <td style="text-align:right">
+            <a class="dash-btn-detail" href="/pupr-{{ daerah }}/dashboard/spk/{{ s.id }}">Detail</a>
+            {% if s.status != 'Selesai' and s.status != 'Dibatalkan' %}
+            <button type="button" class="dash-btn-danger" data-batal="{{ s.id }}">Batalkan</button>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="dash-empty">Belum ada SPK untuk {{ nama_daerah }}. Terbitkan lewat panel di bawah.</p>
+  {% endif %}
+</div>
+
+<div class="dash-card" style="margin-top:18px">
+  <div class="dash-card-head">
+    <h2>Terbitkan SPK Baru</h2>
+      {% if dipilih %}
+      <span style="font-size:11px;color:var(--dash-success)">{{ dipilih|length }} titik sudah dicentang dari halaman Verifikasi</span>
+      {% endif %}
+    <span style="font-size:11px;color:var(--dash-muted)">Pilih kontraktor lalu centang titik kerusakan</span>
+  </div>
+  <div style="padding:12px 14px">
+    {% if kontraktor_list %}
+    <div class="dash-ba-grid">
+      <div>
+        <label class="dash-kpi-label" for="f-kontraktor">KONTRAKTOR</label>
+        <select id="f-kontraktor" class="dash-select" style="width:100%;margin-top:4px">
+          {% for k in kontraktor_list %}
+          <option value="{{ k.id }}">{{ k.kode }} &mdash; {{ k.nama }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="dash-kpi-label" for="f-prioritas">PRIORITAS</label>
+        <select id="f-prioritas" class="dash-select" style="width:100%;margin-top:4px">
+          <option value="Kritis">Kritis</option>
+          <option value="Tinggi" selected>Tinggi</option>
+          <option value="Rutin">Rutin</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:10px">
+      <label class="dash-kpi-label" for="f-judul">JUDUL PEKERJAAN</label>
+      <input type="text" id="f-judul" class="dash-select" style="width:100%;margin-top:4px"
+             placeholder="Contoh: Perbaikan lubuk aspal Jl. Raya Bandung km 8-12">
+    </div>
+    <div class="dash-ba-grid" style="margin-top:10px">
+      <div>
+        <label class="dash-kpi-label" for="f-tenggat">TENGGAT (OPSIONAL)</label>
+        <input type="date" id="f-tenggat" class="dash-select" style="width:100%;margin-top:4px">
+      </div>
+      <div>
+        <label class="dash-kpi-label" for="f-deskripsi">DESKRIPSI SINGKAT</label>
+        <input type="text" id="f-deskripsi" class="dash-select" style="width:100%;margin-top:4px">
+      </div>
+    </div>
+    <div style="margin-top:10px">
+      <label class="dash-kpi-label" for="f-catatan">INSTRUKSI UNTUK KONTRAKTOR</label>
+      <textarea id="f-catatan" class="dash-select" style="width:100%;margin-top:4px;min-height:56px;resize:vertical"
+        placeholder="Contoh: Kerjakan titik Kritis terlebih dahulu. Ambil material dari gudang dinas."></textarea>
+    </div>
+
+    {% if kandidat %}
+    <div style="margin-top:14px">
+      <div class="spk-kepala" style="margin-bottom:8px">
+        <span class="dash-kpi-label">TITIK KERUSAKAN ({{ kandidat|length }} tersedia)</span>
+      </div>
+      <label class="spk-pilih-semua">
+        <input type="checkbox" id="pilih-semua"{{ " checked" if dipilih and dipilih|length == kandidat|length else "" }}> Pilih semua yang terlihat
+      </label>
+      <div style="display:flex;flex-direction:column;gap:8px;max-height:340px;overflow:auto;padding:4px">
+        {% for d in kandidat %}
+        <label class="spk-kartu spk-kartu-pilih">
+          <input type="checkbox" class="pilih-titik" value="{{ d.id }}"{{ " checked" if d.id in dipilih else "" }}>
+          <span class="spk-kartu-body">
+            <span class="spk-kepala">
+              <span class="dash-tiket">{{ d.bap_nomor }}</span>
+              <span class="urgency urgency-{{ d.urgensi|lower }}">{{ d.urgensi }}</span>
+              <span class="badge-status status-{{ d.status|lower }}">{{ d.status }}</span>
+            </span>
+            <span style="display:block;font-size:13px;margin-top:3px">{{ d.lokasi }}</span>
+            <span style="display:block;font-size:11px;color:var(--dash-muted)">
+              {{ d.n_temuan }} temuan
+              {% if d.lat and d.lon %}&middot; {{ '%.5f'|format(d.lat) }}, {{ '%.5f'|format(d.lon) }}{% else %}&middot; tanpa koordinat{% endif %}
+            </span>
+          </span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <p class="dash-empty" style="margin-top:12px">Belum ada laporan kerusakan untuk daerah ini.</p>
+    {% endif %}
+
+    <div style="margin-top:12px">
+      <button type="button" class="dash-btn-apply" id="btn-terbitkan" style="width:100%;height:42px">Terbitkan SPK</button>
+      <p class="dash-hint" style="margin:6px 0 0" id="terbit-info">Pilih minimal satu titik kerusakan, lalu tentukan kontraktor penerima tugas.</p>
+    </div>
+    {% else %}
+    <p class="dash-empty">Belum ada kontraktor aktif. Tambahkan dulu di menu Kontraktor.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block skrip %}
+<script>
+(function(){
+  function nilai(id){ return (document.getElementById(id).value || "").trim(); }
+
+  var sem = document.getElementById("pilih-semua");
+  if (sem) sem.addEventListener("change", function(){
+    document.querySelectorAll(".pilih-titik").forEach(function(c){ c.checked = sem.checked; });
+  });
+
+  document.querySelectorAll("[data-batal]").forEach(function(b){
+    b.addEventListener("click", function(){
+      window.jpConfirm("Batalkan SPK", "Kontraktor tidak lagi dapat mengerjakan SPK ini. Riwayat tetap tersimpan.",
+        {type: "danger", okText: "Ya, Batalkan"})
+      .then(function(ok){
+        if (!ok) return;
+        fetch("/api/spk/" + b.dataset.batal + "/batal", {method: "POST"})
+          .then(function(r){ return r.json().then(function(j){ return {ok: r.ok, j: j}; }); })
+          .then(function(res){
+            if (!res.ok){ window.jpToast("error", "Gagal", res.j.error || "Tidak dapat membatalkan."); return; }
+            window.jpToast("success", "SPK dibatalkan", "");
+            setTimeout(function(){ window.location.reload(); }, 700);
+          })
+          .catch(function(){ window.jpToast("error", "Gagal", "Kesalahan jaringan."); });
+      });
+    });
+  });
+
+  var btn = document.getElementById("btn-terbitkan");
+  if (btn) btn.addEventListener("click", function(){
+    var judul = nilai("f-judul");
+    var ids = Array.prototype.slice
+      .call(document.querySelectorAll(".pilih-titik:checked"))
+      .map(function(c){ return Number(c.value); });
+    if (!judul || !ids.length){
+      window.jpToast("error", "Kurang isian",
+        !judul ? "Judul pekerjaan wajib diisi." : "Pilih minimal satu titik kerusakan.");
+      return;
+    }
+    var t = nilai("f-tenggat");
+    fetch("/api/spk", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        daerah: "{{ nama_daerah }}",
+        kontraktor_id: Number(nilai("f-kontraktor")),
+        judul: judul, deskripsi: nilai("f-deskripsi"),
+        prioritas: nilai("f-prioritas"), tenggat: t || null,
+        catatan_dinas: nilai("f-catatan"), disposisi_ids: ids
+      })
+    }).then(function(r){ return r.json().then(function(j){ return {ok: r.ok, j: j}; }); })
+      .then(function(res){
+        if (!res.ok){ window.jpToast("error", "Gagal", res.j.error || "Tidak dapat menerbitkan."); return; }
+        window.jpToast("success", "SPK Terbit", res.j.nomor + " untuk " + ids.length + " titik.");
+        setTimeout(function(){ window.location.reload(); }, 900);
+      })
+      .catch(function(){ window.jpToast("error", "Gagal", "Kesalahan jaringan."); });
+  });
+})();
+</script>
+{% endblock %}

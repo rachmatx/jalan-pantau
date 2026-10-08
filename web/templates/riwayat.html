@@ -68,13 +68,12 @@
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <div style="display:flex;align-items:center;gap:6px;padding:2px 10px;border-radius:9999px;background:var(--jp-sev-h-bg)">
             <span style="width:8px;height:8px;border-radius:50%;background:var(--jp-sev-h-tx);animation:jp-pulse 1.6s infinite"></span>
-            <span style="font-size:11px;font-weight:600;letter-spacing:.05em;color:#047857;text-transform:uppercase">Terverifikasi / Sah</span>
+            <span style="font-size:11px;font-weight:600;letter-spacing:.05em;color:#047857;text-transform:uppercase">Arsip Tersimpan</span>
           </div>
           <span style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-tx2);font-weight:600" id="d-nomor">-</span>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
-          <span style="padding:4px 8px;border-radius:6px;background:var(--jp-container);font-family:var(--jp-mono);font-size:11px;color:var(--jp-tx2)">SHA-256: <span id="d-hash">-</span></span>
-          <span style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-primary);text-transform:uppercase;background:rgba(0,97,148,.1);padding:2px 8px;border-radius:6px">PPK Wilayah</span>
+          <span style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-primary);text-transform:uppercase;background:rgba(0,97,148,.1);padding:2px 8px;border-radius:6px">Dokumen Sistem</span>
         </div>
       </div>
       <!-- Title Section -->
@@ -117,14 +116,14 @@
             <div style="aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;color:#64748B;font-family:var(--jp-mono);font-size:11px">Foto bukti tidak tersedia</div>
           </div>
         </div>
-        <!-- Tabel RAB -->
+        <!-- Tabel estimasi indeks biaya (bukan RAB) -->
         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
           <div style="display:flex;align-items:center;justify-content:space-between">
             <span style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-tx2);display:flex;align-items:center;gap:6px">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--jp-primary)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-              Inventarisasi Temuan & Rencana Anggaran Biaya (RAB) Penanganan
+              Inventarisasi Temuan &amp; Estimasi Indeks Biaya Penanganan
             </span>
-            <span style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-muted)">Standar Spesifikasi Umum Bina Marga 2018 (Rev. 2)</span>
+            <span style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-muted)">Estimasi harga satuan pemeliharaan rutin</span>
           </div>
           <div class="jp-table-scroll" id="d-tabel"></div>
           <!-- Paginasi temuan -->
@@ -136,7 +135,7 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--jp-muted)" stroke-width="2" style="flex-shrink:0;margin-top:2px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
           <div style="display:flex;flex-direction:column;gap:4px">
             <span style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-tx2)">CATATAN LEGALISASI & AUDIT TRAIL</span>
-            <p style="font-size:12px;color:var(--jp-muted);margin:0;line-height:1.5">Data telemetri ini telah divalidasi silang secara geospasial terhadap GIS Jaringan Jalan Kota Bandung. Nilai taksiran merupakan harga satuan standar pemeliharaan rutin Dinas Bina Marga Provinsi Jawa Barat Tahun Anggaran 2025.</p>
+            <p style="font-size:12px;color:var(--jp-muted);margin:0;line-height:1.5">Catatan ini dihasilkan otomatis oleh sistem dari hasil deteksi yang tersimpan. Nilai taksiran merupakan estimasi harga satuan pemeliharaan rutin, bukan RAB resmi.</p>
           </div>
         </div>
         <!-- Pengesahan / Tanda Tangan -->

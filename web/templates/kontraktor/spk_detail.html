@@ -1,0 +1,271 @@
+{% extends "kontraktor/base.html" %}
+{% block title %}SPK {{ item.nomor }}{% endblock %}
+
+{% block content %}
+<div class="dash-header">
+  <div>
+    <h1 class="dash-title">{{ item.nomor }}</h1>
+    <p class="dash-subtitle">{{ item.judul }} &mdash; diterbitkan {{ item.daerah }}</p>
+  </div>
+  <div class="dash-head-right">
+    <span class="badge-status status-{{ item.status|lower }}">{{ item.status }}</span>
+    <a href="/kontraktor/dashboard" class="dash-btn-action">Semua SPK</a>
+  </div>
+</div>
+
+<div class="dash-ba-grid" style="margin-bottom:12px">
+  <div><span class="dash-kpi-label">KONTRAKTOR</span><div>{{ item.kontraktor_nama }}</div></div>
+  <div><span class="dash-kpi-label">PRIORITAS</span>
+    <div><span class="urgency urgency-{{ item.prioritas|lower }}">{{ item.prioritas }}</span></div></div>
+  <div><span class="dash-kpi-label">TENGGAT</span><div id="spk-tenggat">{{ item.tenggat or '-' }}</div></div>
+  <div><span class="dash-kpi-label">PROGRES TITIK</span><div id="spk-progres">-</div></div>
+</div>
+
+<div class="dash-card" style="margin-bottom:12px">
+  <div class="dash-card-head">
+    <h2>Peta Titik Kerusakan</h2>
+    <div class="dash-head-right" style="gap:8px">
+      <button type="button" class="dash-btn-secondary" id="btn-sat">Satelit</button>
+      <button type="button" class="dash-btn-secondary" id="btn-fit">Paskan</button>
+      <span id="peta-info" style="font-size:11px;color:var(--dash-muted)"></span>
+    </div>
+  </div>
+  <div id="spk-peta" class="spk-map"></div>
+  <div class="dash-head-right" style="padding:8px 14px;gap:12px">
+    <span style="font-size:11px;color:var(--dash-muted)">STATUS TITIK:</span>
+    <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px"><i style="width:12px;height:12px;border-radius:50%;background:#64748B;display:inline-block"></i>Menunggu</span>
+    <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px"><i style="width:12px;height:12px;border-radius:50%;background:#D97706;display:inline-block"></i>Dikerjakan</span>
+    <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px"><i style="width:12px;height:12px;border-radius:50%;background:#059669;display:inline-block"></i>Selesai</span>
+  </div>
+</div>
+
+<div class="dash-card" style="margin-bottom:12px">
+  <div class="dash-card-head">
+    <h2>Kemajuan SPK</h2>
+    <span style="font-size:11px;color:var(--dash-muted)"> Status hanya bisa maju satu tahap</span>
+  </div>
+  <div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px">
+    <div>
+      <label class="dash-kpi-label" for="spk-catatan">LAPORAN PROGRES KE DINAS</label>
+      <textarea id="spk-catatan" class="dash-select" style="width:100%;margin-top:4px;min-height:64px;resize:vertical"
+        placeholder="Contoh: Tim 1 sudah di lokasi, material jalan dikirim sore ini."></textarea>
+    </div>
+    <div class="dash-head-right" style="gap:8px">
+      <button type="button" class="dash-btn-apply" id="btn-terima">Terima SPK</button>
+      <button type="button" class="dash-btn-apply" id="btn-kerja">Mulai Dikerjakan</button>
+      <button type="button" class="dash-btn-secondary" id="btn-selesai">Tandai Selesai</button>
+    </div>
+    <p class="dash-hint" style="margin:0" id="spk-catatatan-dinas">
+      {% if item.catatan_dinas and item.catatan_dinas != '-' %}Catatan dinas: {{ item.catatan_dinas }}{% endif %}
+    </p>
+  </div>
+</div>
+
+<div class="dash-card">
+  <div class="dash-card-head">
+    <h2>Daftar Titik Pekerjaan ({{ tugas|length }})</h2>
+    <span style="font-size:11px;color:var(--dash-muted)">Lampirkan foto bukti lalu tandai selesai</span>
+  </div>
+  {% if tugas %}
+  <div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px">
+    {% for t in tugas %}
+    <div class="spk-kartu" data-tugas="{{ t.id }}">
+      <div class="spk-kartu-body">
+        <div class="spk-kepala">
+          <span class="dash-tiket">{{ t.bap_nomor }}</span>
+          <span class="urgency urgency-{{ t.urgensi|lower }}">{{ t.urgensi }}</span>
+          <span class="badge-status status-{{ t.status|lower }}">{{ t.status }}</span>
+        </div>
+        <div style="font-size:13px;margin-top:3px">{{ t.lokasi }}</div>
+        <div style="font-size:11px;color:var(--dash-muted);margin-top:2px">
+          {{ t.n_temuan }} temuan &middot; {{ t.instansi_nama }}
+          {% if t.lat and t.lon %}&middot; {{ '%.5f'|format(t.lat) }}, {{ '%.5f'|format(t.lon) }}{% endif %}
+        </div>
+        {% if t.catatan and t.catatan != '-' %}
+        <div style="font-size:12px;margin-top:4px">Catatan: {{ t.catatan }}</div>
+        {% endif %}
+        <div class="dash-head-right" style="margin-top:8px;gap:8px">
+          <button type="button" class="dash-btn-secondary" data-fokus="{{ t.id }}">Lihat di Peta</button>
+          <input type="file" accept="image/jpeg,image/png" hidden data-foto-input="{{ t.id }}">
+          <button type="button" class="dash-btn-light" data-foto-btn="{{ t.id }}">
+            {{ 'Ganti Foto Bukti' if t.foto_selesai else 'Unggah Foto Bukti' }}
+          </button>
+          {% if t.foto_selesai %}
+          <a class="dash-btn-detail" target="_blank" rel="noopener"
+             href="/api/kontraktor/spk/{{ item.id }}/tugas/{{ t.id }}/foto">Lihat foto</a>
+          {% endif %}
+          <button type="button" class="dash-btn-apply" data-kerja="{{ t.id }}"
+            {{ 'disabled' if t.status != 'Menunggu' else '' }}>Tandai Dikerjakan</button>
+          <button type="button" class="dash-btn-secondary" data-selesai="{{ t.id }}"
+            {{ 'disabled' if t.status != 'Dikerjakan' else '' }}>Tandai Titik Selesai</button>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="dash-empty">SPK ini tidak memiliki titik pekerjaan.</p>
+  {% endif %}
+</div>
+
+<div class="dash-card" style="margin-top:12px">
+  <div class="dash-card-head"><h2>Riwayat Aktivitas</h2></div>
+  {% if catatan_list %}
+  <div class="timeline" style="padding:12px 14px">
+    {% for c in catatan_list %}
+    <div class="timeline-item">
+      <div style="font-size:13px;font-weight:600">{{ c.status }}</div>
+      <div style="font-size:12px;color:var(--dash-muted)">{{ c.catatan }}</div>
+      <div style="font-size:11px;color:var(--dash-muted)">{{ c.waktu }} &mdash; {{ c.oleh }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="dash-empty">Belum ada riwayat.</p>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block skrip %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}?v={{ static_v }}">
+<script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}?v={{ static_v }}"></script>
+<script src="{{ url_for('static', filename='js/kontraktor_peta.js') }}?v={{ static_v }}"></script>
+<script>
+(function(){
+  var SPK_ID = {{ item.id }};
+  var STATUS_AWAL = {{ item.status|tojson }};
+  var TITIK = [
+    {% for t in tugas %}
+    {id: {{ t.id }}, lat: {{ 'null' if t.lat is none else t.lat }},
+     lon: {{ 'null' if t.lon is none else t.lon }},
+     lokasi: {{ (t.lokasi or '-')|tojson }}, bap_nomor: {{ (t.bap_nomor or '-')|tojson }},
+     urgensi: {{ (t.urgensi or '-')|tojson }}, status: {{ (t.status or 'Menunggu')|tojson }},
+     n_temuan: {{ t.n_temuan|int }}, total_rp: {{ t.total_rp|int }},
+     punya_foto: {{ (t.foto_selesai is not none)|tojson }}}
+    {{ "," if not loop.last }}
+    {% endfor %}
+  ];
+
+  function esc(v){
+    return String(v == null ? "" : v).replace(/[&<>"'`=]/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;","`":"&#96;","=":"&#61;"}[c]; });
+  }
+
+  var peta = SPKPeta.buatPeta("spk-peta", TITIK, {
+    urlFoto: "/api/kontraktor/spk/" + SPK_ID + "/tugas/"
+  });
+  var info = document.getElementById("peta-info");
+  if (info) info.textContent = (peta ? peta.jumlahTitik() : 0) + " titik ditampilkan";
+
+  var sat = false;
+  document.getElementById("btn-sat").addEventListener("click", function(e){
+    sat = !sat;
+    if (peta) peta.satelit(sat);
+    e.currentTarget.setAttribute("aria-pressed", String(sat));
+  });
+  document.getElementById("btn-fit").addEventListener("click", function(){
+    if (peta) peta.sesuaikan();
+  });
+
+  document.querySelectorAll("[data-fokus]").forEach(function(b){
+    b.addEventListener("click", function(){
+      if (peta) peta.fokus(Number(b.dataset.fokus));
+    });
+  });
+
+  /* ---- Kirim perubahan status ---- */
+  function kirim(url, body, judul){
+    fetch(url, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(body)
+    }).then(function(r){
+      return r.json().then(function(j){ return {ok: r.ok, j: j}; });
+    }).then(function(res){
+      if (!res.ok){
+        window.jpToast("error", judul + " gagal", res.j.error || "Tidak dapat menyimpan.");
+        return;
+      }
+      window.jpToast("success", judul + " tersimpan", res.j.pesan || "");
+      setTimeout(function(){ window.location.reload(); }, 700);
+    }).catch(function(){
+      window.jpToast("error", "Gagal", "Kesalahan jaringan.");
+    });
+  }
+
+  function catatanSpk(){
+    return (document.getElementById("spk-catatan").value || "").trim();
+  }
+
+  function setStatusSpk(status, judul){
+    window.jpConfirm(judul, "Ubah status SPK menjadi " + status + "?",
+      {okText: "Ya, " + status})
+      .then(function(ok){ if (ok) kirim("/api/kontraktor/spk/" + SPK_ID + "/status",
+                                {status: status, catatan: catatanSpk()}, judul); });
+  }
+  document.getElementById("btn-terima").addEventListener("click", function(){ setStatusSpk("Diterima", "Terima SPK"); });
+  document.getElementById("btn-kerja").addEventListener("click", function(){ setStatusSpk("Dikerjakan", "Mulai kerja"); });
+  document.getElementById("btn-selesai").addEventListener("click", function(){ setStatusSpk("Selesai", "Tandai selesai"); });
+
+  // Tombol SPK hanya aktif sesuai tahap saat ini (server tetap memvalidasi).
+var boleh = {
+    "btn-terima": STATUS_AWAL === "Diterbitkan",
+    "btn-kerja": STATUS_AWAL === "Diterima",
+    "btn-selesai": STATUS_AWAL === "Dikerjakan",
+  };
+  Object.keys(boleh).forEach(function(id){
+    var el = document.getElementById(id);
+    if (el && !boleh[id]) el.disabled = true;
+  });
+
+  document.querySelectorAll("[data-kerja]").forEach(function(b){
+    b.addEventListener("click", function(){
+      var id = b.dataset.kerja;
+      kirim("/api/kontraktor/spk/" + SPK_ID + "/tugas/" + id,
+             {status: "Dikerjakan", catatan: catatanSpk()}, "Status titik");
+    });
+  });
+  document.querySelectorAll("[data-selesai]").forEach(function(b){
+    b.addEventListener("click", function(){
+      var id = b.dataset.selesai;
+      window.jpConfirm("Tandai titik selesai",
+        "Pastikan foto bukti sudah diunggah untuk titik ini.",
+        {okText: "Ya, Selesai"})
+      .then(function(ok){
+        if (ok) kirim("/api/kontraktor/spk/" + SPK_ID + "/tugas/" + id,
+                      {status: "Selesai", catatan: catatanSpk()}, "Status titik");
+      });
+    });
+  });
+
+  /* ---- Unggah foto bukti ---- */
+  document.querySelectorAll("[data-foto-btn]").forEach(function(b){
+    b.addEventListener("click", function(){
+      document.querySelector('[data-foto-input="' + b.dataset.fotoBtn + '"]').click();
+    });
+  });
+  document.querySelectorAll("[data-foto-input]").forEach(function(inp){
+    inp.addEventListener("change", function(){
+      var f = inp.files && inp.files[0];
+      if (!f) return;
+      var id = inp.dataset.fotoInput;
+      var fd = new FormData();
+      fd.append("foto", f);
+      window.jpToast("info", "Mengunggah", f.name);
+      fetch("/api/kontraktor/spk/" + SPK_ID + "/tugas/" + id + "/foto",
+            {method: "POST", body: fd})
+        .then(function(r){ return r.json().then(function(j){ return {ok: r.ok, j: j}; }); })
+        .then(function(res){
+          if (!res.ok){
+            window.jpToast("error", "Unggah gagal", res.j.error || "Foto ditolak.");
+            return;
+          }
+          window.jpToast("success", "Foto tersimpan", "Sekarang titik bisa ditandai selesai.");
+          setTimeout(function(){ window.location.reload(); }, 800);
+        })
+        .catch(function(){ window.jpToast("error", "Gagal", "Kesalahan jaringan."); });
+    });
+  });
+})();
+</script>
+{% endblock %}

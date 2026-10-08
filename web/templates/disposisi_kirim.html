@@ -11,7 +11,6 @@
     <div class="disp-header-text">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <h1>Disposisi & Transmisi Laporan Kedinasan</h1>
-        <span class="disp-badge">API Gateway V2 Aktif</span>
       </div>
       <p>Integrasi Surat Perintah Kerja (SPK) Elektronik</p>
     </div>
@@ -105,6 +104,10 @@
             <span>Kritis (&lt; 24 Jam)</span>
           </label>
           <label class="disp-urgensi-btn">
+            <input type="radio" name="urgensi" value="tinggi">
+            <span>Tinggi (&lt; 48 Jam)</span>
+          </label>
+          <label class="disp-urgensi-btn">
             <input type="radio" name="urgensi" value="rutin">
             <span>Rutin (&lt; 7 Hari)</span>
           </label>
@@ -114,7 +117,7 @@
       <!-- Catatan -->
       <div class="jp-card disp-card">
         <label class="disp-label">Catatan Pengantar & Rekomendasi:</label>
-        <textarea id="catatan-disposisi" class="disp-textarea" rows="3">Berdasarkan hasil inspeksi computer vision, terdeteksi kerusakan struktural lubang kritis. Disarankan penanganan segera.</textarea>
+        <textarea id="catatan-disposisi" class="disp-textarea" rows="3" placeholder="Tulis catatan pengantar untuk instansi tujuan..."></textarea>
       </div>
 
       <!-- Tombol Aksi -->

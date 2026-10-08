@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Dashboard{% endblock %} | Ruang Kontraktor {{ profil.kode }} &mdash; JalanPantau</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fonts/fonts.css') }}?v={{ static_v }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dash.css') }}?v={{ static_v }}">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='28' height='28' rx='7' fill='%230F766E'/%3E%3Cpath d='M9 11h14v4H9z' M9 18h9v4H9z' fill='%23fff'/%3E%3C/svg%3E">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <script>(function(){var o=window.fetch;if(!o)return;var M={POST:1,PUT:1,PATCH:1,DELETE:1};function t(){var m=document.querySelector('meta[name="csrf-token"]');return m?m.content:"";}window.fetch=function(i,n){n=n||{};var me=String(n.method||(i&&i.method)||"GET").toUpperCase();var u=(typeof i==="string")?i:((i&&i.url)||"");var so=u.indexOf("http")!==0||u.indexOf(location.origin)===0;if(so&&M[me]){var k=t();if(k){var h=new Headers(n.headers||(i&&i.headers)||{});if(!h.has("X-CSRF-Token"))h.set("X-CSRF-Token",k);n.headers=h;}}return o.call(this,i,n);};})();</script>
+</head>
+<body class="dash">
+  <aside class="dash-sidebar" id="sidebar">
+    <div class="dash-brand">
+      <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="7" fill="#0F766E"/><path d="M9 11h14v4H9z" fill="#fff"/><path d="M9 18h9v4H9z" fill="#fff"/></svg>
+      <div>
+        <div class="dash-brand-name">JalanPantau</div>
+        <div class="dash-brand-sub">Kontraktor {{ profil.kode }}</div>
+      </div>
+    </div>
+    <nav class="dash-nav">
+      <a href="/kontraktor/dashboard" class="{{ 'aktif' if active == 'dashboard' else '' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        <span>Beranda</span>
+      </a>
+      <a href="/kontraktor/spk" class="{{ 'aktif' if active == 'spk' else '' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span>SPK Saya</span>
+      </a>
+      <a href="/kontraktor/peta" class="{{ 'aktif' if active == 'peta' else '' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 6v12h22V6H1z"/><path d="M7 18V6M7 12l5-4 5 4 5-3"/></svg>
+        <span>Peta Tugas</span>
+      </a>
+    </nav>
+    <div class="dash-sidebar-footer">
+      <div class="dash-admin-info">
+        <span class="dash-admin-name">{{ profil.nama }}</span>
+        <span class="dash-admin-role">Kontraktor {{ profil.kode }}</span>
+      </div>
+      <a href="/logout" class="dash-logout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span>Keluar</span>
+      </a>
+      <a href="/" class="dash-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        <span>Halaman Publik JalanPantau</span>
+      </a>
+    </div>
+  </aside>
+
+  <main class="dash-main">
+    {% block content %}{% endblock %}
+  </main>
+
+  <div class="toast-container" id="toast-container" aria-live="polite"></div>
+  <script src="{{ url_for('static', filename='js/dash.js') }}?v={{ static_v }}"></script>
+  <script>
+    window.jpToast = function(type, title, message) {
+      var container = document.getElementById("toast-container");
+      if (!container) return;
+      var colors = {success:"#059669", error:"#DC2626", info:"#0F766E", warning:"#D97706"};
+      var icons = {
+        success: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+        error:   '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+        info:    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+        warning: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+      };
+      var toast = document.createElement("div");
+      toast.style.cssText = "pointer-events:auto;padding:12px 16px;border-radius:8px;background:#fff;box-shadow:0 4px 16px rgba(0,0,0,.15);border-left:4px solid " + (colors[type] || colors.info) + ";display:flex;align-items:center;gap:12px;font-size:13px;min-width:280px;max-width:400px";
+      toast.innerHTML = '<span style="font-size:18px;font-weight:700;color:' + (colors[type] || colors.info) + '">' + (icons[type] || icons.info) + '</span>' +
+        '<div style="display:flex;flex-direction:column;flex:1"><span style="font-weight:600;color:#0F172A">' + (title || '') + '</span>' + (message ? '<span style="font-size:11px;color:#64748B;margin-top:2px">' + message + '</span>' : '') + '</div>';
+      container.appendChild(toast);
+      setTimeout(function() {
+        toast.style.opacity = "0";
+        toast.style.transition = "opacity .3s";
+        setTimeout(function() { toast.remove(); }, 300);
+      }, 4500);
+    };
+
+    window.jpConfirm = function(title, message, opts) {
+      opts = opts || {};
+      return new Promise(function(resolve) {
+        var existing = document.getElementById("jp-confirm-modal");
+        if (existing) existing.remove();
+        var overlay = document.createElement("div");
+        overlay.id = "jp-confirm-modal";
+        overlay.style.cssText = "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);backdrop-filter:blur(2px);";
+        var modal = document.createElement("div");
+        modal.style.cssText = "background:#fff;border-radius:12px;padding:24px;max-width:400px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2);";
+        var warna = opts.type === "danger" ? "#DC2626" : "#0F766E";
+        modal.innerHTML =
+          '<div style="font-size:16px;font-weight:600;color:#0F172A;margin-bottom:4px">' + (title || 'Konfirmasi') + '</div>' +
+          '<div style="font-size:13px;color:#64748B">' + (message + '') + '</div>' +
+          '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px">' +
+          '<button type="button" id="jp-confirm-cancel" style="padding:8px 16px;border:1px solid #E2E8F0;border-radius:8px;background:#fff;color:#64748B;font-size:13px;font-weight:500;cursor:pointer">' + (opts.cancelText || 'Batal') + '</button>' +
+          '<button type="button" id="jp-confirm-ok" style="padding:8px 16px;border:none;border-radius:8px;background:' + warna + ';color:#fff;font-size:13px;font-weight:500;cursor:pointer">' + (opts.okText || 'Ya, Lanjutkan') + '</button>' +
+          '</div>';
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+        document.getElementById("jp-confirm-ok").onclick = function() { overlay.remove(); resolve(true); };
+        document.getElementById("jp-confirm-cancel").onclick = function() { overlay.remove(); resolve(false); };
+        overlay.onclick = function(e) { if (e.target === overlay) { overlay.remove(); resolve(false); } };
+      });
+    };
+  </script>
+  {% block skrip %}{% endblock %}
+</body>
+</html>

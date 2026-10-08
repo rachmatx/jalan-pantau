@@ -72,7 +72,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>
           <span>Ringkasan Wilayah</span>
         </div>
-        <div class="jp-caps">DINAS BINA MARGA KOTA BANDUNG</div>
+        <div class="jp-caps" id="peta-dinas">Dinas Bina Marga</div>
       </div>
       <button type="button" id="toggle-drawer-btn" title="Sembunyikan / tampilkan" aria-label="Sembunyikan atau tampilkan ringkasan">−</button>
     </div>
@@ -124,7 +124,7 @@
           </div>
           <div style="display:flex;align-items:center;gap:4px;color:var(--jp-sev-h-tx);background:var(--jp-sev-h-bg);padding:2px 8px;border-radius:6px">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            <span>Geotag Valid & Kriptografis</span>
+            <span>Geotag Tersimpan</span>
           </div>
         </div>
       </div>
@@ -141,8 +141,7 @@
               <button type="button" id="foto-zoom-100" title="Ukuran Asli" style="padding:4px 8px;border:none;border-radius:6px;background:transparent;font-family:var(--jp-mono);font-size:11px;color:var(--jp-tx2);cursor:pointer">1:1</button>
               <button type="button" id="foto-zoom-fit" title="Pas Layar" style="padding:4px;border:none;border-radius:6px;background:transparent;color:var(--jp-tx2);cursor:pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg></button>
               <span style="width:1px;height:16px;background:var(--jp-line);margin:0 4px"></span>
-              <button type="button" id="foto-toggle-box" title="Toggle Box" style="display:flex;align-items:center;gap:4px;padding:2px 8px;border:none;border-radius:6px;background:var(--jp-primary);color:#fff;font-family:var(--jp-mono);font-size:11px;cursor:pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/></svg><span>Box: ON</span></button>
-              <button type="button" id="foto-toggle-clahe" title="CLAHE" style="display:flex;align-items:center;gap:4px;padding:2px 8px;border:none;border-radius:6px;background:var(--jp-container);color:var(--jp-ink);font-family:var(--jp-mono);font-size:11px;cursor:pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2"/></svg><span>CLAHE</span></button>
+              <span style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-tx2);padding:0 6px">Bingka dan label sudah dibakar ke gambar</span>
             </div>
             <!-- Top-Right Zoom Indicator -->
             <div style="position:absolute;top:8px;right:8px;z-index:20;padding:4px 8px;border-radius:6px;background:rgba(2,6,23,.8);color:#fff;backdrop-filter:blur(8px);font-family:var(--jp-mono);font-size:11px;display:flex;align-items:center;gap:4px">
@@ -185,7 +184,7 @@
           <div class="jp-card" style="overflow:hidden">
             <div style="background:var(--jp-container-low);padding:12px 16px;display:flex;align-items:center;justify-content:space-between">
               <span style="font-size:11px;font-weight:600;letter-spacing:0.05em;color:var(--jp-muted)">TABEL KLASIFIKASI KERUSAKAN</span>
-              <span style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-muted)">ISO 9001 / Bina Marga</span>
+              <span style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-muted)">Acuan Bina Marga</span>
             </div>
             <div id="foto-tabel-kerusakan" style="padding:12px;display:flex;flex-direction:column;gap:8px">
               <p class="jp-hint">Pilih marker di peta untuk melihat detail.</p>
@@ -226,8 +225,8 @@
 {% endblock %}
 
 {% block skrip %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}?v={{ static_v }}">
+<script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}?v={{ static_v }}"></script>
 <script src="{{ url_for('static', filename='js/lokasi_dinamis.js') }}?v={{ static_v }}"></script>
 <script src="{{ url_for('static', filename='js/peta.js') }}?v={{ static_v }}"></script>
 {% endblock %}

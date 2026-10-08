@@ -148,7 +148,7 @@
       {% if catatan_list %}
       <div class="dash-cat-list">
         {% for c in catatan_list %}
-        <div class="dash-cat-item"><b>{{ c.status }}</b> — {{ c.catatan }}<br><span>{{ c.waktu }}</span></div>
+        <div class="dash-cat-item"><b>{{ c.status }}</b> — {{ c.catatan }}<br><span>{{ c.waktu }}{% if c.oleh and c.oleh != '-' %} • oleh {{ c.oleh }}{% endif %}</span></div>
         {% endfor %}
       </div>
       {% endif %}
@@ -163,7 +163,27 @@
         </select>
         <textarea id="update-catatan" class="dash-select" rows="2" placeholder="Catatan penanganan..."></textarea>
         <input id="update-pj" class="dash-select" placeholder="Penanggung jawab..." value="{{ item.penanggung_jawab if item.penanggung_jawab and item.penanggung_jawab != '-' else '' }}">
-        <input id="update-foto" type="file" accept=".jpg,.jpeg,.png" class="dash-file" title="Foto sesudah penanganan (maks 5MB)">
+
+        <!-- Foto sesudah perbaikan: label terlihat + tombol unggah terpisah.
+             Sebelumnya input file hanya punya title (tooltip), sehingga
+             mudah terlewat dan status tetap tersimpan tanpa foto. -->
+        <div style="display:flex;flex-direction:column;gap:6px;padding:10px;border:1px solid var(--dash-border,var(--line));border-radius:8px">
+          <label for="update-foto" style="font-size:11px;color:var(--dash-muted);line-height:1.5">
+            Foto jalan sesudah diperbaiki
+            <span style="opacity:.75">(opsional &middot; JPG/PNG &middot; maks 5MB)</span>
+          </label>
+          <input id="update-foto" type="file" accept=".jpg,.jpeg,.png" class="dash-file">
+          <div id="foto-terpilih" style="font-size:11px;color:var(--dash-text);word-break:break-all;display:none"></div>
+          <button type="button" class="dash-btn-action" id="btn-unggah-foto" style="width:100%;display:none">Unggah Foto Saja</button>
+          <div id="foto-status" style="font-size:11px;{% if sesudah_b64 %}color:#4ade80{% else %}color:var(--dash-muted){% endif %}">
+            {%- if sesudah_b64 -%}
+            Foto sesudah sudah tersimpan. Memilih berkas baru lalu mengunggah akan menggantikannya.
+            {%- else -%}
+            Belum ada foto sesudah pada laporan ini. Unggah agar pelapor bisa melihat bukti perbaikan.
+            {%- endif -%}
+          </div>
+        </div>
+
         <button type="button" class="dash-btn-apply" onclick="updateStatus()">Simpan Perubahan</button>
       </div>
     </div>
@@ -174,8 +194,8 @@
 
 {% block skrip %}
 {% if sesi and sesi.lat and sesi.lon %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}?v={{ static_v }}">
+<script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}?v={{ static_v }}"></script>
 <script>
 (function(){
   var ll = [{{ sesi.lat }}, {{ sesi.lon }}];
@@ -192,27 +212,73 @@ window.updateStatus = function() { if (window.__kirimUpdate) window.__kirimUpdat
 {% endif %}
 <script>
 (function(){
+  var DID = {{ item.id if item else 0 }};
+  var fi = document.getElementById('update-foto');
+  var info = document.getElementById('foto-terpilih');
+  var btn = document.getElementById('btn-unggah-foto');
+  var ket = document.getElementById('foto-status');
+
+  function perbaruiPratinjau() {
+    if (!fi || !info || !btn) return;
+    var f = fi.files && fi.files[0];
+    if (!f) { info.style.display = 'none'; btn.style.display = 'none'; return; }
+    var kb = Math.max(1, Math.round(f.size / 1024));
+    var kebesaran = f.size > 5 * 1024 * 1024;
+    info.style.display = 'block';
+    info.innerHTML = 'Dipilih: <strong>' + f.name + '</strong> (' + kb + ' KB)' +
+      (kebesaran ? ' <span style="color:#f87171">melebihi 5MB, upload akan ditolak</span>' : '');
+    btn.style.display = kebesaran ? 'none' : 'block';
+  }
+
+  function unggahFoto(laluSelesai) {
+    if (!fi || !fi.files || !fi.files.length) return false;
+    var fd = new FormData();
+    fd.append('foto', fi.files[0]);
+    btn.disabled = true;
+    return fetch('/api/disposisi/' + DID + '/foto', {method: 'POST', body: fd})
+      .then(function(r) { return r.json().then(function(j) { return {ok: r.ok, j: j}; }); })
+      .then(function(res) {
+        btn.disabled = false;
+        if (!res.ok || !res.j.ok) {
+          window.jpToast('error', 'Foto Gagal', res.j.error || 'Server menolak berkas.');
+          if (ket) ket.innerHTML = '<span style="color:#f87171">Gagal mengunggah: ' +
+            (res.j.error || 'alasan tidak diketahui') + '</span>';
+          return false;
+        }
+        window.jpToast('success', 'Foto Terunggah', 'Foto sesudah tersimpan dan kini tampil di halaman detail.');
+        if (laluSelesai) location.reload();
+        else if (ket) ket.innerHTML = '<span style="color:#4ade80">Foto sesudah berhasil diunggah.</span>';
+        return true;
+      })
+      .catch(function() {
+        btn.disabled = false;
+        window.jpToast('error', 'Foto Gagal', 'Tidak ada koneksi ke server.');
+        if (ket) ket.innerHTML = '<span style="color:#f87171">Gagal mengunggah: tidak ada koneksi.</span>';
+        return false;
+      });
+  }
+
+  if (fi) fi.addEventListener('change', perbaruiPratinjau);
+  if (btn) btn.addEventListener('click', function() { return unggahFoto(false); });
+  window.__unggahFoto = function() { return unggahFoto(true); };
+
   window.__kirimUpdate = function() {
     var status = document.getElementById('update-status').value;
     var catatan = document.getElementById('update-catatan').value;
     var pjEl = document.getElementById('update-pj');
     var pj = pjEl ? pjEl.value : '';
-    fetch('/api/disposisi/{{ item.id if item else 0 }}', {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({status: status, catatan: catatan, penanggung_jawab: pj})})
+    fetch('/api/disposisi/' + DID, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({status: status, catatan: catatan, penanggung_jawab: pj})})
     .then(function(r) { return r.json(); })
     .then(function(j) {
       if (!j.ok) { window.jpToast("error", "Gagal Update", j.error || 'Unknown'); return; }
-      var fi = document.getElementById('update-foto');
       if (fi && fi.files && fi.files.length) {
-        var fd = new FormData();
-        fd.append('foto', fi.files[0]);
-        fetch('/api/disposisi/{{ item.id if item else 0 }}/foto', {method: 'POST', body: fd})
-        .then(function(r) { return r.json(); })
-        .then(function(j2) {
-          window.jpToast(j2.ok ? "success" : "warning", "Update Status", j2.ok ? 'Berhasil disimpan + foto sesudah!' : 'Status tersimpan, foto gagal: ' + (j2.error || ''));
-          location.reload();
-        })
-        .catch(function() { window.jpToast("warning", "Foto Gagal", 'Status tersimpan, foto gagal terkirim.'); location.reload(); });
-      } else { window.jpToast("success", "Berhasil", 'Status berhasil diupdate!'); location.reload(); }
+        // Status sudah aman; unggah foto lalu muat ulang.
+        return unggahFoto(true).then(function(okFoto) {
+          if (!okFoto) window.jpToast("warning", "Status Tersimpan", 'Status berhasil, tetapi foto gagal diunggah.');
+        });
+      }
+      window.jpToast("success", "Berhasil", 'Status berhasil diupdate!');
+      location.reload();
     })
     .catch(function() { window.jpToast("error", "Gagal", 'Gagal mengupdate status.'); });
   };

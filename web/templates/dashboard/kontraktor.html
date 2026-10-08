@@ -1,0 +1,171 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Kontraktor{% endblock %}
+
+{% block content %}
+<div class="dash-header">
+  <div>
+    <h1 class="dash-title">Kontraktor Mitra Kerja</h1>
+    <p class="dash-subtitle">Daftar penerima SPK. Data awal berasal dari <span style="font-family:var(--dash-mono)">config/kontraktor.yaml</span> dan dapat disunting di sini.</p>
+  </div>
+  <div class="dash-head-right">
+    <a href="/pupr-{{ daerah }}/dashboard/spk" class="dash-btn-action">Kelola SPK</a>
+  </div>
+</div>
+
+<div class="dash-detail-grid">
+  <div class="dash-card">
+    <div class="dash-card-head">
+      <h2>Daftar Kontraktor</h2>
+      <span style="font-size:11px;color:var(--dash-muted)">{{ daftar|length }} badan usaha</span>
+    </div>
+    <div class="dash-table-wrap">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th>Kode</th><th>Badan Usaha</th><th>Bidang</th><th>Akun Login</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for k in daftar %}
+          {% set akun = akun_list|selectattr('kontraktor_id', 'equalto', k.id)|list %}
+          <tr>
+            <td><span class="dash-tiket">{{ k.kode }}</span></td>
+            <td>{{ k.nama }}
+              <span class="dash-kpi-label" style="display:block;text-transform:none;letter-spacing:0">{{ k.alamat }}</span></td>
+            <td>{{ k.bidang }}</td>
+            <td>
+              {% if akun %}
+                {% for a in akun %}
+                <div>{{ a.username }}
+                  {% if a.sandi_diatur %}
+                  <span class="badge-status status-selesai">siap</span>
+                  {% else %}
+                  <span class="badge-status status-diterbitkan">disegel</span>
+                  {% endif %}
+                </div>
+                {% endfor %}
+              {% else %}
+              <span style="color:var(--dash-muted)">belum ada</span>
+              {% endif %}
+            </td>
+            <td>{% if k.is_active %}
+              <span class="badge-status status-selesai">Aktif</span>
+              {% else %}
+              <span class="badge-status status-dibatalkan">Nonaktif</span>
+              {% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="dash-card">
+    <div class="dash-card-head"><h2>{{ 'Tambah' if not superadmin else 'Kelola' }} Kontraktor</h2></div>
+    <div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px">
+      <div>
+        <label class="dash-kpi-label" for="f-kode">KODE</label>
+        <input type="text" id="f-kode" class="dash-select" style="width:100%;margin-top:4px" placeholder="KT-006">
+      </div>
+      <div>
+        <label class="dash-kpi-label" for="f-nama">NAMA BADAN USAHA</label>
+        <input type="text" id="f-nama" class="dash-select" style="width:100%;margin-top:4px" placeholder="CV. Contoh Karya">
+      </div>
+      <div>
+        <label class="dash-kpi-label" for="f-alamat">ALAMAT</label>
+        <input type="text" id="f-alamat" class="dash-select" style="width:100%;margin-top:4px">
+      </div>
+      <div class="dash-ba-grid">
+        <div>
+          <label class="dash-kpi-label" for="f-telepon">TELEPON</label>
+          <input type="text" id="f-telepon" class="dash-select" style="width:100%;margin-top:4px">
+        </div>
+        <div>
+          <label class="dash-kpi-label" for="f-email">EMAIL</label>
+          <input type="text" id="f-email" class="dash-select" style="width:100%;margin-top:4px">
+        </div>
+      </div>
+      <div>
+        <label class="dash-kpi-label" for="f-bidang">BIDANG PEKERJAAN</label>
+        <input type="text" id="f-bidang" class="dash-select" style="width:100%;margin-top:4px">
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer">
+        <input type="checkbox" id="f-aktif" checked> Aktif (boleh dipilih pada SPK)
+      </label>
+      <button type="button" class="dash-btn-apply" id="btn-simpan" style="width:100%;height:40px">Simpan Kontraktor</button>
+      <p class="dash-hint" style="margin:0">Menyimpan memakai kode sebagai kunci: kode yang sudah ada akan diperbarui, bukan diduplikasi.</p>
+    </div>
+  </div>
+</div>
+
+{% if superadmin %}
+<div class="dash-card" style="margin-top:18px">
+  <div class="dash-card-head">
+    <h2>Sandi Akun Kontraktor</h2>
+    <span style="font-size:11px;color:var(--dash-muted)">Hanya superadmin</span>
+  </div>
+  <div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px">
+    <div>
+      <label class="dash-kpi-label" for="s-username">USERNAME</label>
+      <input type="text" id="s-username" class="dash-select" style="width:100%;margin-top:4px" placeholder="kt_mitrakarya">
+    </div>
+    <div>
+      <label class="dash-kpi-label" for="s-sandi">SANDI BARU (MIN. 8 KARAKTER)</label>
+      <input type="password" id="s-sandi" class="dash-select" style="width:100%;margin-top:4px" autocomplete="new-password">
+    </div>
+    <button type="button" class="dash-btn-apply" id="btn-sandi" style="width:100%;height:40px">Atur Sandi</button>
+    <p class="dash-hint" style="margin:0">Akun berlabel <b>disegel</b> memakai sandi acak tak-tertebak dan belum bisa login sampai sandi diatur di sini.</p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block skrip %}
+<script>
+(function(){
+  function esc(v){ return String(v == null ? "" : v).replace(/[&<>"'`=]/g, function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;","`":"&#96;","=":"&#61;"}[c]; }); }
+  function nilai(id){ return (document.getElementById(id).value || "").trim(); }
+
+  document.getElementById("btn-simpan").addEventListener("click", function(){
+    var kode = nilai("f-kode"), nama = nilai("f-nama");
+    if (!kode || !nama){
+      window.jpToast("error", "Kurang isian", "Kode dan nama badan usaha wajib diisi.");
+      return;
+    }
+    fetch("/api/kontraktor", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        kode: kode, nama: nama, alamat: nilai("f-alamat"), telepon: nilai("f-telepon"),
+        email: nilai("f-email"), bidang: nilai("f-bidang"),
+        aktif: document.getElementById("f-aktif").checked
+      })
+    }).then(function(r){ return r.json().then(function(j){ return {ok: r.ok, j: j}; }); })
+      .then(function(res){
+        if (!res.ok){ window.jpToast("error", "Gagal", res.j.error || "Tidak dapat menyimpan."); return; }
+        window.jpToast("success", "Tersimpan", "Kontraktor disimpan. Muat ulang untuk melihat daftar.");
+      })
+      .catch(function(){ window.jpToast("error", "Gagal", "Kesalahan jaringan."); });
+  });
+
+  var bs = document.getElementById("btn-sandi");
+  if (bs) bs.addEventListener("click", function(){
+    var u = nilai("s-username"), s = nilai("s-sandi");
+    if (!u || s.length < 8){
+      window.jpToast("error", "Kurang isian", "Username wajib dan sandi minimal 8 karakter.");
+      return;
+    }
+    fetch("/api/kontraktor/sandi", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({username: u, sandi: s})
+    }).then(function(r){ return r.json().then(function(j){ return {ok: r.ok, j: j}; }); })
+      .then(function(res){
+        if (!res.ok){ window.jpToast("error", "Gagal", res.j.error || "Tidak dapat menyimpan."); return; }
+        window.jpToast("success", "Tersimpan", "Sandi akun kontraktor diperbarui.");
+        document.getElementById("s-sandi").value = "";
+      })
+      .catch(function(){ window.jpToast("error", "Gagal", "Kesalahan jaringan."); });
+  });
+})();
+</script>
+{% endblock %}

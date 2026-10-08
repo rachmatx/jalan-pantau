@@ -20,6 +20,7 @@ for f in list(TPL.rglob("*.html")):
 # ID yang dibuat dinamis oleh JS sendiri (innerHTML) — bukan dari template
 DINAMIS = {
     "pag-prev", "pag-next",  # riwayat.js renderPaginasi() via innerHTML
+    "d-pag-prev", "d-pag-next",  # riwayat.js renderTabelTemuan() via innerHTML
     "gps-notif",  # peta.js buatMarkerGPS()/notif dibuat via createElement
 }
 # ID opsional: JS meng-guard dengan if(getElementById(...)) sehingga boleh
@@ -28,6 +29,7 @@ OPSIONAL = {
     "sidebar-toggle", "sidebar",
     "peta-navigate-terdekat",  # di dalam kartu terdekat, dicek if(btnNavTerdekat)
     "d-total",  # guarded if(dTotal) di riwayat.js (kini ada, tapi tetap toleran)
+    "btn-toggle-osd", "live-osd",  # OSD live lama sudah dihapus dari template; live.js meng-guard
 }
 
 gagal = 0

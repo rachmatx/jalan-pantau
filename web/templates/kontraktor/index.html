@@ -1,0 +1,157 @@
+{% extends "kontraktor/base.html" %}
+{% block title %}Beranda{% endblock %}
+
+{% block content %}
+<div class="dash-header">
+  <div>
+    <h1 class="dash-title">Ruang Kerja {{ profil.nama }}</h1>
+    <p class="dash-subtitle">Kode {{ profil.kode }} &mdash; {{ profil.bidang }}</p>
+  </div>
+  <div class="dash-head-right">
+    <a href="/kontraktor/spk" class="dash-btn-secondary">Semua SPK</a>
+    <a href="/kontraktor/peta" class="dash-btn-secondary">Peta Tugas</a>
+    <a href="/kontraktor/dashboard" class="dash-btn-action">Segarkan</a>
+  </div>
+</div>
+
+<div class="dash-kpis">
+  <div class="dash-kpi kpi-total">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Total SPK</span><strong class="dash-kpi-val">{{ stats.total }}</strong></div>
+  </div>
+  <div class="dash-kpi kpi-proses">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Belum Diterima</span><strong class="dash-kpi-val">{{ stats.status.Diterbitkan }}</strong></div>
+  </div>
+  <div class="dash-kpi kpi-baru">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-6l-2 3h-4l-2-3H2"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Sedang Dikerjakan</span><strong class="dash-kpi-val">{{ stats.status.Diterima + stats.status.Dikerjakan }}</strong></div>
+  </div>
+  <div class="dash-kpi kpi-selesai">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">SPK Selesai</span><strong class="dash-kpi-val">{{ stats.status.Selesai }}</strong></div>
+  </div>
+  <div class="dash-kpi kpi-biaya">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0116 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Titik Selesai</span><strong class="dash-kpi-val">{{ stats.n_tugas_selesai }}/{{ stats.n_tugas }}</strong></div>
+  </div>
+</div>
+
+<div class="dash-card" id="ringkasan-spk" style="margin-top:18px">
+  <div class="dash-card-head">
+    <h2>SPK Terbaru</h2>
+    <span style="font-size:11px;color:var(--dash-muted)">
+      Menampilkan {{ items|length }} dari {{ total_spk }} SPK</span>
+  </div>
+  <div class="dash-filter-bar" style="margin:10px 12px;border:none;padding:0">
+    <div class="dash-filter-group">
+      <button type="button" class="dash-filter-btn aktif" data-f="semua">Semua</button>
+      <button type="button" class="dash-filter-btn" data-f="Diterbitkan">Baru</button>
+      <button type="button" class="dash-filter-btn" data-f="Diterima">Diterima</button>
+      <button type="button" class="dash-filter-btn" data-f="Dikerjakan">Dikerjakan</button>
+      <button type="button" class="dash-filter-btn" data-f="Selesai">Selesai</button>
+    </div>
+  </div>
+
+  {% if items %}
+  <div class="dash-table-wrap">
+    <table class="dash-table">
+      <thead>
+        <tr>
+          <th>Nomor SPK</th>
+          <th>Judul Pekerjaan</th>
+          <th>Prioritas</th>
+          <th>Tenggat</th>
+          <th>Progres Titik</th>
+          <th>Status</th>
+          <th style="text-align:right">Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="spk-tbody">
+        {% for s in items %}
+        <tr data-status="{{ s.status }}">
+          <td><span class="dash-tiket">{{ s.nomor }}</span>
+            <span class="dash-kpi-label" style="display:block;text-transform:none;letter-spacing:0">{{ s.daerah }}</span></td>
+          <td>{{ s.judul }}</td>
+          <td><span class="urgency urgency-{{ s.prioritas|lower }}">{{ s.prioritas }}</span></td>
+          <td class="tenggat" data-tenggat="{{ s.tenggat or '' }}">-</td>
+          <td>{{ s.n_tugas_selesai }}/{{ s.n_tugas }}</td>
+          <td><span class="badge-status status-{{ s.status|lower }}">{{ s.status }}</span></td>
+          <td style="text-align:right">
+            <a class="dash-btn-detail" href="/kontraktor/spk/{{ s.id }}">Buka</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="dash-hint" id="spk-info" aria-live="polite"></p>
+  {% if total_spk > items|length %}
+  <p class="dash-hint" style="padding:0 14px 14px">
+    <a class="dash-btn-detail" href="/kontraktor/spk">Lihat semua {{ total_spk }} SPK</a>
+  </p>
+  {% endif %}
+  {% else %}
+  <p class="dash-empty">
+    Belum ada SPK yang ditugaskan kepada {{ profil.nama }}.<br>
+    Daftar akan terisi setelah dinas menerbitkan SPK.
+  </p>
+  {% endif %}
+</div>
+
+<div class="dash-card" style="margin-top:18px">
+  <div class="dash-card-head"><h2>Profil Kontraktor</h2></div>
+  <div style="padding:12px 14px">
+    <div class="dash-ba-grid">
+      <div><span class="dash-kpi-label">BADAN USAHA</span><div>{{ profil.perusahaan }}</div></div>
+      <div><span class="dash-kpi-label">KODE</span><div>{{ profil.kode }}</div></div>
+      <div><span class="dash-kpi-label">BIDANG PEKERJAAN</span><div>{{ profil.bidang }}</div></div>
+      <div><span class="dash-kpi-label">TELEPON</span><div>{{ profil.telepon }}</div></div>
+    </div>
+    <div style="margin-top:10px">
+      <span class="dash-kpi-label">ALAMAT</span>
+      <div style="font-size:13px">{{ profil.alamat }}</div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block skrip %}
+<script>
+(function(){
+  var baris = Array.prototype.slice.call(document.querySelectorAll("#spk-tbody tr"));
+  var info = document.getElementById("spk-info");
+
+  function fmtTenggat(teks) {
+    if (!teks) return "-";
+    var d = new Date(teks);
+    if (isNaN(d.getTime())) return "-";
+    return d.toLocaleDateString("id-ID", {day: "2-digit", month: "short", year: "numeric"});
+  }
+  baris.forEach(function(tr){
+    var sel = tr.querySelector(".tenggat");
+    if (sel) sel.textContent = fmtTenggat(sel.dataset.tenggat);
+  });
+
+  var tampil = baris.length;
+  function saring(f){
+    var n = 0;
+    baris.forEach(function(tr){
+      var ok = f === "semua" || tr.dataset.status === f;
+      tr.style.display = ok ? "" : "none";
+      if (ok) n++;
+    });
+    tampil = n;
+    if (info) info.textContent = "Menampilkan " + n + " dari " + baris.length + " SPK.";
+  }
+  document.querySelectorAll(".dash-filter-btn").forEach(function(b){
+    b.addEventListener("click", function(){
+      document.querySelectorAll(".dash-filter-btn").forEach(function(o){ o.classList.remove("aktif"); });
+      b.classList.add("aktif");
+      saring(b.dataset.f);
+    });
+  });
+  saring("semua");
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,127 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Detail SPK{% endblock %}
+
+{% block content %}
+<div class="dash-header">
+  <div>
+    <h1 class="dash-title">{{ item.nomor }}</h1>
+    <p class="dash-subtitle">{{ item.judul }} &mdash; {{ item.kontraktor_nama }}</p>
+  </div>
+  <div class="dash-head-right">
+    <span class="badge-status status-{{ item.status|lower }}">{{ item.status }}</span>
+    <a href="/pupr-{{ daerah }}/dashboard/spk" class="dash-btn-action">Semua SPK</a>
+  </div>
+</div>
+
+<div class="dash-ba-grid" style="margin-bottom:12px">
+  <div><span class="dash-kpi-label">KONTRAKTOR</span><div>{{ item.kontraktor_nama }} ({{ item.kontraktor_kode }})</div></div>
+  <div><span class="dash-kpi-label">PRIORITAS</span>
+    <div><span class="urgency urgency-{{ item.prioritas|lower }}">{{ item.prioritas }}</span></div></div>
+  <div><span class="dash-kpi-label">TENGGAT</span><div>{{ item.tenggat or '-' }}</div></div>
+  <div><span class="dash-kpi-label">DITERBITKAN OLEH</span><div>{{ item.dibuat_oleh }}</div></div>
+  <div><span class="dash-kpi-label">DITERIMA</span><div>{{ item.diterima_pada or '-' }}</div></div>
+  <div><span class="dash-kpi-label">SELESAI</span><div>{{ item.selesai_pada or '-' }}</div></div>
+</div>
+
+{% if item.catatan_dinas and item.catatan_dinas != '-' %}
+<div class="dash-card" style="padding:10px 14px;margin-bottom:12px;background:#EFF6FF;border:1px solid #BFDBFE">
+  <span style="font-size:12px;color:#1E3A8A"><b>Instruksi dinas:</b> {{ item.catatan_dinas }}</span>
+</div>
+{% endif %}
+{% if item.catatan_kontraktor and item.catatan_kontraktor != '-' %}
+<div class="dash-card" style="padding:10px 14px;margin-bottom:12px;background:#ECFDF5;border:1px solid #A7F3D0">
+  <span style="font-size:12px;color:#065F46"><b>Laporan kontraktor:</b> {{ item.catatan_kontraktor }}</span>
+</div>
+{% endif %}
+
+<div class="dash-card" style="margin-bottom:12px">
+  <div class="dash-card-head">
+    <h2>Peta Titik Kerja</h2>
+    <span id="peta-info" style="font-size:11px;color:var(--dash-muted)"></span>
+  </div>
+  <div id="spk-peta" class="spk-map"></div>
+</div>
+
+<div class="dash-card">
+  <div class="dash-card-head">
+    <h2>Titik Pekerjaan ({{ tugas|length }})</h2>
+    <span style="font-size:11px;color:var(--dash-muted)">Dilaporkan oleh kontraktor</span>
+  </div>
+  {% if tugas %}
+  <div class="dash-table-wrap">
+    <table class="dash-table">
+      <thead>
+        <tr><th>No. Tiket</th><th>Lokasi</th><th>Urgensi</th><th>Status</th><th>Foto Bukti</th><th>Catatan</th></tr>
+      </thead>
+      <tbody>
+        {% for t in tugas %}
+        <tr>
+          <td><span class="dash-tiket">{{ t.bap_nomor }}</span></td>
+          <td>{{ t.lokasi }}
+            <span class="dash-kpi-label" style="display:block;text-transform:none;letter-spacing:0">
+              {% if t.lat and t.lon %}{{ '%.5f'|format(t.lat) }}, {{ '%.5f'|format(t.lon) }}{% else %}tanpa koordinat{% endif %}
+            </span></td>
+          <td><span class="urgency urgency-{{ t.urgensi|lower }}">{{ t.urgensi }}</span></td>
+          <td><span class="badge-status status-{{ t.status|lower }}">{{ t.status }}</span></td>
+          <td>
+            {% if t.foto_selesai %}
+            <a class="dash-btn-detail" target="_blank" rel="noopener"
+               href="/api/kontraktor/spk/{{ item.id }}/tugas/{{ t.id }}/foto">Lihat foto</a>
+            {% else %}
+            <span style="color:var(--dash-muted)">belum ada</span>
+            {% endif %}
+          </td>
+          <td>{{ t.catatan if t.catatan != '-' else '-' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="dash-empty">SPK ini tidak memiliki titik pekerjaan.</p>
+  {% endif %}
+</div>
+
+<div class="dash-card" style="margin-top:12px">
+  <div class="dash-card-head"><h2>Riwayat Aktivitas</h2></div>
+  {% if catatan_list %}
+  <div class="timeline" style="padding:12px 14px">
+    {% for c in catatan_list %}
+    <div class="timeline-item">
+      <div style="font-size:13px;font-weight:600">{{ c.status }}</div>
+      <div style="font-size:12px;color:var(--dash-muted)">{{ c.catatan }}</div>
+      <div style="font-size:11px;color:var(--dash-muted)">{{ c.waktu }} &mdash; {{ c.oleh }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="dash-empty">Belum ada riwayat.</p>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block skrip %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}?v={{ static_v }}">
+<script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}?v={{ static_v }}"></script>
+<script src="{{ url_for('static', filename='js/kontraktor_peta.js') }}?v={{ static_v }}"></script>
+<script>
+(function(){
+  var TITIK = [
+    {% for t in tugas %}
+    {id: {{ t.id }}, lat: {{ 'null' if t.lat is none else t.lat }},
+     lon: {{ 'null' if t.lon is none else t.lon }},
+     lokasi: {{ (t.lokasi or '-')|tojson }}, bap_nomor: {{ (t.bap_nomor or '-')|tojson }},
+     urgensi: {{ (t.urgensi or '-')|tojson }}, status: {{ (t.status or 'Menunggu')|tojson }},
+     n_temuan: {{ t.n_temuan|int }}, total_rp: {{ t.total_rp|int }},
+     punya_foto: {{ (t.foto_selesai is not none)|tojson }}}
+    {{ "," if not loop.last }}
+    {% endfor %}
+  ];
+  var peta = SPKPeta.buatPeta("spk-peta", TITIK, {
+    urlFoto: "/api/kontraktor/spk/{{ item.id }}/tugas/"
+  });
+  var info = document.getElementById("peta-info");
+  if (info) info.textContent = (peta ? peta.jumlahTitik() : 0) + " titik ditampilkan";
+})();
+</script>
+{% endblock %}

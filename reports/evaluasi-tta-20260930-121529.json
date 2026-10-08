@@ -1,0 +1,15 @@
+{
+  "model": "best_yolo11s.pt",
+  "imgsz": 960,
+  "conf": 0.25,
+  "tta": true,
+  "n_gambar": 40,
+  "tp": 52,
+  "fp": 91,
+  "fn": 23,
+  "precision": 0.3636,
+  "recall": 0.6933,
+  "f1": 0.4771,
+  "detik_per_gambar": 4.974,
+  "dibuat": "2026-09-30T12:15:29"
+}

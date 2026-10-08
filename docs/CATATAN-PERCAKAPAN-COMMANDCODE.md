@@ -406,18 +406,21 @@ Remove-Item -Recurse -Force app/__pycache__
 web/
 ├── app.py                    # Routes + API
 ├── database.py               # Database schema + queries
-├── deteksi.py                # YOLO inference
-├── laporan.py                # PDF generation
+├── deteksi.py                # YOLO inference + severity + biaya
+├── streaming.py              # StreamManager (live MJPEG + ByteTrack)
 ├── static/
 │   ├── css/
-│   │   ├── civic.css         # Main styles
-│   │   └── dashboard.css     # Dashboard styles
+│   │   ├── civic.css         # Main styles (tema aktif)
+│   │   ├── dash.css          # Dashboard styles
+│   │   └── style.css         # Legacy (dimuat sebelum civic.css)
 │   └── js/
 │       ├── deteksi.js        # Detection logic
+│       ├── live.js           # Live streaming logic
 │       ├── peta.js           # Map + GPS
 │       ├── riwayat.js        # History + modal
 │       ├── disposisi.js      # Disposisi form
-│       ├── dashboard.js      # Dashboard logic
+│       ├── dash.js           # Dashboard logic
+│       ├── gps.js, zoom.js   # Utilitas GPS & zoom viewer
 │       └── lokasi_dinamis.js # Location helper
 └── templates/
     ├── base.html             # Main layout
@@ -428,14 +431,19 @@ web/
     ├── disposisi_kirim.html  # Send report
     ├── disposisi_detail.html # Report tracking
     ├── kalibrasi.html        # Calibration
-    ├── mobile.html           # Mobile view
+    ├── mobile.html           # Mobile view (mockup demo)
     ├── laporan_preview.html  # PDF preview
+    ├── login.html            # Login admin
+    ├── error/429.html        # Rate-limit error page
     └── dashboard/
         ├── base.html         # Dashboard layout
         ├── index.html        # Dashboard home
         ├── disposisi.html    # Report list
-        └── disposisi_detail.html  # Report detail
+        ├── disposisi_detail.html  # Report detail
+        ├── instansi.html     # Instansi management
+        └── 404.html          # Daerah not-found
 ```
+Catatan: `app/laporan.py` (bukan `web/`) berisi generator PDF.
 
 ---
 

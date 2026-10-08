@@ -3,6 +3,15 @@
 // Gunakan sistem lokasi dari lokasi_dinamis.js
 var lokasiDef = LOKASI.getDefault();
 var lokasiAktif = lokasiDef.key;
+
+// Label instansi di drawer mengikuti lokasi aktif (bukan teks statis).
+function updateDinasLabel() {
+  var el = document.getElementById("peta-dinas");
+  if (!el) return;
+  var d = LOKASI.DAERAH[lokasiAktif];
+  el.textContent = (d && d.instansi && d.instansi.utama) ? d.instansi.utama : "Dinas Bina Marga";
+}
+updateDinasLabel();
 var defaultLl = lokasiDef.data.ll;
 var defaultZoom = lokasiDef.data.zoom;
 
@@ -103,6 +112,7 @@ window.gantiLokasiDefault = function(key) {
     lokasiAktif = key;
     var d = LOKASI.DAERAH[key];
     map.setView(d.ll, d.zoom);
+    updateDinasLabel();
     return true;
   }
   return false;
@@ -477,3 +487,109 @@ fetch("/api/peta")
     document.getElementById("peta-hitung").textContent = "Gagal memuat titik.";
     document.getElementById("peta-kosong").hidden = false;
   });
+
+/* ==========================================================================
+   Viewer zoom modal foto bukti (#foto-viewport / #foto-img).
+   Terpisah dari zoom.js karena modal peta dibuka lewat JS sehingga
+   tidak terdeteksi querySelectorAll saat halaman dimuat.
+
+   Tombol "Box: ON" dan "CLAHE" yang pernah ada DIHAPUS, bukan di-wire:
+   - Bingkai + label sudah dibakar ke dalam JPEG di server
+     (web/deteksi.py: anotasi_dari_rows), jadi tidak ada lapisan yang bisa
+     dimunculkan/diunyikan.
+   - CLAHE sudah diterapkan saat deteksi bila mode malam aktif
+     (deteksi.py: cerahkan_malam), jadi tombol browser-side akan
+     menyesatkan: transform-nya beda dari yang dipakai pipeline.
+   ========================================================================== */
+(function () {
+  var vp = document.getElementById("foto-viewport");
+  var img = document.getElementById("foto-img");
+  var lvl = document.getElementById("foto-zoom-level");
+  if (!vp || !img) return;
+
+  var STEP = 1.4, MIN = 0.2, MAX = 12;
+  var scale = 1, tx = 0, ty = 0, dragging = false, moved = false;
+  var start = null;
+
+  function terapkan() {
+    img.style.transformOrigin = "center center";
+    img.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + scale + ")";
+    img.style.transition = dragging ? "none" : "transform .12s ease";
+    if (lvl) lvl.textContent = Math.round(scale * 100) + "%";
+  }
+
+  function adaGambar() { return !!(img.getAttribute("src")); }
+
+  function zum(faktor, cx, cy) {
+    if (!adaGambar()) return;
+    var next = Math.min(MAX, Math.max(MIN, scale * faktor));
+    if (next === scale) return;
+    var r = vp.getBoundingClientRect();
+    var px = cx === undefined ? r.width / 2 : cx - r.left;
+    var py = cy === undefined ? r.height / 2 : cy - r.top;
+    var k = next / (scale || 1);
+    tx = px - (px - tx) * k;
+    ty = py - (py - ty) * k;
+    scale = next;
+    terapkan();
+  }
+
+  function pasLayar() { scale = 1; tx = 0; ty = 0; terapkan(); }
+  function ukuranAsli() {
+    scale = 1; tx = 0; ty = 0; terapkan();
+    vp.scrollLeft = 0;
+    vp.scrollTop = 0;
+  }
+
+  var petaTombol = {
+    "foto-zoom-in": function () { zum(STEP); },
+    "foto-zoom-out": function () { zum(1 / STEP); },
+    "foto-zoom-100": ukuranAsli,
+    "foto-zoom-fit": pasLayar
+  };
+  Object.keys(petaTombol).forEach(function (id) {
+    var b = document.getElementById(id);
+    if (b) b.addEventListener("click", function (e) { e.preventDefault(); petaTombol[id](); });
+  });
+
+  vp.addEventListener("wheel", function (e) {
+    if (!adaGambar()) return;
+    e.preventDefault();
+    zum(e.deltaY < 0 ? STEP : 1 / STEP, e.clientX, e.clientY);
+  }, { passive: false });
+
+  vp.addEventListener("pointerdown", function (e) {
+    if (e.target.closest("button") || e.button !== 0 || !adaGambar()) return;
+    dragging = true; moved = false;
+    start = { x: e.clientX, y: e.clientY, ox: tx, oy: ty };
+    vp.style.cursor = "grabbing";
+    try { vp.setPointerCapture(e.pointerId); } catch (err) { /* pointer sintetis */ }
+  });
+  vp.addEventListener("pointermove", function (e) {
+    if (!dragging || !start) return;
+    var dx = e.clientX - start.x, dy = e.clientY - start.y;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+    tx = start.ox + dx; ty = start.oy + dy;
+    terapkan();
+  });
+  function berhenti() {
+    if (!dragging) return;
+    dragging = false; start = null; vp.style.cursor = "";
+  }
+  vp.addEventListener("pointerup", berhenti);
+  vp.addEventListener("pointercancel", berhenti);
+  vp.addEventListener("dblclick", function (e) {
+    if (e.target.closest("button") || !adaGambar()) return;
+    zum(STEP, e.clientX, e.clientY);
+  });
+  vp.addEventListener("keydown", function (e) {
+    if (e.key === "+" || e.key === "=") { e.preventDefault(); zum(STEP); }
+    else if (e.key === "-" || e.key === "_") { e.preventDefault(); zum(1 / STEP); }
+    else if (e.key === "0") { e.preventDefault(); pasLayar(); }
+    else if (e.key === "1") { e.preventDefault(); ukuranAsli(); }
+  });
+
+  // Gambar baru dimuat -> kembali ke pas-layar.
+  img.addEventListener("load", function () { pasLayar(); });
+  terapkan();
+})();

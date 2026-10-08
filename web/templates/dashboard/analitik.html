@@ -1,0 +1,59 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Analitik{% endblock %}
+
+{% block content %}
+<div class="dash-header">
+  <div>
+    <h1 class="dash-title">Analitik Kerapatan Kerusakan &mdash; {{ nama_daerah }}</h1>
+    <p class="dash-subtitle">Kerapatan temuan per sel (~1,1 km) dari laporan yang masuk</p>
+  </div>
+</div>
+
+<div class="dash-card" style="padding:10px 14px;margin-bottom:12px;background:#FFFBEB;border:1px solid #FDE68A">
+  <span style="font-size:12px;color:#78350F">
+    Catatan: ini <b>indeks kerapatan internal</b> dari laporan JalanPantau &mdash;
+    <b>bukan IKJ resmi Bina Marga</b>. Nilainya bergantung pada jumlah laporan yang masuk,
+    bukan hasil survei kondisi jalan resmi.
+  </span>
+</div>
+
+<div class="dash-kpis">
+  <div class="dash-kpi kpi-total">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Sel Kerapatan</span><strong class="dash-kpi-val" id="an-sel">0</strong></div>
+  </div>
+  <div class="dash-kpi kpi-baru">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Total Temuan</span><strong class="dash-kpi-val" id="an-temuan">0</strong></div>
+  </div>
+  <div class="dash-kpi kpi-selesai">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Estimasi Indeks Biaya</span><strong class="dash-kpi-val" id="an-biaya" style="font-size:17px">Rp0</strong></div>
+  </div>
+  <div class="dash-kpi kpi-proses">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l10 18H2z"/><path d="M12 10v5m0 3v.5"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Sel Bertemuan Berat</span><strong class="dash-kpi-val" id="an-berat">0</strong></div>
+  </div>
+</div>
+
+<div class="dash-card">
+  <div class="dash-card-head">
+    <h2>Peta Kerapatan Kerusakan</h2>
+    <span id="an-peta-info" style="font-size:12px;color:var(--dash-muted)">Memuat&hellip;</span>
+  </div>
+  <div id="an-peta" class="dash-map" style="height:460px"></div>
+  <div class="dash-head-right" style="padding:8px 14px;gap:10px">
+    <span style="font-size:11px;color:var(--dash-muted)">KERAPATAN:</span>
+    <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px"><i style="width:12px;height:12px;border-radius:3px;background:#ECFDF5;display:inline-block"></i>rendah</span>
+    <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px"><i style="width:12px;height:12px;border-radius:3px;background:#FDE68A;display:inline-block"></i>sedang</span>
+    <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px"><i style="width:12px;height:12px;border-radius:3px;background:#DC2626;display:inline-block"></i>tinggi</span>
+  </div>
+</div>
+{% endblock %}
+
+{% block skrip %}
+<script>window.__DAERAH__ = "{{ daerah }}";</script>
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}?v={{ static_v }}">
+<script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}?v={{ static_v }}"></script>
+<script src="{{ url_for('static', filename='js/analitik.js') }}?v={{ static_v }}"></script>
+{% endblock %}

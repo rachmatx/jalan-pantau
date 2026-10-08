@@ -26,6 +26,22 @@ const btnBerhenti = document.getElementById("berhenti");
 let polling = null;
 let snapshot = null;
 
+// Token kepemilikan stream. Server hanya punya SATU StreamManager untuk
+// seluruh aplikasi, jadi tanpa token ini tab kedua bisa mematikan atau
+// merebut stream milik tab pertama. Diterima dari setiap jawaban start
+// yang berhasil, dan dikirim balik pada stop/anotasi/snapshot.
+let streamToken = null;
+
+// Bungkus body JSON + token. Wrapper fetch global di base.html sudah
+// menambahkan header CSRF untuk metode mutasi, jadi ini hanya body-nya.
+function jsonBody(extra) {
+  return {
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(Object.assign({ token: streamToken }, extra || {})),
+  };
+}
+
+
 confLive.addEventListener("input", () => {
   confLiveOut.textContent = Number(confLive.value).toFixed(2).replace(".", ",");
 });
@@ -104,7 +120,7 @@ async function mulai() {
   snapshot = null;
   // Hentikan stream yang sedang berjalan sebelum mulai yang baru
   if (polling) { clearInterval(polling); polling = null; }
-  await fetch("/api/stream/stop", { method: "POST" }).catch(() => {});
+  await fetch("/api/stream/stop", { method: "POST", ...jsonBody() }).catch(() => {});
   try {
     if (sumber.value === "file") {
       const berkas = document.getElementById("video").files[0];
@@ -116,9 +132,11 @@ async function mulai() {
       data.append("frame_skip", document.getElementById("skip").value);
       if (performaLive()) data.append("performa", performaLive());
       if (document.getElementById("malam-live").checked) data.append("malam", "1");
+      if (streamToken) data.append("token", streamToken);
       const up = await fetch("/api/video", { method: "POST", body: data });
       const jup = await up.json();
       if (!up.ok) throw new Error(jup.error || "Upload gagal.");
+      streamToken = jup.token || null;
     } else {
       const target = sumber.value === "webcam"
         ? Number(document.getElementById("webcam-idx").value)
@@ -132,10 +150,12 @@ async function mulai() {
           frame_skip: document.getElementById("skip").value,
           performa: performaLive(),
           malam: document.getElementById("malam-live").checked,
+          token: streamToken,
         }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Gagal membuka stream.");
+      streamToken = json.token || null;
     }
     slotLive.classList.remove("kosong");
     // Cache-buster: timestamp untuk force browser fetch stream baru
@@ -155,7 +175,7 @@ async function mulai() {
 async function hentikan(manual = true) {
   if (polling) { clearInterval(polling); polling = null; }
   if (manual) {
-    await fetch("/api/stream/stop", { method: "POST" }).catch(() => {});
+    await fetch("/api/stream/stop", { method: "POST", ...jsonBody() }).catch(() => {});
     statusLive.textContent = "Stream berhenti. Ambil snapshot untuk laporan, atau mulai lagi.";
   }
   btnMulai.disabled = false;
@@ -167,7 +187,7 @@ async function hentikan(manual = true) {
 
 async function ambilSnapshot() {
   try {
-    const res = await fetch("/api/stream/snapshot", { method: "POST" });
+    const res = await fetch("/api/stream/snapshot", { method: "POST", ...jsonBody() });
     const json = await res.json();
     if (!res.ok) {
       if (!hasilLive.hidden) return;
@@ -200,10 +220,11 @@ document.getElementById("demo").addEventListener("click", async () => {
     const res = await fetch("/api/demo", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ conf: confLive.value, frame_skip: document.getElementById("skip").value, performa: performaLive(), malam: document.getElementById("malam-live").checked }),
+      body: JSON.stringify({ conf: confLive.value, frame_skip: document.getElementById("skip").value, performa: performaLive(), malam: document.getElementById("malam-live").checked, token: streamToken }),
     });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error || "Gagal memutar video contoh.");
+    streamToken = json.token || null;
     slotLive.classList.remove("kosong");
     slotLive.innerHTML = `<img src="/api/stream" alt="Stream video contoh">`;
     btnBerhenti.disabled = false;
@@ -231,26 +252,49 @@ document.getElementById("simpan-live").addEventListener("click", async () => {
   btn.disabled = true;
   try {
     const { lat, lon } = bacaKoordinatLive();
-  const res = await fetch("/api/riwayat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      sumber: snapshot.namaBerkas,
-      lokasi: document.getElementById("lokasi").value.trim(),
-      lat, lon, model: snapshot.model,
-      rows: snapshot.rows, total: snapshot.total,
-      image_b64: snapshot.image_b64,
-    }),
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    statusLive.textContent = json.error || "Gagal menyimpan.";
-    statusLive.classList.add("galat");
-    return;
-  }
-  const amin = peringatanGPS(lat, lon);
-  statusLive.classList.toggle("galat", amin !== null);
-  statusLive.textContent = amin !== null ? `${amin} (ID ${json.id}).` : `Tersimpan ke riwayat (ID ${json.id}).`;
+    // Kunci idempotensi: satu ref tetap untuk satu aksi simpan.
+    const refSimpan = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+      : ("ref-" + Date.now() + "-" + Math.random().toString(16).slice(2));
+    const kirim = (izinkan) => fetch("/api/riwayat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sumber: snapshot.namaBerkas,
+        lokasi: document.getElementById("lokasi").value.trim(),
+        lat, lon, model: snapshot.model,
+        rows: snapshot.rows, total: snapshot.total,
+        image_b64: snapshot.image_b64,
+        client_ref: refSimpan, izinkan_duplikat: !!izinkan,
+      }),
+    });
+    let res = await kirim(false);
+    let json = await res.json().catch(() => ({}));
+    if (res.ok && json.duplikat && json.alasan === "koordinat") {
+      const lanjut = await window.jpConfirm("Riwayat Serupa",
+        `Sudah ada riwayat di titik ini (ID ${json.id}). Tetap simpan sebagai riwayat baru?`,
+        { okText: "Tetap Simpan" });
+      if (!lanjut) {
+        statusLive.textContent = `Dibatalkan — riwayat serupa sudah ada (ID ${json.id}).`;
+        statusLive.classList.remove("galat");
+        return;
+      }
+      res = await kirim(true);
+      json = await res.json().catch(() => ({}));
+    }
+    if (!res.ok) {
+      statusLive.textContent = json.error || "Gagal menyimpan.";
+      statusLive.classList.add("galat");
+      return;
+    }
+    if (json.duplikat) {
+      statusLive.textContent = `Sudah tersimpan sebelumnya (ID ${json.id}).`;
+      statusLive.classList.remove("galat");
+      if (window.jpToast) window.jpToast("info", "Sudah Ada", "Riwayat ini sudah tersimpan (ID " + json.id + ").");
+      return;
+    }
+    const amin = peringatanGPS(lat, lon);
+    statusLive.classList.toggle("galat", amin !== null);
+    statusLive.textContent = amin !== null ? `${amin} (ID ${json.id}).` : `Tersimpan ke riwayat (ID ${json.id}).`;
   } catch (err) {
     statusLive.textContent = `Gagal menyimpan: ${err.message}`;
     statusLive.classList.add("galat");
@@ -301,10 +345,10 @@ document.getElementById("unduh-live").addEventListener("click", async () => {
   var btnBox = document.getElementById("btn-toggle-box");
   var boxVisible = true;
   if (btnBox) btnBox.addEventListener("click", () => {
-    fetch("/api/stream/anotasi", { method: "POST" })
+    fetch("/api/stream/anotasi", { method: "POST", ...jsonBody() })
       .then(function(r) { return r.json(); })
       .then(function(j) {
-        if (!j.ok) throw new Error("gagal");
+        if (!j.ok) throw new Error(j.error || "gagal");
         boxVisible = !!j.anotasi;
         btnBox.style.background = boxVisible ? "var(--jp-primary)" : "var(--jp-container)";
         btnBox.style.color = boxVisible ? "#fff" : "var(--jp-tx2)";
@@ -401,8 +445,10 @@ document.getElementById("unduh-live").addEventListener("click", async () => {
   // Stop stream saat page di-refresh/tutup
   window.addEventListener("beforeunload", function() {
     if (polling) {
-      // Gunakan sendBeacon untuk reliable request saat page unload
-      navigator.sendBeacon("/api/stream/stop");
+      // fetch keepalive: header CSRF (dipasang wrapper global) tetap terkirim
+      try {
+        fetch("/api/stream/stop", { method: "POST", keepalive: true, ...jsonBody() });
+      } catch (e) { /* abaikan */ }
       clearInterval(polling);
       polling = null;
     }

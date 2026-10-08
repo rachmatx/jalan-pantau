@@ -1,0 +1,15 @@
+{
+  "model": "best.onnx",
+  "imgsz": 640,
+  "conf": 0.25,
+  "tta": false,
+  "n_gambar": 60,
+  "tp": 57,
+  "fp": 65,
+  "fn": 48,
+  "precision": 0.4672,
+  "recall": 0.5429,
+  "f1": 0.5022,
+  "detik_per_gambar": 0.746,
+  "dibuat": "2026-09-30T12:09:23"
+}

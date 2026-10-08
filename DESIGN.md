@@ -6,12 +6,24 @@
 
 ## 1. Produk
 
-**JalanPantau** — aplikasi web Tugas Akhir: foto jalan → AI (YOLOv11n) mendeteksi
+**JalanPantau** — aplikasi web Tugas Akhir: foto jalan → AI mendeteksi
 5 jenis kerusakan (`longitudinal_crack`, `transverse_crack`, `alligator_crack`,
 `other_corruption`, `pothole`) → severity (Ringan/Sedang/Berat) → estimasi biaya →
 laporan PDF → riwayat SQLite → peta GPS (Leaflet). Bahasa UI: **Indonesia**.
 Pengguna: mahasiswa saat **sidang** (demo live!) + petugas survei jalan.
 Run: `.\.venv\Scripts\python web/app.py` → `http://127.0.0.1:5000` (offline-safe wajib).
+
+Model: **YOLOv11** dalam mode **deteksi (bounding box), bukan mask** —
+`best_yolo11s.pt` untuk foto statis, `best.onnx` (YOLOv11n) untuk live.
+Dataset latih (RDD2022) hanya menyediakan anotasi kotak, jadi segmentasi mask
+tidak bisa dilatih tanpa annotasi ulang. Luas area temuan dihitung dari
+*kontur di dalam bounding box*, bukan keluaran mask model.
+Penjelasan lengkap: `docs/Segmentasi-atau-Bounding-Box.md`.
+
+**Konsekuensi ke UI:** jangan sampai ada teks yang menjanjikan presisi
+segmentasi. Semua panel memakai sebutan "indeks biaya" atau "indeks prioritas",
+bukan "biaya perbaikan". Kalau butuh menampilkan bentuk, gunakan polygon dari
+kontur dalam box dan beri label bahwa itu kontur Inside box, bukan mask model.
 
 ## 2. Batasan implementasi (HARGA MATI untuk siapa pun yang mem-port)
 
@@ -20,8 +32,14 @@ Run: `.\.venv\Scripts\python web/app.py` → `http://127.0.0.1:5000` (offline-sa
 - Internet tersedia saat demo, tapi desain harus tetap waras bila font/peta lambat.
 - Kontras teks ≥ 4,5 (WCAG AA). Tanpa emoji sebagai ikon (SVG inline).
 - **Dilarang data fiktif**: tanpa testimoni palsu, tanpa paket harga. Angka yang
-  boleh tampil — mAP val 0,59 / test 0,47 / OOD Bandung 0,55 / bobot 5,2 MB /
+  boleh tampil — YOLOv11s: mAP val 0,65 / test 0,53 / OOD Bandung 0,45, bobot gambar
+  18,3 MB; YOLOv11n: mAP val 0,59 / test 0,47 / OOD Bandung 0,55, bobot live 9,9 MB;
   train 14.176 gambar. Selain itu hanya teks fungsional.
+- **Dilarang menjanjikan segmentasi.** Lihat bagian 1. Karena luas hanya
+  estimasi dari kontur dalam bounding box, seluruh teks harus memakai
+  "indeks biaya" atau "indeks prioritas".
+- **Peta SPK tidak boleh menampilkan data kontraktor lain.** Kontraktor hanya
+  boleh melihat SPK miliknya sendiri; ini ditegakkan di server, bukan di UI.
 
 ## 3. Halaman & fitur (cakupan redesign = SEMUA)
 
@@ -54,23 +72,50 @@ Run: `.\.venv\Scripts\python web/app.py` → `http://127.0.0.1:5000` (offline-sa
   Unduh PDF + Hapus (konfirmasi) + Tutup + X. Esc menutup.
 
 ### 3.4 Tentang (`/tentang`)
-- Alur kerja, batasan jujur (kamera mono, siang hari, estimasi bukan RAB, kalibrasi),
-  tabel harga acuan per severity, metrik model. Nada: transparan, bukan marketing.
+- Alur kerja, batasan jujur (kamera mono, siang hari, estimasi bukan RAB, kalibrasi,
+  **bounding box bukan segmentasi**), tabel harga acuan per severity, metrik model.
+  Nada: transparan, bukan marketing.
+
+### 3.5 Portal Dinas — SPK (`/pupr-<daerah>/dashboard/spk`)
+- Tabel SPK: nomor, kontraktor, judul, prioritas, progres titik, status, aksi.
+- Panel terbitkan SPK: pilih kontraktor (dari daftar aktif) → judul → prioritas →
+  tenggat → centang titik kerusakan dari daftar.
+- Tombol Batalkan hanya aktif selama SPK belum Selesai.
+- Halaman detail SPK menampilkan peta titik kerja, tabel status per titik, dan
+  foto bukti yang diunggah kontraktor.
+
+### 3.6 Ruang Kerja Kontraktor (`/kontraktor/dashboard`)
+- Beranda: KPI (total SPK, belum diterima, sedang dikerjakan, selesai, progres
+  titik) + daftar SPK + filter status.
+- **Sidebar kontras berbeda** dari dinas (warna aksen hijau) supaya saat demo
+  terlihat jelas sedang masuk sebagai siapa.
+- Detail SPK: peta Leaflet titik kerja (warna per status: Menunggu, Dikerjakan,
+  Selesai) + daftar titik dengan aksi per titik.
+- **Aturan wajib di UI:** tombol status SPK hanya aktif untuk tahap berikutnya
+  yang sah. Tombol titik Selesai hanya aktif bila foto bukti sudah diunggah.
+  Status yang tidak valid akan ditolak server, jadi UI bukan satu-satunya penjaga.
+- Unggah foto bukti: tombol terpisah dari aksi ubah status, supaya kontraktor
+  bisa mengunggah foto sebelum menandai selesai.
 
 ## 4. Kontrak ID (JS hook — jangan rename/hapus)
 
-- Deteksi gambar: `form-deteksi gambar conf conf-out malam lokasi-gambar
+- Deteksi gambar: `form-deteksi gambar conf conf-out malam teliti lokasi-gambar
   lat-gambar lon-gambar tombol status slot-gambar viewer-gambar hasil
   temuan-nilai berat-nilai total-nilai tabel unduh simpan`
 - Tab: `tab-gambar tab-live panel-gambar panel-live`
-- Live: `slot-live viewer-live stat-cards fps-stat unik-stat deteksi-stat
-  frame-stat sumber in-webcam webcam-idx in-ipcam ipcam-url in-file video
+- Live: `slot-live viewer-live stat-cards fps-stat fps-infer-stat unik-stat
+  deteksi-stat sumber in-webcam webcam-idx in-ipcam ipcam-url in-file video
   conf-live conf-live-out skip malam-live lokasi lat-live lon-live mulai
   berhenti demo status-live hasil-live total-live-nilai tabel-live unduh-live
   simpan-live`
 - Peta: `map peta-kosong peta-hitung chip-tutup` (+ class `f-sev`)
 - Riwayat: `filter f-dari f-sampai f-sev f-q daftar detail d-judul d-foto
   d-tabel d-pdf d-hapus d-tutup d-x d-status`
+- SPK (dinas): `spk-tbody data-batal` + form `f-kontraktor f-prioritas f-judul
+  f-tenggat f-deskripsi f-catatan pilih-semua pilih-titik btn-terbitkan`
+- Kontraktor: `daftar-spk spk-tbody spk-catatatan btn-terima btn-kerja
+  btn-selesai spk-peta` + per titik `data-tugas data-fokus data-foto-btn
+  data-foto-input data-kerja data-selesai`
 - Global: `main-content toast-container nav-toggle nav-tray`
 
 ## 5. Alur kerja Stitch → Flask

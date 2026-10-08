@@ -331,7 +331,10 @@ document.getElementById("simpan").addEventListener("click", async () => {
   btn.disabled = true;
   try {
     const { lat, lon } = bacaKoordinat("lat-gambar", "lon-gambar");
-    const res = await fetch("/api/riwayat", {
+    // Kunci idempotensi: satu ref tetap untuk satu aksi simpan (anti klik-dobel/retry).
+    const refSimpan = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+      : ("ref-" + Date.now() + "-" + Math.random().toString(16).slice(2));
+    const kirim = (izinkan) => fetch("/api/riwayat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -340,13 +343,34 @@ document.getElementById("simpan").addEventListener("click", async () => {
         lat, lon, model: terakhir.model,
         rows: terakhir.rows, total: terakhir.total,
         image_b64: terakhir.image_b64,
+        client_ref: refSimpan, izinkan_duplikat: !!izinkan,
       }),
     });
-    const json = await res.json().catch(() => ({}));
+    let res = await kirim(false);
+    let json = await res.json().catch(() => ({}));
+    // Duplikat koordinat: tanya operator; boleh simpan ulang bila memang inspeksi baru.
+    if (res.ok && json.duplikat && json.alasan === "koordinat") {
+      const lanjut = await window.jpConfirm("Riwayat Serupa",
+        `Sudah ada riwayat di titik ini (ID ${json.id}). Tetap simpan sebagai riwayat baru?`,
+        { okText: "Tetap Simpan" });
+      if (!lanjut) {
+        status.textContent = `Dibatalkan — riwayat serupa sudah ada (ID ${json.id}).`;
+        status.classList.remove("galat");
+        return;
+      }
+      res = await kirim(true);
+      json = await res.json().catch(() => ({}));
+    }
     if (!res.ok) {
       status.textContent = json.error || "Gagal menyimpan.";
       status.classList.add("galat");
       showToast("Gagal", json.error || "Gagal menyimpan ke riwayat.", "galat");
+      return;
+    }
+    if (json.duplikat) {
+      status.textContent = `Sudah tersimpan sebelumnya (ID ${json.id}).`;
+      status.classList.remove("galat");
+      showToast("Sudah Ada", `Riwayat ini sudah tersimpan (ID ${json.id}).`, "info");
       return;
     }
     const amin = peringatanGPS(lat, lon);
@@ -399,7 +423,11 @@ function showToast(title, message, type) {
   if (!container) return;
   var toast = document.createElement("div");
   toast.className = "toast";
-  var icons = { info: "ℹ", success: "✓", galat: "✕" };
+  var icons = {
+    info: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+    success: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+    galat: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+  };
   var colors = { info: "#006194", success: "#059669", galat: "#ba1a1a" };
   toast.style.cssText = "background:#fff;border-left:4px solid " + (colors[type] || colors.info) + ";border-radius:8px;padding:12px 16px;box-shadow:0 4px 16px rgba(0,0,0,.15);display:flex;align-items:flex-start;gap:12px;animation:slideIn .3s ease;min-width:280px;max-width:360px";
   toast.innerHTML = '<span style="font-size:18px;color:' + (colors[type] || colors.info) + '">' + (icons[type] || icons.info) + '</span><div style="flex:1"><div style="font-size:13px;font-weight:600;color:#0F172A">' + esc(title) + '</div><div style="font-size:12px;color:#64748B;margin-top:2px">' + esc(message) + '</div></div>';

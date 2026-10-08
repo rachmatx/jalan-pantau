@@ -45,6 +45,62 @@ class TestConfigInferensi(unittest.TestCase):
         finally:
             os.remove(path)
 
+    # --- Regresi: yaml.YAMLError tidak menurun dari ValueError -------------
+    # Dulu blok except di get_inferensi hanya menangkap (OSError, ValueError).
+    # Satu indentasi salah di config/inferensi.yaml membuat YAMLError melescap
+    # -> 500 di SETIAP request /api/detect. config/inferensi.yaml sengaja
+    # ditulis supaya bisa diedit pengguna tanpa koding, jadi kegagalan ini nyata.
+
+    def test_yaml_rusak_tidak_melunca(self):
+        import deteksi
+        rusak = {
+            "indentasi": "model_gambar: best.pt\n  imgsz_gambar: 960\n",
+            "kutip_tak_tertutup": 'model_gambar: "best.pt\nimgsz_gambar: 960\n',
+            "tab": "imgsz_gambar: 960\n\tiou: 0.5\n",
+            "bukan_mapping": "- a\n- b\n",
+        }
+        for nama, isi in rusak.items():
+            with self.subTest(kasus=nama):
+                fd, path = tempfile.mkstemp(suffix=".yaml")
+                try:
+                    with os.fdopen(fd, "w", encoding="utf-8") as f:
+                        f.write(isi)
+                    inf = deteksi.get_inferensi(path=path)  # tidak boleh melempar
+                    self.assertEqual(inf["imgsz_gambar"], 960)
+                    self.assertEqual(inf["iou"], 0.5)
+                finally:
+                    os.remove(path)
+
+    def test_yaml_rusak_tidak_kotori_default(self):
+        """Parse gagal -> TIDAK boleh ada kunci yang terlanjur ter-override."""
+        import deteksi
+        fd, path = tempfile.mkstemp(suffix=".yaml")
+        try:
+            # imgsz_gambar: 320 edgyati success, lalu baris rusak.
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                f.write("imgsz_gambar: 320\n  rusak: 1\n")
+            inf = deteksi.get_inferensi(path=path)
+            self.assertEqual(inf["imgsz_gambar"], 960)  # default, bukan 320
+        finally:
+            os.remove(path)
+
+    def test_fallback_selaras_dengan_yaml(self):
+        """Fallback harus mencerminkan config/inferensi.yaml.
+
+        Kalau berbeda, mode degradasi diam-diam mengubah perilaku:
+        tta=False menurunkan recall, imgsz_live=960 memperlambat live.
+        """
+        import deteksi
+        import yaml as _yaml
+        with open(os.path.join(ROOT, "config", "inferensi.yaml"), encoding="utf-8") as f:
+            nyata = _yaml.safe_load(f) or {}
+        fb = deteksi._INFER_FALLBACK
+        for k in ("imgsz_gambar", "imgsz_live", "iou", "tta"):
+            with self.subTest(kunci=k):
+                self.assertEqual(
+                    fb[k], nyata[k],
+                    f"_INFER_FALLBACK[{k}] tidak sama dengan config/inferensi.yaml")
+
 
 class TestAmbangKelas(unittest.TestCase):
     TOL = {"longitudinal_crack": 0.13, "pothole": 0.0}
@@ -368,6 +424,12 @@ class TestVerifikasiOperator(unittest.TestCase):
                 os.remove(path)
 
 
+_BOBOT_ADA = all(
+    os.path.isfile(os.path.join(ROOT, "app", "weights", n))
+    for n in ("best_yolo11s.pt", "best.onnx", "best.pt"))
+
+
+@unittest.skipUnless(_BOBOT_ADA, "bobot model tidak ada di app/weights/")
 class TestBackendGanda(unittest.TestCase):
     def test_resolve_default_dan_fallback(self):
         import deteksi
@@ -571,6 +633,7 @@ class TestBatasUpload(unittest.TestCase):
         import sys
         import web.app as app_mod
         app = app_mod.create_app()
+        app.config["TESTING"] = True
         c = app.test_client()
         besar = b"\xff\xd8\xff" + b"\x00" * (15 * 1024 * 1024)
         r = c.post("/api/detect", data={"gambar": (io.BytesIO(besar),

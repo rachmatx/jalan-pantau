@@ -144,8 +144,8 @@
 {% endblock %}
 
 {% block skrip %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}?v={{ static_v }}">
+<script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}?v={{ static_v }}"></script>
 <script>
 (function(){
   var daerah = "{{ daerah }}";
@@ -352,7 +352,7 @@
     var infoEl = document.getElementById("dash-overflow-info");
     if (infoEl) {
       if (overflowDash) {
-        infoEl.innerHTML = '<span style="color:#B45309;font-weight:600">⚠ Menampilkan ' + semuaData.length + ' dari ' + totalDbDash + ' laporan.</span> Gunakan filter status/urgensi/tanggal untuk mempersempit.';
+        infoEl.innerHTML = '<span style="color:#B45309;font-weight:600;display:inline-flex;align-items:center;gap:6px;vertical-align:-2px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Menampilkan ' + semuaData.length + ' dari ' + totalDbDash + ' laporan.</span> Gunakan filter status/urgensi/tanggal untuk mempersempit.';
       } else if (filtered.length > PER_HALAMAN_DASH) {
         infoEl.textContent = "Menampilkan " + (start + 1) + "-" + Math.min(end, filtered.length) + " dari " + filtered.length + " laporan (Halaman " + halamanDash + "/" + Math.ceil(filtered.length / PER_HALAMAN_DASH) + ").";
       } else {
@@ -472,7 +472,7 @@
           val: semuaData.filter(function(r) { return r[key] === d[0]; }).length};
       });
     }
-    var segsS = bangun([['Terkirim', '#0284C7'], ['Diproses', '#D97706'], ['Selesai', '#059669']], 'status');
+    var segsS = bangun([['Terkirim', '#006194'], ['Diproses', '#D97706'], ['Selesai', '#059669']], 'status');
     var segsU = bangun([['Kritis', '#DC2626'], ['Tinggi', '#D97706'], ['Rutin', '#64748B']], 'urgensi');
     var elS = document.getElementById('dash-donat-status');
     var elU = document.getElementById('dash-donat-urgensi');

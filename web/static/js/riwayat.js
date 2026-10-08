@@ -152,7 +152,7 @@ function tampilkanPeringatanOverflow(overflow, totalDB, jumlahTampil) {
   var infoEl = document.getElementById("f-info");
   if (!infoEl) return;
   if (overflow) {
-    infoEl.innerHTML = '<span style="color:var(--jp-sev-h-tx);font-weight:600">⚠ Menampilkan ' + jumlahTampil + ' dari ' + totalDB + ' catatan.</span> Gunakan filter tanggal/severity untuk mempersempit, atau ekspor CSV untuk data lengkap.';
+    infoEl.innerHTML = '<span style="color:var(--jp-sev-h-tx);font-weight:600;display:inline-flex;align-items:center;gap:6px;vertical-align:-2px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Menampilkan ' + jumlahTampil + ' dari ' + totalDB + ' catatan.</span> Gunakan filter tanggal/severity untuk mempersempit, atau ekspor CSV untuk data lengkap.';
     infoEl.style.background = 'rgba(220,100,0,.08)';
     infoEl.style.padding = '8px 12px';
     infoEl.style.borderRadius = '6px';
@@ -225,13 +225,12 @@ async function bukaDetail(id) {
     `<span>Klasifikasi Jalan: -</span><span style="color:var(--jp-outline)">•</span>` +
     `<span>Konstruksi: -</span>`;
   document.getElementById("d-nomor").textContent = `BA #${s.id}`;
-  document.getElementById("d-hash").textContent = (s.model || "-").slice(0, 12) + "...";
   document.getElementById("d-meta").innerHTML =
     `<div><span>WAKTU AUDIT</span><b>${esc(tanggal(s.waktu))}</b></div>` +
     `<div><span>SUMBER</span><b>${esc(s.sumber)}</b></div>` +
     `<div><span>KOORDINAT</span><b class="mono">${esc(koordinat(s))}</b></div>` +
     `<div><span>SEVERITY TERPARAH</span><b>${badge(s.worst)}</b></div>`;
-  document.getElementById("d-frame").textContent = `Frame #${s.id} / Sesi`;
+  document.getElementById("d-frame").textContent = `Sesi #${s.id}`;
   // Lazy load gambar: tampilkan spinner dulu, load gambar setelah modal terbuka
   var fotoEl = document.getElementById("d-foto");
   if (aktif.ada_gambar) {
@@ -258,9 +257,9 @@ async function bukaDetail(id) {
   if (dTotal) dTotal.textContent = rupiah(s.total_rp);
   var dTtd = document.getElementById("d-ttd");
   if (dTtd) dTtd.innerHTML =
-    `<div style="display:flex;flex-direction:column;align-items:center;gap:8px"><div style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-muted)">PETUGAS SURVEYOR</div><div style="height:40px"></div><div style="font-size:13px;font-weight:700;color:var(--jp-ink)">Operator JalanPantau</div></div>` +
-    `<div style="display:flex;flex-direction:column;align-items:center;gap:8px"><div style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-muted)">PEJABAT PEMBUAT KOMITMEN</div><div style="height:40px"></div><div style="font-size:13px;font-weight:700;color:var(--jp-ink)">-</div></div>` +
-    `<div style="display:flex;flex-direction:column;align-items:center;gap:8px"><div style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-muted)">MENGETAHUI</div><div style="height:40px"></div><div style="font-size:13px;font-weight:700;color:var(--jp-ink)">Kepala Seksi Preservasi</div></div>`;
+    `<div style="display:flex;flex-direction:column;align-items:center;gap:8px"><div style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-muted)">PETUGAS SURVEYOR</div><div style="height:40px"></div><div style="font-size:13px;font-weight:700;color:var(--jp-ink)">( ……… )</div></div>` +
+    `<div style="display:flex;flex-direction:column;align-items:center;gap:8px"><div style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-muted)">PEJABAT PEMBUAT KOMITMEN</div><div style="height:40px"></div><div style="font-size:13px;font-weight:700;color:var(--jp-ink)">( ……… )</div></div>` +
+    `<div style="display:flex;flex-direction:column;align-items:center;gap:8px"><div style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-muted)">MENGETAHUI</div><div style="height:40px"></div><div style="font-size:13px;font-weight:700;color:var(--jp-ink)">( ……… )</div></div>`;
   const st = document.getElementById("d-status");
   if (st) st.hidden = false;
   detail.showModal();

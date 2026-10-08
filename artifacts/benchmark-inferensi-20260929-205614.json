@@ -1,0 +1,23 @@
+{
+  "model": "best_yolo11s.pt",
+  "format": "pytorch",
+  "imgsz": 960,
+  "conf": 0.25,
+  "runs": 10,
+  "warmup": 2,
+  "gambar": "data\\publik\\bpid\\test\\images\\0125c08e.jpeg",
+  "latency_ms": {
+    "mean": 1309.36,
+    "median": 1288.28,
+    "p95": 1435.82,
+    "min": 1249.62,
+    "max": 1536.26
+  },
+  "fps_from_mean": 0.76,
+  "dibuat": "2026-09-29T20:56:14",
+  "hardware": {
+    "python": "3.11.0",
+    "platform": "Windows-10-10.0.19045-SP0",
+    "processor": "Intel64 Family 6 Model 58 Stepping 9, GenuineIntel"
+  }
+}

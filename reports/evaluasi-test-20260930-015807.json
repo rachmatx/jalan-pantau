@@ -1,0 +1,38 @@
+{
+  "dataset": "C:\\Users\\R\\Documents\\TA Machine Learning - Deteksi Kerusakan Jalan Real-Time\\data\\publik\\bpid\\test",
+  "n_gambar": 161,
+  "model": "best.onnx",
+  "imgsz": 640,
+  "remap": {
+    "0": 4
+  },
+  "iou": 0.5,
+  "dibuat": "2026-09-30T01:58:07",
+  "catatan": "P/R/F1 = pada conf F1-optimal (bawaan ultralytics). conf_floor hanya batas bawah kurva PR; laporkan mAP pada conf_floor rendah.",
+  "sapuan": [
+    {
+      "conf_floor": 0.001,
+      "map50": 0.5557,
+      "map50_95": 0.2742,
+      "precision_bestF1": 0.571,
+      "recall_bestF1": 0.5741,
+      "f1_bestF1": 0.5726
+    }
+  ],
+  "map50_tertinggi": {
+    "conf_floor": 0.001,
+    "map50": 0.5557,
+    "map50_95": 0.2742,
+    "precision_bestF1": 0.571,
+    "recall_bestF1": 0.5741,
+    "f1_bestF1": 0.5726
+  },
+  "titik_f1_optimal": {
+    "conf_floor": 0.001,
+    "map50": 0.5557,
+    "map50_95": 0.2742,
+    "precision_bestF1": 0.571,
+    "recall_bestF1": 0.5741,
+    "f1_bestF1": 0.5726
+  }
+}

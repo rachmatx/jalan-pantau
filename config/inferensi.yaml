@@ -45,12 +45,15 @@ gabung_fragmen:
 # Toleransi per kelas (relatif terhadap slider — slider tetap batas mutlak).
 # Efektif = slider - toleransi. Retak tipis boleh lolos di bawah slider,
 # tapi menaikkan slider selalu memperketat semua kelas.
+# pothole 0.08 (2026-09-30): evaluasi BPID (161 gambar, 263 instance) menunjukkan
+#   titik F1 optimal pothole ~conf 0.15-0.20; ambang efektif 0.17 (slider 0.25)
+#   menaikkan recall tanpa menurunkan mAP. Lihat docs/Panduan-Tuning-Model.md §6.
 toleransi_kelas:
   longitudinal_crack: 0.13
   transverse_crack: 0.13
   alligator_crack: 0.10
   other_corruption: 0.10
-  pothole: 0.0
+  pothole: 0.08
 live:
   min_frames: 1  # track sah untuk snapshot bila terlihat >= N frame (redam kedip)
   display_fps: 25   # batas atas laju TAMPIL preview (terpisah dari laju inferensi)

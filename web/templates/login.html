@@ -3,17 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Login Admin | JalanPantau</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>Login | JalanPantau</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fonts/fonts.css') }}?v={{ static_v }}">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='28' height='28' rx='7' fill='%23006194'/%3E%3Cpath d='M10 22 L14 10 L18 10 L14 22 Z' fill='%23fff'/%3E%3C/svg%3E">
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     html{scrollbar-gutter:stable}
     body{font-family:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
       min-height:100vh;display:flex;align-items:center;justify-content:center;
       padding:24px;color:#0F172A;
-      background:linear-gradient(135deg,#002D62 0%,#001f45 100%);position:relative}
+      background:linear-gradient(135deg,#006194 0%,#003f61 100%);position:relative}
     body::before{content:"";position:absolute;inset:0;
       background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),
       linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);
@@ -30,13 +29,26 @@
     .login-card label{display:block;font-size:13px;font-weight:600;color:#334155;margin:14px 0 6px}
     .login-card input{width:100%;padding:11px 14px;border:1px solid #CBD5E1;
       border-radius:8px;font-size:14px;background:#F8FAFC}
-    .login-card input:focus{outline:2px solid rgba(0,102,204,.35);border-color:#003366}
-    .login-btn{width:100%;margin-top:22px;padding:12px;background:#003366;color:#fff;
+    .login-card input:focus{outline:2px solid rgba(0,97,148,.35);border-color:#006194}
+    .login-btn{width:100%;margin-top:22px;padding:12px;background:#006194;color:#fff;
       border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;
       transition:background .15s}
-    .login-btn:hover{background:#00264d}
+    .login-btn:hover{background:#004d78}
+    .login-petunjuk{margin-top:22px;padding:14px;background:#F8FAFC;
+      border:1px solid #E2E8F0;border-radius:8px}
+    .login-petunjuk-judul{margin:0 0 8px;font-size:11px;font-weight:700;
+      letter-spacing:.06em;text-transform:uppercase;color:#64748B}
+    .login-petunjuk dl{margin:0;display:grid;grid-template-columns:auto 1fr;
+      gap:4px 10px;font-size:12px}
+    .login-petunjuk dt{font-weight:600;color:#334155;white-space:nowrap}
+    .login-petunjuk dd{margin:0;color:#64748B}
+    .login-petunjuk code{font-family:ui-monospace,Consolas,monospace;
+      font-size:11px;background:#E2E8F0;color:#0F172A;padding:1px 5px;
+      border-radius:4px}
+    .login-petunjuk-catatan{margin:10px 0 0;padding-top:10px;
+      border-top:1px solid #E2E8F0;font-size:11px;color:#64748B}
     .login-back{text-align:center;margin:18px 0 0;font-size:13px}
-    .login-back a{color:#003366;text-decoration:none;font-weight:600}
+    .login-back a{color:#006194;text-decoration:none;font-weight:600}
     .login-back a:hover{text-decoration:underline}
   </style>
 </head>
@@ -45,17 +57,18 @@
     <section class="login-card">
       <div class="login-logo">
         <svg width="44" height="44" viewBox="0 0 32 32" aria-hidden="true">
-          <rect x="2" y="2" width="28" height="28" rx="7" fill="#003366"/>
+          <rect x="2" y="2" width="28" height="28" rx="7" fill="#006194"/>
           <path d="M10 22 L14 10 L18 10 L14 22 Z" fill="#fff"/>
         </svg>
       </div>
-      <h1>Login Admin Dinas</h1>
-      <p class="login-sub">Dashboard PUPR hanya untuk akun resmi dinas.</p>
+      <h1>Login</h1>
+      <p class="login-sub">Satu form untuk dua jenis akun: admin dinas dan kontraktor.</p>
 
       {% if galat %}<div class="login-galat" role="alert">{{ galat }}</div>{% endif %}
 
       <form method="post" action="/login">
         <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
         <label for="username">Username</label>
         <input type="text" id="username" name="username" required autofocus
                autocomplete="username" placeholder="admin">
@@ -66,6 +79,22 @@
 
         <button type="submit" class="login-btn">Masuk</button>
       </form>
+
+      <div class="login-petunjuk">
+        <p class="login-petunjuk-judul">Akun yang tersedia di demo</p>
+        <dl>
+          <dt>Admin dinas</dt>
+          <dd><code>pupr_bandung</code> &rarr; dashboard daerahnya sendiri</dd>
+          <dt>Superadmin</dt>
+          <dd><code>admin</code> &rarr; semua daerah, kelola instansi dan sandi</dd>
+          <dt>Kontraktor</dt>
+          <dd><code>kt_mitrakarya</code> &rarr; ruang kerja dan SPK</dd>
+        </dl>
+        <p class="login-petunjuk-catatan">
+          Akun kontraktor berasal dari <code>config/kontraktor.yaml</code> dan
+          dapat ditambah lewat menu Kontraktor di dashboard dinas.
+        </p>
+      </div>
 
       <p class="login-back"><a href="/">Kembali ke halaman utama</a></p>
     </section>

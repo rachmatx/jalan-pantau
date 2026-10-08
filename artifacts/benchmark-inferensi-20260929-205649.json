@@ -1,0 +1,23 @@
+{
+  "model": "best.onnx",
+  "format": "onnx",
+  "imgsz": 480,
+  "conf": 0.25,
+  "runs": 20,
+  "warmup": 3,
+  "gambar": "data\\publik\\bpid\\test\\images\\0125c08e.jpeg",
+  "latency_ms": {
+    "mean": 326.19,
+    "median": 325.49,
+    "p95": 366.2,
+    "min": 271.36,
+    "max": 402.05
+  },
+  "fps_from_mean": 3.07,
+  "dibuat": "2026-09-29T20:56:49",
+  "hardware": {
+    "python": "3.11.0",
+    "platform": "Windows-10-10.0.19045-SP0",
+    "processor": "Intel64 Family 6 Model 58 Stepping 9, GenuineIntel"
+  }
+}

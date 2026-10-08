@@ -13,7 +13,7 @@
 - Telemetry strip: RTK Fix, Battery, Flask API status
 - 3 KPI cards: FPS, Temuan, Est. Biaya
 - Quick controls: CLAHE toggle, Grid toggle, Snapshot button (glove-friendly 48px+)
-- Segment path selector
+- Pemilih segmen rute (bukan segmentasi gambar)
 - Temuan terakhir card
 - Bottom action bar: Jeda Rekam + Tandai Kritis + Log Rute
 
@@ -70,7 +70,7 @@
 
 ### `base.html`
 - Tambah link nav: "Mobile" (hanya mobile), "Kalibrasi"
-- Nav顺序: Deteksi | Peta | Riwayat | Kalibrasi | Tentang
+- Urutan nav: Deteksi | Peta | Riwayat | Kalibrasi | Tentang
 
 ### `app.py`
 - `@app.get("/mobile")` → mobile()

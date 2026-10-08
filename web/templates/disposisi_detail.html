@@ -45,8 +45,8 @@
       </div>
     </div>
     <div style="display:flex;justify-content:space-between;font-family:var(--jp-mono);font-size:11px;margin-bottom:6px">
-      <span style="color:var(--jp-muted)">Waktu Berjalan: -</span>
-      <span style="color:var(--jp-sev-m-tx);font-weight:600">{% if disposisi.status == 'Terkirim' %}0{% elif disposisi.status == 'Diproses' %}50{% else %}100{% endif %}% dari Alokasi {{ '24' if disposisi.urgensi == 'Kritis' else '48' }} Jam</span>
+      <span style="color:var(--jp-muted)">Status: {{ disposisi.status }}</span>
+      <span style="color:var(--jp-sev-m-tx);font-weight:600">Progres status: {% if disposisi.status == 'Terkirim' %}0{% elif disposisi.status == 'Diproses' %}50{% else %}100{% endif %}% &bull; SLA acuan {% if disposisi.urgensi == 'Kritis' %}24{% elif disposisi.urgensi == 'Tinggi' %}48{% else %}168{% endif %} jam</span>
     </div>
     <div style="width:100%;height:8px;border-radius:9999px;background:var(--jp-container);overflow:hidden">
       <div style="height:100%;width:{% if disposisi.status == 'Terkirim' %}5{% elif disposisi.status == 'Diproses' %}50{% else %}100{% endif %};background:{% if disposisi.status == 'Selesai' %}var(--jp-sev-h-tx){% else %}var(--jp-sev-m-tx){% endif %};border-radius:9999px"></div>
@@ -135,6 +135,56 @@
         </div>
       </div>
       {% endif %}
+
+      <!-- Foto Setelah Penanganan (diunggah dinas lewat dashboard) -->
+      {% if disposisi %}
+      <div class="jp-card" style="padding:16px">
+        <div style="display:flex;align-items:center;gap:8px;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--jp-line)">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--jp-primary)" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <h2 style="font-size:16px;font-weight:600;color:var(--jp-ink);margin:0">Foto Setelah Penanganan</h2>
+          {% if ada_foto_sesudah %}
+          <span style="margin-left:auto;padding:2px 8px;border-radius:4px;background:var(--jp-sev-h-bg);font-family:var(--jp-mono);font-size:10px;color:#047857;font-weight:600">TERSEDIA</span>
+          {% else %}
+          <span style="margin-left:auto;padding:2px 8px;border-radius:4px;background:var(--jp-container);font-family:var(--jp-mono);font-size:10px;color:var(--jp-muted);font-weight:600">BELUM ADA</span>
+          {% endif %}
+        </div>
+        {% if ada_foto_sesudah %}
+        <button type="button" id="btn-foto-sesudah"
+                style="display:block;width:100%;padding:0;border:1px solid var(--jp-line);border-radius:8px;overflow:hidden;background:#020617;cursor:zoom-in">
+          <img src="/api/disposisi/{{ disposisi.id }}/foto"
+               alt="Foto jalan setelah perbaikan"
+               loading="lazy"
+               style="display:block;width:100%;height:320px;object-fit:contain">
+        </button>
+        <p class="jp-hint" style="margin:10px 0 0">Dokumentasi kondisi jalan setelah pekerjaan selesai, diunggah oleh {{ disposisi.instansi_nama or 'dinas penerima' }}. Klik foto untuk melihat ukuran penuh.</p>
+        <dialog id="dlg-foto-sesudah"
+                style="border:none;border-radius:12px;padding:0;max-width:min(1100px,94vw);width:1100px;background:var(--jp-surface)">
+          <div style="background:#020617;border-radius:12px;overflow:hidden">
+            <img src="/api/disposisi/{{ disposisi.id }}/foto" alt="Foto jalan setelah perbaikan"
+                 style="display:block;width:100%;max-height:82vh;object-fit:contain">
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 16px;background:var(--jp-surface)">
+            <div style="min-width:0">
+              <div style="font-size:13px;font-weight:600;color:var(--jp-ink)">Foto Setelah Penanganan</div>
+              <div class="jp-hint" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ disposisi.lokasi or disposisi.bap_nomor }}</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-shrink:0">
+              <a class="jp-btn-demo" style="padding:8px 16px;text-decoration:none" href="/api/disposisi/{{ disposisi.id }}/foto" download="foto-perbaikan-{{ disposisi.bap_nomor | replace('/', '-') }}.jpg">Unduh</a>
+              <button type="button" class="jp-btn-save" id="btn-tutup-foto-sesudah" style="padding:8px 16px">Tutup</button>
+            </div>
+          </div>
+        </dialog>
+        {% else %}
+        <div style="padding:20px;border-radius:8px;background:var(--jp-container-low);text-align:center">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--jp-muted)" stroke-width="1.6" style="margin:0 auto 8px"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <p class="jp-hint" style="margin:0">Instansi belum mengunggah dokumentasi foto jalan setelah perbaikan pada laporan ini.</p>
+          {% if disposisi.status == 'Selesai' %}
+          <p class="jp-hint" style="margin:6px 0 0;color:var(--jp-sev-m-tx)">Status sudah "Selesai" tanpa foto bukti. Hubungi {{ disposisi.instansi_nama or 'dinas penerima' }} untuk lengkapi.</p>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
     </div>
 
     <!-- RIGHT COLUMN: Info -->
@@ -179,4 +229,23 @@
   </div>
   {% endif %}
 </div>
+{% endblock %}
+
+{% block skrip %}
+{% if disposisi and ada_foto_sesudah %}
+<script>
+(function () {
+  var dlg = document.getElementById("dlg-foto-sesudah");
+  var buka = document.getElementById("btn-foto-sesudah");
+  var tutup = document.getElementById("btn-tutup-foto-sesudah");
+  if (!dlg || !buka) return;
+  buka.addEventListener("click", function () { if (!dlg.open) dlg.showModal(); });
+  if (tutup) tutup.addEventListener("click", function () { dlg.close(); });
+  // Klik pada area gelap di luar gambar menutup modal.
+  dlg.addEventListener("click", function (e) {
+    if (e.target === dlg) dlg.close();
+  });
+})();
+</script>
+{% endif %}
 {% endblock %}

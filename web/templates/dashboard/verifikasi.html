@@ -1,0 +1,261 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Verifikasi Kedinasan{% endblock %}
+
+{% block content %}
+<div class="dash-header">
+  <div>
+    <h1 class="dash-title">Verifikasi Kedinasan &mdash; {{ nama_daerah }}</h1>
+    <p class="dash-subtitle">Tentukan laporan mana yang sah dan boleh diteruskan ke kontraktor. Penerbitan SPK dilakukan di halaman SPK.</p>
+  </div>
+  <div class="dash-head-right">
+    <button type="button" class="dash-btn-action" id="btn-refresh">Segarkan Data</button>
+  </div>
+</div>
+
+<!-- KPI -->
+<div class="dash-kpis">
+  <div class="dash-kpi kpi-proses">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Menunggu Verifikasi</span><strong class="dash-kpi-val" id="kpi-tunggu">0</strong></div>
+  </div>
+  <div class="dash-kpi kpi-baru">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Sudah Diterima</span><strong class="dash-kpi-val" id="kpi-proses">0</strong></div>
+  </div>
+  <div class="dash-kpi kpi-selesai">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Selesai</span><strong class="dash-kpi-val" id="kpi-selesai">0</strong></div>
+  </div>
+  <div class="dash-kpi kpi-total">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Estimasi Indeks Biaya</span><strong class="dash-kpi-val" id="kpi-biaya" style="font-size:17px">Rp0</strong></div>
+  </div>
+</div>
+
+<!-- Workbench 2 kolom -->
+<div class="dash-detail-grid">
+  <!-- KIRI: Inbox -->
+  <div class="dash-card">
+    <div class="dash-card-head">
+      <h2>Inbox Verifikasi Disposisi Masuk</h2>
+      <span style="font-size:11px;color:var(--dash-muted)">Sumber: JalanPantau</span>
+    </div>
+    <div class="dash-filter-bar" style="margin:10px 12px;border:none;padding:0">
+      <div class="dash-filter-group">
+        <button type="button" class="dash-filter-btn aktif" data-f="semua">Semua</button>
+        <button type="button" class="dash-filter-btn" data-f="Terkirim">Belum Diproses</button>
+        <button type="button" class="dash-filter-btn" data-f="Diproses">Diterima</button>
+        <button type="button" class="dash-filter-btn" data-f="Selesai">Selesai</button>
+      </div>
+    </div>
+    <div class="dash-table-wrap">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th>No. Tiket / Ruas</th>
+            <th>Prioritas</th>
+            <th>Sumber</th>
+            <th>Status Kedinasan</th>
+            <th style="text-align:right">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="vrf-tbody">
+          <tr><td colspan="5" class="dash-loading">Memuat...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dash-hint" id="vrf-info" aria-live="polite"></p>
+  </div>
+
+  <!-- KANAN: Panel verifikasi -->
+  <div class="dash-card" id="vrf-panel">
+    <div class="dash-card-head">
+      <h2>Validasi Laporan Masuk</h2>
+      <span class="dash-urg-chip" id="vrf-sla">SLA &mdash;</span>
+    </div>
+    <div style="padding:12px 14px;display:flex;flex-direction:column;gap:12px">
+      <div>
+        <span class="dash-kpi-label">NOMOR TIKET</span>
+        <div class="dash-tiket" style="font-size:14px" id="vrf-nomor">&mdash;</div>
+        <div style="font-size:12px;color:var(--dash-muted);margin-top:2px" id="vrf-lokasi">Pilih tiket dari daftar.</div>
+      </div>
+
+      <div class="dash-ba-grid">
+        <div><span class="dash-kpi-label">PRIORITAS</span><div id="vrf-urgensi">&mdash;</div></div>
+        <div><span class="dash-kpi-label">TEMUAN</span><div class="dash-kpi-val" style="font-size:15px" id="vrf-temuan">0</div></div>
+        <div><span class="dash-kpi-label">KOORDINAT</span><div style="font-family:var(--dash-mono);font-size:11px" id="vrf-koord">&mdash;</div></div>
+        <div><span class="dash-kpi-label">ESTIMASI INDEKS BIAYA</span><div style="font-family:var(--dash-mono);font-size:12px" id="vrf-biaya">Rp0</div></div>
+      </div>
+
+      <div>
+        <label class="dash-kpi-label" for="vrf-pj">PENANGGUNG JAWAB / UNIT</label>
+        <input type="text" id="vrf-pj" class="dash-select" style="width:100%;margin-top:4px" placeholder="cth: Unit TRC / petugas lapangan">
+      </div>
+      <div>
+        <label class="dash-kpi-label" for="vrf-catatan">CATATAN INSTRUKSI (OPSIONAL)</label>
+        <textarea id="vrf-catatan" class="dash-select" style="width:100%;margin-top:4px;min-height:60px;resize:vertical" placeholder="Catatan untuk petugas / alasan penolakan"></textarea>
+      </div>
+
+      <div id="vrf-kosong" style="font-size:12px;color:var(--dash-muted)">Belum ada tiket dipilih.</div>
+
+      <div>
+        <button type="button" class="dash-btn-apply" id="btn-terima" style="width:100%;height:40px" disabled>Tandai Laporan Sah (Terima)</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+          <button type="button" class="dash-btn-secondary" id="btn-selesai" disabled>Tandai Selesai</button>
+          <button type="button" class="dash-btn-secondary" id="btn-terbitkan" disabled>Terbitkan SPK</button>
+          <button type="button" class="dash-btn-danger" id="btn-tolak" disabled>Tolak Validasi</button>
+        </div>
+      </div>
+      <p class="dash-hint" style="margin:0">Tandai Sah berarti laporan ini dinyatakan valid dan boleh masuk lingkup SPK. Penerbitan SPK (memilih kontraktor, tenggat, dan instruksi) dilakukan di halaman SPK. Estimasi biaya di sini adalah indeks prioritas, bukan RAB.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block skrip %}
+<script>
+(function(){
+  var daerah = "{{ daerah }}";
+  function esc(v){ return String(v == null ? "" : v).replace(/[&<>"'`=]/g, function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;","`":"&#96;","=":"&#61;"}[c]; }); }
+  function rupiah(n){ return "Rp" + Number(n || 0).toLocaleString("id-ID"); }
+  function urgKelas(u){ return u === "Kritis" ? "kritis" : u === "Tinggi" ? "tinggi" : "rutin"; }
+  function statusKelas(s){
+    return s === "Terkirim" ? "terkirim" : s === "Diproses" ? "diproses"
+      : s === "Ditolak" ? "ditolak" : "selesai"; }
+  function labelStatus(s){
+    return s === "Terkirim" ? "Menunggu Validasi" : s === "Diproses" ? "Diterima"
+      : s === "Ditolak" ? "Ditolak" : "Selesai"; }
+
+  var semua = [], filterNama = "semua", aktif = null;
+
+  function slaTeks(r){
+    var t = new Date(r.waktu).getTime();
+    if (isNaN(t)) return "SLA —";
+    var batas = r.urgensi === "Kritis" ? 24 : 48;
+    var sisa = batas - (Date.now() - t) / 3600000;
+    if (r.status === "Selesai") return "Selesai";
+    if (sisa < 0) return "Lewat SLA " + Math.abs(Math.round(sisa)) + " jam";
+    return "SLA " + Math.round(sisa) + " jam sisa";
+  }
+
+  function renderKPI(){
+    var t = semua.filter(function(r){ return r.status === "Terkirim"; }).length;
+    var p = semua.filter(function(r){ return r.status === "Diproses"; }).length;
+    var s = semua.filter(function(r){ return r.status === "Selesai"; }).length;
+    var rp = semua.reduce(function(a, r){ return a + (r.total_rp || 0); }, 0);
+    document.getElementById("kpi-tunggu").textContent = t;
+    document.getElementById("kpi-proses").textContent = p;
+    document.getElementById("kpi-selesai").textContent = s;
+    document.getElementById("kpi-biaya").textContent = rupiah(rp);
+  }
+
+  function renderTabel(){
+    var rows = semua.filter(function(r){ return filterNama === "semua" || r.status === filterNama; });
+    var tb = document.getElementById("vrf-tbody");
+    if (!rows.length){
+      tb.innerHTML = '<tr><td colspan="5" class="dash-empty">Tidak ada disposisi untuk filter ini.</td></tr>';
+    } else {
+      tb.innerHTML = rows.map(function(r){
+        return '<tr data-id="' + Number(r.id) + '" style="cursor:pointer' + (aktif && aktif.id === r.id ? ';background:var(--dash-surface-2)' : '') + '">'
+          + '<td><span class="dash-tiket">' + esc(r.bap_nomor) + '</span>'
+          + '<span class="dash-kpi-label" style="display:block;text-transform:none;letter-spacing:0">' + esc(r.lokasi || '-') + '</span></td>'
+          + '<td><span class="urgency urgency-' + urgKelas(r.urgensi) + '">' + esc(r.urgensi || '-') + '</span></td>'
+          + '<td>JalanPantau<span class="dash-kpi-label" style="display:block;text-transform:none">' + esc(r.n_temuan) + ' titik</span></td>'
+          + '<td><span class="badge-status status-' + statusKelas(r.status) + '">' + labelStatus(r.status) + '</span></td>'
+          + '<td style="text-align:right"><button type="button" class="dash-btn-action" data-pilih="' + Number(r.id) + '">Verifikasi</button></td>'
+          + '</tr>';
+      }).join("");
+      tb.querySelectorAll("[data-pilih]").forEach(function(b){
+        b.addEventListener("click", function(e){ e.stopPropagation(); pilih(Number(b.dataset.pilih)); });
+      });
+      tb.querySelectorAll("tr[data-id]").forEach(function(tr){
+        tr.addEventListener("click", function(){ pilih(Number(tr.dataset.id)); });
+      });
+    }
+    document.getElementById("vrf-info").textContent = "Menampilkan " + rows.length + " dari " + semua.length + " disposisi aktif.";
+  }
+
+  function kosongkanPanel(){
+    ["vrf-nomor","vrf-lokasi","vrf-urgensi","vrf-temuan","vrf-koord","vrf-biaya"].forEach(function(id){
+      document.getElementById(id).textContent = "—";
+    });
+    document.getElementById("vrf-sla").textContent = "SLA —";
+    document.getElementById("btn-terima").disabled = true;
+    document.getElementById("btn-terbitkan").disabled = true;
+    document.getElementById("btn-selesai").disabled = true;
+    document.getElementById("btn-tolak").disabled = true;
+    document.getElementById("vrf-kosong").style.display = "block";
+  }
+
+  function pilih(id){
+    aktif = semua.filter(function(r){ return r.id === id; })[0] || null;
+    if (!aktif) return kosongkanPanel();
+    document.getElementById("vrf-kosong").style.display = "none";
+    document.getElementById("vrf-nomor").textContent = aktif.bap_nomor || ("#" + id);
+    document.getElementById("vrf-lokasi").textContent = aktif.lokasi || "-";
+    document.getElementById("vrf-urgensi").innerHTML =
+      '<span class="urgency urgency-' + urgKelas(aktif.urgensi) + '">' + esc(aktif.urgensi || "-") + "</span>";
+    document.getElementById("vrf-temuan").textContent = aktif.n_temuan || 0;
+    document.getElementById("vrf-koord").textContent =
+      (aktif.lat && aktif.lon) ? Number(aktif.lat).toFixed(5) + ", " + Number(aktif.lon).toFixed(5) : "-";
+    document.getElementById("vrf-biaya").textContent = rupiah(aktif.total_rp);
+    document.getElementById("vrf-sla").textContent = slaTeks(aktif);
+    document.getElementById("vrf-pj").value = aktif.penanggung_jawab || "";
+    document.getElementById("vrf-catatan").value = "";
+    document.getElementById("btn-terima").disabled = false;
+    document.getElementById("btn-terbitkan").disabled = false;
+    document.getElementById("btn-selesai").disabled = false;
+    document.getElementById("btn-tolak").disabled = false;
+    renderTabel();
+  }
+
+  function kirim(statusBaru){
+    if (!aktif) return;
+    var pj = document.getElementById("vrf-pj").value.trim();
+    var catatan = document.getElementById("vrf-catatan").value.trim();
+    fetch("/api/disposisi/" + aktif.id, {
+      method: "PUT",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({status: statusBaru, penanggung_jawab: pj, catatan: catatan})
+    })
+    .then(function(r){ return r.json().then(function(j){ return {ok: r.ok, j: j}; }); })
+    .then(function(res){
+      if (!res.ok){ window.jpToast("error", "Gagal", res.j.error || "Tidak dapat memperbarui."); return; }
+      window.jpToast("success", "Tersimpan", "Status tiket diperbarui menjadi " + statusBaru + ".");
+      aktif = null; kosongkanPanel(); muat();
+    })
+    .catch(function(){ window.jpToast("error", "Gagal", "Kesalahan jaringan."); });
+  }
+
+  function muat(){
+    fetch("/api/disposisi?daerah=" + encodeURIComponent(daerah) + "&exact=1&limit=200")
+      .then(function(r){ return r.json(); })
+      .then(function(rows){ semua = rows || []; renderKPI(); renderTabel(); })
+      .catch(function(){ document.getElementById("vrf-tbody").innerHTML = '<tr><td colspan="5" class="dash-empty">Gagal memuat.</td></tr>'; });
+  }
+
+  document.querySelectorAll(".dash-filter-btn").forEach(function(b){
+    b.addEventListener("click", function(){
+      document.querySelectorAll(".dash-filter-btn").forEach(function(o){ o.classList.remove("aktif"); });
+      b.classList.add("aktif");
+      filterNama = b.dataset.f;
+      renderTabel();
+    });
+  });
+  document.getElementById("btn-terima").addEventListener("click", function(){ kirim("Diproses"); });
+  document.getElementById("btn-selesai").addEventListener("click", function(){ kirim("Selesai"); });
+  document.getElementById("btn-tolak").addEventListener("click", function(){
+    window.jpConfirm("Tolak Validasi", "Tandai tiket ini sebagai Ditolak?", {type:"danger", okText:"Ya, Tolak"})
+      .then(function(ok){ if (ok) kirim("Ditolak"); });
+  });
+  document.getElementById("btn-terbitkan").addEventListener("click", function(){
+    if (!aktif) return;
+    window.location.href = "/pupr-" + daerah + "/dashboard/spk?pilih=" + aktif.id;
+  });
+  document.getElementById("btn-refresh").addEventListener("click", muat);
+
+  muat();
+})();
+</script>
+{% endblock %}

@@ -7,12 +7,13 @@
 
 ## Konteks aplikasi
 
-**JalanPantau** — web app Tugas Akhir. Alur: foto jalan difoto → AI YOLOv11n
-mendeteksi 5 kerusakan (retak memanjang, retak melintang, retak kulit buaya,
-kerusakan lain, lubang) → tiap temuan diberi severity Ringan/Sedang/Berat +
-estimasi biaya → laporan PDF → tersimpan di riwayat → terpetakan GPS.
-Navigasi: Deteksi, Peta, Riwayat, Tentang. Angka resmi yang boleh tampil:
-mAP validasi 0,59 · mAP test 0,47 · OOD Bandung 0,55 · bobot model 5,2 MB.
+**JalanPantau** — web app Tugas Akhir. Alur: foto jalan difoto → AI (YOLOv11s
+untuk foto statis, YOLOv11n untuk live) mendeteksi 5 kerusakan (retak memanjang,
+retak melintang, retak kulit buaya, kerusakan lain, lubang) → tiap temuan diberi
+severity Ringan/Sedang/Berat + estimasi biaya → laporan PDF → tersimpan di riwayat
+→ terpetakan GPS. Navigasi: Deteksi, Peta, Riwayat, Tentang. Angka resmi yang boleh
+tampil: YOLOv11s mAP val 0,65 / test 0,53 / OOD Bandung 0,45 (bobot 18,3 MB);
+YOLOv11n mAP val 0,59 / test 0,47 / OOD Bandung 0,55 (bobot live 9,9 MB).
 
 ---
 
@@ -28,8 +29,8 @@ Workbench 2 kolom (desktop; HP menumpuk vertikal):
   "Simpan ke riwayat"; 3 kartu KPI (Jumlah temuan, Prioritas berat, Estimasi total
   biaya Rp); tabel temuan (No, Kelas, Ukuran, Severity badge warna, Estimasi Rp).
 - Tab "Gambar | Live" di atas workbench. Tab Live berisi kontrol sumber
-  (webcam / kamera HP / file video), kartu KPI kecil (FPS, Titik unik, Deteksi,
-  Frame), tombol Mulai/Berhenti.
+  (webcam / kamera HP / file video), kartu KPI kecil (FPS Tampil, FPS Inferensi,
+  Titik Unik, Deteksi Aktif), tombol Mulai/Berhenti.
 - State yang didesain: sebelum upload (placeholder ramah), loading "Mendeteksi…",
   hasil ada, hasil kosong ("tidak terdeteksi, turunkan confidence…"), error.
 
