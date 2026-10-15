@@ -15,13 +15,17 @@
 </div>
 
 <div class="dash-kpis">
+  <div class="dash-kpi kpi-proses">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Perlu Tindakan Anda</span><strong class="dash-kpi-val">{{ stats.status.Diterbitan + stats.status['Perlu Revisi'] }}</strong></div>
+  </div>
   <div class="dash-kpi kpi-total">
     <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
     <div class="dash-kpi-info"><span class="dash-kpi-label">Total SPK</span><strong class="dash-kpi-val">{{ stats.total }}</strong></div>
   </div>
   <div class="dash-kpi kpi-proses">
     <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-    <div class="dash-kpi-info"><span class="dash-kpi-label">Belum Diterima</span><strong class="dash-kpi-val">{{ stats.status.Diterbitkan }}</strong></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Belum Diterima</span><strong class="dash-kpi-val">{{ stats.status.Diterbitan }}</strong></div>
   </div>
   <div class="dash-kpi kpi-baru">
     <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-6l-2 3h-4l-2-3H2"/></svg></div>
@@ -29,7 +33,7 @@
   </div>
   <div class="dash-kpi kpi-selesai">
     <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-    <div class="dash-kpi-info"><span class="dash-kpi-label">SPK Selesai</span><strong class="dash-kpi-val">{{ stats.status.Selesai }}</strong></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Diterima Dinas</span><strong class="dash-kpi-val">{{ stats.status['Diterima Dinas'] }}</strong></div>
   </div>
   <div class="dash-kpi kpi-biaya">
     <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0116 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
@@ -46,10 +50,12 @@
   <div class="dash-filter-bar" style="margin:10px 12px;border:none;padding:0">
     <div class="dash-filter-group">
       <button type="button" class="dash-filter-btn aktif" data-f="semua">Semua</button>
-      <button type="button" class="dash-filter-btn" data-f="Diterbitkan">Baru</button>
+      <button type="button" class="dash-filter-btn" data-f="Diterbitan">Baru</button>
       <button type="button" class="dash-filter-btn" data-f="Diterima">Diterima</button>
       <button type="button" class="dash-filter-btn" data-f="Dikerjakan">Dikerjakan</button>
-      <button type="button" class="dash-filter-btn" data-f="Selesai">Selesai</button>
+      <button type="button" class="dash-filter-btn" data-f="Perlu Revisi">Perlu Revisi</button>
+      <button type="button" class="dash-filter-btn" data-f="Menunggu Penerimaan">Menunggu Penerimaan</button>
+      <button type="button" class="dash-filter-btn" data-f="Diterima Dinas">Diterima Dinas</button>
     </div>
   </div>
 
@@ -74,9 +80,11 @@
             <span class="dash-kpi-label" style="display:block;text-transform:none;letter-spacing:0">{{ s.daerah }}</span></td>
           <td>{{ s.judul }}</td>
           <td><span class="urgency urgency-{{ s.prioritas|lower }}">{{ s.prioritas }}</span></td>
-          <td class="tenggat" data-tenggat="{{ s.tenggat or '' }}">-</td>
+          {% set tgl_lbl, tgl_kls = status_tenggat(s.tenggat, s.status) %}
+          <td class="tenggat">{{ s.tenggat or '-' }}
+            {% if tgl_lbl %}<span class="tenggat-info {{ tgl_kls }}">{{ tgl_lbl }}</span>{% endif %}</td>
           <td>{{ s.n_tugas_selesai }}/{{ s.n_tugas }}</td>
-          <td><span class="badge-status status-{{ s.status|lower }}">{{ s.status }}</span></td>
+          <td><span class="badge-status status-{{ s.status|lower|replace(' ', '-') }}">{{ s.status }}</span></td>
           <td style="text-align:right">
             <a class="dash-btn-detail" href="/kontraktor/spk/{{ s.id }}">Buka</a>
           </td>
@@ -122,16 +130,8 @@
   var baris = Array.prototype.slice.call(document.querySelectorAll("#spk-tbody tr"));
   var info = document.getElementById("spk-info");
 
-  function fmtTenggat(teks) {
-    if (!teks) return "-";
-    var d = new Date(teks);
-    if (isNaN(d.getTime())) return "-";
-    return d.toLocaleDateString("id-ID", {day: "2-digit", month: "short", year: "numeric"});
-  }
-  baris.forEach(function(tr){
-    var sel = tr.querySelector(".tenggat");
-    if (sel) sel.textContent = fmtTenggat(sel.dataset.tenggat);
-  });
+// Tanggal tenggat sudah dirender server-side bersama penanda sisa hari,
+  // jadi tidak perlu diformat ulang di sini.
 
   var tampil = baris.length;
   function saring(f){

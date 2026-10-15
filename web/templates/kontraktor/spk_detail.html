@@ -2,13 +2,20 @@
 {% block title %}SPK {{ item.nomor }}{% endblock %}
 
 {% block content %}
+<nav aria-label="Remah roti" style="font-size:12px;color:var(--dash-muted);margin-bottom:10px">
+  <a href="/kontraktor/dashboard" style="color:var(--dash-muted);text-decoration:none">Beranda</a>
+  <span aria-hidden="true" style="margin:0 6px">&rsaquo;</span>
+  <a href="/kontraktor/spk" style="color:var(--dash-muted);text-decoration:none">SPK Saya</a>
+  <span aria-hidden="true" style="margin:0 6px">&rsaquo;</span>
+  <span style="color:var(--dash-text);font-weight:600">{{ item.nomor }}</span>
+</nav>
 <div class="dash-header">
   <div>
     <h1 class="dash-title">{{ item.nomor }}</h1>
     <p class="dash-subtitle">{{ item.judul }} &mdash; diterbitkan {{ item.daerah }}</p>
   </div>
   <div class="dash-head-right">
-    <span class="badge-status status-{{ item.status|lower }}">{{ item.status }}</span>
+    <span class="badge-status status-{{ item.status|lower|replace(' ', '-') }}">{{ item.status }}</span>
     <a href="/kontraktor/dashboard" class="dash-btn-action">Semua SPK</a>
   </div>
 </div>
@@ -17,8 +24,7 @@
   <div><span class="dash-kpi-label">KONTRAKTOR</span><div>{{ item.kontraktor_nama }}</div></div>
   <div><span class="dash-kpi-label">PRIORITAS</span>
     <div><span class="urgency urgency-{{ item.prioritas|lower }}">{{ item.prioritas }}</span></div></div>
-  <div><span class="dash-kpi-label">TENGGAT</span><div id="spk-tenggat">{{ item.tenggat or '-' }}</div></div>
-  <div><span class="dash-kpi-label">PROGRES TITIK</span><div id="spk-progres">-</div></div>
+  <div><span class="dash-kpi-label">TENGGAT</span><div>{{ item.tenggat or '-' }}</div></div>
 </div>
 
 <div class="dash-card" style="margin-bottom:12px">
@@ -39,37 +45,49 @@
   </div>
 </div>
 
+{% set n_selesai = tugas|selectattr('status', 'equalto', 'Selesai')|list|length %}
 <div class="dash-card" style="margin-bottom:12px">
   <div class="dash-card-head">
-    <h2>Kemajuan SPK</h2>
-    <span style="font-size:11px;color:var(--dash-muted)"> Status hanya bisa maju satu tahap</span>
+    <h2>Titik Pekerjaan ({{ n_selesai }}/{{ tugas|length }} selesai)</h2>
+    <span style="font-size:11px;color:var(--dash-muted)">Unggah foto bukti lalu tandai selesai</span>
   </div>
   <div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px">
+    {% if item.status == 'Perlu Revisi' %}
+    <div style="padding:10px 12px;border-radius:10px;background:#FEF2F2;border:1px solid #FECACA">
+      <p style="font-size:13px;color:#991B1B;margin:0 0 4px"><b>Dinas meminta revisi.</b></p>
+      <p style="font-size:12px;color:#991B1B;margin:0">
+        {% if item.catatan_dinas and item.catatan_dinas != '-' %}{{ item.catatan_dinas }}{% else %}Perbaiki pekerjaan sesuai catatan dinas, lalu unggah ulang foto bukti setiap titik.{% endif %}
+      </p>
+      <p style="font-size:11px;color:#991B1B;margin:6px 0 0">Putaran revisi ke-{{ item.revisi_ke or 1 }}. Bukti foto lama sudah dikosongkan.</p>
+    </div>
+    {% elif item.status == 'Menunggu Penerimaan' %}
+    <div style="padding:10px 12px;border-radius:10px;background:#FFF7ED;border:1px solid #FED7AA">
+      <p style="font-size:13px;color:#9A3412;margin:0"><b>Menunggu pemeriksaan dinas.</b>
+        Hasil kerja sudah diajukan {{ item.selesai_pada or '-' }}. Anda tidak dapat mengubah status
+        sampai dinas menerima atau meminta revisi.</p>
+    </div>
+    {% elif item.status == 'Diterima Dinas' %}
+    <div style="padding:10px 12px;border-radius:10px;background:#ECFDF5;border:1px solid #A7F3D0">
+      <p style="font-size:13px;color:#065F46;margin:0"><b>Hasil kerja diterima dinas.</b>
+        Diterima {{ item.waktu_diterima or '-' }} oleh {{ item.diterima_oleh or '-' }}.
+        {% if item.nomor_bast and item.nomor_bast != '-' %}BAST {{ item.nomor_bast }}.{% endif %}</p>
+    </div>
+    {% endif %}
     <div>
       <label class="dash-kpi-label" for="spk-catatan">LAPORAN PROGRES KE DINAS</label>
       <textarea id="spk-catatan" class="dash-select" style="width:100%;margin-top:4px;min-height:64px;resize:vertical"
         placeholder="Contoh: Tim 1 sudah di lokasi, material jalan dikirim sore ini."></textarea>
     </div>
+    {% if item.status == 'Diterbitan' %}
     <div class="dash-head-right" style="gap:8px">
       <button type="button" class="dash-btn-apply" id="btn-terima">Terima SPK</button>
-      <button type="button" class="dash-btn-apply" id="btn-kerja">Mulai Dikerjakan</button>
-      <button type="button" class="dash-btn-secondary" id="btn-selesai">Tandai Selesai</button>
     </div>
-    <p class="dash-hint" style="margin:0" id="spk-catatatan-dinas">
-      {% if item.catatan_dinas and item.catatan_dinas != '-' %}Catatan dinas: {{ item.catatan_dinas }}{% endif %}
-    </p>
-  </div>
-</div>
-
-<div class="dash-card">
-  <div class="dash-card-head">
-    <h2>Daftar Titik Pekerjaan ({{ tugas|length }})</h2>
-    <span style="font-size:11px;color:var(--dash-muted)">Lampirkan foto bukti lalu tandai selesai</span>
+    {% endif %}
   </div>
   {% if tugas %}
-  <div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px">
+  <div id="kartu-tugas" style="padding:12px 14px;display:flex;flex-direction:column;gap:10px">
     {% for t in tugas %}
-    <div class="spk-kartu" data-tugas="{{ t.id }}">
+    <div class="spk-kartu" data-tugas="{{ t.id }}" data-jp-row="1">
       <div class="spk-kartu-body">
         <div class="spk-kepala">
           <span class="dash-tiket">{{ t.bap_nomor }}</span>
@@ -103,8 +121,14 @@
     </div>
     {% endfor %}
   </div>
+  <div id="kartu-paginasi" style="display:none;align-items:center;justify-content:center;gap:4px;margin-top:4px;flex-wrap:wrap"></div>
+  <p class="dash-hint" id="kartu-info" aria-live="polite" style="padding:0 14px 12px;margin:0"></p>
   {% else %}
   <p class="dash-empty">SPK ini tidak memiliki titik pekerjaan.</p>
+  {% endif %}
+  {% if item.status in ('Diterima', 'Dikerjakan', 'Perlu Revisi') %}
+  <p class="dash-hint" style="margin:0;padding:0 14px 12px">Selesaikan setiap titik dan unggah foto buktinya.
+    Setelah semua titik selesai, hasil kerja otomatis dikirim ke dinas.</p>
   {% endif %}
 </div>
 
@@ -133,7 +157,19 @@
 <script>
 (function(){
   var SPK_ID = {{ item.id }};
-  var STATUS_AWAL = {{ item.status|tojson }};
+
+  // Kartu titik dibatasi 10 per halaman. Peta di atas tetap menampilkan
+  // seluruh titik, dan angka progres tetap menghitung semuanya.
+  var kartu = document.getElementById("kartu-tugas");
+  if (kartu) {
+    window.jpPaginasi({
+      tbody: kartu,
+      bar: document.getElementById("kartu-paginasi"),
+      info: document.getElementById("kartu-info"),
+      perHalaman: 10,
+      label: "titik pekerjaan"
+    }).segarkan();
+  }
   var TITIK = [
     {% for t in tugas %}
     {id: {{ t.id }}, lat: {{ 'null' if t.lat is none else t.lat }},
@@ -188,7 +224,8 @@
       }
       window.jpToast("success", judul + " tersimpan", res.j.pesan || "");
       setTimeout(function(){ window.location.reload(); }, 700);
-    }).catch(function(){
+    }).catch(function(e){
+      window.jpLaporGagal(judul.toLowerCase() + " titik pekerjaan", e, {});
       window.jpToast("error", "Gagal", "Kesalahan jaringan.");
     });
   }
@@ -197,26 +234,18 @@
     return (document.getElementById("spk-catatan").value || "").trim();
   }
 
-  function setStatusSpk(status, judul){
-    window.jpConfirm(judul, "Ubah status SPK menjadi " + status + "?",
-      {okText: "Ya, " + status})
-      .then(function(ok){ if (ok) kirim("/api/kontraktor/spk/" + SPK_ID + "/status",
-                                {status: status, catatan: catatanSpk()}, judul); });
+// Hanya "Terima SPK" yang perlu tombol sendiri. Status "Dikerjakan" dan
+  // "Menunggu Penerimaan" dinaikkan otomatis server saat titik pekerjaan
+  // pertama dimulai dan saat titik terakhir selesai, jadi tombol_level SPK
+  // untuk keduanya hanya akan diam-diam tidak mengubah apa pun.
+  var btnTerima = document.getElementById("btn-terima");
+  if (btnTerima){
+    btnTerima.addEventListener("click", function(){
+      window.jpConfirm("Terima SPK", "Ubah status SPK menjadi Diterima?", {okText: "Ya, Terima"})
+        .then(function(ok){ if (ok) kirim("/api/kontraktor/spk/" + SPK_ID + "/status",
+                                  {status: "Diterima", catatan: catatanSpk()}, "Terima SPK"); });
+    });
   }
-  document.getElementById("btn-terima").addEventListener("click", function(){ setStatusSpk("Diterima", "Terima SPK"); });
-  document.getElementById("btn-kerja").addEventListener("click", function(){ setStatusSpk("Dikerjakan", "Mulai kerja"); });
-  document.getElementById("btn-selesai").addEventListener("click", function(){ setStatusSpk("Selesai", "Tandai selesai"); });
-
-  // Tombol SPK hanya aktif sesuai tahap saat ini (server tetap memvalidasi).
-var boleh = {
-    "btn-terima": STATUS_AWAL === "Diterbitkan",
-    "btn-kerja": STATUS_AWAL === "Diterima",
-    "btn-selesai": STATUS_AWAL === "Dikerjakan",
-  };
-  Object.keys(boleh).forEach(function(id){
-    var el = document.getElementById(id);
-    if (el && !boleh[id]) el.disabled = true;
-  });
 
   document.querySelectorAll("[data-kerja]").forEach(function(b){
     b.addEventListener("click", function(){
@@ -263,7 +292,7 @@ var boleh = {
           window.jpToast("success", "Foto tersimpan", "Sekarang titik bisa ditandai selesai.");
           setTimeout(function(){ window.location.reload(); }, 800);
         })
-        .catch(function(){ window.jpToast("error", "Gagal", "Kesalahan jaringan."); });
+        .catch(function(e){ window.jpLaporGagal("unggah foto bukti titik", e, {}); window.jpToast("error", "Gagal", "Kesalahan jaringan."); });
     });
   });
 })();

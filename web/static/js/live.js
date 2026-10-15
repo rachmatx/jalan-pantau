@@ -354,8 +354,9 @@ document.getElementById("unduh-live").addEventListener("click", async () => {
         btnBox.style.color = boxVisible ? "#fff" : "var(--jp-tx2)";
         showToast("Anotasi", boxVisible ? "Bounding box ditampilkan" : "Bounding box disembunyikan", "info");
       })
-      .catch(function() {
-        showToast("Anotasi", "Server tidak merespons.", "galat");
+.catch(function(e) {
+          console.error("[JalanPantau] simpan anotasi live", e);
+          showToast("Anotasi", "Server tidak merespons.", "galat");
       });
   });
 
@@ -437,8 +438,9 @@ document.getElementById("unduh-live").addEventListener("click", async () => {
         URL.revokeObjectURL(a.href);
         showToast("Log", "Log sesi terunduh.", "success");
       })
-      .catch(function() {
-        showToast("Log", "Gagal mengambil log dari server.", "galat");
+.catch(function(e) {
+          console.error("[JalanPantau] ambil log live", e);
+          showToast("Log", "Gagal mengambil log dari server.", "galat");
       });
   });
 

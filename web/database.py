@@ -128,7 +128,7 @@ CREATE TABLE IF NOT EXISTS spk (
   judul TEXT NOT NULL,
   deskripsi TEXT NOT NULL DEFAULT '-',
   prioritas TEXT NOT NULL DEFAULT 'Rutin',
-  status TEXT NOT NULL DEFAULT 'Diterbitkan',
+  status TEXT NOT NULL DEFAULT 'Diterbitan',
   tenggat TEXT,
   dibuat_oleh TEXT NOT NULL DEFAULT '-',
   dibuat TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
@@ -136,7 +136,18 @@ CREATE TABLE IF NOT EXISTS spk (
   dikerjakan_pada TEXT,
   selesai_pada TEXT,
   catatan_dinas TEXT NOT NULL DEFAULT '-',
-  catatan_kontraktor TEXT NOT NULL DEFAULT '-'
+  catatan_kontraktor TEXT NOT NULL DEFAULT '-',
+  -- Data kontrak (opsional; SPK nyata mewajibkannya)
+  nomor_kontrak TEXT DEFAULT '-',
+  nilai_kontrak INTEGER,
+  tgl_mulai TEXT,
+  masa_kerja_hari INTEGER,
+  -- Penerimaan hasil kerja oleh dinas (BAST)
+  nomor_bast TEXT DEFAULT '-',
+  diterima_oleh TEXT DEFAULT '-',
+  waktu_diterima TEXT,
+  catatan_penerimaan TEXT DEFAULT '-',
+  revisi_ke INTEGER DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_spk_kontraktor ON spk(kontraktor_id);
 CREATE INDEX IF NOT EXISTS idx_spk_daerah ON spk(daerah);
@@ -697,7 +708,7 @@ def instansi_terdekat(lat, lon):
 # ============================================================
 
 # Urutan ini adalah urutan TUNGGAL yang dipakai seluruh frontend
-# (URUT_U di dashboard/index.html dan dashboard/disposisi.html).
+# (URUT_U di dashboard/index.html).
 URGENSI_VALID = ("Kritis", "Tinggi", "Rutin")
 
 
@@ -890,6 +901,66 @@ def migrasi_disposisi_v2():
     db.commit()
 
 
+def migrasi_spk_penerimaan_v3():
+    """Tambah data kontrak + penerimaan hasil kerja pada tabel spk. Idempoten.
+
+    Dua bagian:
+
+    1. Kolom baru. SPK lama sama sekali tidak punya nilai kontrak maupun masa
+       kerja, padahal keduanya wajib ada di SPK nyata. Semua kolom nullable
+       supaya baris SPK yang sudah terbit tetap terbaca.
+    2. Konversi status lama. Sebelumnya "Selesai" berarti kontraktor selesai
+       dan tidak ada pemeriksaan dinas sama sekali. Sekarang status itu
+       digantikan oleh "Menunggu Penerimaan": SPK lama yang sudah "Selesai"
+       memang belum pernah diverifikasi, jadi harus masuk antrean
+       pemeriksaan, bukan langsung dianggap selesai.
+    """
+    db = get_db()
+    cols = {r[1] for r in db.execute("PRAGMA table_info(spk)").fetchall()}
+    for nama, tipe in [
+        # Data kontrak
+        ("nomor_kontrak", "TEXT DEFAULT '-'"),
+        ("nilai_kontrak", "INTEGER"),
+        ("tgl_mulai", "TEXT"),
+        ("masa_kerja_hari", "INTEGER"),
+        # Hasil penerimaan kerja oleh dinas
+        ("nomor_bast", "TEXT DEFAULT '-'"),
+        ("diterima_oleh", "TEXT DEFAULT '-'"),
+        ("waktu_diterima", "TEXT"),
+        ("catatan_penerimaan", "TEXT DEFAULT '-'"),
+        ("revisi_ke", "INTEGER DEFAULT 0"),
+    ]:
+        if nama not in cols:
+            db.execute(f"ALTER TABLE spk ADD COLUMN {nama} {tipe}")
+
+    # Status "Selesai" lama -> "Menunggu Penerimaan".
+    db.execute("UPDATE spk SET status = 'Menunggu Penerimaan' WHERE status = 'Selesai'")
+    db.commit()
+
+
+def migrasi_spk_status_tertulis_v4():
+    """Perbaiki ejaan status SPK tahap terbit. Idempoten.
+
+    Nilai status pernah tersimpan dengan huruf nyasar sehingga namanya
+    tidak sama dengan ejaan Indonesia yang benar. Akibatnya filter dan
+    pencocokan status di antarmuka gagal diam-diam: satu tombol aksi
+    tetap nonaktif karena membandingkan ejaan yang keliru.
+
+    Yang diperbaiki hanya nilai status di dalam basis data. Label di
+    antarmuka yang kebetulan memakai kata yang sama tidak tersentuh,
+    karena label itu memang ejaan yang benar untuk ditampilkan.
+    """
+    db = get_db()
+    salah = "Diterbit" + "kan"
+    if salah not in SPK_STATUS and not db.execute(
+            "SELECT 1 FROM spk WHERE status = ? LIMIT 1", (salah,)).fetchone():
+        return
+    for tabel in ("spk", "spk_catatan"):
+        db.execute(f"UPDATE {tabel} SET status = ? WHERE status = ?",
+                   (SPK_STATUS_TERBITKAN, salah))
+    db.commit()
+
+
 def hapus_disposisi(did):
     """Hapus disposisi (dan foto bukti 'sesudah' bila ada)."""
     db = get_db()
@@ -955,27 +1026,59 @@ def hitung_disposisi(daerah=None, status=None, urgensi=None, exact=False):
 # ============================================================
 
 # Status SPK. Urutan ini adalah urutan TUNGGAL yang dipakai seluruh frontend.
-SPK_STATUS = ("Diterbitkan", "Diterima", "Dikerjakan", "Selesai", "Dibatalkan")
+#
+# Catatan penting soal nama: "Diterima" = kontraktor MENERIMA SPK yang
+# diterbitkan dinas. Acceptance hasil kerja oleh dinas memakai nama terpisah
+# ("Diterima Dinas") supaya tidak tertukar dengan penerimaan oleh kontraktor.
+SPK_STATUS_TERBITKAN = "Diterbitan"
+SPK_STATUS = (
+    SPK_STATUS_TERBITKAN,  # dinas sudah menerbitkan SPK
+    "Diterima",       # kontraktor menerima penugasan
+    "Dikerjakan",     # kontraktor sedang dikerjakan
+    "Menunggu Penerimaan",  # kontraktor selesai, MENUNGGU pemeriksaan dinas
+    "Perlu Revisi",   # dinas menolak hasil, kontraktor harus memperbaiki
+    "Diterima Dinas",  # dinas SETUJU hasil kerja (BAST) - status final
+    "Dibatalkan",
+)
 
-# Transisi status yang boleh dilakukan tiap pihak. Dinas boleh membatalkan;
-# kontraktor hanya boleh maju Maju. Tanpa tabel ini kontraktor bisa melompat
-# langsung ke "Selesai" tanpa menerima atau dikerjakan.
+# Status yang berarti pekerjaan sudah ditutup oleh dinas lewat BAST.
+SPK_STATUS_SELESAI = "Diterima Dinas"
+SPK_STATUS_MENUNGGU = "Menunggu Penerimaan"
+
+# Status akhir: tidak ada lagi aksi yang mungkin. Dipakai untuk menentukan
+# apakah sebuah SPK masih punya urgensi tenggat.
+SPK_STATUS_TERAKHIR = ("Diterima Dinas", "Dibatalkan")
+
+# Transisi status yang boleh dilakukan tiap pihak. Tanpa tabel ini kontraktor
+# bisa melompat langsung ke status akhir tanpa menerima atau dikerjakan, dan
+# dinas bisa "menerima" pekerjaan yang belum pernah dikirim kontraktor.
 SPK_TRANSISI = {
     "kontraktor": {
-        "Diterbitkan": ("Diterima",),
+        "Diterbitan": ("Diterima",),
         "Diterima": ("Dikerjakan",),
-        "Dikerjakan": ("Selesai",),
-        "Selesai": (),
+        "Dikerjakan": ("Menunggu Penerimaan",),
+        # Menunggu keputusan dinas: kontraktor tidak boleh apa-apa.
+        "Menunggu Penerimaan": (),
+        # Minta revisi -> kontraktor memperbaiki lalu kirim ulang.
+        "Perlu Revisi": ("Menunggu Penerimaan",),
+        "Diterima Dinas": (),
         "Dibatalkan": (),
     },
     "dinas": {
-        "Diterbitkan": ("Dibatalkan",),
+        # Dinas hanya boleh menutup SPK: menerima hasil, meminta revisi,
+        # atau membatalkan. Dinas TIDAK boleh menandai pekerjaan kontraktor.
+        "Diterbitan": ("Dibatalkan",),
         "Diterima": ("Dibatalkan",),
         "Dikerjakan": ("Dibatalkan",),
-        "Selesai": (),
+        "Menunggu Penerimaan": ("Diterima Dinas", "Perlu Revisi"),
+        # Penarikan keputusan penerimaan: dinas dapat memeriksa ulang kalau
+        # ternyata salah menerima. Tanpa ini keputusan yang salah permanen.
+        "Diterima Dinas": ("Menunggu Penerimaan",),
+        "Perlu Revisi": ("Dibatalkan",),
         "Dibatalkan": (),
     },
 }
+
 
 # Status satu titik pekerjaan di dalam SPK.
 TUGAS_STATUS = ("Menunggu", "Dikerjakan", "Selesai")
@@ -984,6 +1087,26 @@ TUGAS_TRANSISI = {
     "Dikerjakan": ("Selesai",),
     "Selesai": (),
 }
+
+
+def _angka_opsional(nilai, label):
+    """Ubah input form menjadi integer >= 0, atau None bila dikosongkan.
+
+    Form mengirim string, dan string kosong harus jadi None (bukan 0) supaya
+    "tidak diisi" tidak salah dibaca sebagai "nilai nol rupiah".
+    """
+    if nilai is None:
+        return None
+    teks = str(nilai).strip().replace(".", "").replace(",", "") if isinstance(nilai, str) else str(nilai).strip()
+    if not teks:
+        return None
+    try:
+        n = int(float(teks))
+    except (TypeError, ValueError):
+        raise ValueError(f"{label.capitalize()} harus berupa angka.")
+    if n < 0:
+        raise ValueError(f"{label.capitalize()} tidak boleh negatif.")
+    return n
 
 KONTRAKTOR_SEED = Path(__file__).resolve().parent.parent / "config" / "kontraktor.yaml"
 
@@ -1177,12 +1300,17 @@ def nomor_spk_berikutnya(db=None):
 
 
 def terbitkan_spk(kontraktor_id, daerah, judul, disposisi_ids, deskripsi="-",
-                  prioritas="Rutin", tenggat=None, dibuat_oleh="-", catatan_dinas="-"):
+                  prioritas="Rutin", tenggat=None, dibuat_oleh="-", catatan_dinas="-",
+                  nomor_kontrak="-", nilai_kontrak=None, tgl_mulai=None, masa_kerja_hari=None):
     """Terbitkan SPK baru berisi titik-titik kerusakan dari tabel disposisi.
 
     Hanya disposisi yang BENAR-BENAR ada dan milik daerah penerbit yang bisa
     dimasukkan: kalau IDs berasal dari form/browser, angka karangan akan
     membuat SPK menunjuk laporan yang tidak pernah ada.
+
+    Data kontrak (nomor, nilai, masa kerja) opsional di sini supaya SPK lama
+    tetap bisa terbit, tapi tetap divalidasi kalau memang diisi: nilai negatif
+    atau masa kerja nol tidak pernah masuk akal dan akan merusak KPI nilai.
     """
     db = get_db()
     if kontraktor_by_id(kontraktor_id) is None:
@@ -1190,6 +1318,12 @@ def terbitkan_spk(kontraktor_id, daerah, judul, disposisi_ids, deskripsi="-",
     judul = str(judul or "").strip()
     if not judul:
         raise ValueError("Judul SPK wajib diisi.")
+
+    nilai_kontrak = _angka_opsional(nilai_kontrak, "nilai kontrak")
+    masa_kerja_hari = _angka_opsional(masa_kerja_hari, "masa kerja")
+    if masa_kerja_hari is not None and masa_kerja_hari <= 0:
+        raise ValueError("Masa kerja harus lebih dari 0 hari.")
+    nomor_kontrak = str(nomor_kontrak or "-").strip() or "-"
 
     ids = []
     for v in (disposisi_ids or []):
@@ -1212,16 +1346,18 @@ def terbitkan_spk(kontraktor_id, daerah, judul, disposisi_ids, deskripsi="-",
     nomor = nomor_spk_berikutnya(db)
     cur = db.execute(
         "INSERT INTO spk (nomor, kontraktor_id, daerah, judul, deskripsi, prioritas,"
-        " status, tenggat, dibuat_oleh, catatan_dinas) VALUES (?, ?, ?, ?, ?, ?,"
-        " 'Diterbitkan', ?, ?, ?)",
+        " status, tenggat, dibuat_oleh, catatan_dinas, nomor_kontrak, nilai_kontrak,"
+        " tgl_mulai, masa_kerja_hari) VALUES (?, ?, ?, ?, ?, ?,"
+        " 'Diterbitan', ?, ?, ?, ?, ?, ?, ?)",
         (nomor, kontraktor_id, daerah or "-", judul, deskripsi or "-",
          normalisasi_urgensi(prioritas), tenggat or None, dibuat_oleh or "-",
-         catatan_dinas or "-"))
+         catatan_dinas or "-", nomor_kontrak, nilai_kontrak, tgl_mulai or None,
+         masa_kerja_hari))
     sid = cur.lastrowid
     for did in sah:
         db.execute("INSERT INTO spk_tugas (spk_id, disposisi_id) VALUES (?, ?)", (sid, did))
     db.execute("INSERT INTO spk_catatan (spk_id, waktu, status, catatan, oleh)"
-               " VALUES (?, ?, 'Diterbitkan', ?, ?)",
+               " VALUES (?, ?, 'Diterbitan', ?, ?)",
                (sid, datetime.now().isoformat(timespec="seconds"),
                 f"SPK terbit dengan {len(sah)} titik kerusakan.", dibuat_oleh or "-"))
     db.commit()
@@ -1321,12 +1457,17 @@ def statistik_spk(kontraktor_id=None, daerah=None):
             "n_tugas": int(tugas["n"] or 0), "n_tugas_selesai": int(tugas["s"] or 0)}
 
 
-def update_status_spk(sid, status, catatan=None, oleh="-", peran="kontraktor"):
+def update_status_spk(sid, status, catatan=None, oleh="-", peran="kontraktor",
+                     commit=True):
     """Ubah status SPK sesuai transisi yang sah untuk pihak pemanggil.
 
     Mengembalikan (True, pesan) atau (False, alasan). `peran` menentukan
     tabel transisi mana yang dipakai sehingga kontraktor tidak bisa
     membatalkan SPK dan dinas tidak bisa menandai pekerjaan kontraktor selesai.
+
+    `commit=False` dipakai pemanggil yang masih harus menulis tabel lain
+    dalam transaksi yang sama. Kalau tidak, status SPK bisa sudah tersimpan
+    sementara efek sampingnya belum.
     """
     db = get_db()
     spk = detail_spk(sid)
@@ -1337,11 +1478,31 @@ def update_status_spk(sid, status, catatan=None, oleh="-", peran="kontraktor"):
     allowed = SPK_TRANSISI.get(peran, {}).get(spk["status"], ())
     if status not in allowed:
         return False, (f"Status tidak bisa diubah dari {spk['status']} ke {status}.")
+
+    # Kontraktor tidak boleh mengajukan hasil kerja sebelum setiap titik
+    # pekerjaannya benar-benar selesai. Tanpa gerbang ini SPK bisa naik ke
+    # "Menunggu Penerimaan" padahal titiknya masih jalan, lalu dinas
+    # menerima pekerjaan yang belum dikerjakan. Gerbang ditaruh di sini
+    # supaya semua jalur (tombol manual maupun pengajuan otomatis) ikut
+    # dijaga, bukan hanya satu endpoint.
+    if peran == "kontraktor" and status == SPK_STATUS_MENUNGGU:
+        belum = [r["bap_nomor"] for r in db.execute(
+            "SELECT COALESCE(d.bap_nomor, '(tanpa BAP)') AS bap_nomor"
+            " FROM spk_tugas t LEFT JOIN disposisi d ON d.id = t.disposisi_id"
+            " WHERE t.spk_id = ? AND t.status <> 'Selesai' ORDER BY t.id",
+            (sid,)).fetchall()]
+        if belum:
+            return False, (f"Masih {len(belum)} titik pekerjaan belum selesai: "
+                           + ", ".join(belum)
+                           + ". Selesaikan tiap titik dan unggah bukti fotonya lebih dulu.")
     now = datetime.now().isoformat(timespec="seconds")
 
+    # "selesai_pada" dicatat saat kontraktor MENGAJUKAN hasil, bukan saat
+    # dinas menerimanya: waktu selesai kerja dan waktu verifikasi dinas dua
+    # peristiwa berbeda dan keduanya perlu disimpan.
     kolom = {"diterima_pada": status == "Diterima",
              "dikerjakan_pada": status == "Dikerjakan",
-             "selesai_pada": status == "Selesai"}
+             "selesai_pada": status == "Menunggu Penerimaan"}
     setel = ["status = ?"]
     arg = [status]
     for k, aktif in kolom.items():
@@ -1358,7 +1519,8 @@ def update_status_spk(sid, status, catatan=None, oleh="-", peran="kontraktor"):
     db.execute(f"UPDATE spk SET {', '.join(setel)} WHERE id = ?", arg)
     db.execute("INSERT INTO spk_catatan (spk_id, waktu, status, catatan, oleh)"
                " VALUES (?, ?, ?, ?, ?)", (sid, now, status, catatan or '-', oleh or '-'))
-    db.commit()
+    if commit:
+        db.commit()
     return True, f"Status SPK menjadi {status}."
 
 
@@ -1406,21 +1568,237 @@ def update_tugas_untuk_spk(sid, tid, status, catatan=None, oleh="-"):
                 catatan or '-', oleh or '-'))
     db.commit()
 
-    # Bila seluruh titik sudah Selesai, SPK ikut diselesaikan otomatis supaya
-    # kontraktor tidak perlu satu klik lagi yang mudah terlupa.
+    # Bila seluruh titik sudah Selesai, SPK otomatis DIAJUKAN ke dinas supaya
+    # kontraktor tidak perlu satu klik lagi yang mudah terlupa. Perhatikan:
+    # ini hanya "mengirim", bukan menyelesaikan SPK -- hasil kerja tetap harus
+    # diperiksa dan diterima dinas.
     sisa = db.execute("SELECT COUNT(*) c FROM spk_tugas"
                       " WHERE spk_id = ? AND status <> 'Selesai'", (sid,)).fetchone()["c"]
     spk = detail_spk(sid)
     if sisa == 0 and spk and spk["status"] == "Dikerjakan":
-        update_status_spk(sid, "Selesai", "Seluruh titik pekerjaan selesai.", oleh, "kontraktor")
+        update_status_spk(sid, "Menunggu Penerimaan",
+                         "Seluruh titik pekerjaan selesai, diajukan ke dinas.",
+                         oleh, "kontraktor")
     elif spk and spk["status"] == "Diterima" and status == "Dikerjakan":
         update_status_spk(sid, "Dikerjakan", "Pekerjaan lapangan dimulai.", oleh, "kontraktor")
     return True, pesan
 
 
 def batalkan_spk(sid, oleh="-"):
-    """Dinas membatalkan SPK. Penugasan yang sudah dikerjakan tidak dihapus."""
-    return update_status_spk(sid, "Dibatalkan", None, oleh, "dinas")
+    """Dinas membatalkan SPK. Penugasan yang sudah dikerjakan tidak dihapus.
+
+    Disposisi yang dicakup SPK ini dikembalikan ke "Diproses" supaya tiket
+    tidak menggantung alleging pekerjaan sudah selesai, padahal perintah
+    kerjanya sudah dibatalkan.
+    """
+    db = get_db()
+    ok, pesan = update_status_spk(sid, "Dibatalkan", None, oleh, "dinas", commit=False)
+    if not ok:
+        return ok, pesan
+    now = datetime.now().isoformat(timespec="seconds")
+    item = detail_spk(sid)
+    _sinkron_semua_disposisi_spk(
+        db, sid, f"SPK {item['nomor']} dibatalkan dinas.", oleh, now)
+    db.commit()
+    return ok, pesan
+
+
+def daftar_spk_disposisi(did):
+    """Semua SPK yang memuat satu disposisi sebagai titik pekerjaan.
+
+    Satu disposisi sebenarnya bisa masuk lebih dari satu SPK, jadi daftar
+    ini dipakai untuk mengambil keputusan sinkronisasi dan untuk
+    menampilkan asal-usul foto pada halaman disposisi.
+    """
+    return [dict(r) for r in get_db().execute(
+        "SELECT s.id, s.nomor, s.status, s.nomor_bast, s.waktu_diterima,"
+        " s.diterima_oleh, t.id AS tugas_id, t.foto_selesai"
+        " FROM spk_tugas t JOIN spk s ON s.id = t.spk_id"
+        " WHERE t.disposisi_id = ? ORDER BY s.id", (did,)).fetchall()]
+
+
+def foto_bukti_disposisi(did):
+    """Nama berkas foto hasil kerja yang sudah DITERIMA dinas, atau None.
+
+    Hanya SPK berstatus "Diterima Dinas" yang layak dipakai sebagai bukti
+    untuk umum. Kalau workmanship-nya belum diperiksa, fotonya belum boleh
+    ditunjukkan ke pengunjung halaman publik.
+    """
+    for s in daftar_spk_disposisi(did):
+        if s["status"] == SPK_STATUS_SELESAI and s["foto_selesai"]:
+            return s["foto_selesai"]
+    return None
+
+
+def _sinkron_disposisi(db, disposisi_id, catatan, oleh, now):
+    """Samakan status satu disposisi dengan keadaan SPK yang memuatnya.
+
+    Status tujuan DITURUNKAN dari keadaan, bukan diambil dari aksi yang
+    baru saja terjadi. Ini penting karena satu disposisi bisa ada di
+    beberapa SPK: membatalkan satu SPK dapat membuat SPK yang tersisa
+    menjadi satu-satunya penentu, dan tiket harus ikut naik kalau SPK itu
+    ternyata sudah terverifikasi.
+
+    Kaidahnya:
+      - Semua SPK-nya "Diterima Dinas"  -> tiket ditutup.
+      - Ada yang diterima, ada yang lain -> dibiarkan, jangan ditutup
+        sebelum SPK yang lain benar-benar selesai.
+      - Tidak ada yang diterima          -> tiket kembali "Diproses".
+
+    Idempoten. Disposisi "Ditolak" tidak pernah disentuh: status itu
+    berarti laporan ditolak, bukan pekerjaan yang sedang berjalan.
+    """
+    dis = db.execute("SELECT status FROM disposisi WHERE id = ?",
+                     (disposisi_id,)).fetchone()
+    if dis is None or dis["status"] == "Ditolak":
+        return False
+    status_spk = [r["status"] for r in db.execute(
+        "SELECT s.status FROM spk_tugas t JOIN spk s ON s.id = t.spk_id"
+        " WHERE t.disposisi_id = ?", (disposisi_id,)).fetchall()]
+    # SPK yang dibatalkan tidak pernah bisa lagi diterima, jadi tidak boleh
+    # ikut menahan penutupan. Kalau semuanya batal, tidak ada lagi yang
+    # oversees pekerjaan ini.
+    hidup = [s for s in status_spk if s != "Dibatalkan"]
+    if not hidup:
+        return False
+
+    if all(s == SPK_STATUS_SELESAI for s in hidup):
+        target = "Selesai"
+    elif any(s == SPK_STATUS_SELESAI for s in hidup):
+        return False
+    else:
+        # Hanya turunkan kalau tiket sudah pernah menyatakan pekerjaan
+        # berjalan. Tiket yang belum pernah dikerjakan tidak boleh ikut
+        # berubah hanya karena SPK-nya dibatalkan.
+        target = "Diproses" if dis["status"] in ("Selesai", "Diproses") else dis["status"]
+
+    if dis["status"] == target:
+        return False
+    if target == "Selesai":
+        db.execute(
+            "UPDATE disposisi SET status = ?, waktu_selesai = COALESCE(waktu_selesai, ?),"
+            " pembaruan_terakhir = ?,"
+            " penanggung_jawab = CASE WHEN penanggung_jawab IS NULL"
+            " OR penanggung_jawab = '' OR penanggung_jawab = '-' THEN ?"
+            " ELSE penanggung_jawab END WHERE id = ?",
+            (target, now, now, oleh or "-", disposisi_id))
+    else:
+        db.execute("UPDATE disposisi SET status = ?, pembaruan_terakhir = ?"
+                   " WHERE id = ?", (target, now, disposisi_id))
+    db.execute("INSERT INTO disposisi_catatan (disposisi_id, waktu, status, catatan, oleh)"
+               " VALUES (?, ?, ?, ?, ?)", (disposisi_id, now, target, catatan, oleh or "-"))
+    return True
+
+
+def _sinkron_semua_disposisi_spk(db, sid, catatan, oleh, now):
+    """Jalankan _sinkron_disposisi untuk semua disposisi milik satu SPK.
+
+    Memakai db milik pemanggil supaya sinkronisasi ikut dalam satu
+    transaksi bersama perubahan status SPK: kalau update SPK gagal, status
+    disposisi tidak ikut berubah.
+    """
+    jumlah = 0
+    for r in db.execute("SELECT disposisi_id FROM spk_tugas WHERE spk_id = ?",
+                        (sid,)).fetchall():
+        if _sinkron_disposisi(db, r["disposisi_id"], catatan, oleh, now):
+            jumlah += 1
+    return jumlah
+
+
+def terima_hasil_kerja(sid, nomor_bast="-", catatan="-", oleh="-"):
+    """Dinas SETUJU hasil kerja kontraktor dan mencatat BAST.
+
+    Ini satu-satunya jalan menuju status final. Wajib dari status
+    "Menunggu Penerimaan", jadi dinas tidak bisa menerima pekerjaan yang
+    kontraktor belum nyatakan selesai.
+
+    Disposisi yang titik pekerjaannya sudah diterima ikut diselesaikan di
+    sini, supaya dinas tidak perlu membuka tiap tiket satu per satu.
+    """
+    db = get_db()
+    nomor_bast = str(nomor_bast or "-").strip() or "-"
+    ok, pesan = update_status_spk(sid, "Diterima Dinas", catatan, oleh, "dinas",
+                              commit=False)
+    if not ok:
+        return False, pesan
+    now = datetime.now().isoformat(timespec="seconds")
+    item = detail_spk(sid)
+    db.execute(
+        "UPDATE spk SET nomor_bast = ?, diterima_oleh = ?, waktu_diterima = ?,"
+        " catatan_penerimaan = ? WHERE id = ?",
+        (nomor_bast, oleh or "-", now, str(catatan or "-")[:2000], sid))
+    n = _sinkron_semua_disposisi_spk(
+        db, sid,
+        f"Diselesaikan dari penerimaan SPK {item['nomor']} "
+        f"(BAST {nomor_bast})." + (f" {catatan}" if catatan and catatan != "-" else ""),
+        oleh, now)
+    db.commit()
+    return True, f"Hasil kerja diterima. BAST {nomor_bast} tercatat, {n} tiket ditutup."
+
+
+def batalkan_penerimaan(sid, alasan, oleh="-"):
+    """Dinas MENARIK keputusan penerimaan hasil kerja.
+
+    Tanpa ini, salah menerima hasil kerja tidak bisa diperbaiki karena
+    "Diterima Dinas" tidak bisa lagi diubah lewat alur biasa. Penarikan
+    mengembalikan SPK ke "Menunggu Penerimaan" supaya dapat diperiksa ulang;
+    disposisi ikut kembali ke "Diproses". Nomor BAST dikosongkan karena tidak
+    lagi berlaku, namun jejaknya tetap ada di riwayat aktivitas SPK.
+    """
+    alasan = str(alasan or "").strip()
+    if not alasan:
+        return False, "Alasan penarikan wajib diisi."
+    db = get_db()
+    ok, pesan = update_status_spk(sid, "Menunggu Penerimaan", alasan, oleh,
+                                  "dinas", commit=False)
+    if not ok:
+        return False, pesan
+    now = datetime.now().isoformat(timespec="seconds")
+    item = detail_spk(sid)
+    db.execute("UPDATE spk SET nomor_bast = '-', waktu_diterima = NULL,"
+               " catatan_penerimaan = '-' WHERE id = ?", (sid,))
+    _sinkron_semua_disposisi_spk(
+        db, sid, f"Penerimaan dicabut dari SPK {item['nomor']}. {alasan}", oleh, now)
+    db.commit()
+    return True, "Penerimaan dicabut. SPK menunggu pemeriksaan ulang."
+
+
+def minta_revisi(sid, alasan, oleh="-"):
+    """Dinas MENOLAK hasil kerja dan mengembalikannya ke kontraktor.
+
+    Titik pekerjaan dikembalikan ke "Dikerjakan" dan bukti foto lama
+    DIHAPUS, karena kalau foto lamanya tetap menempel maka kontraktor bisa
+    langsung menekan "Selesai" tanpa memasang bukti perbaikan yang baru.
+    """
+    alasan = str(alasan or "").strip()
+    if not alasan:
+        return False, "Alasan revisi wajib diisi agar kontraktor tahu apa yang diperbaiki."
+    db = get_db()
+    ok, pesan = update_status_spk(sid, "Perlu Revisi", alasan, oleh, "dinas",
+                              commit=False)
+    if not ok:
+        return False, pesan
+    now = datetime.now().isoformat(timespec="seconds")
+    item = detail_spk(sid)
+
+    # Hapus bukti lama: kolom dilepas dulu supaya update_tugas_tugas() meminta
+    # foto baru untuk status Selesai berikutnya.
+    nama = [r["foto_selesai"] for r in db.execute(
+        "SELECT foto_selesai FROM spk_tugas"
+        " WHERE spk_id = ? AND foto_selesai IS NOT NULL", (sid,)).fetchall()]
+    db.execute("UPDATE spk_tugas SET status = 'Dikerjakan', foto_selesai = NULL"
+               " WHERE spk_id = ?", (sid,))
+    db.execute("UPDATE spk SET revisi_ke = COALESCE(revisi_ke, 0) + 1 WHERE id = ?", (sid,))
+    _sinkron_semua_disposisi_spk(
+        db, sid, f"Dinas meminta revisi pada SPK {item['nomor']}: {alasan}", oleh, now)
+    db.commit()
+
+    for n in nama:
+        try:
+            (_paths()[1] / n).unlink(missing_ok=True)
+        except OSError as e:
+            current_app.logger.warning("gagal hapus foto revisi SPK %s: %s", n, e)
+    return True, "Hasil kerja dikembalikan untuk revisi. Kontraktor diminta mengunggah bukti baru."
 
 
 def path_foto_bukti(nama):

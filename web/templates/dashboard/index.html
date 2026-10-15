@@ -19,6 +19,13 @@
     <input type="date" id="dash-dari" class="dash-date" title="Dari tanggal">
     <span style="font-size:11px;color:var(--dash-muted)">s/d</span>
     <input type="date" id="dash-sampai" class="dash-date" title="Sampai tanggal">
+    <select id="dash-urgensi" class="dash-select" style="width:auto;padding:6px 10px"
+            title="Saring menurut urgensi">
+      <option value="">Semua urgensi</option>
+      <option value="Kritis">Kritis</option>
+      <option value="Tinggi">Tinggi</option>
+      <option value="Rutin">Rutin</option>
+    </select>
   </div>
   <div class="dash-search-wrap">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -160,6 +167,7 @@
   var dataTampil = [];
   var filterAktif = 'semua';
   var queryCari = '';
+  var urgensiAktif = '';
   var tglDari = '', tglSampai = '';
   var sortKey = 'waktu', sortDir = -1;
   var idMaks = 0;
@@ -168,7 +176,7 @@
   var peta = null, penanda = [];
   // Pagination state
   var halamanDash = 1;
-  var PER_HALAMAN_DASH = 25;
+  var PER_HALAMAN_DASH = 10;
   var totalDbDash = 0;
   var overflowDash = false;
 
@@ -263,28 +271,31 @@
     var pagEl = document.getElementById("dash-paginasi");
     if (!pagEl) return;
     if (totalHal <= 1) { pagEl.style.display = "none"; return; }
+    // Halaman bisa tertinggal di luar jangkauan setelah data dihapus.
+    if (halamanDash > totalHal) halamanDash = totalHal;
     pagEl.style.display = "flex";
     var html = '<button type="button" class="dash-btn-light" id="dash-pag-prev"' + (halamanDash <= 1 ? " disabled" : "") + ">‹ Sebelumnya</button>";
-    for (var i = 1; i <= totalHal; i++) {
-      html += '<button type="button" class="dash-btn-light dash-pag-num' + (i === halamanDash ? " aktif" : "") + '" data-hal="' + i + '">' + i + "</button>";
-    }
+    window.jpNomorHalaman(totalHal, halamanDash).forEach(function(n) {
+      if (n === "...") { html += '<span class="inst-pag-gap">…</span>'; return; }
+      html += '<button type="button" class="dash-btn-light dash-pag-num' + (n === halamanDash ? " aktif" : "") + '" data-hal="' + n + '">' + n + "</button>";
+    });
     html += '<button type="button" class="dash-btn-light" id="dash-pag-next"' + (halamanDash >= totalHal ? " disabled" : "") + ">Berikutnya ›</button>";
     pagEl.innerHTML = html;
     var btnPrev = document.getElementById("dash-pag-prev");
     var btnNext = document.getElementById("dash-pag-next");
     if (btnPrev) btnPrev.onclick = function() { if (halamanDash > 1) { halamanDash--; renderTabel(); }};
     if (btnNext) btnNext.onclick = function() { if (halamanDash < totalHal) { halamanDash++; renderTabel(); }};
-    var nums = document.querySelectorAll(".dash-pag-num");
-    for (var j = 0; j < nums.length; j++) {
-      (function(idx) {
-        nums[j].onclick = function() { halamanDash = idx + 1; renderTabel(); };
-      })(j);
-    }
+    // Baca dari data-hal, bukan indeks DOM: elipsis di antaranya membuat
+    // indeks tidak lagi sama dengan nomor halaman.
+    document.querySelectorAll(".dash-pag-num").forEach(function(btn) {
+      btn.onclick = function() { halamanDash = Number(btn.dataset.hal); renderTabel(); };
+    });
   }
 
   function renderTabel() {
     var filtered = semuaData.filter(function(r) {
       var matchStatus = filterAktif === 'semua' || r.status === filterAktif;
+      var matchUrgensi = !urgensiAktif || r.urgensi === urgensiAktif;
       var matchCari = !queryCari ||
         (r.bap_nomor && r.bap_nomor.toLowerCase().includes(queryCari.toLowerCase())) ||
         (r.lokasi && r.lokasi.toLowerCase().includes(queryCari.toLowerCase()));
@@ -294,7 +305,7 @@
         if (tglDari && w < tglDari) matchTgl = false;
         if (tglSampai && w > tglSampai) matchTgl = false;
       }
-      return matchStatus && matchCari && matchTgl;
+      return matchStatus && matchCari && matchTgl && matchUrgensi;
     });
     filtered.sort(function(a, b) {
       var x = nilaiSort(a), y = nilaiSort(b);
@@ -361,38 +372,44 @@
     }
   }
   
-  // Load data
-  function muatData(rows, totalDb, overflow) {
+  // Load data. `jagaHalaman` dipakai saat penyegaran otomatis supaya
+  // pengguna tidak terlempar balik ke halaman pertama setiap 30 detik.
+  function muatData(rows, totalDb, overflow, jagaHalaman) {
     semuaData = rows;
-    totalDbDash = totalDb || rows.length;
+    if (totalDb != null) totalDbDash = totalDb;
     overflowDash = overflow || false;
     idMaks = rows.reduce(function(m, r) { return r.id > m ? r.id : m; }, idMaks);
-    halamanDash = 1;  // reset ke halaman 1 saat data baru
+    if (!jagaHalaman) halamanDash = 1;
     renderTabel();
     updateKPI();
     renderTren();
     renderDonat();
   }
-  // Load dengan cek overflow (ambil 201, kirim 200)
-  fetch("/api/disposisi?daerah=" + daerah + "&exact=1&limit=201")
-    .then(function(r) { return r.json(); })
-    .then(function(rows) {
-      var overflow = rows.length > 200;
-      var data = overflow ? rows.slice(0, 200) : rows;
-      // Hitung total DB dari KPI stats (server-side) atau fallback
-      var totalDb = statsTotalDb || rows.length;
-      muatData(data, totalDb, overflow);
-    })
-    .catch(function() {
-      document.getElementById("dash-tabel-body").innerHTML = '<tr><td colspan="7" class="dash-empty">Gagal memuat data.</td></tr>';
-    });
 
-  // Fetch total DB terpisah untuk overflow info
-  var statsTotalDb = 0;
-  fetch("/api/disposisi/stats?daerah=" + daerah + "&exact=1")
-    .then(function(r) { return r.json(); })
-    .then(function(s) { statsTotalDb = s.total || 0; })
-    .catch(function() {});
+  // Daftar dan statistik diambil bersama-sama. Kalau dipisah menjadi dua
+  // permintaan, angka "dari jumlah sebenarnya" bisa salah karena permintaan yang
+  // selesai lebih dulu memakai angka total yang masih kosong.
+  // duluan memakai angka total yang masih kosong.
+  function unduhData(jagaHalaman) {
+    return Promise.all([
+      fetch("/api/disposisi?daerah=" + daerah + "&exact=1&limit=201")
+        .then(function(r) { return r.json(); }),
+      fetch("/api/disposisi/stats?daerah=" + daerah + "&exact=1")
+        .then(function(r) { return r.json(); }),
+    ]).then(function(j) {
+      var rows = j[0] || [], stats = j[1] || {};
+      var overflow = rows.length > 200;
+      muatData(overflow ? rows.slice(0, 200) : rows,
+               stats.total != null ? stats.total : rows.length,
+               overflow, jagaHalaman);
+    });
+  }
+
+  unduhData(false).catch(function(e) {
+    window.jpLaporGagal("memuat data dashboard", e, {});
+    document.getElementById("dash-tabel-body").innerHTML =
+      '<tr><td colspan="7" class="dash-empty">Gagal memuat data.</td></tr>';
+  });
   
   // Animasi counter KPI (naik/turun smooth)
   function animasiCounter(el, target, durasi) {
@@ -495,7 +512,7 @@
   // Polling laporan baru tiap 30 detik
   setInterval(function() {
     if (document.hidden) return;
-    fetch("/api/disposisi?daerah=" + daerah + "&exact=1&limit=200")
+    fetch("/api/disposisi?daerah=" + daerah + "&exact=1&limit=201")
       .then(function(r) { return r.json(); })
       .then(function(rows) {
         var mx = rows.reduce(function(m, r) { return r.id > m ? r.id : m; }, 0);
@@ -503,10 +520,29 @@
           var baru = rows.filter(function(r) { return r.id > idMaks; }).length;
           dashToast(baru + ' laporan baru masuk');
         }
-        if (mx !== idMaks || rows.length !== semuaData.length) muatData(rows);
+        var overflow = rows.length > 200;
+        if (mx !== idMaks || overflow !== overflowDash
+            || Math.min(rows.length, 200) !== semuaData.length) {
+          // Ambil ulang total juga, karena angka "dari(total)" ikut stale.
+fetch("/api/disposisi/stats?daerah=" + daerah + "&exact=1")
+      .then(function(r) { return r.json(); })
+      .then(function(s) {
+        muatData(overflow ? rows.slice(0, 200) : rows,
+        s.total != null ? s.total : rows.length,
+        overflow, true);
       })
-      .catch(function() {});
-  }, 30000);
+      // Gagal ambil total tidak merusak tabel: daftar SPK sudah ada dari
+      // panggilan sebelumnya. Cukup dicatat, tanpa toast supaya tidak
+      // muncul berulang tiap 30 detik.
+      .catch(function(e) { window.jpLaporGagal("ambil total statistik saat polling", e, {}); });
+    }
+    })
+    // Polling utama. Kalau ini gagal terus, dashboard terlihat tenang
+    // padahal datanya tidak pernah diperbarui -- itu persis kondisi yang
+    // menyembunyikan bug tombol Terbitkan. Pakai pencatat sekali-jangan agar
+    // satu masalah tidak jadi numpuk baris konsol setiap 30 detik.
+    .catch(function(e) { window.jpLaporGagalSekali("poll-dashboard", "polling dashboard", e); });
+    }, 30000);
   
   // Filter buttons
   document.querySelectorAll('.dash-filter-btn').forEach(function(btn) {
@@ -515,15 +551,27 @@
       btn.classList.add('aktif');
       filterAktif = btn.getAttribute('data-filter');
       document.getElementById('dash-filter-label').textContent = btn.textContent;
+      halamanDash = 1;
       renderTabel();
     });
   });
   
+  // Filter urgensi
+  var pilihUrgensi = document.getElementById('dash-urgensi');
+  if (pilihUrgensi) {
+    pilihUrgensi.addEventListener('change', function() {
+      urgensiAktif = this.value;
+      halamanDash = 1;
+      renderTabel();
+    });
+  }
+
   // Search
   var searchInput = document.getElementById('dash-search');
   if (searchInput) {
     searchInput.addEventListener('input', function() {
       queryCari = this.value;
+      halamanDash = 1;
       renderTabel();
     });
   }
@@ -553,7 +601,12 @@
   // Filter tanggal
   function ikatTanggal(id, cb) {
     var el = document.getElementById(id);
-    if (el) el.addEventListener('change', function() { cb(this.value); renderTabel(); });
+    if (!el) return;
+    el.addEventListener('change', function() {
+      cb(this.value);
+      halamanDash = 1;   // hasil saringan baru, kembali ke halaman pertama
+      renderTabel();
+    });
   }
   ikatTanggal('dash-dari', function(v) { tglDari = v; });
   ikatTanggal('dash-sampai', function(v) { tglSampai = v; });
@@ -561,6 +614,7 @@
   // Sorting klik header
   document.querySelectorAll('#dash-tabel th.sortable').forEach(function(th) {
     th.addEventListener('click', function() {
+      halamanDash = 1;   // urutan baru, kembali ke halaman pertama
       var k = th.getAttribute('data-sort');
       if (sortKey === k) { sortDir = -sortDir; }
       else { sortKey = k; sortDir = 1; }

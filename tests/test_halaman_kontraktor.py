@@ -70,7 +70,8 @@ class TestHalamanSPKSaya(unittest.TestCase):
         self.assertIn('href="/kontraktor/peta"', base)
 
     def test_filter_status_valid(self):
-        for s in ("Diterbitkan", "Diterima", "Dikerjakan", "Selesai"):
+        for s in ("Diterbitan", "Diterima", "Dikerjakan", "Perlu Revisi",
+                  "Menunggu+Penerimaan", "Diterima+Dinas", "Dibatalkan"):
             with self.subTest(s=s):
                 r = self.c.get("/kontraktor/spk?status=" + s)
                 self.assertEqual(r.status_code, 200)

@@ -145,6 +145,24 @@
     <!-- Update Status -->
     <div class="dash-card" style="padding:12px">
       <h3 style="font-size:13px;font-weight:600;margin:0 0 12px">Update Status</h3>
+      {% if spk_terkait %}
+      <div style="padding:10px 12px;border-radius:10px;background:var(--dash-surface-2);border:1px solid var(--dash-border);margin-bottom:12px">
+        <div style="font-size:11px;font-weight:600;color:var(--dash-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Penanganan</div>
+        {% for s in spk_terkait %}
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+          <a href="/pupr-{{ daerah }}/dashboard/spk/{{ s.id }}" style="font-family:var(--dash-mono);font-size:12px;color:var(--dash-accent);text-decoration:none">
+            {{ s.nomor }}</a>
+          <span class="badge-status status-{{ s.status|lower|replace(' ', '-') }}">{{ s.status }}</span>
+          {% if s.nomor_bast and s.nomor_bast != '-' %}
+          <span style="font-size:11px;color:var(--dash-muted)">BAST {{ s.nomor_bast }}</span>
+          {% endif %}
+        </div>
+        {% endfor %}
+        <p style="font-size:11px;color:var(--dash-muted);margin:6px 0 0">
+          Status tiket mengikuti penerimaan SPK secara otomatis, jadi tidak perlu diubah manual di sini.
+        </p>
+      </div>
+      {% endif %}
       {% if catatan_list %}
       <div class="dash-cat-list">
         {% for c in catatan_list %}
@@ -156,11 +174,23 @@
       <div style="font-size:11px;color:var(--dash-muted);background:var(--dash-surface-2);border-radius:6px;padding:8px 10px;margin-bottom:8px">Catatan terakhir: <span style="color:var(--dash-text)">{{ item.catatan }}</span></div>
       {% endif %}
       <div style="display:flex;flex-direction:column;gap:8px">
+        {% set terkunci = spk_terkait and spk_terkait|selectattr('status', 'equalto', 'Diterima Dinas')|list|length > 0 %}
+        {% if terkunci %}
+        <div style="padding:10px 12px;border-radius:8px;background:#ECFDF5;border:1px solid #A7F3D0;font-size:12px;color:#065F46">
+          Tiket ini ditutup otomatis oleh penerimaan SPK. Memilih status lain di sini akan
+          bertentangan dengan SPK. Bila penerimaan itu keliru, tarik keputusannya dari
+          halaman detail SPK.
+        </div>
+        <select id="update-status" class="dash-select" disabled>
+          <option value="Selesai" selected>Selesai (dari SPK)</option>
+        </select>
+        {% else %}
         <select id="update-status" class="dash-select">
           <option value="Terkirim" {{ 'selected' if item.status == 'Terkirim' else '' }}>Terkirim</option>
           <option value="Diproses" {{ 'selected' if item.status == 'Diproses' else '' }}>Diproses</option>
           <option value="Selesai" {{ 'selected' if item.status == 'Selesai' else '' }}>Selesai</option>
         </select>
+        {% endif %}
         <textarea id="update-catatan" class="dash-select" rows="2" placeholder="Catatan penanganan..."></textarea>
         <input id="update-pj" class="dash-select" placeholder="Penanggung jawab..." value="{{ item.penanggung_jawab if item.penanggung_jawab and item.penanggung_jawab != '-' else '' }}">
 
@@ -250,8 +280,9 @@ window.updateStatus = function() { if (window.__kirimUpdate) window.__kirimUpdat
         else if (ket) ket.innerHTML = '<span style="color:#4ade80">Foto sesudah berhasil diunggah.</span>';
         return true;
       })
-      .catch(function() {
-        btn.disabled = false;
+.catch(function(e) {
+      window.jpLaporGagal("unggah foto bukti", e, {});
+      btn.disabled = false;
         window.jpToast('error', 'Foto Gagal', 'Tidak ada koneksi ke server.');
         if (ket) ket.innerHTML = '<span style="color:#f87171">Gagal mengunggah: tidak ada koneksi.</span>';
         return false;
@@ -263,7 +294,21 @@ window.updateStatus = function() { if (window.__kirimUpdate) window.__kirimUpdat
   window.__unggahFoto = function() { return unggahFoto(true); };
 
   window.__kirimUpdate = function() {
-    var status = document.getElementById('update-status').value;
+    var sel = document.getElementById('update-status');
+    // Status terkunci: hanya boleh mengunggah foto, bukan mengubah status.
+    // Mengirim ulang status di sini akan bertentangan dengan SPK.
+    if (sel && sel.disabled) {
+      if (fi && fi.files && fi.files.length) {
+        unggahFoto(true).then(function(okFoto) {
+          if (!okFoto) window.jpToast("warning", "Foto Gagal", 'Status terkunci, foto gagal diunggah.');
+        });
+      } else {
+        window.jpToast("info", "Status Terkunci",
+          'Status diatur otomatis dari penerimaan SPK. Ubah dari halaman detail SPK bila perlu.');
+      }
+      return;
+    }
+    var status = sel.value;
     var catatan = document.getElementById('update-catatan').value;
     var pjEl = document.getElementById('update-pj');
     var pj = pjEl ? pjEl.value : '';
@@ -280,7 +325,7 @@ window.updateStatus = function() { if (window.__kirimUpdate) window.__kirimUpdat
       window.jpToast("success", "Berhasil", 'Status berhasil diupdate!');
       location.reload();
     })
-    .catch(function() { window.jpToast("error", "Gagal", 'Gagal mengupdate status.'); });
+    .catch(function(e) { window.jpLaporGagal("update status disposisi", e, {}); window.jpToast("error", "Gagal", 'Gagal mengupdate status.'); });
   };
 
   function segarkanSLA() {

@@ -25,10 +25,10 @@
             <th>Kode</th><th>Badan Usaha</th><th>Bidang</th><th>Akun Login</th><th>Status</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="kontraktor-tbody">
           {% for k in daftar %}
           {% set akun = akun_list|selectattr('kontraktor_id', 'equalto', k.id)|list %}
-          <tr>
+          <tr data-jp-row="1">
             <td><span class="dash-tiket">{{ k.kode }}</span></td>
             <td>{{ k.nama }}
               <span class="dash-kpi-label" style="display:block;text-transform:none;letter-spacing:0">{{ k.alamat }}</span></td>
@@ -54,10 +54,14 @@
               <span class="badge-status status-dibatalkan">Nonaktif</span>
               {% endif %}</td>
           </tr>
+          {% else %}
+          <tr><td colspan="5" class="dash-empty">Belum ada kontraktor terdaftar.</td></tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
+    <div id="kontraktor-paginasi" style="display:none;align-items:center;justify-content:center;gap:4px;margin-top:12px;flex-wrap:wrap"></div>
+    <p class="dash-hint" id="kontraktor-page-info" aria-live="polite" style="padding:0 14px"></p>
   </div>
 
   <div class="dash-card">
@@ -123,6 +127,15 @@
 {% block skrip %}
 <script>
 (function(){
+  // Daftar kontraktor dibatasi 10 baris per halaman.
+  window.jpPaginasi({
+    tbody: document.getElementById("kontraktor-tbody"),
+    bar: document.getElementById("kontraktor-paginasi"),
+    info: document.getElementById("kontraktor-page-info"),
+    perHalaman: 10,
+    label: "kontraktor"
+  }).segarkan();
+
   function esc(v){ return String(v == null ? "" : v).replace(/[&<>"'`=]/g, function(c){
     return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;","`":"&#96;","=":"&#61;"}[c]; }); }
   function nilai(id){ return (document.getElementById(id).value || "").trim(); }
@@ -145,7 +158,7 @@
         if (!res.ok){ window.jpToast("error", "Gagal", res.j.error || "Tidak dapat menyimpan."); return; }
         window.jpToast("success", "Tersimpan", "Kontraktor disimpan. Muat ulang untuk melihat daftar.");
       })
-      .catch(function(){ window.jpToast("error", "Gagal", "Kesalahan jaringan."); });
+      .catch(function(e){ window.jpLaporGagal("simpan kontraktor", e, {}); window.jpToast("error", "Gagal", "Kesalahan jaringan."); });
   });
 
   var bs = document.getElementById("btn-sandi");
@@ -164,7 +177,7 @@
         window.jpToast("success", "Tersimpan", "Sandi akun kontraktor diperbarui.");
         document.getElementById("s-sandi").value = "";
       })
-      .catch(function(){ window.jpToast("error", "Gagal", "Kesalahan jaringan."); });
+      .catch(function(e){ window.jpLaporGagal("simpan sandi kontraktor", e, {}); window.jpToast("error", "Gagal", "Kesalahan jaringan."); });
   });
 })();
 </script>

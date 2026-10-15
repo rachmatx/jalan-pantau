@@ -212,7 +212,21 @@ body.dash {
 .dash-btn-lihat:hover { text-decoration: underline; }
 
 /* ---- Table ---- */
-.dash-table-wrap { overflow-x: auto; }
+/* Gradien "local" menempel ke konten, "scroll" ikut viewport: saat tabel
+   digeser, sisi yang bisa digeser lebih illuminating hilang dan sisi
+   tersembunyi memunculkan bayangan. Ini penanda bahwa masih ada kolom
+   di luar layar, tanpa perlu tambahan JavaScript. */
+.dash-table-wrap {
+  overflow-x: auto;
+  background:
+    linear-gradient(to right, var(--dash-surface) 30%, rgba(255,255,255,0)) left center,
+    linear-gradient(to left, var(--dash-surface) 30%, rgba(255,255,255,0)) right center,
+    linear-gradient(to right, rgba(15,23,42,.13), rgba(15,23,42,0)) left center,
+    linear-gradient(to left, rgba(15,23,42,.13), rgba(15,23,42,0)) right center;
+  background-repeat: no-repeat;
+  background-size: 32px 100%, 32px 100%, 12px 100%, 12px 100%;
+  background-attachment: local, local, scroll, scroll;
+}
 .dash-table { width: 100%; border-collapse: collapse; }
 .dash-table th {
   text-align: left;
@@ -266,6 +280,27 @@ body.dash {
 .status-dibatalkan::before { background: #94A3B8; }
 .status-menunggu { background: #F1F5F9; color: var(--dash-muted); }
 .status-menunggu::before { background: #94A3B8; }
+/* Hasil kerja menunggu pemeriksaan dinas: perlu perhatian, belum final. */
+.status-menunggu-penerimaan { background: #FFF7ED; color: #C2410C; }
+.status-menunggu-penerimaan::before { background: #EA580C; }
+/* Dinas menolak hasil kerja dan kontraktor harus memperbaiki. */
+.status-perlu-revisi { background: #FEF2F2; color: #B91C1C; }
+.status-perlu-revisi::before { background: #DC2626; }
+/* Status FINAL: hasil kerja sudah diperiksa dan diterima dinas (BAST). */
+.status-diterima-dinas { background: #ECFDF5; color: var(--dash-success); }
+.status-diterima-dinas::before { background: var(--dash-success); }
+
+/* Input formulir dashboard (penerimaan hasil kerja, penerbitan SPK). */
+.dash-input {
+  width: 100%; padding: 7px 10px; margin-top: 4px;
+  border: 1px solid #CBD5E1; border-radius: 8px;
+  background: #fff; color: var(--dash-ink);
+  font: inherit; font-size: 13px;
+}
+.dash-input:focus {
+  outline: 2px solid var(--dash-accent); outline-offset: 1px;
+  border-color: var(--dash-accent);
+}
 
 /* Peta titik pekerjaan di dalam SPK. */
 .spk-map { height: 340px; background: var(--dash-surface-2); z-index: 0; }
@@ -348,11 +383,79 @@ body.dash {
   .dash-kpis { grid-template-columns: repeat(3, 1fr); }
   .dash-duo { grid-template-columns: 1fr; }
 }
+/* Elipsis di antara nomor halaman saat jumlahnya banyak. */
+.inst-pag-gap {
+  align-self: center;
+  padding: 0 4px;
+  font-size: 12px;
+  color: var(--dash-muted);
+  user-select: none;
+}
+
+/* Penanda tenggat SPK. Hanya SPK yang masih berjalan yang punya
+   urgensi; yang sudah diterima dinas atau dibatalkan tidak ditampilkan.
+   Nama kelas ".tenggat" dipakai template sebagai hook JS, jadi badge ini
+   memakai awalan ".tenggat-info" agar tidak bentrok. */
+.tenggat-info {
+  display: inline-block; margin-top: 3px;
+  padding: 1px 6px; border-radius: 9999px;
+  font-size: 10px; font-weight: 600; white-space: nowrap;
+}
+.tenggat-aman { background: #F1F5F9; color: #64748B; }
+.tenggat-dekat { background: #FFFBEB; color: #B45309; }
+.tenggat-hari-ini { background: #FFF7ED; color: #C2410C; }
+.tenggat-lewat { background: #FEF2F2; color: #B91C1C; }
+
+/* ---- Menu drawer layar kecil ----
+   Default disembunyikan, baru dihidupkan di bawah 768px. Aturan default
+   WAJIB ditulis sebelum @media, kalau tidak aturan ini menimpa nilai
+   display yang sudah di-set di dalam media query. */
+.dash-nav-toggle { display: none; }
+.dash-nav-scrim { display: none; }
+
 @media (max-width: 768px) {
-  .dash-sidebar { display: none; }
-  .dash-main { margin-left: 0; padding: 12px; }
+  /* Sidebar jadi menu drawer: disembunyikan sampai tombol menu ditekan.
+     Sebelumnya di bawah 768px sidebar hilang tanpa ada tombol apa pun,
+     sehingga pengguna HP tidak bisa berpindah halaman sama sekali. */
+  .dash-sidebar {
+    transform: translateX(-100%);
+    transition: transform .22s ease;
+    box-shadow: 0 0 24px rgba(15, 23, 42, .18);
+  }
+  .dash-sidebar.dash-sidebar-buka { transform: translateX(0); }
+  .dash-nav-scrim {
+    display: block;
+    position: fixed; inset: 0; z-index: 40;
+    background: rgba(15, 23, 42, .45);
+  }
+  .dash-main { margin-left: 0; padding: 12px; padding-top: 56px; }
   .dash-kpis { grid-template-columns: repeat(2, 1fr); }
   .dash-ba-grid { grid-template-columns: 1fr; }
+  /* Tombol menu hanya muncul di layar kecil. */
+  .dash-nav-toggle {
+    display: flex; align-items: center; justify-content: center;
+    position: fixed; top: 10px; left: 12px; z-index: 60;
+    width: 40px; height: 40px; padding: 0;
+    border: 1px solid var(--dash-border); border-radius: 10px;
+    background: var(--dash-surface); color: var(--dash-text);
+    box-shadow: 0 1px 4px rgba(15, 23, 42, .12); cursor: pointer;
+  }
+  .dash-nav-toggle svg { width: 20px; height: 20px; }
+
+  /* ---- Tabel di layar kecil ----
+     Tabel 6-7 kolom tidak muat di 360px. Peras padding/ukuran font supaya
+     lebih banyak kolom kebaca, dan kunci kolom pertama agar konteks baris
+     tidak hilang saat tabel digeser ke kanan. */
+  .dash-table th, .dash-table td { padding: 6px 8px; }
+  .dash-table th { font-size: 9px; }
+  .dash-table td { font-size: 11px; }
+  .dash-table th:first-child, .dash-table td:first-child {
+    position: sticky; left: 0; z-index: 2;
+    background: var(--dash-surface);
+    box-shadow: 1px 0 0 var(--dash-border);
+  }
+  .dash-table th:first-child { z-index: 3; background: var(--dash-surface-2); }
+  .dash-table tbody tr:hover td:first-child { background: var(--dash-surface-2); }
 }
 
 /* ---- Form Elements ---- */

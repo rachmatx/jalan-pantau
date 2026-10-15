@@ -322,7 +322,7 @@ function hapusId(id) {
         muat();
         window.jpToast("success", "Berhasil", "Riwayat #" + id + " telah dihapus.");
       })
-      .catch(function(){ window.jpToast("error", "Gagal", "Gagal menghapus riwayat."); });
+      .catch(function(e){ console.error("[JalanPantau] hapus riwayat", e); window.jpToast("error", "Gagal", "Gagal menghapus riwayat."); });
   });
 }
 

@@ -59,7 +59,7 @@
         renderTabelBAP();
         pilihBAP(rows[0].id);
       })
-      .catch(function(e) { console.log("Gagal load BAP:", e); });
+      .catch(function(e) { console.warn("[JalanPantau] gagal memuat daftar BAP", e); });
   }
   
   // Render tabel BAP dengan pagination
@@ -127,7 +127,8 @@
           (per.transverse_crack + per.longitudinal_crack) + " Garis";
         document.getElementById("rekap-biaya").textContent = "Rp " + (b.total_rp / 1000000).toFixed(2) + " Jt";
       })
-      .catch(function() {
+      .catch(function(e) {
+        console.error("[JalanPantau] rekap jenis kerusakan", e);
         document.getElementById("rekap-lubang").textContent = "-";
         document.getElementById("rekap-retak").textContent = "-";
         document.getElementById("rekap-melintang").textContent = "-";
@@ -167,7 +168,9 @@
     fetch("/api/instansi")
       .then(function(r) { return r.json(); })
       .then(function(data) { instansiDaftar = data; })
-      .catch(function() {});
+      // Daftar instansi hanya dipakai untuk kotak pencarian. Kalau gagal,
+  // isi halaman lain tetap utuh, jadi cukup dicatat tanpa toast.
+  .catch(function(e) { console.warn("[JalanPantau] gagal memuat daftar instansi untuk pencarian", e); });
   }
   
   // Search instansi
@@ -282,9 +285,14 @@
       }
     })
     .catch(function(e) {
+      // e.message di sini hampir selalu "Failed to fetch", artinya server
+      // tidak menjawab sama sekali, bukan isi yang ditolak. Dicatat ke
+      // konsol supaya penyebabnya bisa ditelusuri.
+      console.error("[JalanPantau] kirim disposisi", e);
       btn.innerHTML = original;
       btn.disabled = false;
-      window.jpToast("error", "Gagal Mengirim", e.message);
+      window.jpToast("error", "Gagal Mengirim",
+        "Tidak ada respons dari server. Periksa koneksi, lalu coba lagi.");
     });
   });
 })();

@@ -68,12 +68,30 @@ class TestSetelahLoginRender(unittest.TestCase):
         from database import AKUN_DEMO
         c.post("/login", data={"username": AKUN_DEMO[0], "password": AKUN_DEMO[1]})
         for u in ["/pupr-bandung/dashboard", "/pupr-bandung/dashboard/verifikasi",
-                  "/pupr-bandung/dashboard/analitik", "/pupr-bandung/dashboard/disposisi",
+                  "/pupr-bandung/dashboard/analitik",
                   "/pupr-bandung/dashboard/instansi", "/pupr-bandung/dashboard/spk",
                   "/pupr-bandung/dashboard/kontraktor", "/kalibrasi"]:
             with self.subTest(url=u):
                 self.assertEqual(c.get(u).status_code, 200, u)
         self.assertEqual(c.get("/pupr-bandung/dashboard/xyz").status_code, 404)
+
+    def test_daftar_disposisi_diarahkan_ke_beranda(self):
+        """Alamat lama daftar disposisi harus tetap berguna.
+
+        Daftar laporan sudah menjadi bagian dari halaman Beranda, jadi
+        alamat lamanya dialihkan ke sana. Tautan tersimpan dan bookmark
+        lama tidak boleh ikut rusak jadi halaman kosong atau 404.
+        """
+        app = _app()
+        with app.app_context():
+            from database import init_admin
+            init_admin()
+        c = app.test_client()
+        from database import AKUN_DEMO
+        c.post("/login", data={"username": AKUN_DEMO[0], "password": AKUN_DEMO[1]})
+        r = c.get("/pupr-bandung/dashboard/disposisi")
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("/dashboard", r.headers["Location"])
 
 
 class TestCsrfHtml(unittest.TestCase):

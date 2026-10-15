@@ -136,6 +136,54 @@
       </div>
       {% endif %}
 
+      <!-- Bukti hasil kerja kontraktor yang sudah diterima dinas lewat SPK.
+           Berkasnya TIDAK disalin ke foto_sesudah; halaman ini merujuk
+           fotonya lewat rute /foto-bukti yang hanya melayani SPK
+           berstatus "Diterima Dinas". -->
+      {% if disposisi and ada_foto_bukti %}
+      {% set spk_diterima = spk_terkait|selectattr('status', 'equalto', 'Diterima Dinas')|list|first %}
+      <div class="jp-card" style="padding:16px">
+        <div style="display:flex;align-items:center;gap:8px;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--jp-line)">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--jp-primary)" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+          <h2 style="font-size:16px;font-weight:600;color:var(--jp-ink);margin:0">Bukti Hasil Kerja</h2>
+          <span style="margin-left:auto;padding:2px 8px;border-radius:4px;background:var(--jp-sev-h-bg);font-family:var(--jp-mono);font-size:10px;color:#047857;font-weight:600">TERVERIFIKASI</span>
+        </div>
+        <button type="button" id="btn-foto-bukti"
+                style="display:block;width:100%;padding:0;border:1px solid var(--jp-line);border-radius:8px;overflow:hidden;background:#020617;cursor:zoom-in">
+          <img src="/api/disposisi/{{ disposisi.id }}/foto-bukti"
+               alt="Foto hasil pekerjaan yang sudah disetujui dinas"
+               loading="lazy"
+               style="display:block;width:100%;height:320px;object-fit:contain">
+        </button>
+        <p class="jp-hint" style="margin:10px 0 0">
+          Foto dikerjakan oleh kontraktor dan telah disetujui dinas
+          {% if spk_diterima %}
+          melalui SPK {{ spk_diterima.nomor }}{% if spk_diterima.nomor_bast and spk_diterima.nomor_bast != '-' %}
+          dengan BAST {{ spk_diterima.nomor_bast }}{% endif %}
+          {%- endif %}.
+          Klik foto untuk melihat ukuran penuh.
+        </p>
+        <dialog id="dlg-foto-bukti"
+                style="border:none;border-radius:12px;padding:0;max-width:min(1100px,94vw);width:1100px;background:var(--jp-surface)">
+          <div style="background:#020617;border-radius:12px;overflow:hidden">
+            <img src="/api/disposisi/{{ disposisi.id }}/foto-bukti"
+                 alt="Foto hasil pekerjaan yang sudah disetujui dinas"
+                 style="display:block;width:100%;max-height:82vh;object-fit:contain">
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 16px;background:var(--jp-surface)">
+            <div style="min-width:0">
+              <div style="font-size:13px;font-weight:600;color:var(--jp-ink)">Bukti Hasil Kerja</div>
+              <div class="jp-hint" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ disposisi.lokasi or disposisi.bap_nomor }}</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-shrink:0">
+              <a class="jp-btn-demo" style="padding:8px 16px;text-decoration:none" href="/api/disposisi/{{ disposisi.id }}/foto-bukti" download="bukti-hasil-{{ disposisi.bap_nomor | replace('/', '-') }}.jpg">Unduh</a>
+              <button type="button" class="jp-btn-save" id="btn-tutup-foto-bukti" style="padding:8px 16px">Tutup</button>
+            </div>
+          </div>
+        </dialog>
+      </div>
+      {% endif %}
+
       <!-- Foto Setelah Penanganan (diunggah dinas lewat dashboard) -->
       {% if disposisi %}
       <div class="jp-card" style="padding:16px">
@@ -175,6 +223,7 @@
           </div>
         </dialog>
         {% else %}
+        {% if not ada_foto_bukti %}
         <div style="padding:20px;border-radius:8px;background:var(--jp-container-low);text-align:center">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--jp-muted)" stroke-width="1.6" style="margin:0 auto 8px"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
           <p class="jp-hint" style="margin:0">Instansi belum mengunggah dokumentasi foto jalan setelah perbaikan pada laporan ini.</p>
@@ -184,6 +233,7 @@
         </div>
         {% endif %}
       </div>
+      {% endif %}
       {% endif %}
     </div>
 
@@ -235,15 +285,18 @@
 {% if disposisi and ada_foto_sesudah %}
 <script>
 (function () {
-  var dlg = document.getElementById("dlg-foto-sesudah");
-  var buka = document.getElementById("btn-foto-sesudah");
-  var tutup = document.getElementById("btn-tutup-foto-sesudah");
-  if (!dlg || !buka) return;
-  buka.addEventListener("click", function () { if (!dlg.open) dlg.showModal(); });
-  if (tutup) tutup.addEventListener("click", function () { dlg.close(); });
-  // Klik pada area gelap di luar gambar menutup modal.
-  dlg.addEventListener("click", function (e) {
-    if (e.target === dlg) dlg.close();
+  // Satu pasang untuk dialog mana pun yang ada di halaman: bukti hasil
+  // kerja dari SPK dan foto sesudah milik dinas. Identikanya bisa
+  // dipisah agar blok yang tidak dirender tidak memicu error.
+  [["dlg-foto-bukti", "btn-foto-bukti", "btn-tutup-foto-bukti"],
+   ["dlg-foto-sesudah", "btn-foto-sesudah", "btn-tutup-foto-sesudah"]].forEach(function (id) {
+    var dlg = document.getElementById(id[0]);
+    var buka = document.getElementById(id[1]);
+    var tutup = document.getElementById(id[2]);
+    if (!dlg || !buka) return;
+    buka.addEventListener("click", function () { if (!dlg.open) dlg.showModal(); });
+    if (tutup) tutup.addEventListener("click", function () { dlg.close(); });
+    dlg.addEventListener("click", function (e) { if (e.target === dlg) dlg.close(); });
   });
 })();
 </script>

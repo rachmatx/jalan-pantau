@@ -109,6 +109,8 @@
       </tbody>
     </table>
   </div>
+  <div id="akun-paginasi" style="display:none;align-items:center;justify-content:center;gap:4px;margin-top:12px;flex-wrap:wrap"></div>
+  <p class="dash-hint" id="akun-page-info" aria-live="polite"></p>
 </div>
 {% endif %}
 {% endblock %}
@@ -126,26 +128,30 @@
   // Pagination state
   var semuaInstansi = [];
   var halamanInstansi = 1;
-  var PER_HALAMAN_INSTANSI = 20;
+  var PER_HALAMAN_INSTANSI = 10;
 
   function renderPaginasiInstansi(total){
     var totalHal = Math.ceil(total / PER_HALAMAN_INSTANSI);
     var pagEl = document.getElementById("instansi-paginasi");
     if (!pagEl) return;
     if (totalHal <= 1) { pagEl.style.display = "none"; return; }
+    // Halaman bisa tertinggal di luar jangkauan setelah data dihapus.
+    if (halamanInstansi > totalHal) halamanInstansi = totalHal;
     pagEl.style.display = "flex";
     var html = '<button type="button" class="dash-btn-light" id="inst-pag-prev"' + (halamanInstansi <= 1 ? " disabled" : "") + ">‹ Sebelumnya</button>";
-    for (var i = 1; i <= totalHal; i++) {
-      html += '<button type="button" class="dash-btn-light inst-pag-num' + (i === halamanInstansi ? " aktif" : "") + '" data-hal="' + i + '">' + i + "</button>";
-    }
+    window.jpNomorHalaman(totalHal, halamanInstansi).forEach(function(n){
+      if (n === "...") { html += '<span class="inst-pag-gap">…</span>'; return; }
+      html += '<button type="button" class="dash-btn-light inst-pag-num' + (n === halamanInstansi ? " aktif" : "") + '" data-hal="' + n + '">' + n + "</button>";
+    });
     html += '<button type="button" class="dash-btn-light" id="inst-pag-next"' + (halamanInstansi >= totalHal ? " disabled" : "") + ">Berikutnya ›</button>";
     pagEl.innerHTML = html;
     document.getElementById("inst-pag-prev").onclick = function() { if (halamanInstansi > 1) { halamanInstansi--; renderTabelInstansi(); }};
     document.getElementById("inst-pag-next").onclick = function() { if (halamanInstansi < totalHal) { halamanInstansi++; renderTabelInstansi(); }};
-    var nums = document.querySelectorAll(".inst-pag-num");
-    for (var j = 0; j < nums.length; j++) {
-      (function(idx) { nums[j].onclick = function() { halamanInstansi = idx + 1; renderTabelInstansi(); }; })(j);
-    }
+    // Baca dari data-hal, bukan dari indeks DOM: keduanya harus sinkron
+    // dengan nomor halaman dan tidak rapuh saat ada elipsis.
+    document.querySelectorAll(".inst-pag-num").forEach(function(btn){
+      btn.onclick = function(){ halamanInstansi = Number(btn.dataset.hal); renderTabelInstansi(); };
+    });
   }
 
   function renderTabelInstansi(){
@@ -178,6 +184,8 @@
     var infoEl = document.getElementById("instansi-page-info");
     if (infoEl && semuaInstansi.length > PER_HALAMAN_INSTANSI) {
       infoEl.textContent = "Menampilkan " + (start + 1) + "-" + end + " dari " + semuaInstansi.length + " instansi (Halaman " + halamanInstansi + "/" + Math.ceil(semuaInstansi.length / PER_HALAMAN_INSTANSI) + ").";
+    } else if (infoEl) {
+      infoEl.textContent = "Total " + semuaInstansi.length + " instansi.";
     }
   }
 
@@ -193,9 +201,10 @@
         halamanInstansi = 1;
         renderTabelInstansi();
       })
-      .catch(function(){
-        tb.innerHTML = '<tr><td colspan="6" class="dash-empty">Gagal memuat.</td></tr>';
-      });
+.catch(function(e){
+      window.jpLaporGagal("memuat daftar instansi", e, {});
+      tb.innerHTML = '<tr><td colspan="6" class="dash-empty">Gagal memuat.</td></tr>';
+    });
   }
 
   window.toggleForm = function(){
@@ -238,7 +247,7 @@
       });
       loadData();
     })
-    .catch(function(){ window.jpToast("error", "Gagal", "Gagal menyimpan. Periksa koneksi."); });
+    .catch(function(e){ window.jpLaporGagal("simpan instansi", e, {}); window.jpToast("error", "Gagal", "Gagal menyimpan. Periksa koneksi."); });
   };
 
   window.hapusInstansi = function(id, nama){
@@ -255,7 +264,7 @@
           window.jpToast("success", "Berhasil", "Instansi telah dihapus.");
           loadData();
         })
-        .catch(function(){ window.jpToast("error", "Gagal", "Gagal menghapus."); });
+        .catch(function(e){ window.jpLaporGagal("hapus instansi", e, {}); window.jpToast("error", "Gagal", "Gagal menghapus."); });
     });
   };
 
@@ -265,18 +274,31 @@
   function loadAkun(){
     var tb = document.getElementById("akun-tbody");
     if (!tb) return;
+    var pag = window.jpPaginasi({
+      tbody: tb,
+      bar: document.getElementById("akun-paginasi"),
+      info: document.getElementById("akun-page-info"),
+      perHalaman: 10,
+      label: "akun"
+    });
     fetch("/api/admin")
       .then(function(r){ return r.json().then(function(j){ return {ok: r.ok, j: j}; }); })
       .then(function(res){
         if (!res.ok){
           tb.innerHTML = '<tr><td colspan="5" class="dash-empty">Gagal memuat.</td></tr>';
+          pag.segarkan();
+          return;
+        }
+        if (!res.j.length){
+          tb.innerHTML = '<tr><td colspan="5" class="dash-empty">Belum ada akun.</td></tr>';
+          pag.segarkan();
           return;
         }
         tb.innerHTML = res.j.map(function(a){
           var st = a.sandi_diatur
             ? '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:#ECFDF5;color:#059669">Sudah diatur</span>'
             : '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:#FEF2F2;color:#DC2626">Belum diatur</span>';
-          return "<tr>"
+          return '<tr data-jp-row="1">'
             + "<td style=\"font-family:var(--dash-mono)\">" + esc(a.username) + "</td>"
             + "<td>" + esc(a.daerah) + "</td>"
             + "<td>" + st + "</td>"
@@ -284,9 +306,12 @@
             + "<td><button type=\"button\" class=\"dash-btn-apply\" onclick=\"simpanSandi(" + a.id + ",'" + esc(a.username).replace(/'/g,"\\'") + "')\">Simpan</button></td>"
             + "</tr>";
         }).join("");
+        pag.segarkan();
       })
-      .catch(function(){
-        tb.innerHTML = '<tr><td colspan="5" class="dash-empty">Gagal memuat.</td></tr>';
+.catch(function(e){
+      window.jpLaporGagal("memuat akun instansi", e, {});
+      tb.innerHTML = '<tr><td colspan="5" class="dash-empty">Gagal memuat.</td></tr>';
+      pag.segarkan();
       });
   }
 
@@ -312,7 +337,7 @@
       if (el) el.value = "";
       loadAkun();
     })
-    .catch(function(){ window.jpToast("error", "Gagal", "Gagal menyimpan sandi."); });
+    .catch(function(e){ window.jpLaporGagal("simpan sandi akun instansi", e, {}); window.jpToast("error", "Gagal", "Gagal menyimpan sandi."); });
   };
 })();
 </script>

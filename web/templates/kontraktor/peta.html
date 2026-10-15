@@ -71,9 +71,9 @@
           <th>Status</th><th>Bukti</th><th style="text-align:right">Aksi</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody id="peta-tbody">
         {% for t in titik %}
-        <tr>
+        <tr data-jp-row="1">
           <td><span class="dash-tiket">{{ t.bap_nomor }}</span></td>
           <td>{{ t.lokasi }}
             <span class="dash-kpi-label" style="display:block;text-transform:none;letter-spacing:0">
@@ -96,6 +96,8 @@
         {% endfor %}
       </tbody>
     </table>
+    <div id="peta-paginasi" style="display:none;align-items:center;justify-content:center;gap:4px;margin-top:12px;flex-wrap:wrap"></div>
+    <p class="dash-hint" id="peta-info-2" aria-live="polite" style="padding:0 14px 12px"></p>
   </div>
   {% else %}
   <p class="dash-empty">
@@ -112,6 +114,16 @@
 <script src="{{ url_for('static', filename='js/kontraktor_peta.js') }}?v={{ static_v }}"></script>
 <script>
 (function(){
+  // Daftar titik dibatasi 10 baris per halaman. Peta tetap menampilkan
+  // seluruh titik; yang dipaginasikan hanya tabelnya.
+  window.jpPaginasi({
+    tbody: document.getElementById("peta-tbody"),
+    bar: document.getElementById("peta-paginasi"),
+    info: document.getElementById("peta-info-2"),
+    perHalaman: 10,
+    label: "titik"
+  }).segarkan();
+
   var TITIK = [
     {% for t in titik %}
     {id: {{ t.tugas_id }}, lat: {{ t.lat }}, lon: {{ t.lon }},

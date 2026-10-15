@@ -473,7 +473,17 @@ function showToast(title, message, type) {
       barisAsli = data.rows;
       verHapus = new Set();
       verSev = {};
-      syncVerifikasi().catch(function() {});
+      // Gagal sinkronkan verifikasi diam-diam akan menyesatkan: tabel
+      // verifikasi di bawah sudah menampilkan hasil deteksi yang BARU,
+      // padahal daftar CHECK-nya masih yang lama. User bisa salah menilai
+      // tanpa pernah tahu ada yang gagal.
+      syncVerifikasi().catch(function(e) {
+        console.error("[JalanPantau] sinkronisasi verifikasi setelah deteksi", e);
+        if (status) {
+          status.textContent = "Temuan diperbarui, tetapi daftar verifikasi gagal disinkronkan. Muat ulang halaman.";
+          status.classList.add("galat");
+        }
+      });
     }
   } catch (e) { /* abaikan */ }
 })();
@@ -536,8 +546,9 @@ function reverseGeocode(lat, lon) {
       showToast("Lokasi Tidak Ditemukan", "Tidak bisa menemukan nama jalan. Silakan isi manual.", "info");
     }
   })
-  .catch(function() {
-    lokasiInput.value = "";
+.catch(function(e) {
+      console.error("[JalanPantau] geocoding lokasi", e);
+      lokasiInput.value = "";
     showToast("Lokasi Tidak Ditemukan", "Gagal mengakses layanan geocoding. Silakan isi manual.", "info");
   });
 }

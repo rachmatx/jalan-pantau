@@ -19,15 +19,19 @@
   </div>
   <div class="dash-kpi kpi-proses">
     <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-    <div class="dash-kpi-info"><span class="dash-kpi-label">Diterbitkan</span><strong class="dash-kpi-val">{{ stats.status.Diterbitkan }}</strong></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Diterbitkan</span><strong class="dash-kpi-val">{{ stats.status.Diterbitan }}</strong></div>
   </div>
   <div class="dash-kpi kpi-baru">
     <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-6l-2 3h-4l-2-3H2"/></svg></div>
     <div class="dash-kpi-info"><span class="dash-kpi-label">Dikerjakan</span><strong class="dash-kpi-val">{{ stats.status.Diterima + stats.status.Dikerjakan }}</strong></div>
   </div>
+  <div class="dash-kpi kpi-total">
+    <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Menunggu Penerimaan</span><strong class="dash-kpi-val">{{ stats.status['Menunggu Penerimaan'] }}</strong></div>
+  </div>
   <div class="dash-kpi kpi-selesai">
     <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-    <div class="dash-kpi-info"><span class="dash-kpi-label">Selesai</span><strong class="dash-kpi-val">{{ stats.status.Selesai }}</strong></div>
+    <div class="dash-kpi-info"><span class="dash-kpi-label">Diterima (BAST)</span><strong class="dash-kpi-val">{{ stats.status['Diterima Dinas'] }}</strong></div>
   </div>
   <div class="dash-kpi kpi-total">
     <div class="dash-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0116 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
@@ -40,41 +44,54 @@
     <h2>Daftar SPK</h2>
     <span style="font-size:11px;color:var(--dash-muted)">{{ items|length }} SPK</span>
   </div>
-  {% if items %}
-  <div class="dash-table-wrap">
-    <table class="dash-table">
-      <thead>
-        <tr>
-          <th>Nomor</th><th>Kontraktor</th><th>Judul</th><th>Prioritas</th>
-          <th>Progres Titik</th><th>Status</th><th style="text-align:right">Aksi</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for s in items %}
-        <tr>
-          <td><span class="dash-tiket">{{ s.nomor }}</span>
-            <span class="dash-kpi-label" style="display:block;text-transform:none;letter-spacing:0">{{ s.dibuat[:10] }}</span></td>
-          <td>{{ s.kontraktor_nama }}
-            <span class="dash-kpi-label" style="display:block;text-transform:none;letter-spacing:0">{{ s.kontraktor_kode }}</span></td>
-          <td>{{ s.judul }}</td>
-          <td><span class="urgency urgency-{{ s.prioritas|lower }}">{{ s.prioritas }}</span></td>
-          <td>{{ s.n_tugas_selesai }}/{{ s.n_tugas }}</td>
-          <td><span class="badge-status status-{{ s.status|lower }}">{{ s.status }}</span></td>
-          <td style="text-align:right">
-            <a class="dash-btn-detail" href="/pupr-{{ daerah }}/dashboard/spk/{{ s.id }}">Detail</a>
-            {% if s.status != 'Selesai' and s.status != 'Dibatalkan' %}
-            <button type="button" class="dash-btn-danger" data-batal="{{ s.id }}">Batalkan</button>
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+{% if items %}
+    <div class="dash-table-wrap">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th>Nomor</th><th>Kontraktor</th><th>Judul</th><th>Prioritas</th><th>Tenggat</th>
+            <th>Progres Titik</th><th>Status</th><th style="text-align:right">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="spk-tbody">
+          {% for s in items %}
+          <tr data-jp-row="1">
+            <td><span class="dash-tiket">{{ s.nomor }}</span>
+              <span class="dash-kpi-label" style="display:block;text-transform:none;letter-spacing:0">{{ s.dibuat[:10] }}</span></td>
+            <td>{{ s.kontraktor_nama }}
+              <span class="dash-kpi-label" style="display:block;text-transform:none;letter-spacing:0">{{ s.kontraktor_kode }}</span></td>
+            <td>{{ s.judul }}</td>
+            <td><span class="urgency urgency-{{ s.prioritas|lower }}">{{ s.prioritas }}</span></td>
+            {% set tgl_lbl, tgl_kls = status_tenggat(s.tenggat, s.status) %}
+            <td>{{ s.tenggat or '-' }}
+              {% if tgl_lbl %}<span class="tenggat-info {{ tgl_kls }}">{{ tgl_lbl }}</span>{% endif %}</td>
+            <td>{{ s.n_tugas_selesai }}/{{ s.n_tugas }}</td>
+            <td><span class="badge-status status-{{ s.status|lower|replace(' ', '-') }}">{{ s.status }}</span></td>
+            <td style="text-align:right">
+              <a class="dash-btn-detail" href="/pupr-{{ daerah }}/dashboard/spk/{{ s.id }}">Detail</a>
+              {% if s.status == 'Menunggu Penerimaan' %}
+              <a class="dash-btn-action" href="/pupr-{{ daerah }}/dashboard/spk/{{ s.id }}">Periksa</a>
+              {% endif %}
+              {% if s.status not in ['Diterima Dinas', 'Dibatalkan'] %}
+              <button type="button" class="dash-btn-danger" data-batal="{{ s.id }}">Batalkan</button>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="8" class="dash-empty">Belum ada SPK untuk daerah ini.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="dash-empty">Belum ada SPK untuk {{ nama_daerah }}. Terbitkan lewat panel di bawah.</p>
+    {% endif %}
+    {# Elemen paginasi DI LUAR blok if items di atas. Kalau ikut disembunyikan
+       saat daftar kosong, elemen ini lenyap dari DOM dan pemanggil jpPaginasi
+       di blok skrip berakhir dengan tbody null. #}
+    <div id="spk-paginasi" style="display:none;align-items:center;justify-content:center;gap:4px;margin-top:12px;flex-wrap:wrap"></div>
+    <p class="dash-hint" id="spk-page-info" aria-live="polite" style="padding:0 14px 12px"></p>
   </div>
-  {% else %}
-  <p class="dash-empty">Belum ada SPK untuk {{ nama_daerah }}. Terbitkan lewat panel di bawah.</p>
-  {% endif %}
-</div>
 
 <div class="dash-card" style="margin-top:18px">
   <div class="dash-card-head">
@@ -117,6 +134,30 @@
       <div>
         <label class="dash-kpi-label" for="f-deskripsi">DESKRIPSI SINGKAT</label>
         <input type="text" id="f-deskripsi" class="dash-select" style="width:100%;margin-top:4px">
+      </div>
+    </div>
+    <div style="margin-top:10px;padding:12px;border:1px dashed #CBD5E1;border-radius:10px">
+      <span class="dash-kpi-label" style="display:block;margin-bottom:8px">DATA KONTRAK (opsional, tapi wajib di SPK nyata)</span>
+      <div class="dash-ba-grid">
+        <div>
+          <label class="dash-kpi-label" for="f-nomor-kontrak">NOMOR KONTRAK</label>
+          <input type="text" id="f-nomor-kontrak" class="dash-select" style="width:100%;margin-top:4px"
+                 placeholder="contoh: 027/KONT/2026">
+        </div>
+        <div>
+          <label class="dash-kpi-label" for="f-nilai-kontrak">NILAI KONTRAK (Rp)</label>
+          <input type="text" inputmode="numeric" id="f-nilai-kontrak" class="dash-select"
+                 style="width:100%;margin-top:4px" placeholder="contoh: 45000000">
+        </div>
+        <div>
+          <label class="dash-kpi-label" for="f-tgl-mulai">TANGGAL MULAI</label>
+          <input type="date" id="f-tgl-mulai" class="dash-select" style="width:100%;margin-top:4px">
+        </div>
+        <div>
+          <label class="dash-kpi-label" for="f-masa-kerja">MASA KERJA (hari)</label>
+          <input type="number" min="1" step="1" id="f-masa-kerja" class="dash-select"
+                 style="width:100%;margin-top:4px" placeholder="contoh: 30">
+        </div>
       </div>
     </div>
     <div style="margin-top:10px">
@@ -171,6 +212,15 @@
 {% block skrip %}
 <script>
 (function(){
+  // Daftar SPK dibatasi 10 baris per halaman.
+  window.jpPaginasi({
+    tbody: document.getElementById("spk-tbody"),
+    bar: document.getElementById("spk-paginasi"),
+    info: document.getElementById("spk-page-info"),
+    perHalaman: 10,
+    label: "SPK"
+  }).segarkan();
+
   function nilai(id){ return (document.getElementById(id).value || "").trim(); }
 
   var sem = document.getElementById("pilih-semua");
@@ -191,7 +241,7 @@
             window.jpToast("success", "SPK dibatalkan", "");
             setTimeout(function(){ window.location.reload(); }, 700);
           })
-          .catch(function(){ window.jpToast("error", "Gagal", "Kesalahan jaringan."); });
+          .catch(function(e){ window.jpLaporGagal("batalkan SPK", e, {}); window.jpToast("error", "Gagal", "Kesalahan jaringan."); });
       });
     });
   });
@@ -215,7 +265,11 @@
         kontraktor_id: Number(nilai("f-kontraktor")),
         judul: judul, deskripsi: nilai("f-deskripsi"),
         prioritas: nilai("f-prioritas"), tenggat: t || null,
-        catatan_dinas: nilai("f-catatan"), disposisi_ids: ids
+        catatan_dinas: nilai("f-catatan"), disposisi_ids: ids,
+        nomor_kontrak: nilai("f-nomor-kontrak"),
+        nilai_kontrak: nilai("f-nilai-kontrak"),
+        tgl_mulai: nilai("f-tgl-mulai") || null,
+        masa_kerja_hari: nilai("f-masa-kerja")
       })
     }).then(function(r){ return r.json().then(function(j){ return {ok: r.ok, j: j}; }); })
       .then(function(res){
@@ -223,7 +277,7 @@
         window.jpToast("success", "SPK Terbit", res.j.nomor + " untuk " + ids.length + " titik.");
         setTimeout(function(){ window.location.reload(); }, 900);
       })
-      .catch(function(){ window.jpToast("error", "Gagal", "Kesalahan jaringan."); });
+      .catch(function(e){ window.jpLaporGagal("terbitkan SPK", e, {}); window.jpToast("error", "Gagal", "Kesalahan jaringan."); });
   });
 })();
 </script>

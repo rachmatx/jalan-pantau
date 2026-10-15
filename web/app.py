@@ -35,6 +35,8 @@ from database import (daftar_sesi, detail_sesi, hapus_sesi, simpan_sesi,
                        path_foto_sesudah,
                        migrasi_disposisi_v2, migrasi_admin_v2,
                        migrasi_sesi_v2, migrasi_urgensi_v1, sesi_by_client_ref,
+                        migrasi_spk_penerimaan_v3,
+                       migrasi_spk_status_tertulis_v4,
                        sesi_duplikat_coord,
                        disposisi_by_client_ref, disposisi_duplikat,
                        pastikan_akun_daerah, daftar_admin,
@@ -45,8 +47,10 @@ from database import (daftar_sesi, detail_sesi, hapus_sesi, simpan_sesi,
                        set_password_kontraktor,
                        daftar_spk, detail_spk, spk_boleh_akses, daftar_tugas_spk,
                        riwayat_spk, statistik_spk, terbitkan_spk, update_status_spk,
-                       update_tugas_untuk_spk, batalkan_spk, simpan_foto_tugas,
-                       path_foto_bukti, titik_peta_kontraktor, SPK_STATUS)
+update_tugas_untuk_spk, batalkan_spk, simpan_foto_tugas,
+                        terima_hasil_kerja, minta_revisi, batalkan_penerimaan,
+                        daftar_spk_disposisi, foto_bukti_disposisi,
+                        path_foto_bukti, titik_peta_kontraktor, SPK_STATUS, SPK_STATUS_TERAKHIR)
 
 WEB_DIR = Path(__file__).parent
 
@@ -213,6 +217,33 @@ def _muat_env_file():
         pass
 
 
+def status_tenggat(tenggat, status_selesai):
+    """Sisa hari terhadap tenggat SPK, untuk penanda urgensi di daftar.
+
+    Mengembalikan (label, kelas_warna). SPK tanpa tenggat, sudah selesai,
+    atau dibatalkan tidak punya urgensi sehingga label None.
+
+    `tenggat` disimpan sebagai tanggal (YYYY-MM-DD) tanpa jam, jadi
+    dibandingkan terhadap tengah malam hari ini agar "tenggat hari ini"
+    tidak terbaca sebagai sudah lewat sejak pagi.
+    """
+    from datetime import date as _tgl
+    if not tenggat or status_selesai in SPK_STATUS_TERAKHIR:
+        return None, ""
+    try:
+        batas = _tgl.fromisoformat(str(tenggat)[:10])
+    except ValueError:
+        return None, ""
+    sisa = (batas - _tgl.today()).days
+    if sisa < 0:
+        return f"Telat {-sisa} hari", "tenggat-lewat"
+    if sisa == 0:
+        return "Jatuh tempo hari ini", "tenggat-hari-ini"
+    if sisa <= 3:
+        return f"{sisa} hari lagi", "tenggat-dekat"
+    return f"{sisa} hari lagi", "tenggat-aman"
+
+
 def create_app():
     _muat_env_file()
     app = Flask(__name__, template_folder=str(WEB_DIR / "templates"),
@@ -248,6 +279,8 @@ def create_app():
         migrasi_admin_v2()
         migrasi_sesi_v2()
         migrasi_urgensi_v1()  # ejaan urgensi lama -> Kritis/Tinggi/Rutin
+        migrasi_spk_penerimaan_v3()  # nilai kontrak + penerimaan hasil kerja
+        migrasi_spk_status_tertulis_v4()  # ejaan status tahap terbit
         init_admin()  # seed akun admin default (lihat database.init_admin)
         init_kontraktor()  # seed kontraktor + akun dari config/kontraktor.yaml
         # Akun login tiap daerah: pupr_<slug> -> dashboard daerahnya.
@@ -495,17 +528,42 @@ def create_app():
         return redirect(url_for("login_form"))
 
     # Cache-buster: versi ini akan ditambahkan ke semua asset static
-    STATIC_VERSION = "32"
+    STATIC_VERSION = "36"
 
     @app.context_processor
     def inject_static_version():
-        return {"static_v": STATIC_VERSION}
+        return {"static_v": STATIC_VERSION, "status_tenggat": status_tenggat}
 
     @app.errorhandler(413)
     def terlalu_besar(e):
         """Global 200MB (video) terlampaui -> JSON, bukan halaman HTML Flask."""
         return jsonify({"error": "Berkas terlalu besar (maks 200MB untuk "
                                  "video, 15MB gambar, 5MB foto kalibrasi/disposisi)."}), 413
+
+    @app.errorhandler(404)
+    def halaman_tidak_ada(e):
+        """Rute /api/ harus balas JSON; halaman biasa tetap 404 HTML.
+
+        Tanpa ini, klien API yang salah alamat (misalnya GET ke endpoint
+        POST) menerima halaman galat HTML dan tidak tahu apa yang terjadi.
+        """
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "Alamat API tidak dikenal."}), 404
+        return e
+
+    @app.errorhandler(405)
+    def metode_salah(e):
+        """Misalnya GET ke endpoint POST: balas JSON, bukan HTML.
+
+        405 memang jawaban yang benar, tapi formatnya harus sesuai dengan
+        endpoint yang dipanggil supaya bisa dibaca pemanggil program.
+        """
+        if request.path.startswith("/api/"):
+            return jsonify({
+                "error": "Metode HTTP tidak diizinkan untuk alamat ini.",
+                "method": request.method,
+            }), 405
+        return e
 
     @app.errorhandler(429)
     def kebanyakan_request(e):
@@ -590,9 +648,15 @@ def create_app():
         s = detail_sesi(d["bap_id"])
         # Foto perbaikan hanya ditampilkan kalau berkasnya benar-benar ada.
         ada_foto = path_foto_sesudah(d) is not None
+        # Foto hasil kerja kontraktor yang sudah diterima dinas dipakai
+        # sebagai bukti perbaikan pada halaman publik. Berkasnya TIDAK
+        # disalin ke foto_sesudah supaya tidak ada dua salinan yang bisa
+        # berbeda isi; halaman cukup merujuknya lewat /foto-bukti.
         return render_template("disposisi_detail.html", active="disposisi",
                                sesi=s["sesi"] if s else None, sid=sid,
-                               disposisi=d, ada_foto_sesudah=ada_foto)
+                               disposisi=d, ada_foto_sesudah=ada_foto,
+                               spk_terkait=daftar_spk_disposisi(d["id"]),
+                               ada_foto_bukti=bool(foto_bukti_disposisi(d["id"])))
 
     @app.post("/api/detect")
     @(limiter.limit("30 per minute; 300 per hour") if limiter else (lambda f: f))
@@ -1183,7 +1247,7 @@ def create_app():
         # mencampur "Bogor" dengan "Kabupaten Bogor", dll.)
         exact = request.args.get("exact", "") in ("1", "true", "yes")
         # Hormati ?limit=. Sebelumnya parameter ini DIABAIKAN, padahal
-        # dashboard/index.html dan dashboard/disposisi.html memang mengirim
+        # dashboard/index.html memang mengirim
         # limit=201 lalu mengecek rows.length > 200 untuk menampilkan
         # peringatan "Menampilkan N dari M". Karena limit diabaikan, cek itu
         # selalu false dan peringatan tidak pernah muncul.
@@ -1416,6 +1480,29 @@ def create_app():
             return jsonify({"error": "Belum ada foto perbaikan."}), 404
         return send_file(p, mimetype="image/jpeg")
 
+    @app.get("/api/disposisi/<int:did>/foto-bukti")
+    def api_disposisi_foto_bukti(did):
+        """Sajikan foto hasil kerja kontraktor yang SUDAH DITERIMA dinas.
+
+        Publik, sama seperti /api/disposisi/<id>/foto, karena halaman
+        /disposisi/<id> yang memakainya juga bisa dibuka siapa pun.
+
+        Bedanya: berkas di sini HANYA dilayani bila SPK-nya sudah berstatus
+        "Diterima Dinas". Hasil kerja yang belum diperiksa Dinas tidak
+        boleh diperlakukan sebagai bukti perbaikan untuk umum.
+
+        Nama berkas tidak pernah diambil dari permintaan, melainkan dari
+        database lewat foto_bukti_disposisi, lalu divalidasi lagi oleh
+        path_foto_bukti supaya nilai database tidak bisa dipakai untuk
+        keluar dari folder hasil/.
+        """
+        if not detail_disposisi(did):
+            return jsonify({"error": "Disposisi tidak ditemukan."}), 404
+        p = path_foto_bukti(foto_bukti_disposisi(did))
+        if p is None:
+            return jsonify({"error": "Belum ada foto hasil kerja yang disetujui."}), 404
+        return send_file(p, mimetype="image/jpeg")
+
     @app.delete("/api/disposisi/<int:did>")
     @login_wajib
     def api_disposisi_hapus(did):
@@ -1481,16 +1568,23 @@ def create_app():
                         sesudah_path = hasil_dir / item["foto_sesudah"]
                         if sesudah_path.exists():
                             sesudah_b64 = base64.b64encode(sesudah_path.read_bytes()).decode()
-                return render_template("dashboard/disposisi_detail.html", active="disposisi", daerah=daerah, nama_daerah=nama, item=item, sesi=sesi_data["sesi"] if sesi_data else None, rows=sesi_data.get("temuan", []) if sesi_data else [], image_b64=image_b64, sesudah_b64=sesudah_b64, catatan_list=riwayat_catatan(did))
+                return render_template("dashboard/disposisi_detail.html", active="dashboard", daerah=daerah, nama_daerah=nama, item=item, sesi=sesi_data["sesi"] if sesi_data else None, rows=sesi_data.get("temuan", []) if sesi_data else [], image_b64=image_b64, sesudah_b64=sesudah_b64, catatan_list=riwayat_catatan(did),
+                               spk_terkait=daftar_spk_disposisi(did),
+                               ada_foto_bukti=bool(foto_bukti_disposisi(did)))
             else:
-                # Daftar disposisi
-                items = daftar_disposisi(daerah=nama, limit=200, exact=True)
-                return render_template("dashboard/disposisi.html", active="disposisi", daerah=daerah, nama_daerah=nama, items=items)
+                # Daftar laporan sudah menjadi bagian dari beranda, jadi
+                # halaman tersendiri dihapus. Alamat lama tetap
+                # diarahkan ke beranda supaya tautan dan bookmark lama
+                # tidak ikut rusak.
+                return redirect(url_for(
+                    "dashboard_handler", daerah=daerah))
         elif subroute == "verifikasi":
             # Layar verifikasi kedinasan: terima/tolak laporan masuk + terbitkan SPK.
-            stats = statistik_disposisi(nama, exact=True)
+            # Semua angka di halaman ini dihitung ulang di sisi peramban dari
+            # data yang diambil lewat /api/disposisi, jadi tidak ada ringkasan
+            # yang perlu dikirim bersama render_template.
             return render_template("dashboard/verifikasi.html", active="verifikasi",
-                                   daerah=daerah, nama_daerah=nama, stats=stats)
+                                   daerah=daerah, nama_daerah=nama)
         elif subroute == "analitik":
             # Peta kerapatan kerusakan (indeks internal, bukan IKJ resmi).
             return render_template("dashboard/analitik.html", active="analitik",
@@ -1749,7 +1843,11 @@ def create_app():
                                 prioritas=data.get("prioritas") or "Rutin",
                                 tenggat=(data.get("tenggat") or "").strip() or None,
                                 dibuat_oleh=session.get("admin_user"),
-                                catatan_dinas=(data.get("catatan_dinas") or "-").strip() or "-")
+                                catatan_dinas=(data.get("catatan_dinas") or "-").strip() or "-",
+                                nomor_kontrak=(data.get("nomor_kontrak") or "-").strip() or "-",
+                                nilai_kontrak=data.get("nilai_kontrak"),
+                                tgl_mulai=(data.get("tgl_mulai") or "").strip() or None,
+                                masa_kerja_hari=data.get("masa_kerja_hari"))
         except ValueError as e:
             return jsonify({"error": str(e)}), 400
         return jsonify({"ok": True, "id": sid, "nomor": detail_spk(sid)["nomor"]})
@@ -1763,6 +1861,53 @@ def create_app():
         if not _wewenang_ok({"instansi_daerah": item["daerah"]}):
             return jsonify({"error": "SPK ini di luar wewenang daerah Anda."}), 403
         ok, pesan = batalkan_spk(sid, oleh=session.get("admin_user"))
+        return (jsonify({"ok": True, "pesan": pesan}), 200) if ok else (
+            jsonify({"error": pesan}), 400)
+
+    @app.post("/api/spk/<int:sid>/terima")
+    @login_wajib
+    def api_spk_terima(sid):
+        """Dinas menerima hasil kerja kontraktor dan mencatat BAST."""
+        data = request.get_json(force=True, silent=True) or {}
+        item = detail_spk(sid)
+        if not item:
+            return jsonify({"error": "SPK tidak ditemukan."}), 404
+        if not _wewenang_ok({"instansi_daerah": item["daerah"]}):
+            return jsonify({"error": "SPK ini di luar wewenang daerah Anda."}), 403
+        ok, pesan = terima_hasil_kerja(sid,
+                                      nomor_bast=data.get("nomor_bast") or "-",
+                                      catatan=(data.get("catatan") or "-").strip() or "-",
+                                      oleh=session.get("admin_user"))
+        return (jsonify({"ok": True, "pesan": pesan}), 200) if ok else (
+            jsonify({"error": pesan}), 400)
+
+    @app.post("/api/spk/<int:sid>/revisi")
+    @login_wajib
+    def api_spk_revisi(sid):
+        """Dinas menolak hasil kerja dan meminta kontraktor memperbaiki."""
+        data = request.get_json(force=True, silent=True) or {}
+        item = detail_spk(sid)
+        if not item:
+            return jsonify({"error": "SPK tidak ditemukan."}), 404
+        if not _wewenang_ok({"instansi_daerah": item["daerah"]}):
+            return jsonify({"error": "SPK ini di luar wewenang daerah Anda."}), 403
+        ok, pesan = minta_revisi(sid, alasan=data.get("alasan"),
+                                 oleh=session.get("admin_user"))
+        return (jsonify({"ok": True, "pesan": pesan}), 200) if ok else (
+            jsonify({"error": pesan}), 400)
+
+    @app.post("/api/spk/<int:sid>/batalkan-terima")
+    @login_wajib
+    def api_spk_batalkan_terima(sid):
+        """Dinas menarik keputusan penerimaan hasil kerja."""
+        data = request.get_json(force=True, silent=True) or {}
+        item = detail_spk(sid)
+        if not item:
+            return jsonify({"error": "SPK tidak ditemukan."}), 404
+        if not _wewenang_ok({"instansi_daerah": item["daerah"]}):
+            return jsonify({"error": "SPK ini di luar wewenang daerah Anda."}), 403
+        ok, pesan = batalkan_penerimaan(sid, alasan=data.get("alasan"),
+                                         oleh=session.get("admin_user"))
         return (jsonify({"ok": True, "pesan": pesan}), 200) if ok else (
             jsonify({"error": pesan}), 400)
 
