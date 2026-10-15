@@ -104,8 +104,7 @@ class TestEncoding(unittest.TestCase):
         c = app.test_client()
 
         dicek = 0
-        for path in ("/disposisi/36", "/", "/riwayat", "/peta",
-                     "/pupr-depok/dashboard/spk", "/pupr-depok/dashboard"):
+        for path in ("/", "/riwayat", "/peta", "/tentang", "/login"):
             r = c.get(path)
             if r.status_code != 200:
                 continue
@@ -131,5 +130,5 @@ class TestEncoding(unittest.TestCase):
         app.config["DB_PATH"] = tmp
         app.config["TESTING"] = True
         c = app.test_client()
-        html = c.get("/disposisi/36").get_data(as_text=True)
+        html = c.get("/riwayat").get_data(as_text=True)
         self.assertIn('<meta charset="utf-8"', html.lower())

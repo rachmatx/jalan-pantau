@@ -23,18 +23,30 @@ def bobot(severity):
 
 
 def skor(item):
-    """Hitung skor prioritas 0-100 untuk satu temuan.
+    """Hitung skor prioritas 0-100 untuk satu temuan + dimensi turunan.
 
-    item: dict hasil diagnose (wajib ada kunci 'severity' dan 'luas_cm2').
-    Mengembalikan dict baru = item + 'skor_prioritas' (int).
+    item: dict hasil diagnose (wajib ada kunci 'severity' dan 'luas_cm2';
+    opsional 'tebal_asumsi_cm').
+    Mengembalikan dict baru = item + 'luas_m2' + 'volume_m3' (bila tebal
+    tersedia) + 'skor_prioritas' (int).
     """
+    d = dict(item or {})
     try:
-        luas = max(0.0, float(item.get("luas_cm2", 0) or 0))
+        luas = max(0.0, float(d.get("luas_cm2", 0) or 0))
     except (TypeError, ValueError):
         luas = 0.0
+    luas_m2 = luas / LUAS_ACUAN_CM2
+    d["luas_m2"] = round(luas_m2, 3)
+    try:
+        tebal = float(d.get("tebal_asumsi_cm") or 0)
+    except (TypeError, ValueError):
+        tebal = 0.0
+    if tebal > 0:
+        d["volume_m3"] = round(luas_m2 * (tebal / 100), 3)
     a_norm = min(1.0, luas / LUAS_ACUAN_CM2)
-    nilai = round(100 * (bobot(item.get("severity")) / 3) * a_norm)
-    return {**item, "skor_prioritas": int(max(0, min(100, nilai)))}
+    nilai = round(100 * (bobot(d.get("severity")) / 3) * a_norm)
+    d["skor_prioritas"] = int(max(0, min(100, nilai)))
+    return d
 
 
 def total_prioritas(rows):

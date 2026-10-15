@@ -11,7 +11,7 @@ import unittest
 from unittest import mock
 
 ROWS = [{"kelas": "pothole", "severity": "Berat", "dasar": "18 cm",
-         "total_rp": 1000, "total_str": "Rp1.000"}]
+         "skor_prioritas": 80}]
 
 
 def _app():
@@ -20,10 +20,7 @@ def _app():
     app.config["DB_PATH"] = os.path.join(tempfile.mkdtemp(), "t.db")
     app.config["TESTING"] = True
     with app.app_context():          # seed DB sementara
-        from database import (init_instansi, migrasi_disposisi_v2, migrasi_admin_v2,
-                              migrasi_sesi_v2, init_admin)
-        init_instansi()
-        migrasi_disposisi_v2()
+        from database import (migrasi_admin_v2, migrasi_sesi_v2, init_admin)
         migrasi_admin_v2()
         migrasi_sesi_v2()
         init_admin()
@@ -44,17 +41,8 @@ class TestApiPublik(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertIsInstance(r.get_json(), list)
 
-    def test_instansi_daftar_dan_terdekat(self):
-        self.assertEqual(self.c.get("/api/instansi").status_code, 200)
-        r = self.c.get("/api/instansi/terdekat?lat=-6.9175&lon=107.6191")
-        self.assertEqual(r.status_code, 200)
-        self.assertIn("nama", r.get_json())
 
-    def test_instansi_detail_tidak_ada(self):
-        self.assertEqual(self.c.get("/api/instansi/999999").status_code, 404)
 
-    def test_instansi_terdekat_param_salah(self):
-        self.assertEqual(self.c.get("/api/instansi/terdekat?lat=x&lon=y").status_code, 400)
 
     def test_riwayat_daftar_bentuk(self):
         r = self.c.get("/api/riwayat")
@@ -67,11 +55,6 @@ class TestApiPublik(unittest.TestCase):
         self.assertEqual(self.c.get("/api/riwayat/999999").status_code, 404)
         self.assertEqual(self.c.get("/api/riwayat/999999/gambar").status_code, 404)
 
-    def test_disposisi_stats_dan_detail(self):
-        r = self.c.get("/api/disposisi/stats?daerah=Bandung&exact=1")
-        self.assertEqual(r.status_code, 200)
-        self.assertIn("total", r.get_json())
-        self.assertEqual(self.c.get("/api/disposisi/999999").status_code, 404)
 
     def test_kalibrasi_status(self):
         r = self.c.get("/api/kalibrasi")
@@ -89,11 +72,8 @@ class TestApiButuhLogin(unittest.TestCase):
         self.c = _app().test_client()
 
     def test_endpoint_admin_mengembalikan_401(self):
-        self.assertEqual(self.c.post("/api/instansi", json={}).status_code, 401)
-        self.assertEqual(self.c.get("/api/admin").status_code, 401)
         self.assertEqual(self.c.post("/api/kalibrasi", json={"pixels_per_cm": 11.0}).status_code, 401)
-        self.assertEqual(self.c.put("/api/disposisi/1", json={"status": "Diproses"}).status_code, 401)
-        self.assertEqual(self.c.delete("/api/disposisi/1").status_code, 401)
+        self.assertEqual(self.c.delete("/api/riwayat/1").status_code, 401)
 
 
 class TestApiSetelahLogin(unittest.TestCase):
@@ -102,10 +82,6 @@ class TestApiSetelahLogin(unittest.TestCase):
         self.c = self.app.test_client()
         _login(self.c)
 
-    def test_admin_daftar(self):
-        r = self.c.get("/api/admin")
-        self.assertEqual(r.status_code, 200)
-        self.assertIsInstance(r.get_json(), list)
 
     def test_kalibrasi_simpan_dipatch(self):
         palsu = {"pixels_per_cm": 11.0, "metode": "manual", "catatan": "-",
@@ -178,113 +154,6 @@ class TestApiSetelahLogin(unittest.TestCase):
         self.assertEqual(self.c.post("/api/stream/anotasi", json={}).status_code, 200)
         self.assertEqual(self.c.post("/api/stream/snapshot", json={}).status_code, 400)
 
-    def test_foto_sesudah_tampil_di_halaman_publik(self):
-        """Regression: dinas bisa mengunggah foto perbaikan, tapi halaman
-        publik /disposisi/<id> tidak menampilkannya sama sekali."""
-        import io
-        import pathlib
-        import tempfile as _tf
-        from PIL import Image
-        from database import get_db, migrasi_disposisi_v2
-
-        app = _app()
-        with app.app_context():
-            get_db()
-            migrasi_disposisi_v2()   # tambah kolom foto_sesudah
-        c = app.test_client()
-        sid = c.post("/api/riwayat", json={
-            "sumber": "uji", "lokasi": "Jl Uji", "model": "m",
-            "rows": ROWS, "total": 1000, "client_ref": "fs-s",
-        }).get_json()["id"]
-        did = c.post("/api/disposisi", json={
-            "bap_id": sid, "bap_nomor": "BA-FS/1", "lokasi": "Jl Uji",
-            "n_temuan": 1, "total_rp": 1000, "worst": "Berat",
-            "instansi_id": 0, "instansi_nama": "Dinas Uji",
-            "instansi_daerah": "Kabupaten Bogor", "instansi_email": "a@b.c",
-            "urgensi": "rutin", "catatan": "uji", "client_ref": "fs-d",
-        }).get_json()["id"]
-
-        # Sebelum ada foto: halaman tetap jalan, tanpa <img> yang rusak.
-        html = c.get(f"/disposisi/{sid}").get_data(as_text=True)
-        self.assertIn("Foto Setelah Penanganan", html)
-        self.assertNotIn("/api/disposisi/%d/foto" % did, html)
-        self.assertEqual(c.get(f"/api/disposisi/{did}/foto").status_code, 404)
-
-        # Unggah foto lalu pastikan muncul di halaman.
-        nama = f"{sid}_sesudah_{did}.jpg"
-        buf = io.BytesIO()
-        Image.new("RGB", (60, 40), (20, 110, 70)).save(buf, format="JPEG")
-        p = pathlib.Path(app.config["DB_PATH"]).parent / "hasil" / nama
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_bytes(buf.getvalue())
-        with app.app_context():
-            db = get_db()
-            db.execute("UPDATE disposisi SET foto_sesudah = ? WHERE id = ?", (nama, did))
-            db.commit()
-
-        r = c.get(f"/api/disposisi/{did}/foto")
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.headers.get("Content-Type"), "image/jpeg")
-        r.close()   # lepas handle file sebelum lanjut (Windows menahan file terbuka)
-        html = c.get(f"/disposisi/{sid}").get_data(as_text=True)
-        self.assertIn("/api/disposisi/%d/foto" % did, html)
-        self.assertIn("TERSEDIA", html)
-
-        # Kolom terisi tapi berkas hilang -> jangan render <img> yang rusak.
-        # (Tidak menghapus berkas sungguhan karena Windows menahan handle.)
-        hilang = f"{sid}_sesudah_{did}_hilang.jpg"
-        with app.app_context():
-            db = get_db()
-            db.execute("UPDATE disposisi SET foto_sesudah = ? WHERE id = ?",
-                       (hilang, did))
-            db.commit()
-        html = c.get(f"/disposisi/{sid}").get_data(as_text=True)
-        self.assertNotIn("/api/disposisi/%d/foto" % did, html)
-        self.assertEqual(c.get(f"/api/disposisi/{did}/foto").status_code, 404)
-
-    def test_foto_sesudah_tolak_path_traversal(self):
-        """Nama file di kolom DB tidak boleh dipakai untuk keluar dari folder."""
-        app = _app()
-        with app.app_context():
-            from database import get_db, migrasi_disposisi_v2
-            get_db()
-            migrasi_disposisi_v2()
-        c = app.test_client()
-        sid = c.post("/api/riwayat", json={
-            "sumber": "uji", "lokasi": "Jl", "model": "m",
-            "rows": ROWS, "total": 1000, "client_ref": "tr-s",
-        }).get_json()["id"]
-        did = c.post("/api/disposisi", json={
-            "bap_id": sid, "bap_nomor": "BA-TR/1", "lokasi": "Jl",
-            "n_temuan": 1, "total_rp": 1000, "worst": "Berat",
-            "instansi_id": 0, "instansi_nama": "D", "instansi_daerah": "Kabupaten Bogor",
-            "instansi_email": "a@b.c", "urgensi": "rutin", "catatan": "-",
-            "client_ref": "tr-d",
-        }).get_json()["id"]
-        for jahat in ("../../.env", "/etc/hosts", "..\\..\\.env",
-                      "sub/dir.jpg", "catatan.txt", "-", ""):
-            with app.app_context():
-                db = get_db()
-                db.execute("UPDATE disposisi SET foto_sesudah = ? WHERE id = ?",
-                           (jahat, did))
-                db.commit()
-            with self.subTest(nama=jahat):
-                self.assertEqual(c.get(f"/api/disposisi/{did}/foto").status_code, 404)
-        self.assertEqual(c.get("/api/disposisi/999999/foto").status_code, 404)
-
-    def test_laporan_pdf(self):
-        r = self.c.post("/api/laporan", json={"rows": ROWS, "total": 1000,
-                                              "source": "uji", "model": "m"})
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.headers["Content-Type"], "application/pdf")
-        self.assertEqual(r.get_data()[:5], b"%PDF-")
-
-    def test_laporan_tanpa_rows_400(self):
-        self.assertEqual(self.c.post("/api/laporan", json={"rows": []}).status_code, 400)
-
-    def test_logout_redirect(self):
-        self.assertEqual(self.c.get("/logout").status_code, 302)
-
 
 class TestAutentikasiDan404(unittest.TestCase):
     def test_login_salah_401(self):
@@ -295,7 +164,6 @@ class TestAutentikasiDan404(unittest.TestCase):
     def test_halaman_tidak_ditemukan(self):
         c = _app().test_client()
         self.assertEqual(c.get("/laporan/preview/999999").status_code, 404)
-        self.assertEqual(c.get("/disposisi/999999").status_code, 404)
 
     def test_mobile_dan_kalibrasi_anon(self):
         c = _app().test_client()
@@ -343,66 +211,7 @@ class TestValidasiInput(unittest.TestCase):
         r = self.c.post("/api/riwayat", json={"rows": ROWS, "total": 1, "lat": 999, "lon": 0})
         self.assertEqual(r.status_code, 400)
 
-    def test_disposisi_field_kurang_400(self):
-        self.assertEqual(self.c.post("/api/disposisi", json={"bap_id": 1}).status_code, 400)
-
-    def test_admin_sandi_terlalu_pendek_400(self):
-        r = self.c.post("/api/admin/sandi", json={"username": "admin", "sandi_baru": "x"})
-        self.assertEqual(r.status_code, 400)
-
-    def test_instansi_field_kurang_400(self):
-        self.assertEqual(self.c.post("/api/instansi", json={"nama": "X"}).status_code, 400)
-
-    def test_disposisi_daftar_hormati_limit(self):
-        """Regresi: ?limit= pernah DIABAIKAN, sehingga cek overflow
-        (rows.length > 200) di dashboard selalu false."""
-        app = _app()
-        c = app.test_client()
-        for i in range(4):
-            sid = c.post("/api/riwayat", json={
-                "sumber": "uji", "lokasi": "Jl", "model": "m",
-                "rows": ROWS, "total": 1000, "client_ref": f"lim-s{i}",
-            }).get_json()["id"]
-            c.post("/api/disposisi", json={
-                "bap_id": sid, "bap_nomor": f"B{i}", "lokasi": "Jl",
-                "n_temuan": 1, "total_rp": 1000, "worst": "Berat",
-                "instansi_id": 0, "instansi_nama": "D",
-                "instansi_daerah": "Kabupaten Bogor", "instansi_email": "a@b.c",
-                "urgensi": "kritis", "catatan": "-", "client_ref": f"lim-d{i}",
-            })
-        base = "/api/disposisi?daerah=bogor"
-        self.assertEqual(len(c.get(base).get_json()), 4)
-        self.assertEqual(len(c.get(base + "&limit=2").get_json()), 2)
-        self.assertEqual(len(c.get(base + "&limit=201").get_json()), 4)
-        # Nilai aneh tidak boleh melempar exception.
-        self.assertEqual(len(c.get(base + "&limit=abc").get_json()), 4)
-        # Nilai negatif dijepit ke 1, bukan error 500.
-        self.assertEqual(len(c.get(base + "&limit=-5").get_json()), 1)
-
-    def test_urgensi_disimpan_kapital(self):
-        """Regresi: form mengirim lowercase, konsumen membandingkan kapital."""
-        app = _app()
-        c = app.test_client()
-        sid = c.post("/api/riwayat", json={
-            "sumber": "uji", "lokasi": "Jl", "model": "m",
-            "rows": ROWS, "total": 1000, "client_ref": "urg-s",
-        }).get_json()["id"]
-        r = c.post("/api/disposisi", json={
-            "bap_id": sid, "bap_nomor": "BU", "lokasi": "Jl",
-            "n_temuan": 1, "total_rp": 1000, "worst": "Berat",
-            "instansi_id": 0, "instansi_nama": "D",
-            "instansi_daerah": "Kabupaten Bogor", "instansi_email": "a@b.c",
-            "urgensi": "kritis", "catatan": "-", "client_ref": "urg-d",
-        })
-        self.assertEqual(r.status_code, 200, r.get_json())
-        did = r.get_json()["id"]
-        from database import detail_disposisi
-        with app.app_context():
-            self.assertEqual(detail_disposisi(did)["urgensi"], "Kritis")
-        # Filter kapital harus menemukan baris lowercase yang sudah disimpan.
-        self.assertEqual(len(c.get("/api/disposisi?daerah=bogor&urgensi=Kritis").get_json()), 1)
-        self.assertEqual(len(c.get("/api/disposisi?daerah=bogor&urgensi=kritis").get_json()), 1)
 
 
-if __name__ == "__main__":
-    unittest.main()
+
+

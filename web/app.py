@@ -198,32 +198,6 @@ def _muat_env_file():
         pass
 
 
-def status_tenggat(tenggat, status_selesai):
-    """Sisa hari terhadap tenggat SPK, untuk penanda urgensi di daftar.
-
-    Mengembalikan (label, kelas_warna). SPK tanpa tenggat, sudah selesai,
-    atau dibatalkan tidak punya urgensi sehingga label None.
-
-    `tenggat` disimpan sebagai tanggal (YYYY-MM-DD) tanpa jam, jadi
-    dibandingkan terhadap tengah malam hari ini agar "tenggat hari ini"
-    tidak terbaca sebagai sudah lewat sejak pagi.
-    """
-    from datetime import date as _tgl
-    if not tenggat or status_selesai in SPK_STATUS_TERAKHIR:
-        return None, ""
-    try:
-        batas = _tgl.fromisoformat(str(tenggat)[:10])
-    except ValueError:
-        return None, ""
-    sisa = (batas - _tgl.today()).days
-    if sisa < 0:
-        return f"Telat {-sisa} hari", "tenggat-lewat"
-    if sisa == 0:
-        return "Jatuh tempo hari ini", "tenggat-hari-ini"
-    if sisa <= 3:
-        return f"{sisa} hari lagi", "tenggat-dekat"
-    return f"{sisa} hari lagi", "tenggat-aman"
-
 
 def create_app():
     _muat_env_file()
@@ -375,7 +349,7 @@ def create_app():
 
     @app.context_processor
     def inject_static_version():
-        return {"static_v": STATIC_VERSION, "status_tenggat": status_tenggat}
+        return {"static_v": STATIC_VERSION}
 
     @app.errorhandler(413)
     def terlalu_besar(e):
@@ -941,6 +915,8 @@ def create_app():
     @app.get("/api/peta")
     def api_peta():
         return jsonify(titik_peta())
+
+    return app
 
 
 

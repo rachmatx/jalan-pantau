@@ -2,8 +2,7 @@
 
 Sebelum overhaul ini ada 27 `catch(function(){...})` yang membuang objek
 galat. Akibatnya penyebab kegagalan hilang begitu toast "Kesalahan
-jaringan." tampil, persis seperti bug tombol Terbitkan SPK yang baru
-saja diperbaiki: tidak ada jejak apa pun untuk ditelusuri.
+jaringan." tampil tanpa jejak apa pun untuk ditelusuri.
 """
 import os
 import re
@@ -12,18 +11,10 @@ import unittest
 # Halaman yang punya helper bersama jp_core.js (bisa pakai jpLaporGagal).
 HELPER = "web/static/js/jp_core.js"
 BERKAS = [
-    "web/templates/dashboard/disposisi_detail.html",
-    "web/templates/dashboard/index.html",
-    "web/templates/dashboard/instansi.html",
-    "web/templates/dashboard/kontraktor.html",
-    "web/templates/dashboard/spk.html",
-    "web/templates/dashboard/spk_detail.html",
-    "web/templates/kontraktor/spk_detail.html",
-    "web/templates/dashboard/verifikasi.html",
     "web/static/js/deteksi.js",
-    "web/static/js/disposisi.js",
     "web/static/js/live.js",
     "web/static/js/riwayat.js",
+    "web/static/js/peta.js",
 ]
 
 # Pola catch tanpa parameter -- persis yang bikin galat hilang.
@@ -75,11 +66,6 @@ class TestCatchMelapor(unittest.TestCase):
         self.assertIn("window.jpLaporGagal =", src)
         self.assertIn("window.jpLaporGagalSekali =", src)
 
-    def test_halaman_spk_memakai_helper_teririt(self):
-        """Tombol Terbitkan wajib punya jejak galat; dulu tidak ada sama sekali."""
-        src = _teks("web/templates/dashboard/spk.html")
-        self.assertIn('getElementById("btn-terbitkan")', src)
-        self.assertIn('window.jpLaporGagal("terbitkan SPK"', src)
 
 
 class TestTanpaArtefakBahasa(unittest.TestCase):

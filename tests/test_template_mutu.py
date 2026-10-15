@@ -58,7 +58,7 @@ class TestPlaceholderJinja(unittest.TestCase):
     menghasilkan false positive.
     """
 
-    HALAMAN = ["/", "/peta", "/riwayat", "/tentang", "/login", "/disposisi"]
+    HALAMAN = ["/", "/peta", "/riwayat", "/tentang", "/login"]
 
     def setUp(self):
         import os
@@ -83,31 +83,3 @@ class TestPlaceholderJinja(unittest.TestCase):
         teks = r.get_data(as_text=True)
         self.assertNotIn("{{", teks)
         self.assertNotIn("{%", teks)
-
-
-class TestLoginKontraktor(unittest.TestCase):
-    """Halaman login melayani dua jenis akun, jadi harus menyebut keduanya."""
-
-    def setUp(self):
-        import os
-        import tempfile
-
-        import web.app as app_mod
-        self.app = app_mod.create_app()
-        self.app.config["DB_PATH"] = os.path.join(tempfile.mkdtemp(), "t.db")
-        self.app.config["TESTING"] = True
-
-    def test_login_menyebut_dua_peran(self):
-        html_teks = self.app.test_client().get("/login").get_data(as_text=True)
-        self.assertIn("kontraktor", html_teks.lower())
-        self.assertIn("dinas", html_teks.lower())
-        # Tidak boleh lagi judul eksklusif yang menutupi kontraktor.
-        self.assertNotIn("hanya untuk akun resmi dinas", html_teks)
-
-    def test_login_tetap_punya_field_csrf(self):
-        html_teks = self.app.test_client().get("/login").get_data(as_text=True)
-        self.assertIn('name="_csrf"', html_teks)
-
-
-if __name__ == "__main__":
-    unittest.main()

@@ -85,7 +85,7 @@ def persen_skor(per_sev_skor, total):
     if t <= 0:
         return out
     for s in SEVERITY:
-        out[s] = _bulat(_num(per_sev_rp.get(s, 0.0)) / t * 100.0, 1)
+        out[s] = _bulat(_num(per_sev_skor.get(s, 0.0)) / t * 100.0, 1)
     return out
 
 

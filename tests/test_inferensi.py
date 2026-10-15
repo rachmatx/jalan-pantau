@@ -266,7 +266,7 @@ class TestGabungFragmen(unittest.TestCase):
         return {"kelas": kelas, "conf": conf, "box": box,
                 "panjang_cm": 10, "lebar_cm": 10, "luas_m2": 0.01,
                 "luas_cm2": 100, "tebal_asumsi_cm": 5, "bahan": "b",
-                "total_rp": 1000, "total_str": "Rp1.000", "dasar": "d",
+                "skor_prioritas": 11, "dasar": "d",
                 "severity": "Ringan"}
 
     def test_fragmen_bersentuhan_melebur_dan_dihitung_ulang(self):
@@ -280,7 +280,7 @@ class TestGabungFragmen(unittest.TestCase):
         g = [r for r in baru if r.get("fragmen") == 2][0]
         self.assertEqual(g["box"], [0, 0, 150, 150])
         self.assertEqual(g["conf"], 0.8)  # pemenang
-        # severity/biaya dihitung ulang dari box gabungan (bukan jumlah fragmen)
+        # severity/skor dihitung ulang dari box gabungan (bukan jumlah fragmen)
         self.assertNotEqual(g["luas_m2"], 0.01)
 
     def test_terpisah_tidak_melebur(self):
@@ -350,12 +350,12 @@ class TestVerifikasiOperator(unittest.TestCase):
         return [
             {"kelas": "pothole", "conf": 0.8, "severity": "Berat",
              "box": [0, 0, 80, 80], "panjang_cm": 10, "lebar_cm": 10,
-             "luas_cm2": 100, "luas_m2": 0.01, "total_rp": 5000,
-             "total_str": "Rp5.000", "dasar": "d", "bahan": "b"},
+             "luas_cm2": 100, "luas_m2": 0.01, "skor_prioritas": 33,
+             "dasar": "d", "bahan": "b"},
             {"kelas": "longitudinal_crack", "conf": 0.5, "severity": "Ringan",
              "box": [0, 0, 400, 8], "panjang_cm": 50, "lebar_cm": 1,
-             "luas_cm2": 50, "luas_m2": 0.005, "total_rp": 1000,
-             "total_str": "Rp1.000", "dasar": "d", "bahan": "b"},
+             "luas_cm2": 50, "luas_m2": 0.005, "skor_prioritas": 7,
+             "dasar": "d", "bahan": "b"},
         ]
 
     def test_hapus(self):
@@ -373,8 +373,8 @@ class TestVerifikasiOperator(unittest.TestCase):
         self.assertEqual(r["severity"], "Berat")
         self.assertEqual(r["diubah"], "severity Ringan->Berat")
         self.assertEqual(r["sumber"], "AI")
-        # biaya dihitung ulang dari box + harga Berat (bukan angka asal 1000)
-        self.assertNotEqual(r["total_rp"], 1000)
+        # skor dihitung ulang dari box + severity Berat (bukan angka asal 7)
+        self.assertNotEqual(r["skor_prioritas"], 7)
         self.assertEqual(r["bahan"], "beton + lapis pondasi")
 
     def test_tidak_ubah_tetap_nol(self):
@@ -393,9 +393,7 @@ class TestVerifikasiOperator(unittest.TestCase):
         app.config["TESTING"] = True
         c = app.test_client()
         with app.app_context():
-            from database import init_instansi, migrasi_disposisi_v2
-            init_instansi()
-            migrasi_disposisi_v2()
+            pass
             r = c.post("/api/verifikasi", json={"rows": self._rows(),
                                                 "hapus": [0],
                                                 "severity": {"1": "Berat"}})
@@ -403,7 +401,7 @@ class TestVerifikasiOperator(unittest.TestCase):
             j = r.get_json()
             self.assertEqual(len(j["rows"]), 1)
             self.assertEqual(j["info"]["total"], 2)
-            self.assertIn("total_str", j)
+            self.assertIn("total", j)
 
     def test_pdf_dengan_ubah(self):
         import tempfile
@@ -587,44 +585,33 @@ class TestKalibrasi(unittest.TestCase):
         deteksi._cfg = None
 
 
-class TestHargaPerKelas(unittest.TestCase):
-    def test_kelompok_dan_fallback(self):
-        from biaya import cari_harga, kelompok_jenis, load_harga
-        self.assertEqual(kelompok_jenis("longitudinal_crack"), "crack")
-        self.assertEqual(kelompok_jenis("transverse_crack"), "crack")
-        self.assertEqual(kelompok_jenis("pothole"), "pothole")
-        self.assertIsNone(kelompok_jenis("kelas_aneh"))
-        rows = load_harga("config/harga_acuan.csv")
-        # retak ringan -> crack sealing per meter
-        h = cari_harga(rows, "Ringan", "crack")
-        self.assertEqual(h["bahan"], "crack sealing emulsi")
-        self.assertEqual(h["satuan"], "m")
-        # lubang ringan -> fallback patching per m2
-        h = cari_harga(rows, "Ringan", "pothole")
-        self.assertEqual(h["bahan"], "cold-mix patching")
-        # retak berat -> baris crack satuan m (bukan beton m3)
-        h = cari_harga(rows, "Berat", "crack")
-        self.assertEqual(h["satuan"], "m")
-        self.assertIn("crack sealing", h["bahan"])
-        with self.assertRaises(ValueError):
-            cari_harga(rows, "Ringansekali")
 
-    def test_estimasi_satuan_meter(self):
-        from biaya import estimasi, load_harga
-        rows = load_harga("config/harga_acuan.csv")
-        item = {"kelas": "transverse_crack", "severity": "Ringan",
-                "panjang_cm": 200, "lebar_cm": 2, "luas_cm2": 400,
-                "tebal_asumsi_cm": 2}
-        r = estimasi(item, rows)
-        self.assertEqual(r["total_rp"], round(2.0 * 45000))  # 2 m x Rp45rb
-        self.assertEqual(r["satuan"], "m")
-        # lubang tak berubah: per m2
-        item2 = {"kelas": "pothole", "severity": "Ringan",
-                 "panjang_cm": 100, "lebar_cm": 50, "luas_cm2": 5000,
-                 "tebal_asumsi_cm": 2}
-        r2 = estimasi(item2, rows)
-        self.assertEqual(r2["total_rp"], round(0.5 * 150000))
-        self.assertEqual(r2["satuan"], "m2")
+class TestSkorPrioritas(unittest.TestCase):
+    def test_bobot_severity(self):
+        from prioritas import skor
+        self.assertEqual(skor({"severity": "Ringan", "luas_cm2": 10000})["skor_prioritas"], 33)
+        self.assertEqual(skor({"severity": "Sedang", "luas_cm2": 10000})["skor_prioritas"], 67)
+        self.assertEqual(skor({"severity": "Berat", "luas_cm2": 10000})["skor_prioritas"], 100)
+
+    def test_normalisasi_luas(self):
+        from prioritas import skor
+        # luas >= 10000 cm2 (1 m2) -> faktor 1
+        self.assertEqual(skor({"severity": "Berat", "luas_cm2": 50000})["skor_prioritas"], 100)
+        # luas kecil -> proporsional
+        self.assertEqual(skor({"severity": "Berat", "luas_cm2": 1000})["skor_prioritas"], 10)
+
+    def test_rentang_0_100(self):
+        from prioritas import skor
+        for sev in ("Ringan", "Sedang", "Berat"):
+            for luas in (0, 1, 500, 9999, 10000, 10**9):
+                v = skor({"severity": sev, "luas_cm2": luas})["skor_prioritas"]
+                self.assertGreaterEqual(v, 0)
+                self.assertLessEqual(v, 100)
+
+    def test_total_prioritas(self):
+        from prioritas import total_prioritas
+        rows = [{"skor_prioritas": 100}, {"skor_prioritas": 33}, {}]
+        self.assertEqual(total_prioritas(rows), 133)
 
 
 class TestBatasUpload(unittest.TestCase):

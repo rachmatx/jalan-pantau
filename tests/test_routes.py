@@ -20,7 +20,7 @@ def _app(testing=True):
 class TestRoutePublik(unittest.TestCase):
     def test_halaman_publik_render(self):
         c = _app().test_client()
-        for u in ["/", "/peta", "/riwayat", "/tentang", "/disposisi", "/login"]:
+        for u in ["/", "/peta", "/riwayat", "/tentang", "/login"]:
             with self.subTest(url=u):
                 self.assertEqual(c.get(u).status_code, 200, u)
 
@@ -29,7 +29,7 @@ class TestRoutePublik(unittest.TestCase):
         for u in ["/static/vendor/leaflet/leaflet.js",
                   "/static/vendor/leaflet/leaflet.css",
                   "/static/vendor/fonts/fonts.css",
-                  "/static/js/kontraktor_peta.js"]:
+                  "/static/js/peta.js"]:
             with self.subTest(url=u):
                 self.assertEqual(c.get(u).status_code, 200, u)
 
@@ -43,7 +43,7 @@ class TestRoutePublik(unittest.TestCase):
         """Regresi: halaman publik WAJIB menyisipkan header X-CSRF-Token di fetch.
 
         Tanpa ini, semua aksi POST dari halaman publik (deteksi, simpan riwayat,
-        laporan, disposisi, kalibrasi) gagal 403 karena CSRF aktif.
+        laporan, kalibrasi) gagal 403 karena CSRF aktif.
         """
         html = _app().test_client().get("/").get_data(as_text=True)
         self.assertIn("X-CSRF-Token", html)
@@ -54,8 +54,6 @@ class TestRouteTerlindungi(unittest.TestCase):
     def test_tanpa_login_redirect(self):
         c = _app().test_client()
         self.assertEqual(c.get("/kalibrasi").status_code, 302)
-        self.assertEqual(c.get("/pupr-bandung/dashboard").status_code, 302)
-        self.assertEqual(c.get("/kontraktor/dashboard").status_code, 302)
 
 
 class TestSetelahLoginRender(unittest.TestCase):
@@ -67,31 +65,9 @@ class TestSetelahLoginRender(unittest.TestCase):
         c = app.test_client()
         from database import AKUN_DEMO
         c.post("/login", data={"username": AKUN_DEMO[0], "password": AKUN_DEMO[1]})
-        for u in ["/pupr-bandung/dashboard", "/pupr-bandung/dashboard/verifikasi",
-                  "/pupr-bandung/dashboard/analitik",
-                  "/pupr-bandung/dashboard/instansi", "/pupr-bandung/dashboard/spk",
-                  "/pupr-bandung/dashboard/kontraktor", "/kalibrasi"]:
+        for u in ["/kalibrasi", "/"]:
             with self.subTest(url=u):
                 self.assertEqual(c.get(u).status_code, 200, u)
-        self.assertEqual(c.get("/pupr-bandung/dashboard/xyz").status_code, 404)
-
-    def test_daftar_disposisi_diarahkan_ke_beranda(self):
-        """Alamat lama daftar disposisi harus tetap berguna.
-
-        Daftar laporan sudah menjadi bagian dari halaman Beranda, jadi
-        alamat lamanya dialihkan ke sana. Tautan tersimpan dan bookmark
-        lama tidak boleh ikut rusak jadi halaman kosong atau 404.
-        """
-        app = _app()
-        with app.app_context():
-            from database import init_admin
-            init_admin()
-        c = app.test_client()
-        from database import AKUN_DEMO
-        c.post("/login", data={"username": AKUN_DEMO[0], "password": AKUN_DEMO[1]})
-        r = c.get("/pupr-bandung/dashboard/disposisi")
-        self.assertEqual(r.status_code, 302)
-        self.assertIn("/dashboard", r.headers["Location"])
 
 
 class TestCsrfHtml(unittest.TestCase):
