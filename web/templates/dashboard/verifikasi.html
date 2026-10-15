@@ -90,7 +90,12 @@
 
       <div>
         <label class="dash-kpi-label" for="vrf-pj">PENANGGUNG JAWAB / UNIT</label>
-        <input type="text" id="vrf-pj" class="dash-select" style="width:100%;margin-top:4px" placeholder="cth: Unit TRC / petugas lapangan">
+        <select id="vrf-pj" class="dash-select" style="width:100%;margin-top:4px">
+          <option value="">&mdash; Belum ditentukan &mdash;</option>
+          {% for k in kontraktor_list %}
+          <option value="{{ k.kode }} &mdash; {{ k.nama }}">{{ k.kode }} &mdash; {{ k.nama }}</option>
+          {% endfor %}
+        </select>
       </div>
       <div>
         <label class="dash-kpi-label" for="vrf-catatan">CATATAN INSTRUKSI (OPSIONAL)</label>
@@ -194,6 +199,7 @@
       document.getElementById(id).textContent = "—";
     });
     document.getElementById("vrf-sla").textContent = "SLA —";
+    window.jpPilihPenanggungJawab(document.getElementById("vrf-pj"), "");
     document.getElementById("btn-terima").disabled = true;
     document.getElementById("btn-terbitkan").disabled = true;
     document.getElementById("btn-selesai").disabled = true;
@@ -214,7 +220,7 @@
       (aktif.lat && aktif.lon) ? Number(aktif.lat).toFixed(5) + ", " + Number(aktif.lon).toFixed(5) : "-";
     document.getElementById("vrf-biaya").textContent = rupiah(aktif.total_rp);
     document.getElementById("vrf-sla").textContent = slaTeks(aktif);
-    document.getElementById("vrf-pj").value = aktif.penanggung_jawab || "";
+    window.jpPilihPenanggungJawab(document.getElementById("vrf-pj"), aktif.penanggung_jawab);
     document.getElementById("vrf-catatan").value = "";
     document.getElementById("btn-terima").disabled = false;
     document.getElementById("btn-terbitkan").disabled = false;

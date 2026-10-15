@@ -83,15 +83,14 @@ Cara reproduksi (menulis artefak JSON berisi latency mean/median/p95 + info hard
 - Dampak kalibrasi langsung terlihat (box 100px = X cm)
 
 ### 4. Laporan PDF
-- Generate PDF otomatis dengan foto + tabel temuan + total estimasi
+- Generate PDF otomatis dengan foto inspeksi + tabel temuan + total estimasi
 - Metadata: sumber, model, waktu deteksi
-- Bukti foto sesudah perbaikan ikut dilampirkan bila tersedia
 
 ### 5. Peta Sebaran
 - Leaflet map dengan marker GPS
 - Filter severity
 - Popup detail tiap titik
-- Lihat foto bukti sebelum dan sesudah perbaikan
+- Klik titik untuk membuka foto bukti kerusakan (foto inspeksi)
 
 ### 6. Riwayat & Disposisi
 - Riwayat deteksi dengan thumbnail

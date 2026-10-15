@@ -1045,6 +1045,14 @@ SPK_STATUS = (
 SPK_STATUS_SELESAI = "Diterima Dinas"
 SPK_STATUS_MENUNGGU = "Menunggu Penerimaan"
 
+# Status SPK dari mana hasil kerja boleh diajukan ke dinas OTOMATIS begitu
+# seluruh titik pekerjaan selesai. "Perlu Revisi" sengaja ikut masuk:
+# kontraktor tidak punya tombol submit sendiri (hanya ada saat status
+# "Diterbitan"), jadi bila status ini tidak memicu pengajuan, SPK yang
+# dikembalikan dinas akan macet permanen di "Perlu Revisi" -- kontraktor
+# sudah memasang bukti baru tapi tidak ada jalan untuk mengirimnya.
+SPK_STATUS_AJUKAN_OTOMATIS = ("Dikerjakan", "Perlu Revisi")
+
 # Status akhir: tidak ada lagi aksi yang mungkin. Dipakai untuk menentukan
 # apakah sebuah SPK masih punya urgensi tenggat.
 SPK_STATUS_TERAKHIR = ("Diterima Dinas", "Dibatalkan")
@@ -1572,10 +1580,13 @@ def update_tugas_untuk_spk(sid, tid, status, catatan=None, oleh="-"):
     # kontraktor tidak perlu satu klik lagi yang mudah terlupa. Perhatikan:
     # ini hanya "mengirim", bukan menyelesaikan SPK -- hasil kerja tetap harus
     # diperiksa dan diterima dinas.
+    #
+    # Pemicu ini juga menyalakan diri lagi setelah dinas meminta revisi, karena
+    # kontraktor tidak punya tombol submit untuk status "Perlu Revisi".
     sisa = db.execute("SELECT COUNT(*) c FROM spk_tugas"
                       " WHERE spk_id = ? AND status <> 'Selesai'", (sid,)).fetchone()["c"]
     spk = detail_spk(sid)
-    if sisa == 0 and spk and spk["status"] == "Dikerjakan":
+    if sisa == 0 and spk and spk["status"] in SPK_STATUS_AJUKAN_OTOMATIS:
         update_status_spk(sid, "Menunggu Penerimaan",
                          "Seluruh titik pekerjaan selesai, diajukan ke dinas.",
                          oleh, "kontraktor")
@@ -1623,11 +1634,20 @@ def foto_bukti_disposisi(did):
     Hanya SPK berstatus "Diterima Dinas" yang layak dipakai sebagai bukti
     untuk umum. Kalau workmanship-nya belum diperiksa, fotonya belum boleh
     ditunjukkan ke pengunjung halaman publik.
+
+    Satu disposisi bisa masuk lebih dari satu SPK (mis. pekerjaan dipecah ke
+    beberapa kontraktor, atau SPK lama dibatalkan lalu diterbitkan ulang).
+    Kalau semuanya sudah diterima, yang ditampilkan adalah **penerimaan
+    terbaru** -- itu yang menggambarkan keadaan jalan saat ini. Memilih
+    berdasarkan s.id terkecil asal tidak menentukan dan bisa menampilkan
+    bukti lama padahal ada pekerjaan yang lebih baru sudah selesai.
     """
-    for s in daftar_spk_disposisi(did):
-        if s["status"] == SPK_STATUS_SELESAI and s["foto_selesai"]:
-            return s["foto_selesai"]
-    return None
+    calon = [s for s in daftar_spk_disposisi(did)
+             if s["status"] == SPK_STATUS_SELESAI and s["foto_selesai"]]
+    if not calon:
+        return None
+    terbaru = max(calon, key=lambda s: (s["waktu_diterima"] or "", s["id"]))
+    return terbaru["foto_selesai"]
 
 
 def _sinkron_disposisi(db, disposisi_id, catatan, oleh, now):
@@ -1820,17 +1840,29 @@ def simpan_foto_tugas(tid, data, ext):
     """Simpan foto bukti sebuah titik pekerjaan. Return nama berkas atau None.
 
     Nama berkas memakai awalan 'spk_' supaya tidak mungkin menimpa
-    <id_sesi>.jpg milik riwayat yang sudah ada.
+    <id_sesi>.jpg milik riwayat yang sudah ada. Kalau titik sudah punya
+    bukti sebelumnya, berkas lama DIHAPUS setelah yang baru berhasil
+    ditulis -- kolom hanya menyimpan satu nama, sehingga berkas lama akan
+    menggantung selamanya di folder hasil/ tanpa pernah dirujuk lagi.
     """
     if not data or not ext:
         return None
     import secrets as _sec
 
     _, hasil = _paths()
+    db = get_db()
+    lama = db.execute("SELECT foto_selesai FROM spk_tugas WHERE id = ?",
+                      (tid,)).fetchone()
+    lama = (lama["foto_selesai"] if lama else None)
     nama = f"spk_{int(tid)}_{_sec.token_hex(8)}.{ext}"
     (hasil / nama).write_bytes(data)
-    get_db().execute("UPDATE spk_tugas SET foto_selesai = ? WHERE id = ?", (nama, tid))
-    get_db().commit()
+    db.execute("UPDATE spk_tugas SET foto_selesai = ? WHERE id = ?", (nama, tid))
+    db.commit()
+    if lama and lama != nama:
+        try:
+            (hasil / lama).unlink(missing_ok=True)
+        except OSError as e:
+            current_app.logger.warning("gagal hapus foto bukti lama %s: %s", lama, e)
     return nama
 
 

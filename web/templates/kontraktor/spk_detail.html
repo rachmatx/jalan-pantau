@@ -58,7 +58,8 @@
       <p style="font-size:12px;color:#991B1B;margin:0">
         {% if item.catatan_dinas and item.catatan_dinas != '-' %}{{ item.catatan_dinas }}{% else %}Perbaiki pekerjaan sesuai catatan dinas, lalu unggah ulang foto bukti setiap titik.{% endif %}
       </p>
-      <p style="font-size:11px;color:#991B1B;margin:6px 0 0">Putaran revisi ke-{{ item.revisi_ke or 1 }}. Bukti foto lama sudah dikosongkan.</p>
+      <p style="font-size:11px;color:#991B1B;margin:6px 0 0">Putaran revisi ke-{{ item.revisi_ke or 1 }}. Bukti foto lama sudah dikosongkan.
+        Setelah <b>semua</b> titik ditandai selesai, hasilnya otomatis diajukan ke dinas di halaman ini.</p>
     </div>
     {% elif item.status == 'Menunggu Penerimaan' %}
     <div style="padding:10px 12px;border-radius:10px;background:#FFF7ED;border:1px solid #FED7AA">
@@ -104,10 +105,16 @@
         {% endif %}
         <div class="dash-head-right" style="margin-top:8px;gap:8px">
           <button type="button" class="dash-btn-secondary" data-fokus="{{ t.id }}">Lihat di Peta</button>
+          {# Bukti yang sudah diverifikasi tidak boleh berubah. Setelah SPK
+             final (Diterima Dinas / Dibatalkan) tombol unggah disembunyikan;
+             server juga menolak unggahan lewat route foto tugas. Foto yang
+             sudah ada tetap bisa dilihat. #}
+          {% if item.status not in ('Diterima Dinas', 'Dibatalkan') %}
           <input type="file" accept="image/jpeg,image/png" hidden data-foto-input="{{ t.id }}">
           <button type="button" class="dash-btn-light" data-foto-btn="{{ t.id }}">
             {{ 'Ganti Foto Bukti' if t.foto_selesai else 'Unggah Foto Bukti' }}
           </button>
+          {% endif %}
           {% if t.foto_selesai %}
           <a class="dash-btn-detail" target="_blank" rel="noopener"
              href="/api/kontraktor/spk/{{ item.id }}/tugas/{{ t.id }}/foto">Lihat foto</a>
@@ -238,6 +245,12 @@
   // "Menunggu Penerimaan" dinaikkan otomatis server saat titik pekerjaan
   // pertama dimulai dan saat titik terakhir selesai, jadi tombol_level SPK
   // untuk keduanya hanya akan diam-diam tidak mengubah apa pun.
+  //
+  // Perhatikan jalur revisi: kontraktor TIDAK punya tombol submit saat status
+  // "Perlu Revisi", jadi pengajuan hasil kerja yang disistem pun harus tetap
+  // menyalakan diri di status itu. Kalau SPK_STATUS_AJUKAN_OTOMATIS di
+  // database.py hanya dibatasi ke "Dikerjakan", SPK akan macet di "Perlu Revisi"
+  // selamanya: bukti sudah terpasang tapi tidak ada jalan untuk mengirimnya.
   var btnTerima = document.getElementById("btn-terima");
   if (btnTerima){
     btnTerima.addEventListener("click", function(){

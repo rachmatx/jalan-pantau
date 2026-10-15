@@ -223,6 +223,30 @@ window.jpLaporGagalSekali = (function() {
       });
     };
 
+    // Pilih penanggung jawab / unit dari daftar kontraktor.
+    // Nilai lama di kolom disposisi.penanggung_jawab bisa berupa teks bebas
+    // (mis. "Unit TRC") yang tidak ada di daftar kontraktor. Memasang nilai itu
+    // langsung ke <select> akan membuat selectedIndex = -1 sehingga isinya
+    // hilang begitu tiket disimpan. Karena itu nilai yang tidak cocok disisipkan
+    // sebagai opsi bertanda "data lama" supaya tidak ada data yang hilang diam-diam.
+    window.jpPilihPenanggungJawab = function(sel, nilai) {
+      if (!sel) return;
+      var v = String(nilai == null ? "" : nilai).trim();
+      // Buang opsi sisa dari pemilihan sebelumnya sebelum memilih yang baru.
+      if (sel._jpLama && sel._jpLama.parentNode) sel._jpLama.parentNode.removeChild(sel._jpLama);
+      sel._jpLama = null;
+      if (!v || v === "-") { sel.selectedIndex = 0; return; }
+      for (var i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].value === v) { sel.selectedIndex = i; return; }
+      }
+      var opt = document.createElement("option");
+      opt.value = v;
+      opt.textContent = v + " (data lama)";
+      sel.appendChild(opt);
+      sel._jpLama = opt;
+      sel.selectedIndex = sel.options.length - 1;
+    };
+
   (function(){
     var btn = document.getElementById("nav-toggle");
     var side = document.getElementById("sidebar");

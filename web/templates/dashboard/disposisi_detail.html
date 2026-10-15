@@ -71,7 +71,7 @@
               <td style="padding:8px">{{ r.kelas|replace('_',' ')|title }}</td>
               <td style="padding:8px;font-family:monospace;font-size:11px">{{ r.dasar }}</td>
               <td style="padding:8px"><span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:{% if r.severity == 'Berat' %}#FEF2F2;color:#DC2626{% elif r.severity == 'Sedang' %}#FFFBEB;color:#D97706{% else %}#ECFDF5;color:#059669{% endif %}">{{ r.severity }}</span></td>
-              <td style="padding:8px;font-family:monospace">{{ '%.0f'|format(r.conf*100) }}%</td>
+              <td style="padding:8px;font-family:monospace">{{ '%.0f'|format((r.conf or 0) * 100) }}%</td>
               <td style="padding:8px;text-align:right;font-family:monospace">Rp{{ '%d'|format(r.total_rp) }}</td>
             </tr>
             {% endfor %}
@@ -192,8 +192,29 @@
         </select>
         {% endif %}
         <textarea id="update-catatan" class="dash-select" rows="2" placeholder="Catatan penanganan..."></textarea>
-        <input id="update-pj" class="dash-select" placeholder="Penanggung jawab..." value="{{ item.penanggung_jawab if item.penanggung_jawab and item.penanggung_jawab != '-' else '' }}">
+        {% set pj_sekarang = item.penanggung_jawab if item.penanggung_jawab and item.penanggung_jawab != '-' else '' %}
+        {% set pj_status = namespace(cocok=false) %}
+        <select id="update-pj" class="dash-select" aria-label="Penanggung jawab">
+          <option value="" {{ 'selected' if not pj_sekarang else '' }}>&mdash; Belum ditentukan &mdash;</option>
+          {% for k in kontraktor_list %}
+          {% set nilai_k = k.kode ~ ' — ' ~ k.nama %}
+          {% if nilai_k == pj_sekarang %}{% set pj_status.cocok = true %}{% endif %}
+          <option value="{{ nilai_k }}" {{ 'selected' if nilai_k == pj_sekarang else '' }}>{{ nilai_k }}</option>
+          {% endfor %}
+          {# Nilai lama yang ketik manual tidak ada di daftar kontraktor. #}
+          {# Ditampilkan sebagai opsi tersendiri supaya tidak hilang diam-diam. #}
+          {% if pj_sekarang and not pj_status.cocok %}
+          <option value="{{ pj_sekarang }}" selected>{{ pj_sekarang }} (data lama)</option>
+          {% endif %}
+        </select>
 
+        {# Foto sesudah perbaikan milik dinas. Hanya relevan untuk laporan
+           yang TIDAK punya SPK: kalau sudah ada SPK, bukti yang sah adalah
+           foto kontraktor yang sudah diperiksa dinas lewat BAST. Panel ini
+           disembunyikan supaya tidak muncul dua klaim "sudah diperbaiki"
+           untuk satu lokasi. Server juga menolak unggahan lewat route
+           POST /api/disposisi/<id>/foto saat SPK sudah ada. #}
+        {% if not spk_terkait %}
         <!-- Foto sesudah perbaikan: label terlihat + tombol unggah terpisah.
              Sebelumnya input file hanya punya title (tooltip), sehingga
              mudah terlewat dan status tetap tersimpan tanpa foto. -->
@@ -213,6 +234,15 @@
             {%- endif -%}
           </div>
         </div>
+        {% elif sesudah_b64 %}
+        <div style="padding:10px 12px;border-radius:8px;background:var(--dash-surface-2,rgba(148,163,184,.12));border:1px solid var(--dash-border,var(--line))">
+          <p style="font-size:11px;color:var(--dash-muted);margin:0;line-height:1.5">
+            Bukti perbaikan laporan ini berasal dari foto hasil kerja kontraktor
+            yang sudah disetujui dinas lewat BAST. Unggah foto di sini sudah
+            dinonaktifkan untuk laporan yang punya SPK.
+          </p>
+        </div>
+        {% endif %}
 
         <button type="button" class="dash-btn-apply" onclick="updateStatus()">Simpan Perubahan</button>
       </div>

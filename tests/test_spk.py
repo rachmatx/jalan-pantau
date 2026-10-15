@@ -513,7 +513,14 @@ class TestPenerimaanHasilKerja(_Dasar):
         self.assertIn("foto bukti", r.get_json()["error"])
 
     def test_alur_revisi_lengkap_sampai_diterima(self):
-        """Revisi -> perbaiki -> unggah bukti -> ajukan -> diterima."""
+        """Revisi -> perbaiki -> unggah bukti -> otomatis diajukan -> diterima.
+
+        Ini sekaligus mengunci perbaikan bug dead-end: kontraktor tidak punya
+        tombol submit saat status "Perlu Revisi", jadi pengajuan SETELAH revisi
+        harus datang dari auto-submit di server. Test ini sengaja tidak
+        memanggil POST /status -- kalau auto-submitnya rusak lagi, SPK akan
+        menggantung di "Perlu Revisi" dan test ini gagal.
+        """
         self._ajukan()
         self.dinas.post(f"/api/spk/{self.spk}/revisi", json={"alasan": "Aspal kurang"})
         c = self._kontraktor()
@@ -521,10 +528,8 @@ class TestPenerimaanHasilKerja(_Dasar):
             c.post(f"/api/kontraktor/spk/{self.spk}/tugas/{tid}/foto",
                    data={"foto": (_jpeg(), "p.jpg")}, content_type="multipart/form-data")
             c.post(f"/api/kontraktor/spk/{self.spk}/tugas/{tid}", json={"status": "Selesai"})
-        # Setelah revisi kontraktor mengirim ulang secara sadar lewat tombol
-        # "Ajukan Hasil Kerja" (auto-submit hanya berjalan saat masih Dikerjakan).
-        c.post(f"/api/kontraktor/spk/{self.spk}/status",
-               json={"status": "Menunggu Penerimaan"})
+        # Tanpa POST /status -- pengajuan harus terjadi sendiri begitu titik
+        # terakhir selesai, walau SPK sedang berstatus "Perlu Revisi".
         with self.app.app_context():
             from database import detail_spk
             self.assertEqual(detail_spk(self.spk)["status"], "Menunggu Penerimaan")
@@ -534,6 +539,50 @@ class TestPenerimaanHasilKerja(_Dasar):
             from database import detail_spk
             self.assertEqual(detail_spk(self.spk)["status"], "Diterima Dinas")
 
+    def test_setelah_revisi_tidak_menunggu_perintah_tambahan(self):
+        """Regression: SPK tidak boleh menggantung di "Perlu Revisi".
+
+        Kontraktor hanya punya tombol "Terima SPK" saat status "Diterbitan",
+        jadi kalau auto-submit tidak menyalakan diri di "Perlu Revisi" maka
+        kontraktor tidak punya satu pun jalan untuk mengirim ulang hasilnya.
+        """
+        self._ajukan()
+        self.dinas.post(f"/api/spk/{self.spk}/revisi", json={"alasan": "Aspal kurang"})
+        c = self._kontraktor()
+        for tid in (1, 2):
+            c.post(f"/api/kontraktor/spk/{self.spk}/tugas/{tid}/foto",
+                   data={"foto": (_jpeg(), "p.jpg")}, content_type="multipart/form-data")
+            r = c.post(f"/api/kontraktor/spk/{self.spk}/tugas/{tid}", json={"status": "Selesai"})
+            self.assertEqual(r.status_code, 200)
+        with self.app.app_context():
+            from database import detail_spk, daftar_tugas_spk
+            item = detail_spk(self.spk)
+            tugas = daftar_tugas_spk(self.spk)
+        self.assertNotEqual(item["status"], "Perlu Revisi",
+                            "SPK menggantung: kontraktor tidak bisa mengirim ulang hasil kerja")
+        self.assertEqual(item["status"], "Menunggu Penerimaan")
+        for t in tugas:
+            self.assertEqual(t["status"], "Selesai")
+            self.assertIsNotNone(t["foto_selesai"])
+
+    def test_halaman_kontraktor_tidak_punya_tombol_saat_perlu_revisi(self):
+        """Cek sisi template: saat "Perlu Revisi" tidak ada tombol status.
+
+        Kontraktor hanya punya tombol "Terima SPK" saat status "Diterbitan",
+        jadi halaman revisi memang tidak boleh punya tombol submit -- yang
+        membuat jalur auto-submit jadi satu-satunya jalan, dan wajib diuji.
+        """
+        self._ajukan()
+        self.dinas.post(f"/api/spk/{self.spk}/revisi", json={"alasan": "Aspal kurang"})
+        r = self._kontraktor().get(f"/kontraktor/spk/{self.spk}")
+        self.assertEqual(r.status_code, 200)
+        html = r.get_data(as_text=True)
+        self.assertNotIn('id="btn-terima"', html)
+        # Tanpa tombol, satu-satunya jalan keluar harus pengajuan otomatis.
+        with self.app.app_context():
+            from database import SPK_STATUS_AJUKAN_OTOMATIS
+        self.assertIn("Perlu Revisi", SPK_STATUS_AJUKAN_OTOMATIS)
+
     def test_kontraktor_ditolak_di_endpoint_dinas(self):
         """Kontraktor (bahkan kontraktor lain) tidak boleh menerima hasil kerja."""
         self._ajukan()
@@ -542,6 +591,129 @@ class TestPenerimaanHasilKerja(_Dasar):
         self.assertEqual(r.status_code, 401)
         r2 = c2.post(f"/api/spk/{self.spk}/revisi", json={"alasan": "sengaja"})
         self.assertEqual(r2.status_code, 401)
+
+    def test_bukti_tidak_bisa_diganti_setelah_bast(self):
+        """Regression: bukti publik harus berhenti berubah begitu BAST diteken.
+
+        Kalau kontraktor masih boleh mengunggah setelah "Diterima Dinas", isi
+        yang dilihat publik bukan lagi bukti yang pernah diperiksa dinas, dan
+        keputusan BAST kehilangan makna sebagai dokumen acceptance.
+        """
+        self._ajukan()
+        self.dinas.post(f"/api/spk/{self.spk}/terima", json={"nomor_bast": "BAST/1"})
+        with self.app.app_context():
+            from database import detail_spk, daftar_tugas_spk
+            sebelum = {t["id"]: t["foto_selesai"] for t in daftar_tugas_spk(self.spk)}
+            self.assertEqual(detail_spk(self.spk)["status"], "Diterima Dinas")
+        r = self._kontraktor().post(
+            f"/api/kontraktor/spk/{self.spk}/tugas/1/foto",
+            data={"foto": (_jpeg(), "palsu.jpg")}, content_type="multipart/form-data")
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("tidak bisa diubah", r.get_json()["error"])
+        with self.app.app_context():
+            from database import daftar_tugas_spk
+            sesudah = {t["id"]: t["foto_selesai"] for t in daftar_tugas_spk(self.spk)}
+        self.assertEqual(sesudah, sebelum, "Bukti berubah setelah SPK final")
+
+    def test_bukti_tidak_bisa_diganti_setelah_dibatalkan(self):
+        # SPK yang dibatalkan bisa berada di status mana pun yang boleh
+        # dibatalkan dinas (Diterbitan / Diterima / Dikerjakan), bukan dari
+        # "Menunggu Penerimaan" -- ke sana dinas hanya boleh terima atau revisi.
+        self.dinas.post(f"/api/spk/{self.spk}/batal")
+        with self.app.app_context():
+            from database import detail_spk
+            self.assertEqual(detail_spk(self.spk)["status"], "Dibatalkan")
+        r = self._kontraktor().post(
+            f"/api/kontraktor/spk/{self.spk}/tugas/1/foto",
+            data={"foto": (_jpeg(), "palsu.jpg")}, content_type="multipart/form-data")
+        self.assertEqual(r.status_code, 400)
+
+    def test_tombol_foto_hilang_setelah_spk_final(self):
+        """Sisi template: tombol unggah foto tidak boleh tampil saat SPK final.
+
+        Dicek atribut HTML-nya (data-foto-btn=") supaya tidak tertukar dengan
+        querySelector di dalam skrip, yang memang selalu ada.
+        """
+        self._ajukan()
+        html_aktif = self._kontraktor().get(
+            f"/kontraktor/spk/{self.spk}").get_data(as_text=True)
+        self.assertIn('data-foto-btn="', html_aktif, "tombol harus ada sebelum SPK final")
+        self.dinas.post(f"/api/spk/{self.spk}/terima", json={"nomor_bast": "BAST/1"})
+        html_final = self._kontraktor().get(
+            f"/kontraktor/spk/{self.spk}").get_data(as_text=True)
+        self.assertNotIn('data-foto-btn="', html_final)
+        # Bukti yang sudah ada harus tetap bisa dilihat.
+        self.assertIn("Lihat foto", html_final)
+
+    def test_ganti_foto_membuang_berkas_lama(self):
+        """Kolom foto_selesai hanya menyimpan satu nama.
+
+        Kalau berkas lama tidak dihapus saat diganti, setiap penggantian
+        menyisakan file yatim permanen di folder hasil/.
+        """
+        self._ajukan()
+        c = self._kontraktor()
+        with self.app.app_context():
+            from database import daftar_tugas_spk, _paths
+            lama = daftar_tugas_spk(self.spk)[0]["foto_selesai"]
+            folder = _paths()[1]
+            self.assertTrue((folder / lama).is_file())
+        r = c.post(f"/api/kontraktor/spk/{self.spk}/tugas/1/foto",
+                   data={"foto": (_jpeg(), "baru.jpg")}, content_type="multipart/form-data")
+        self.assertEqual(r.status_code, 200)
+        with self.app.app_context():
+            from database import daftar_tugas_spk, _paths
+            baru = daftar_tugas_spk(self.spk)[0]["foto_selesai"]
+            folder = _paths()[1]
+        self.assertNotEqual(baru, lama)
+        self.assertFalse((folder / lama).exists(), f"berkas yatim {lama} tidak dihapus")
+        self.assertTrue((folder / baru).is_file())
+
+
+class TestFotoSesudahTanpaSPK(_Dasar):
+    """Foto "jalan sesudah diperbaiki" milik dinas HANYA untuk laporan tanpa SPK.
+
+    Kalau ada SPK, bukti yang sah adalah foto kontraktor yang sudah diperiksa
+    dinas lewat BAST. Membiarkan dinas mengunggah foto sendiri di tiket yang
+    sama menghasilkan dua klaim "sudah diperbaiki" yang berbeda untuk satu
+    lokasi, dan yang tampil ke publik bisa bukan yang pernah diperiksa.
+    """
+
+    def test_tolak_unggah_foto_sesudah_bila_sudah_punya_spk(self):
+        # self.d1 dan self.d2 sudah jadi titik pekerjaan SPK di setUp.
+        r = self.dinas.post(f"/api/disposisi/{self.d1}/foto",
+                            data={"foto": (_jpeg(), "a.jpg")},
+                            content_type="multipart/form-data")
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("sudah punya SPK", r.get_json()["error"])
+        with self.app.app_context():
+            from database import detail_disposisi
+            self.assertIsNone(detail_disposisi(self.d1)["foto_sesudah"])
+
+    def test_panel_foto_sesudah_disembunyikan_bila_ada_spk(self):
+        r = self.dinas.get(f"/pupr-bandung/dashboard/disposisi/{self.d1}")
+        self.assertEqual(r.status_code, 200)
+        self.assertNotIn('id="update-foto"', r.get_data(as_text=True))
+
+    def test_tetap_boleh_bila_laporan_tanpa_spk(self):
+        """Fitur ini tidak dihapus, hanya dipersempit: tiket tanpa SPK masih
+        butuh cara menunjukkan bahwa kerusakan sudah ditangani."""
+        with self.app.app_context():
+            from database import simpan_disposisi, detail_sesi, rekap_temuan, simpan_sesi
+            rows = [{"kelas": "pothole", "severity": "Berat", "dasar": "18 cm",
+                     "total_rp": 1500000, "total_str": "Rp1.500.000", "conf": 0.9}]
+            s = simpan_sesi("uji", "Jl. Tanpa SPK", "m", rows, 0, lat=-6.9, lon=107.6)
+            rc = rekap_temuan(s)
+            did = simpan_disposisi(s, "BAP-X/1", "Jl. Tanpa SPK", -6.9, 107.6,
+                                   rc["n_temuan"], rc["total_rp"], rc["worst"],
+                                   None, "D", "Bandung", "a@b.c", "rutin")
+        r = self.dinas.post(f"/api/disposisi/{did}/foto",
+                            data={"foto": (_jpeg(), "a.jpg")},
+                            content_type="multipart/form-data")
+        self.assertEqual(r.status_code, 200, r.get_json())
+        with self.app.app_context():
+            from database import detail_disposisi
+            self.assertIsNotNone(detail_disposisi(did)["foto_sesudah"])
 
 
 class TestDataKontrakSPK(_Dasar):
@@ -652,6 +824,154 @@ class TestEjaanStatus(_Dasar):
                 (salah,)).fetchone()["c"]
         self.assertEqual(sisa_spk, 0)
         self.assertEqual(sisa_catatan, 0)
+
+
+class TestKonsistensiBuktiFoto(_Dasar):
+    """Pemeriksaan tambahan pada jalur foto, di luar alur SPK utama."""
+
+    def test_dashboard_memakai_validator_yang_sama_dengan_route_publik(self):
+        """Dashboard harus lewat path_foto_sesudah, bukan merangkai path sendiri.
+
+        Kalau dashboard merangkai folder hasil langsung dari nilai kolom, ia
+        melewati pemeriksaan basename dan bisa membaca berkas di luar folder
+        hasil lalu membungkusnya jadi base64 di dalam HTML.
+
+        Test ini benar-benar meletakkan berkas target di LUAR folder hasil,
+        lalu memastikan isinya tidak bocor ke halaman.
+        """
+        import base64 as _b64
+        with self.app.app_context():
+            from database import simpan_disposisi, rekap_temuan, simpan_sesi, _paths
+            rows = [{"kelas": "pothole", "severity": "Berat", "dasar": "18 cm",
+                     "total_rp": 1500000, "total_str": "Rp1.500.000", "conf": 0.9}]
+            s = simpan_sesi("uji", "Jl. Jalur", "m", rows, 0, lat=-6.9, lon=107.6,
+                            image_b64=_b64.b64encode(_jpeg().read()).decode())
+            rc = rekap_temuan(s)
+            did = simpan_disposisi(s, "BAP-J/1", "Jl. Jalur", -6.9, 107.6,
+                                   rc["n_temuan"], rc["total_rp"], rc["worst"],
+                                   None, "D", "Bandung", "a@b.c", "rutin")
+            hasil = _paths()[1]
+            hasil.mkdir(parents=True, exist_ok=True)
+            # Berkas rahasia satu folder DI LUAR folder hasil.
+            rahasia = hasil.parent / "rahasia.txt"
+            rahasia.write_text("RAHASIA-JP-SECRET-1234", encoding="utf-8")
+            sidah = _b64.b64encode(b"RAHASIA-JP-SECRET-1234").decode()
+            from database import get_db
+            get_db().execute("UPDATE disposisi SET foto_sesudah = ? WHERE id = ?",
+                             ("../rahasia.txt", did))
+            get_db().commit()
+        try:
+            html = self.dinas.get(f"/pupr-bandung/dashboard/disposisi/{did}")
+            self.assertEqual(html.status_code, 200)
+            teks = html.get_data(as_text=True)
+            # Path lintasan harus ditolak validator.
+            self.assertNotIn(sidah, teks,
+                             "berkas di luar folder hasil bocor ke dashboard")
+            self.assertNotIn("RAHASIA-JP-SECRET-1234", teks)
+        finally:
+            rahasia.unlink(missing_ok=True)
+
+    def test_foto_lama_yang_benar_ada_tetap_ditampilkan(self):
+        """Penjaga test di atas: validasi tidak boleh terlalu ketat sampai
+        gambar yang sah ikut hilang."""
+        import base64 as _b64
+        with self.app.app_context():
+            from database import simpan_disposisi, rekap_temuan, simpan_sesi, _paths
+            rows = [{"kelas": "pothole", "severity": "Berat", "dasar": "18 cm",
+                     "total_rp": 1500000, "total_str": "Rp1.500.000", "conf": 0.9}]
+            s = simpan_sesi("uji", "Jl. Sah", "m", rows, 0, lat=-6.9, lon=107.6,
+                            image_b64=_b64.b64encode(_jpeg().read()).decode())
+            rc = rekap_temuan(s)
+            did = simpan_disposisi(s, "BAP-S/1", "Jl. Sah", -6.9, 107.6,
+                                   rc["n_temuan"], rc["total_rp"], rc["worst"],
+                                   None, "D", "Bandung", "a@b.c", "rutin")
+            nama = f"{did}_sesudah_{did}.jpg"
+            folder = _paths()[1]
+            folder.mkdir(parents=True, exist_ok=True)
+            (folder / nama).write_bytes(_jpeg().read())
+            from database import get_db
+            get_db().execute("UPDATE disposisi SET foto_sesudah = ? WHERE id = ?",
+                             (nama, did))
+            get_db().commit()
+        html = self.dinas.get(f"/pupr-bandung/dashboard/disposisi/{did}")
+        self.assertEqual(html.status_code, 200)
+        teks = html.get_data(as_text=True)
+        self.assertIn("Foto sesudah sudah tersimpan", teks)
+        # Gambar sesudah harus benar-benar dirender (label SESUDAH), bukan
+        # hanya status teksnya.
+        self.assertIn("SESUDAH", teks)
+
+    def test_bukti_publik_memakai_penerimaan_terbaru(self):
+        """Kalau satu disposisi masuk dua SPK yang keduanya diterima dinas,
+        yang ditampilkan ke publik adalah penerimaan TERAKHIR.
+
+        Memilih s.id terkecil asal bisa menampilkan bukti lama padahal
+        pekerjaan yang lebih baru sudah selesai.
+        """
+        from PIL import Image
+        import io as _io
+        with self.app.app_context():
+            from database import get_db, detail_spk
+            # SPK kedua untuk disposisi yang sama.
+            kid = get_db().execute(
+                "SELECT kontraktor_id FROM spk WHERE id = ?", (self.spk,)).fetchone()[0]
+            spk1 = self.spk
+            spk2 = detail_spk(spk1)["id"]
+            # Terbitkan SPK kedua berisi disposisi yang sama.
+            import database as D
+            d = get_db().execute(
+                "SELECT id FROM disposisi WHERE bap_id ="
+                " (SELECT bap_id FROM disposisi WHERE id = ?)", (self.d1,)).fetchone()[0]
+            baru = D.terbitkan_spk(kid, "Bandung", "Perbaikan Susulan", [d])
+            # Beri waktu terima berbeda supaya "terbaru" tidak ambigu.
+            get_db().execute(
+                "UPDATE spk SET status='Diterima Dinas', waktu_diterima=?"
+                " WHERE id = ?", ("2026-01-01T00:00:00", spk2))
+            get_db().execute(
+                "UPDATE spk SET status='Diterima Dinas', waktu_diterima=?"
+                " WHERE id = ?", ("2026-12-31T00:00:00", baru))
+            get_db().commit()
+            # Foto berbeda untuk kedua SPK.
+            _paths = D._paths()
+            _paths[1].mkdir(parents=True, exist_ok=True)
+            f_lama, f_baru = "bukti_lama.jpg", "bukti_baru.jpg"
+            (_paths[1] / f_lama).write_bytes(_jpeg().read())
+            buf = _io.BytesIO()
+            Image.new("RGB", (30, 30), (10, 200, 10)).save(buf, format="JPEG")
+            (_paths[1] / f_baru).write_bytes(buf.getvalue())
+            get_db().execute(
+                "UPDATE spk_tugas SET foto_selesai=? WHERE spk_id=?",
+                (f_lama, spk2))
+            get_db().execute(
+                "UPDATE spk_tugas SET foto_selesai=? WHERE spk_id=?",
+                (f_baru, baru))
+            get_db().commit()
+            assert D.foto_bukti_disposisi(d) == f_baru, (
+                "penerimaan terbaru harus menang, bukan s.id terkecil")
+
+
+class TestRateLimitFoto(_Dasar):
+    """Route unggah foto harus ikut dibatasi; sebelumnya hanya rate limit
+    global 600/jam yang berlaku, dan hilang total tanpa flask-limiter."""
+
+    def test_route_foto_memakai_pembatas(self):
+        """Guard statis: ketiga route foto harus punya dekorator limit.
+
+        Diuji lewat sumber, bukan lewat configurer Flask, supaya tetap
+        berlaku walau limiter tidak terpasang di lingkungan uji.
+        """
+        import re
+        src = open(os.path.join(os.path.dirname(os.path.dirname(
+            os.path.abspath(__file__))), "web", "app.py"),
+            encoding="utf-8").read()
+        for route in ("/api/disposisi/<int:did>/foto",
+                      "/api/kontraktor/spk/<int:sid>/tugas/<int:tid>/foto",
+                      "/api/kalibrasi/foto"):
+            m = re.search(r'@app\.post\("' + re.escape(route) + r'"\)(.{0,400})'
+                          r'\n    def ', src, re.S)
+            self.assertIsNotNone(m, f"route {route} tidak ditemukan")
+            self.assertIn("limiter.limit", m.group(1),
+                          f"route {route} tidak punya rate limit")
 
 
 if __name__ == "__main__":

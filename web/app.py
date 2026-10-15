@@ -528,7 +528,7 @@ def create_app():
         return redirect(url_for("login_form"))
 
     # Cache-buster: versi ini akan ditambahkan ke semua asset static
-    STATIC_VERSION = "36"
+    STATIC_VERSION = "37"
 
     @app.context_processor
     def inject_static_version():
@@ -736,6 +736,7 @@ def create_app():
 
     @app.post("/api/kalibrasi/foto")
     @login_wajib
+    @(limiter.limit("10 per minute; 60 per hour") if limiter else (lambda f: f))
     def api_kalibrasi_foto():
         """Upload foto penggaris (maks 5MB) -> {image_b64, lebar, tinggi}.
 
@@ -1419,18 +1420,30 @@ def create_app():
 
     @app.post("/api/disposisi/<int:did>/foto")
     @login_wajib
+    @(limiter.limit("20 per minute; 200 per hour") if limiter else (lambda f: f))
     def api_disposisi_foto(did):
         """Upload foto sesudah penanganan (maks 5MB, jpg/png).
 
         Validasi + re-encode delegated ke _terima_foto (lihat catatan di
         sana). Nama file deterministik per disposisi agar tidak menimpa
         disposisi lain dengan bap_id sama.
+
+        HANYA untuk disposisi yang TIDAK punya SPK. Kalau ada SPK, bukti
+        "jalan sudah diperbaiki" adalah foto kontraktor yang sudah diperiksa
+        dinas lewat BAST (lihat foto_bukti_disposisi). Membiarkan dinas
+        mengunggah foto sendiri di tiket yang sama akan menghasilkan dua
+        klaim otoritatif yang berbeda untuk satu lokasi, dan yang tampil ke
+        publik bisa bukan yang pernah diperiksa dinas.
         """
         d = detail_disposisi(did)
         if not d:
             return jsonify({"error": "Disposisi tidak ditemukan."}), 404
         if not _wewenang_ok(d):
             return jsonify({"error": "Disposisi ini di luar wewenang daerah Anda."}), 403
+        if daftar_spk_disposisi(did):
+            return jsonify({"error": "Laporan ini sudah punya SPK. Bukti perbaikan "
+                                     "menjadi foto hasil kerja kontraktor yang "
+                                     "disetujui dinas lewat BAST, bukan foto di sini."}), 400
         bersih, galat = _terima_foto("foto")
         if galat:
             return jsonify({"error": galat}), 400
@@ -1564,13 +1577,17 @@ def create_app():
                     img_path = hasil_dir / f"{item['bap_id']}.jpg"
                     if img_path.exists():
                         image_b64 = base64.b64encode(img_path.read_bytes()).decode()
-                    if item.get("foto_sesudah"):
-                        sesudah_path = hasil_dir / item["foto_sesudah"]
-                        if sesudah_path.exists():
-                            sesudah_b64 = base64.b64encode(sesudah_path.read_bytes()).decode()
+                    # WAJIB lewat path_foto_sesudah, sama seperti route publik
+                    # /api/disposisi/<did>/foto. Merangkai path langsung dari
+                    # nilai kolom akan melewati pemeriksaan basename/ekstensi/
+                    # is_file(), sehingga kedua halaman bisa berbeda pendapat
+                    # soal berkas mana yang benar-benar ada di folder hasil.
+                    sesudah_path = path_foto_sesudah(item)
+                    if sesudah_path is not None:
+                        sesudah_b64 = base64.b64encode(sesudah_path.read_bytes()).decode()
                 return render_template("dashboard/disposisi_detail.html", active="dashboard", daerah=daerah, nama_daerah=nama, item=item, sesi=sesi_data["sesi"] if sesi_data else None, rows=sesi_data.get("temuan", []) if sesi_data else [], image_b64=image_b64, sesudah_b64=sesudah_b64, catatan_list=riwayat_catatan(did),
-                               spk_terkait=daftar_spk_disposisi(did),
-                               ada_foto_bukti=bool(foto_bukti_disposisi(did)))
+                                spk_terkait=daftar_spk_disposisi(did),
+                               kontraktor_list=daftar_kontraktor())
             else:
                 # Daftar laporan sudah menjadi bagian dari beranda, jadi
                 # halaman tersendiri dihapus. Alamat lama tetap
@@ -1584,7 +1601,8 @@ def create_app():
             # data yang diambil lewat /api/disposisi, jadi tidak ada ringkasan
             # yang perlu dikirim bersama render_template.
             return render_template("dashboard/verifikasi.html", active="verifikasi",
-                                   daerah=daerah, nama_daerah=nama)
+                                   daerah=daerah, nama_daerah=nama,
+                                   kontraktor_list=daftar_kontraktor())
         elif subroute == "analitik":
             # Peta kerapatan kerusakan (indeks internal, bukan IKJ resmi).
             return render_template("dashboard/analitik.html", active="analitik",
@@ -1775,13 +1793,26 @@ def create_app():
 
     @app.post("/api/kontraktor/spk/<int:sid>/tugas/<int:tid>/foto")
     @kontraktor_wajib
+    @(limiter.limit("20 per minute; 200 per hour") if limiter else (lambda f: f))
     def api_kontraktor_tugas_foto(sid, tid):
-        """Kontraktor unggah foto bukti pengerjaan satu titik."""
+        """Kontraktor unggah foto bukti pengerjaan satu titik.
+
+        Ditolak begitu SPK sudah final (Diterima Dinas / Dibatalkan). Setelah
+        BAST ditandatangani, foto yang terverifikasi harus berhenti berubah:
+        bila masih boleh diganti, bukti yang dilihat publik bukan lagi bukti
+        yang pernah diperiksa dinas, dan keputusan BAST jadi tidak bermakna
+        sebagai dokumen acceptance.
+        """
         kid = _kid()
         if not spk_boleh_akses(sid, kid):
             return jsonify({"error": "SPK tidak ditemukan."}), 404
         if _tugas_milik_spk(sid, tid) is None:
             return jsonify({"error": "Titik pekerjaan tidak ada di SPK ini."}), 404
+        spk = detail_spk(sid)
+        if spk and spk["status"] in SPK_STATUS_TERAKHIR:
+            return jsonify({"error": "SPK sudah " + spk["status"] + ". Bukti foto "
+                                     "tidak bisa diubah lagi setelah keputusan "
+                                     "dinas."}), 400
         bersih, galat = _terima_foto("foto")
         if galat:
             return jsonify({"error": galat}), 400

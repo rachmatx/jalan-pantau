@@ -132,7 +132,7 @@ dataset. Lihat `docs/Segmentasi-atau-Bounding-Box.md`.
 | GET | `/api/disposisi/<did>` | detail + riwayat catatan |
 | POST | `/api/disposisi` | kirim disposisi → `{id}` |
 | PUT | `/api/disposisi/<did>` | 🔒 update status |
-| POST | `/api/disposisi/<did>/foto` | 🔒 multipart `foto` (bukti sesudah) |
+| POST | `/api/disposisi/<did>/foto` | 🔒 multipart `foto` — **ditolak bila laporan sudah punya SPK** |
 | DELETE | `/api/disposisi/<did>` | 🔒 hapus |
 
 ## Admin
@@ -168,11 +168,52 @@ melihat SPK miliknya sendiri.
 
 ### Status SPK
 
-`Diterbitan` → `Diterima` → `Dikerjakan` → `Selesai`
-(`Dibatalkan` oleh dinas kapan saja sebelum selesai).
+Tujuh status, dipisah menurut siapa yang boleh menjalankannya
+(`SPK_TRANSISI` di `web/database.py`):
 
-Kalau seluruh titik pekerjaan sudah Selesai, status SPK otomatis naik ke
-Selesai tanpa perlu klik tambahan.
+| Status | Situs | Kontraktor boleh | Dinas boleh |
+|---|---|---|---|
+| `Diterbitan` | dinas terbitkan SPK | → `Diterima` | → `Dibatalkan` |
+| `Diterima` | kontraktor menerima penugasan | → `Dikerjakan` | → `Dibatalkan` |
+| `Dikerjakan` | kontraktor mengerjakan | → `Menunggu Penerimaan` | → `Dibatalkan` |
+| `Menunggu Penerimaan` | hasil kerja diajukan | — | → `Diterima Dinas`, `Perlu Revisi` |
+| `Perlu Revisi` | dinas menolak hasil kerja | → `Menunggu Penerimaan` (otomatis) | → `Dibatalkan` |
+| `Diterima Dinas` | BAST, status final | — | → `Menunggu Penerimaan` (batalkan terima) |
+| `Dibatalkan` | dibatalkan dinas, final | — | — |
+
+Dinas **tidak pernah** bisa menaikkan status ke `Dikerjakan`: pekerjaan
+lapangan dinaikkan kontraktor, atau otomatis server saat titik pertama
+dimulai.
+
+Kalau seluruh titik pekerjaan sudah Selesai, SPK otomatis naik ke
+`Menunggu Penerimaan` tanpa perlu klik tambahan. Ini juga berlaku setelah
+revisi — kontraktor tidak punya tombol submit saat status `Perlu Revisi`.
+
+Status `Diterima Dinas` mengunci bukti foto: unggahan foto baru ditolak
+karena bukti publik harus sama dengan yang pernah diperiksa dinas.
+
+### Bukti foto
+
+Tiga jenis berkas, tidak saling menimpa:
+
+| Jenis | Kolom | Diunggah | Keterangan |
+|---|---|---|---|
+| Foto inspeksi | `sesi.gambar` | Operator | Saat deteksi, otomatis |
+| Bukti hasil kerja | `spk_tugas.foto_selesai` | Kontraktor | Wajib sebelum tugas Selesai; terkunci setelah BAST |
+| Foto sesudah | `disposisi.foto_sesudah` | Dinas | **Hanya untuk laporan tanpa SPK** |
+
+Untuk laporan yang sudah punya SPK, bukti yang otoritatif adalah foto hasil
+kerja kontraktor yang disetujui dinas lewat BAST, disajikan lewat
+`GET /api/disposisi/<did>/foto-bukti`. Endpoint itu publik tanpa login, tapi
+hanya melayani SPK berstatus `Diterima Dinas`.
+
+Endpoint foto yang tersedia:
+
+| Method | Path | Akses |
+|---|---|---|
+| POST | `/api/disposisi/<did>/foto` | 🔒 dinas daerah; ditolak bila sudah ada SPK |
+| GET | `/api/disposisi/<did>/foto` | publik |
+| GET | `/api/disposisi/<did>/foto-bukti` | publik; hanya bila SPK `Diterima Dinas` |
 
 ## Contoh
 
