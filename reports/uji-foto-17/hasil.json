@@ -1,0 +1,728 @@
+[
+ {
+  "foto": "China_MotorBike_000394.jpg",
+  "n_temuan": 3,
+  "temuan": [
+   {
+    "kelas": "other_corruption",
+    "conf": 0.877,
+    "severity": "Sedang",
+    "luas_cm2": 798.0,
+    "skor_prioritas": 5,
+    "box": [
+     171.3,
+     201.1,
+     510.7,
+     508.5
+    ]
+   },
+   {
+    "kelas": "other_corruption",
+    "conf": 0.401,
+    "severity": "Sedang",
+    "luas_cm2": 799.0,
+    "skor_prioritas": 5,
+    "box": [
+     -0.0,
+     148.7,
+     339.3,
+     456.5
+    ]
+   },
+   {
+    "kelas": "pothole",
+    "conf": 0.582,
+    "severity": "Ringan",
+    "luas_cm2": 3.6,
+    "skor_prioritas": 0,
+    "box": [
+     103.4,
+     102.6,
+     128.9,
+     120.9
+    ]
+   }
+  ]
+ },
+ {
+  "foto": "China_MotorBike_000396.jpg",
+  "n_temuan": 1,
+  "temuan": [
+   {
+    "kelas": "longitudinal_crack",
+    "conf": 0.722,
+    "severity": "Sedang",
+    "luas_cm2": 113.1,
+    "skor_prioritas": 1,
+    "box": [
+     104.0,
+     307.0,
+     176.4,
+     511.2
+    ]
+   }
+  ]
+ },
+ {
+  "foto": "China_MotorBike_000399.jpg",
+  "n_temuan": 3,
+  "temuan": [
+   {
+    "kelas": "longitudinal_crack",
+    "conf": 0.638,
+    "severity": "Berat",
+    "luas_cm2": 267.0,
+    "skor_prioritas": 3,
+    "box": [
+     318.0,
+     176.2,
+     422.1,
+     511.5
+    ]
+   },
+   {
+    "kelas": "longitudinal_crack",
+    "conf": 0.294,
+    "severity": "Berat",
+    "luas_cm2": 279.7,
+    "skor_prioritas": 3,
+    "box": [
+     289.3,
+     123.7,
+     400.1,
+     453.7
+    ]
+   },
+   {
+    "kelas": "alligator_crack",
+    "conf": 0.506,
+    "severity": "Ringan",
+    "luas_cm2": 23.6,
+    "skor_prioritas": 0,
+    "box": [
+     138.0,
+     85.2,
+     209.7,
+     128.3
+    ]
+   }
+  ]
+ },
+ {
+  "foto": "China_MotorBike_000400.jpg",
+  "n_temuan": 2,
+  "temuan": [
+   {
+    "kelas": "longitudinal_crack",
+    "conf": 0.66,
+    "severity": "Berat",
+    "luas_cm2": 248.2,
+    "skor_prioritas": 2,
+    "box": [
+     397.3,
+     72.7,
+     497.5,
+     396.4
+    ]
+   },
+   {
+    "kelas": "longitudinal_crack",
+    "conf": 0.523,
+    "severity": "Berat",
+    "luas_cm2": 240.2,
+    "skor_prioritas": 2,
+    "box": [
+     418.2,
+     177.0,
+     512.0,
+     511.9
+    ]
+   }
+  ]
+ },
+ {
+  "foto": "China_MotorBike_000401.jpg",
+  "n_temuan": 2,
+  "temuan": [
+   {
+    "kelas": "transverse_crack",
+    "conf": 0.616,
+    "severity": "Sedang",
+    "luas_cm2": 29.4,
+    "skor_prioritas": 0,
+    "box": [
+     0.1,
+     213.7,
+     133.7,
+     242.5
+    ]
+   },
+   {
+    "kelas": "transverse_crack",
+    "conf": 0.566,
+    "severity": "Sedang",
+    "luas_cm2": 41.6,
+    "skor_prioritas": 0,
+    "box": [
+     133.4,
+     198.9,
+     277.1,
+     236.8
+    ]
+   }
+  ]
+ },
+ {
+  "foto": "China_MotorBike_000402.jpg",
+  "n_temuan": 2,
+  "temuan": [
+   {
+    "kelas": "other_corruption",
+    "conf": 0.761,
+    "severity": "Sedang",
+    "luas_cm2": 684.3,
+    "skor_prioritas": 5,
+    "box": [
+     164.1,
+     250.8,
+     507.3,
+     511.5
+    ]
+   },
+   {
+    "kelas": "pothole",
+    "conf": 0.803,
+    "severity": "Ringan",
+    "luas_cm2": 5.3,
+    "skor_prioritas": 0,
+    "box": [
+     103.6,
+     116.1,
+     133.8,
+     138.9
+    ]
+   }
+  ]
+ },
+ {
+  "foto": "China_MotorBike_000403.jpg",
+  "n_temuan": 2,
+  "temuan": [
+   {
+    "kelas": "transverse_crack",
+    "conf": 0.702,
+    "severity": "Sedang",
+    "luas_cm2": 167.7,
+    "skor_prioritas": 1,
+    "box": [
+     167.3,
+     250.4,
+     509.3,
+     314.5
+    ]
+   },
+   {
+    "kelas": "transverse_crack",
+    "conf": 0.427,
+    "severity": "Sedang",
+    "luas_cm2": 105.0,
+    "skor_prioritas": 1,
+    "box": [
+     0.5,
+     243.5,
+     322.5,
+     286.1
+    ]
+   }
+  ]
+ },
+ {
+  "foto": "China_MotorBike_000405.jpg",
+  "n_temuan": 4,
+  "temuan": [
+   {
+    "kelas": "alligator_crack",
+    "conf": 0.812,
+    "severity": "Sedang",
+    "luas_cm2": 688.0,
+    "skor_prioritas": 5,
+    "box": [
+     169.8,
+     142.3,
+     512.2,
+     405.0
+    ]
+   },
+   {
+    "kelas": "other_corruption",
+    "conf": 0.936,
+    "severity": "Sedang",
+    "luas_cm2": 604.1,
+    "skor_prioritas": 4,
+    "box": [
+     162.0,
+     283.6,
+     507.6,
+     512.2
+    ]
+   },
+   {
+    "kelas": "longitudinal_crack",
+    "conf": 0.837,
+    "severity": "Sedang",
+    "luas_cm2": 168.4,
+    "skor_prioritas": 1,
+    "box": [
+     98.0,
+     3.1,
+     180.6,
+     269.6
+    ]
+   },
+   {
+    "kelas": "alligator_crack",
+    "conf": 0.913,
+    "severity": "Ringan",
+    "luas_cm2": 69.1,
+    "skor_prioritas": 0,
+    "box": [
+     215.1,
+     32.8,
+     332.7,
+     109.6
+    ]
+   }
+  ]
+ },
+ {
+  "foto": "China_MotorBike_000407.jpg",
+  "n_temuan": 2,
+  "temuan": [
+   {
+    "kelas": "pothole",
+    "conf": 0.71,
+    "severity": "Ringan",
+    "luas_cm2": 11.4,
+    "skor_prioritas": 0,
+    "box": [
+     228.9,
+     148.9,
+     269.4,
+     185.6
+    ]
+   },
+   {
+    "kelas": "pothole",
+    "conf": 0.278,
+    "severity": "Ringan",
+    "luas_cm2": 1.4,
+    "skor_prioritas": 0,
+    "box": [
+     211.6,
+     161.9,
+     222.9,
+     177.7
+    ]
+   }
+  ]
+ },
+ {
+  "foto": "China_MotorBike_000409.jpg",
+  "n_temuan": 4,
+  "temuan": [
+   {
+    "kelas": "longitudinal_crack",
+    "conf": 0.597,
+    "severity": "Berat",
+    "luas_cm2": 156.7,
+    "skor_prioritas": 2,
+    "box": [
+     405.5,
+     150.1,
+     512.0,
+     342.4
+    ]
+   },
+   {
+    "kelas": "transverse_crack",
+    "conf": 0.753,
+    "severity": "Sedang",
+    "luas_cm2": 123.2,
+    "skor_prioritas": 1,
+    "box": [
+     230.1,
+     385.5,
+     511.8,
+     442.6
+    ]
+   },
+   {
+    "kelas": "transverse_crack",
+    "conf": 0.526,
+    "severity": "Sedang",
+    "luas_cm2": 115.5,
+    "skor_prioritas": 1,
+    "box": [
+     149.6,
+     91.4,
+     491.6,
+     135.6
+    ]
+   },
+   {
+    "kelas": "alligator_crack",
+    "conf": 0.389,
+    "severity": "Ringan",
+    "luas_cm2": 39.3,
+    "skor_prioritas": 0,
+    "box": [
+     152.0,
+     386.9,
+     243.9,
+     442.7
+    ]
+   }
+  ]
+ },
+ {
+  "foto": "China_MotorBike_000410.jpg",
+  "n_temuan": 1,
+  "temuan": [
+   {
+    "kelas": "transverse_crack",
+    "conf": 0.511,
+    "severity": "Berat",
+    "luas_cm2": 229.4,
+    "skor_prioritas": 2,
+    "box": [
+     41.8,
+     254.2,
+     382.9,
+     342.2
+    ]
+   }
+  ]
+ },
+ {
+  "foto": "China_MotorBike_000411.jpg",
+  "n_temuan": 4,
+  "temuan": [
+   {
+    "kelas": "longitudinal_crack",
+    "conf": 0.593,
+    "severity": "Sedang",
+    "luas_cm2": 178.6,
+    "skor_prioritas": 1,
+    "box": [
+     85.0,
+     11.8,
+     161.5,
+     317.0
+    ]
+   },
+   {
+    "kelas": "longitudinal_crack",
+    "conf": 0.332,
+    "severity": "Sedang",
+    "luas_cm2": 152.3,
+    "skor_prioritas": 1,
+    "box": [
+     76.3,
+     164.2,
+     133.7,
+     511.6
+    ]
+   },
+   {
+    "kelas": "longitudinal_crack",
+    "conf": 0.498,
+    "severity": "Sedang",
+    "luas_cm2": 48.8,
+    "skor_prioritas": 0,
+    "box": [
+     74.5,
+     310.9,
+     106.2,
+     511.8
+    ]
+   },
+   {
+    "kelas": "transverse_crack",
+    "conf": 0.643,
+    "severity": "Sedang",
+    "luas_cm2": 17.4,
+    "skor_prioritas": 0,
+    "box": [
+     0.1,
+     281.5,
+     87.4,
+     307.5
+    ]
+   }
+  ]
+ },
+ {
+  "foto": "China_MotorBike_000412.jpg",
+  "n_temuan": 3,
+  "temuan": [
+   {
+    "kelas": "other_corruption",
+    "conf": 0.92,
+    "severity": "Sedang",
+    "luas_cm2": 358.9,
+    "skor_prioritas": 2,
+    "box": [
+     3.1,
+     301.0,
+     226.7,
+     510.8
+    ]
+   },
+   {
+    "kelas": "longitudinal_crack",
+    "conf": 0.455,
+    "severity": "Sedang",
+    "luas_cm2": 12.9,
+    "skor_prioritas": 0,
+    "box": [
+     273.8,
+     134.3,
+     290.8,
+     233.4
+    ]
+   },
+   {
+    "kelas": "longitudinal_crack",
+    "conf": 0.411,
+    "severity": "Sedang",
+    "luas_cm2": 23.6,
+    "skor_prioritas": 0,
+    "box": [
+     275.1,
+     120.6,
+     302.4,
+     233.3
+    ]
+   }
+  ]
+ },
+ {
+  "foto": "China_MotorBike_000414.jpg",
+  "n_temuan": 4,
+  "temuan": [
+   {
+    "kelas": "longitudinal_crack",
+    "conf": 0.684,
+    "severity": "Sedang",
+    "luas_cm2": 83.8,
+    "skor_prioritas": 1,
+    "box": [
+     199.2,
+     299.7,
+     251.0,
+     511.2
+    ]
+   },
+   {
+    "kelas": "longitudinal_crack",
+    "conf": 0.68,
+    "severity": "Sedang",
+    "luas_cm2": 59.4,
+    "skor_prioritas": 0,
+    "box": [
+     205.6,
+     94.7,
+     241.4,
+     312.1
+    ]
+   },
+   {
+    "kelas": "transverse_crack",
+    "conf": 0.661,
+    "severity": "Sedang",
+    "luas_cm2": 9.5,
+    "skor_prioritas": 0,
+    "box": [
+     143.8,
+     168.6,
+     207.5,
+     188.1
+    ]
+   },
+   {
+    "kelas": "transverse_crack",
+    "conf": 0.56,
+    "severity": "Sedang",
+    "luas_cm2": 28.4,
+    "skor_prioritas": 0,
+    "box": [
+     -0.5,
+     199.7,
+     150.2,
+     224.3
+    ]
+   }
+  ]
+ },
+ {
+  "foto": "China_MotorBike_000415.jpg",
+  "n_temuan": 4,
+  "temuan": [
+   {
+    "kelas": "longitudinal_crack",
+    "conf": 0.761,
+    "severity": "Berat",
+    "luas_cm2": 206.7,
+    "skor_prioritas": 2,
+    "box": [
+     187.6,
+     0.6,
+     421.4,
+     116.2
+    ]
+   },
+   {
+    "kelas": "transverse_crack",
+    "conf": 0.46,
+    "severity": "Berat",
+    "luas_cm2": 222.6,
+    "skor_prioritas": 2,
+    "box": [
+     189.2,
+     1.5,
+     439.0,
+     118.0
+    ]
+   },
+   {
+    "kelas": "transverse_crack",
+    "conf": 0.647,
+    "severity": "Sedang",
+    "luas_cm2": 126.6,
+    "skor_prioritas": 1,
+    "box": [
+     170.5,
+     168.0,
+     512.2,
+     216.4
+    ]
+   },
+   {
+    "kelas": "other_corruption",
+    "conf": 0.256,
+    "severity": "Ringan",
+    "luas_cm2": 41.0,
+    "skor_prioritas": 0,
+    "box": [
+     -0.1,
+     52.8,
+     52.6,
+     154.6
+    ]
+   }
+  ]
+ },
+ {
+  "foto": "China_MotorBike_000416.jpg",
+  "n_temuan": 1,
+  "temuan": [
+   {
+    "kelas": "alligator_crack",
+    "conf": 0.712,
+    "severity": "Sedang",
+    "luas_cm2": 877.2,
+    "skor_prioritas": 6,
+    "box": [
+     170.9,
+     114.7,
+     512.2,
+     450.7
+    ]
+   }
+  ]
+ },
+ {
+  "foto": "China_MotorBike_000417.jpg",
+  "n_temuan": 6,
+  "temuan": [
+   {
+    "kelas": "longitudinal_crack",
+    "conf": 0.76,
+    "severity": "Berat",
+    "luas_cm2": 216.4,
+    "skor_prioritas": 2,
+    "box": [
+     268.3,
+     -0.5,
+     375.9,
+     262.5
+    ]
+   },
+   {
+    "kelas": "transverse_crack",
+    "conf": 0.687,
+    "severity": "Sedang",
+    "luas_cm2": 122.1,
+    "skor_prioritas": 1,
+    "box": [
+     0.3,
+     256.2,
+     257.9,
+     318.1
+    ]
+   },
+   {
+    "kelas": "longitudinal_crack",
+    "conf": 0.74,
+    "severity": "Sedang",
+    "luas_cm2": 50.8,
+    "skor_prioritas": 0,
+    "box": [
+     254.6,
+     293.3,
+     326.5,
+     385.7
+    ]
+   },
+   {
+    "kelas": "longitudinal_crack",
+    "conf": 0.665,
+    "severity": "Sedang",
+    "luas_cm2": 27.3,
+    "skor_prioritas": 0,
+    "box": [
+     312.1,
+     415.4,
+     349.9,
+     509.9
+    ]
+   },
+   {
+    "kelas": "longitudinal_crack",
+    "conf": 0.281,
+    "severity": "Sedang",
+    "luas_cm2": 18.3,
+    "skor_prioritas": 0,
+    "box": [
+     367.3,
+     262.4,
+     390.5,
+     365.3
+    ]
+   },
+   {
+    "kelas": "transverse_crack",
+    "conf": 0.686,
+    "severity": "Sedang",
+    "luas_cm2": 40.6,
+    "skor_prioritas": 0,
+    "box": [
+     377.7,
+     254.4,
+     511.7,
+     294.1
+    ]
+   }
+  ]
+ }
+]
