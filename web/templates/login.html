@@ -62,7 +62,7 @@
         </svg>
       </div>
       <h1>Login</h1>
-      <p class="login-sub">Satu form untuk dua jenis akun: admin dinas dan kontraktor.</p>
+      <p class="login-sub">Masuk sebagai admin untuk mengelola kalibrasi dan riwayat.</p>
 
       {% if galat %}<div class="login-galat" role="alert">{{ galat }}</div>{% endif %}
 
@@ -81,19 +81,11 @@
       </form>
 
       <div class="login-petunjuk">
-        <p class="login-petunjuk-judul">Akun yang tersedia di demo</p>
+        <p class="login-petunjuk-judul">Akun demo</p>
         <dl>
-          <dt>Admin dinas</dt>
-          <dd><code>pupr_bandung</code> &rarr; dashboard daerahnya sendiri</dd>
-          <dt>Superadmin</dt>
-          <dd><code>admin</code> &rarr; semua daerah, kelola instansi dan sandi</dd>
-          <dt>Kontraktor</dt>
-          <dd><code>kt_mitrakarya</code> &rarr; ruang kerja dan SPK</dd>
+          <dt>Admin</dt>
+          <dd><code>admin</code> &rarr; akses penuh aplikasi</dd>
         </dl>
-        <p class="login-petunjuk-catatan">
-          Akun kontraktor berasal dari <code>config/kontraktor.yaml</code> dan
-          dapat ditambah lewat menu Kontraktor di dashboard dinas.
-        </p>
       </div>
 
       <p class="login-back"><a href="/">Kembali ke halaman utama</a></p>
