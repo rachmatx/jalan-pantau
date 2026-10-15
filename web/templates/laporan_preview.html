@@ -61,7 +61,7 @@
           <th style="padding:8px 10px;text-align:left">Ukuran</th>
           <th style="padding:8px 10px;text-align:left">Severity</th>
           <th style="padding:8px 10px;text-align:left">Conf</th>
-          <th style="padding:8px 10px;text-align:right">Estimasi</th>
+          <th style="padding:8px 10px;text-align:right">Skor</th>
         </tr></thead>
         <tbody>
           {% for t in temuan %}
@@ -71,12 +71,12 @@
             <td style="padding:8px 10px;font-family:var(--jp-mono);font-size:11px">{{ t.dasar }}</td>
             <td style="padding:8px 10px">{{ t.severity }}</td>
             <td style="padding:8px 10px;font-family:var(--jp-mono)">{{ t.conf }}</td>
-            <td style="padding:8px 10px;text-align:right;font-family:var(--jp-mono)">{{ t.total_str }}</td>
+            <td style="padding:8px 10px;text-align:right;font-family:var(--jp-mono)">{{ t.skor_prioritas }}</td>
           </tr>
           {% endfor %}
           <tr style="border-top:2px solid var(--jp-ink);font-weight:700">
-            <td colspan="5" style="padding:10px;text-align:right">Total estimasi acuan:</td>
-            <td style="padding:10px;text-align:right;font-family:var(--jp-mono)">Rp{{ "{:,}".format(total_rp).replace(",", ".") }}</td>
+            <td colspan="5" style="padding:10px;text-align:right">Total indeks prioritas:</td>
+            <td style="padding:10px;text-align:right;font-family:var(--jp-mono)">{{ total_prioritas }}</td>
           </tr>
         </tbody>
       </table>

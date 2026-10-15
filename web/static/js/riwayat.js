@@ -22,8 +22,8 @@ function esc(v) {
     "'": "&#39;", "`": "&#96;", "=": "&#61;",
   }[c]));
 }
-function rupiah(n) {
-  return "Rp" + Number(n).toLocaleString("id-ID");
+function fmtSkor(n) {
+  return Number(n || 0).toLocaleString("id-ID");
 }
 function tanggal(iso) {
   return new Date(iso).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
@@ -35,18 +35,18 @@ function koordinat(s) {
 }
 
 function perbaruiKpi(rows, total_db) {
-  let temuan = 0, rupiahTot = 0;
+  let temuan = 0, skorTot = 0;
   const sev = { Ringan: 0, Sedang: 0, Berat: 0 };
   for (const r of rows) {
     temuan += Number(r.n_temuan) || 0;
-    rupiahTot += Number(r.total_rp) || 0;
+    skorTot += Number(r.skor_prioritas) || 0;
     if (sev[r.worst] !== undefined) sev[r.worst] += 1;
   }
   document.getElementById("kpi-sesi").textContent = total_db ?? rows.length;
   document.getElementById("kpi-temuan").textContent = temuan;
   document.getElementById("kpi-berat").textContent = sev.Berat;
   document.getElementById("kpi-sedang").textContent = sev.Sedang;
-  document.getElementById("kpi-rupiah").textContent = rupiah(rupiahTot);
+  document.getElementById("kpi-skor").textContent = fmtSkor(skorTot);
 }
 
 function renderPaginasi(total) {
@@ -95,7 +95,7 @@ function renderTabel() {
       '<td>' + esc(r.sumber) + '</td>' +
       '<td><span class="jp-cell-main">' + esc(r.lokasi) + '</span><span class="jp-cell-sub">' + esc(koordinat(r)) + '</span></td>' +
       '<td>' + badge(r.worst) + '</td><td class="jp-num">' + esc(r.n_temuan) + '</td>' +
-      '<td class="jp-num-right">' + esc(rupiah(r.total_rp)) + '</td>' +
+      '<td class="jp-num-right">' + esc(fmtSkor(r.skor_prioritas)) + '</td>' +
       '<td><span class="jp-rowact">' +
       '<button type="button" data-act="detail" data-id="' + r.id + '" title="Lihat detail">Detail</button>' +
       '<button type="button" data-act="pdf" data-id="' + r.id + '" title="Unduh PDF">PDF</button>' +
@@ -182,13 +182,13 @@ function renderTabelTemuan() {
 
   tabelEl.innerHTML =
     `<table class="jp-table"><thead><tr><th>NO</th><th>KATEGORI KERUSAKAN</th>` +
-    `<th>TINGKAT KEPARAHAN</th><th>DIMENSI</th><th>REKOMENDASI</th><th class="jp-num-right">ESTIMASI</th></tr></thead><tbody>` +
+    `<th>TINGKAT KEPARAHAN</th><th>DIMENSI</th><th>REKOMENDASI</th><th class="jp-num-right">SKOR</th></tr></thead><tbody>` +
     pageRows.map((r) =>
       `<tr><td class="jp-num">${esc(String(r.idx).padStart(2, "0"))}</td>` +
       `<td><span class="jp-cell-main">${esc(r.kelas)}</span><span class="jp-cell-sub">Kode: -</span></td>` +
       `<td>${badge(r.severity)}</td><td class="jp-num">${esc(r.dasar)}</td>` +
       `<td style="font-size:12px;color:var(--jp-tx2)">-</td>` +
-      `<td class="jp-num-right">${esc(r.total_str)}</td></tr>`
+      `<td class="jp-num-right">${esc(fmtSkor(r.skor_prioritas))}</td></tr>`
     ).join("") + `</tbody></table>`;
 
   // Render pagination
@@ -254,7 +254,7 @@ async function bukaDetail(id) {
   halamanTemuan = 1;
   renderTabelTemuan();
   var dTotal = document.getElementById("d-total");
-  if (dTotal) dTotal.textContent = rupiah(s.total_rp);
+  if (dTotal) dTotal.textContent = fmtSkor(s.skor_prioritas);
   var dTtd = document.getElementById("d-ttd");
   if (dTtd) dTtd.innerHTML =
     `<div style="display:flex;flex-direction:column;align-items:center;gap:8px"><div style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-muted)">PETUGAS SURVEYOR</div><div style="height:40px"></div><div style="font-size:13px;font-weight:700;color:var(--jp-ink)">( ……… )</div></div>` +
@@ -289,7 +289,7 @@ async function unduhPdf(data) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      rows: data.temuan, total: s.total_rp, image_b64,
+      rows: data.temuan, total: s.skor_prioritas, image_b64,
       source: `${s.sumber} (${s.lokasi})`, model: s.model,
     }),
   });
@@ -327,10 +327,10 @@ function hapusId(id) {
 }
 
 function eksporCsv() {
-  const head = "id;waktu;sumber;lokasi;lat;lon;worst;n_temuan;total_rp\n";
+  const head = "id;waktu;sumber;lokasi;lat;lon;worst;n_temuan;skor_prioritas\n";
   const isi = barisTerakhir.map((r) =>
     [r.id, r.waktu, r.sumber, r.lokasi, r.lat ?? "", r.lon ?? "",
-     r.worst, r.n_temuan, r.total_rp].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(";")
+     r.worst, r.n_temuan, r.skor_prioritas].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(";")
   ).join("\n");
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([head + isi], { type: "text/csv" }));

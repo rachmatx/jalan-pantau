@@ -1,7 +1,7 @@
-"""Pipeline deteksi Flask: YOLO -> severity -> biaya (-> PDF di routes).
+"""Pipeline deteksi Flask: YOLO -> severity -> indeks prioritas (-> PDF di routes).
 
-Modul terverifikasi dipakai ulang TANPA diubah: app/severity.py, app/biaya.py,
-app/laporan.py. File ini hanya adaptor (I/O web) di atasnya.
+Modul terverifikasi dipakai ulang TANPA diubah: app/severity.py,
+app/prioritas.py, app/laporan.py. File ini hanya adaptor (I/O web) di atasnya.
 """
 import base64
 import logging
@@ -22,18 +22,16 @@ if str(APP_DIR) not in sys.path:
     sys.path.insert(0, str(APP_DIR))
 
 from severity import diagnose, load_config  # noqa: E402
-from biaya import estimasi, load_harga  # noqa: E402
+from prioritas import skor as skor_prioritas  # noqa: E402
 from laporan import buat_laporan  # noqa: E402
 
 MODEL_DEFAULT = APP_DIR / "weights" / "best.pt"
 WEIGHTS_DIR = APP_DIR / "weights"
 CFG_DEFAULT = ROOT / "config" / "severity.yaml"
-PRICE_DEFAULT = ROOT / "config" / "harga_acuan.csv"
 INFER_DEFAULT = ROOT / "config" / "inferensi.yaml"
 
 _models = {}  # path str -> YOLO (gambar pt + live onnx bisa hidup berdampingan)
 _cfg = None
-_prices = None
 _infer = None
 _model_lock = threading.Lock()  # jaga load singleton dari Flask thread + worker stream
 _kalibrasi_lock = threading.Lock()  # P3: tulis severity.yaml atomik antar-thread
@@ -218,20 +216,15 @@ def get_config():
     return _cfg
 
 
-def get_prices():
-    global _prices
-    if _prices is None:
-        _prices = load_harga(str(PRICE_DEFAULT))
-    return _prices
 
 
 PPC_MIN, PPC_MAKS = 0.05, 500.0  # px/cm wajar: 0,05 (jauh) s.d. 500 (makro)
 
 
 def muat_ulang_config():
-    """Buang cache severity/harga agar deteksi berikutnya baca file terbaru."""
-    global _cfg, _prices
-    _cfg, _prices = None, None
+    """Buang cache severity agar deteksi berikutnya baca file terbaru."""
+    global _cfg
+    _cfg = None
 
 
 def get_kalibrasi():
@@ -424,15 +417,15 @@ SEV_VALID = ("Ringan", "Sedang", "Berat")
 
 
 def terapkan_koreksi(rows, hapus=None, severity=None):
-    """Verifikasi operator: hapus baris + koreksi severity (hitung ulang biaya).
+    """Verifikasi operator: hapus baris + koreksi severity (hitung ulang skor prioritas).
 
     rows = hasil mentah AI (tak dimutasi). hapus = [idx_asli...],
     severity = {idx_asli: 'Ringan'|'Sedang'|'Berat'}. Koreksi severity
-    menghitung ulang bahan + estimasi dari box (bila ada) lewat config aktif.
+    menghitung ulang bahan + skor dari box (bila ada) lewat config aktif.
     Tiap baris hasil membawa 'sumber' ('AI') + 'idx_asli' + opsional 'diubah'.
     Mengembalikan (rows_baru, total, info {hapus, severity, total}).
     """
-    cfg, prices = get_config(), get_prices()
+    cfg = get_config()
     hapus_set = set()
     for i in (hapus or []):
         try:
@@ -470,7 +463,7 @@ def terapkan_koreksi(rows, hapus=None, severity=None):
             item["severity"] = baru_sev
             item["bahan"] = cfg["bahan"][baru_sev]
             item["tebal_asumsi_cm"] = cfg["tebal_asumsi_cm"][baru_sev]
-            baru = estimasi(item, prices)
+            baru = skor_prioritas(item)
             for k in ("conf", "box", "sumber", "idx_asli", "track_id", "frames"):
                 if k in r:
                     baru[k] = r[k]
@@ -478,7 +471,7 @@ def terapkan_koreksi(rows, hapus=None, severity=None):
             r = baru
             n_sev += 1
         out.append(r)
-    total = sum(int(r.get("total_rp", 0)) for r in out)
+    total = sum(int(r.get("skor_prioritas", 0)) for r in out)
     return out, total, {"hapus": n_hapus, "severity": n_sev,
                        "total": n_hapus + n_sev}
 
@@ -573,64 +566,6 @@ def decode_image(raw: bytes):
     return img
 
 
-def pseudo_segmentation(frame, box, padding=8):
-    """
-    Generate segmentation mask dari bounding box menggunakan kontur detection.
-    Hybrid approach: Otsu threshold + morphological ops + contour filtering.
-    """
-    import numpy as np
-    h, w = frame.shape[:2]
-    x1, y1, x2, y2 = map(int, box)
-    # Add padding untuk konteks
-    x1 = max(0, x1 - padding)
-    y1 = max(0, y1 - padding)
-    x2 = min(w, x2 + padding)
-    y2 = min(h, y2 + padding)
-
-    crop = frame[y1:y2, x1:x2]
-    if crop.size == 0:
-        return None, None, 0
-
-    # Convert ke grayscale
-    gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
-
-    # Gaussian blur untuk reduce noise
-    blur = cv2.GaussianBlur(gray, (5, 5), 0)
-
-    # Adaptive threshold - lebih baik untuk pencahayaan tidak merata
-    thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                   cv2.THRESH_BINARY_INV, 11, 2)
-
-    # Morphological operations untuk clean up
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-    thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel, iterations=2)
-    thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=1)
-
-    # Find contours
-    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    if not contours:
-        return None, None, 0
-
-    # Filter kontur kecil (noise) - ambil yang > 10% area box
-    box_area = (x2 - x1) * (y2 - y1)
-    min_area = box_area * 0.1
-    valid_contours = [c for c in contours if cv2.contourArea(c) > min_area]
-
-    if not valid_contours:
-        return None, None, 0
-
-    # Ambil kontur terbesar
-    largest = max(valid_contours, key=cv2.contourArea)
-    area_px = cv2.contourArea(largest)
-
-    # Buat mask
-    mask = np.zeros(crop.shape[:2], dtype=np.uint8)
-    cv2.drawContours(mask, [largest], -1, 255, -1)
-
-    return mask, largest, area_px
-
-
 def exif_gps(raw: bytes):
     """Ambil (lat, lon) desimal dari EXIF foto HP. Kembalikan (None, None) bila tak ada/rusak."""
     try:
@@ -659,18 +594,17 @@ def exif_gps(raw: bytes):
         return None, None
 
 
-def proses_detections(res, names, conf_digits=3, frame=None, segmentasi=False):
+def proses_detections(res, names, conf_digits=3, frame=None):
     """Ubah Boxes ultralytics -> list dict siap JSON (pola app_streamlit.proses_hasil).
 
     Args:
         res: hasil prediksi ultralytics
         names: nama kelas model
         conf_digits: jumlah digit desimal confidence
-        frame: gambar asli (optional, diperlukan jika segmentasi=True)
-        segmentasi: jika True, generate pseudo-segmentation mask untuk setiap box
+        frame: gambar asli (optional, tidak dipakai saat ini)
     """
     rows = []
-    cfg, prices = get_config(), get_prices()
+    cfg = get_config()
     for b in res.boxes:
         cls = names[int(b.cls[0])]
         x1, y1, x2, y2 = map(float, b.xyxy[0])
@@ -678,22 +612,7 @@ def proses_detections(res, names, conf_digits=3, frame=None, segmentasi=False):
         item["conf"] = round(float(b.conf[0]), conf_digits)
         item["box"] = [round(x1, 1), round(y1, 1), round(x2, 1), round(y2, 1)]
 
-        # Pseudo-segmentasi: generate mask dari kontur dalam box
-        if segmentasi and frame is not None:
-            try:
-                mask, contour, mask_area = pseudo_segmentation(frame, [x1, y1, x2, y2])
-                item["mask_area_px"] = int(mask_area)
-                # Hitung luas dalam cm² jika kalibrasi tersedia
-                ppc = cfg.get("pixels_per_cm", 8.0)
-                item["mask_area_cm2"] = round(mask_area / (ppc ** 2), 2)
-                # Simpan contour points untuk visualisasi (koordinat relatif ke box)
-                if contour is not None:
-                    item["contour"] = contour.tolist()
-            except Exception:
-                item["mask_area_px"] = 0
-                item["mask_area_cm2"] = 0
-
-        rows.append(estimasi(item, prices))
+        rows.append(skor_prioritas(item))
     return rows
 
 
@@ -702,9 +621,9 @@ def gabung_fragmen(rows, iou_min=0.05, inter_min=0.3, lintas_kelas=True):
 
     Model sering memecah kerusakan besar jadi kepingan kecil yang IoU-nya
     rendah (lolos NMS). Kepingan yang bersentuhan/tumpang tindih digabung:
-    box = gabungan terluar, kelas/conf = anggota tertinggi, severity + biaya
+    box = gabungan terluar, kelas/conf = anggota tertinggi, severity + skor prioritas
     DIHITUNG ULANG dari box gabungan (sekaligus menghentikan dobel-hitung
-    biaya fragmen yang bertumpuk). Mengembalikan (rows_baru, n_dilebur).
+    skor fragmen yang bertumpuk). Mengembalikan (rows_baru, n_dilebur).
     """
     try:
         boxes = [[float(v) for v in r["box"]] for r in rows]
@@ -736,7 +655,7 @@ def gabung_fragmen(rows, iou_min=0.05, inter_min=0.3, lintas_kelas=True):
         cluster.setdefault(cari(i), []).append(i)
     if all(len(m) == 1 for m in cluster.values()):
         return list(rows), 0
-    cfg, prices = get_config(), get_prices()
+    cfg = get_config()
     baru = []
     for m in cluster.values():
         if len(m) == 1:
@@ -751,7 +670,7 @@ def gabung_fragmen(rows, iou_min=0.05, inter_min=0.3, lintas_kelas=True):
         item = diagnose(menang.get("kelas", "-"), x1, y1, x2, y2, cfg)
         item["conf"] = menang.get("conf", 0)
         item["box"] = [round(x1, 1), round(y1, 1), round(x2, 1), round(y2, 1)]
-        row = estimasi(item, prices)
+        row = skor_prioritas(item)
         row["fragmen"] = len(m)
         baru.append(row)
     baru.sort(key=lambda r: -float(r.get("conf", 0)))
@@ -814,10 +733,7 @@ def anotasi_hasil_terpilih(img_bgr, res, semua_rows, keep_ids):
 
 
 def anotasi_dari_rows(img_bgr, rows):
-    """Anotasi untuk jalur tiling (rows membawa kunci 'box').
-
-    Jika row memiliki key 'contour', gambar polygon segmentasi overlay.
-    """
+    """Anotasi untuk jalur tiling (rows membawa kunci 'box')."""
     import numpy as np
     out = img_bgr.copy()
     h, w = out.shape[:2]
@@ -829,21 +745,6 @@ def anotasi_dari_rows(img_bgr, rows):
         except (KeyError, TypeError, ValueError):
             continue
         warna = WARNA_SEV_BGR.get(r.get("severity", ""), (0, 102, 204))
-
-        # Overlay segmentasi jika ada contour
-        if r.get("contour") is not None:
-            try:
-                contour = np.array(r["contour"], dtype=np.int32)
-                # Offset contour ke posisi asli (contour relatif ke crop)
-                contour_offset = contour + np.array([x1, y1])
-                # Overlay semi-transparent
-                overlay = out.copy()
-                cv2.drawContours(overlay, [contour_offset], -1, warna, -1)
-                cv2.addWeighted(overlay, 0.3, out, 0.7, 0, out)
-                # Outline contour
-                cv2.drawContours(out, [contour_offset], -1, warna, 2, cv2.LINE_AA)
-            except Exception:
-                pass
 
         label = f"{r.get('kelas', '?')} {float(r.get('conf', 0)):.2f}"
         _gambar_label(out, x1, y1, x2, y2, warna, label, fs, tebal)
@@ -961,7 +862,7 @@ def prediksi_ensemble(ma, mb, img, conf=0.25, imgsz=960, iou=0.5,
             ci = int(b.cls[0])
             per_kelas.setdefault(ci, []).append(
                 (list(map(float, b.xyxy[0])), float(b.conf[0])))
-    cfg, prices = get_config(), get_prices()
+    cfg = get_config()
     names = ma.names
     semua, n_gabung = [], 0
     for ci in sorted(per_kelas):
@@ -984,7 +885,7 @@ def prediksi_ensemble(ma, mb, img, conf=0.25, imgsz=960, iou=0.5,
             item["conf"] = round(float(fs), 3)
             item["box"] = [round(x1, 1), round(y1, 1), round(x2, 1),
                            round(y2, 1)]
-            semua.append(estimasi(item, prices))
+            semua.append(skor_prioritas(item))
     return semua, {"n_mentah_a": na, "n_mentah_b": nb, "n_lebur": n_gabung}
 
 
@@ -1034,7 +935,7 @@ def prediksi_teliti(model, img, conf=0.25, iou=0.5, tcfg=None, ambang=None,
     kls = np.array(kls)
     iou_g = float(tcfg.get("iou_gabung", 0.5))
     metode = str(tcfg.get("metode_gabung", "nms")).lower()
-    cfg, prices = get_config(), get_prices()
+    cfg = get_config()
     gabung = []  # (box, conf, cls)
     for c in np.unique(kls):
         m = np.where(kls == c)[0]
@@ -1055,7 +956,7 @@ def prediksi_teliti(model, img, conf=0.25, iou=0.5, tcfg=None, ambang=None,
         item = diagnose(model.names[int(ci)], x1, y1, x2, y2, cfg)
         item["conf"] = round(float(cf), conf_digits)
         item["box"] = [round(x1, 1), round(y1, 1), round(x2, 1), round(y2, 1)]
-        rows.append(estimasi(item, prices))
+        rows.append(skor_prioritas(item))
     # Saring terhadap ambang SLIDER (predict memakai conf terendah).
     lolos, info_saring = saring_rows(rows, conf if conf_slider is None else conf_slider,
                                      ambang, batas, luas_min_px)
@@ -1167,7 +1068,7 @@ def analisis_gambar(raw: bytes, conf: float = 0.25, model_path=None,
     rows, n_pangkas = batas_topk(rows, maks_temuan)
     info["topk"] = n_pangkas
     gambar = anotasi_dari_rows(img, rows)
-    total = sum(r["total_rp"] for r in rows)
+    total = sum(r["skor_prioritas"] for r in rows)
     return {
         "rows": rows,
         "total": total,

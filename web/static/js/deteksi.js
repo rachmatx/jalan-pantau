@@ -35,10 +35,10 @@ function renderTabelDeteksi() {
     return `<tr><td class="jp-num">${String(mulai + i + 1).padStart(2, "0")}</td>` +
       `<td><span class="jp-cell-main">${esc(namaKelas(r.kelas))}</span><span class="jp-cell-sub">class: ${esc(r.kelas)}</span></td>` +
       `<td class="jp-num">${esc(r.dasar)}</td><td>${badge(r.severity)}</td>` +
-      `<td class="jp-num">${esc(confStr(r.conf))}</td><td class="jp-num-right">${esc(r.total_str)}</td>` +
+      `<td class="jp-num">${esc(confStr(r.conf))}</td><td class="jp-num-right">${esc(fmtSkor(r.skor_prioritas))}</td>` +
       `<td>${sumber}</td><td style="white-space:nowrap">${aksi}</td></tr>`;
   }).join("");
-  var thead = `<tr><th>#</th><th>JENIS KERUSAKAN</th><th>AREA / DIMENSI ESTIMASI</th><th>TINGKAT KEPARAHAN</th><th>CONFIDENCE</th><th class="jp-num-right">ESTIMASI BIAYA</th><th>SUMBER</th><th>VERIFIKASI</th></tr>`;
+  var thead = `<tr><th>#</th><th>JENIS KERUSAKAN</th><th>AREA / DIMENSI ESTIMASI</th><th>TINGKAT KEPARAHAN</th><th>CONFIDENCE</th><th class="jp-num-right">SKOR</th><th>SUMBER</th><th>VERIFIKASI</th></tr>`;
   document.getElementById("tabel").innerHTML = `<table class="jp-table"><thead>${thead}</thead><tbody>${tbody}</tbody></table>`;
   // Pagination
   var pagEl = document.getElementById("deteksi-paginasi");
@@ -80,7 +80,7 @@ async function syncVerifikasi() {
   if (terakhir) {
     terakhir.rows = json.rows;
     terakhir.total = json.total;
-    terakhir.total_str = json.total_str;
+    terakhir.total_str = fmtSkor(json.total);
     terakhir.info = json.info;
   }
   refreshVerifikasiUI();
@@ -183,6 +183,9 @@ const NAMA_KELAS = {
   other_corruption: "Kerusakan Lain (Other Corruption)",
 };
 function namaKelas(k) { return NAMA_KELAS[k] || k; }
+function fmtSkor(n) {
+  return Number(n || 0).toLocaleString("id-ID");
+}
 function confStr(c) {
   const v = Number(c);
   return `${String(v.toFixed(2)).replace(".", ",")} (${Math.round(v * 100)}%)`;
@@ -460,7 +463,7 @@ function showToast(title, message, type) {
       slot.innerHTML = '<img src="data:image/jpeg;base64,' + data.image_b64 + '" alt="Hasil deteksi ' + esc(data.namaBerkas) + '">';
     }
     if (data.rows && data.rows.length) {
-      document.getElementById("total-nilai").textContent = data.total_str;
+      document.getElementById("total-nilai").textContent = fmtSkor(data.total);
       document.getElementById("temuan-nilai").textContent = data.rows.length;
       var nBerat = data.rows.filter(function(r) { return r.severity === "Berat"; }).length;
       document.getElementById("berat-nilai").textContent = "Berat (" + nBerat + ")";

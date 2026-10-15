@@ -1,4 +1,4 @@
-"""JalanPantau (Flask): deteksi kerusakan jalan + severity + biaya + PDF + peta + riwayat.
+"""JalanPantau (Flask): deteksi kerusakan jalan + severity + indeks prioritas + PDF + peta + riwayat.
 
 Run dari root repo:
     .\\.venv\\Scripts\\python web/app.py
@@ -20,10 +20,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from flask import (Flask, Response, current_app, jsonify, redirect,
                    render_template, request, send_file, session, url_for)
 
-from deteksi import (analisis_gambar, buat_pdf, get_kalibrasi, get_prices,
+from deteksi import (analisis_gambar, buat_pdf, get_kalibrasi,
                      hitung_ppc, nama_model, simpan_kalibrasi,
                      terapkan_koreksi)
-from biaya import rupiah
 from streaming import MANAGER
 from database import (daftar_sesi, detail_sesi, hapus_sesi, simpan_sesi,
                        titik_peta, tutup_db, init_instansi, daftar_instansi,
@@ -600,15 +599,7 @@ def create_app():
 
     @app.get("/tentang")
     def tentang():
-        prices = []
-        for h in get_prices():
-            h = dict(h)
-            try:
-                h["harga_fmt"] = f"{float(h['harga_satuan_rp']):,.0f}".replace(",", ".")
-            except (TypeError, ValueError):
-                h["harga_fmt"] = h["harga_satuan_rp"]
-            prices.append(h)
-        return render_template("tentang.html", active="tentang", prices=prices)
+        return render_template("tentang.html", active="tentang")
 
     @app.get("/mobile")
     def mobile():
@@ -623,9 +614,9 @@ def create_app():
     def laporan_preview(sid):
         d = detail_sesi(sid)
         if d is None:
-            return render_template("laporan_preview.html", active="riwayat", sesi=None, temuan=[], total_rp=0, sid=sid), 404
+            return render_template("laporan_preview.html", active="riwayat", sesi=None, temuan=[], total_prioritas=0, sid=sid), 404
         s = d["sesi"]
-        return render_template("laporan_preview.html", active="riwayat", sesi=s, temuan=d["temuan"], total_rp=s["total_rp"], sid=sid)
+        return render_template("laporan_preview.html", active="riwayat", sesi=s, temuan=d["temuan"], total_prioritas=s["skor_prioritas"], sid=sid)
 
     @app.get("/disposisi")
     def disposisi():
@@ -674,7 +665,6 @@ def create_app():
         conf = min(max(conf, CONF_MIN), CONF_MAX)
         malam = request.form.get("malam", "") in ("1", "true", "on")
         teliti = request.form.get("teliti", "") in ("1", "true", "on")
-        segmentasi = request.form.get("segmentasi", "") in ("1", "true", "on")
         data = f.read(MAX_IMG_BYTES + 1)
         if len(data) > MAX_IMG_BYTES:
             return jsonify({"error": "Ukuran gambar maks 15MB. "
@@ -684,13 +674,12 @@ def create_app():
             return jsonify({"error": "Berkas bukan gambar JPG/PNG yang valid."}), 400
         try:
             hasil = analisis_gambar(data, conf=conf, malam=malam,
-                                    teliti=teliti, segmentasi=segmentasi)
+                                    teliti=teliti)
         except ValueError as e:
             return jsonify({"error": str(e)}), 400
         except Exception:
             app.logger.exception("detect gagal")
             return jsonify({"error": "Deteksi gagal. Coba gambar lain."}), 500
-        hasil["total_str"] = rupiah(hasil["total"])
         return jsonify(hasil)
 
     def _dampak_kalibrasi(ppc):
@@ -790,8 +779,7 @@ def create_app():
         except Exception:
             app.logger.exception("verifikasi gagal")
             return jsonify({"error": "Verifikasi gagal. Coba lagi."}), 500
-        return jsonify({"rows": baru, "total": total,
-                        "total_str": rupiah(total), "info": info})
+        return jsonify({"rows": baru, "total": total, "info": info})
 
     @app.post("/api/laporan")
     @(limiter.limit("20 per minute; 200 per hour") if limiter else (lambda f: f))
@@ -961,7 +949,6 @@ def create_app():
         snap = MANAGER.snapshot()
         if not snap["rows"]:
             return jsonify({"error": "Belum ada track terekam. Tunggu deteksi muncul."}), 400
-        snap["total_str"] = rupiah(snap["total"])
         snap["source"] = f"Live ({MANAGER.stats()['source']})"
         snap["model"] = nama_model(kunci="model_live")
         return jsonify(snap)

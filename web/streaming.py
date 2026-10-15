@@ -9,7 +9,7 @@ berat di CPU:
 
 Dulu ketiganya satu loop bloking sehingga FPS tampil == FPS inferensi (~3 FPS)
 dan buffer kamera menumpuk -> patah-patah. Pengukuran/snapshot tetap dari
-self.tracks (box terbaik per ID), jadi angka severity/biaya tak terpengaruh.
+self.tracks (box terbaik per ID), jadi angka severity/skor tak terpengaruh.
 
 Satu sesi aktif dalam satu waktu (cukup untuk demo sidang + hemat CPU).
 Setiap start() me-reset tracker sehingga ID mulai dari 1 lagi.
@@ -21,10 +21,10 @@ from pathlib import Path
 import cv2
 
 from deteksi import (ambang_efektif, cerahkan_malam, conf_prediksi, get_config,
-                     get_inferensi, get_model, get_prices, kelas_mayoritas,
+                     get_inferensi, get_model, kelas_mayoritas,
                      masuk_akal)
 from severity import diagnose
-from biaya import estimasi
+from prioritas import skor as skor_prioritas
 
 WARNA = {"Ringan": (0, 180, 0), "Sedang": (0, 200, 200), "Berat": (0, 0, 220)}
 MAX_TRACKS = 500  # P1: cegah OOM sesi live berjam-jam
@@ -450,7 +450,7 @@ class StreamManager:
             jpg = self.latest_jpg
             conf_global = self.conf
         import base64
-        cfg, prices = get_config(), get_prices()
+        cfg = get_config()
         infer = get_inferensi()
         min_frames = int(infer.get("live", {}).get("min_frames", 1))
         ambang = infer.get("toleransi_kelas")
@@ -468,14 +468,14 @@ class StreamManager:
                 continue
             item = diagnose(kelas, *tr["box_best"], cfg)
             item["conf"] = tr["conf_max"]
-            row = estimasi(item, prices)
+            row = skor_prioritas(item)
             if not masuk_akal(row, batas):
                 buang["ukuran"] += 1
                 continue
             row["track_id"] = tid
             row["frames"] = tr["frames"]
             rows.append(row)
-        total = sum(r["total_rp"] for r in rows)
+        total = sum(r["skor_prioritas"] for r in rows)
         return {"rows": rows, "total": total, "disaring": buang,
                 "image_b64": base64.b64encode(jpg).decode("ascii") if jpg else None}
 

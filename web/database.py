@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS sesi (
   lat REAL, lon REAL,
   model TEXT NOT NULL DEFAULT '-',
   n_temuan INTEGER NOT NULL,
-  total_rp INTEGER NOT NULL,
+  skor_prioritas INTEGER NOT NULL,
   worst TEXT NOT NULL DEFAULT '-',
   client_ref TEXT
 );
@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS temuan (
   bahan TEXT NOT NULL DEFAULT '-',
   luas_m2 REAL NOT NULL DEFAULT 0,
   volume_m3 REAL NOT NULL DEFAULT 0,
-  total_rp INTEGER NOT NULL,
+  skor_prioritas INTEGER NOT NULL,
   total_str TEXT NOT NULL DEFAULT '-',
   conf REAL
 );
@@ -242,6 +242,7 @@ def get_db():
         g.db.row_factory = sqlite3.Row
         g.db.execute("PRAGMA foreign_keys = ON")
         g.db.executescript(SKEMA)
+        migrasi_prioritas_v1(g.db)
     return g.db
 
 
@@ -356,6 +357,19 @@ def migrasi_sesi_v2():
     db.commit()
 
 
+def migrasi_prioritas_v1(db):
+    """Rename kolom total_rp -> skor_prioritas (sesi, temuan).
+
+    Penggantian estimasi biaya -> indeks prioritas (2026-10-16).
+    Aman diulang; RENAME COLUMN butuh SQLite >= 3.25.
+    """
+    for tabel in ("sesi", "temuan"):
+        cols = {r[1] for r in db.execute(f"PRAGMA table_info({tabel})").fetchall()}
+        if "total_rp" in cols and "skor_prioritas" not in cols:
+            db.execute(f"ALTER TABLE {tabel} RENAME COLUMN total_rp TO skor_prioritas")
+    db.commit()
+
+
 def sesi_by_client_ref(ref):
     """Id sesi untuk client_ref tertentu (idempotensi). None bila belum ada."""
     if not ref:
@@ -410,8 +424,8 @@ def simpan_sesi(sumber, lokasi, model, rows, total, lat=None, lon=None, image_b6
     ref yang sama tidak membuat baris baru (dijamin indeks unik parsial).
 
     CATATAN PENTING: parameter `total` TIDAK dipercaya. Nilai sesi dihitung
-    ulang dari jumlah `temuan[].total_rp` supaya kolom sesi.total_rp selalu
-    sama dengan jumlah baris temuan. Sebelumnya angka datang dari client,
+    ulang dari jumlah `temuan[].skor_prioritas` supaya kolom sesi.skor_prioritas
+    selalu sama dengan jumlah baris temuan. Sebelumnya angka datang dari client,
     sehingga (a) bisa disuntik nilai berapa pun, dan (b) bisa tidak cocok
     dengan rincian temuan di bawahnya.
     """
@@ -422,7 +436,7 @@ def simpan_sesi(sumber, lokasi, model, rows, total, lat=None, lon=None, image_b6
     if not rows:
         raise ValueError("Tidak ada temuan untuk disimpan.")
     # Batas wajar: luas, volume, dan nominal yang tidak mungkin melebihi ini.
-    B_RP, B_M2, B_M3, B_CONF = 10 ** 13, 10 ** 5, 10 ** 4, 1.0
+    B_SKOR, B_M2, B_M3, B_CONF = 10 ** 6, 10 ** 5, 10 ** 4, 1.0
     temuan = []
     for r in rows:
         temuan.append({
@@ -432,18 +446,18 @@ def simpan_sesi(sumber, lokasi, model, rows, total, lat=None, lon=None, image_b6
             "bahan": str(r.get("bahan", "-"))[:120],
             "luas_m2": _angka(r.get("luas_m2"), B_M2),
             "volume_m3": _angka(r.get("volume_m3"), B_M3),
-            "total_rp": int(_angka(r.get("total_rp"), B_RP)),
-            "total_str": str(r.get("total_str", "-"))[:60],
+            "skor_prioritas": int(_angka(r.get("skor_prioritas"), B_SKOR)),
+            "total_str": str(r.get("skor_prioritas", "-"))[:60],
             "conf": (_angka(r.get("conf"), B_CONF, bawaan=-1.0)
                      if r.get("conf") is not None else None),
             "track_id": (int(_angka(r.get("track_id"), 10 ** 6))
                          if r.get("track_id") is not None else None),
         })
-    total = sum(t["total_rp"] for t in temuan)
+    total = sum(t["skor_prioritas"] for t in temuan)
     sev = [t["severity"] for t in temuan]
     worst = max(sev, key=lambda s: URUT_SEV.get(s, -1))
     cur = db.execute(
-        "INSERT INTO sesi (waktu, sumber, lokasi, lat, lon, model, n_temuan, total_rp, worst, client_ref)"
+        "INSERT INTO sesi (waktu, sumber, lokasi, lat, lon, model, n_temuan, skor_prioritas, worst, client_ref)"
         " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (datetime.now().isoformat(timespec="seconds"), sumber, lokasi or "-",
          lat, lon, model, len(temuan), int(total), worst, client_ref))
@@ -451,10 +465,10 @@ def simpan_sesi(sumber, lokasi, model, rows, total, lat=None, lon=None, image_b6
     for i, t in enumerate(temuan, 1):
         db.execute(
             "INSERT INTO temuan (sesi_id, idx, track_id, kelas, dasar, severity, bahan,"
-            " luas_m2, volume_m3, total_rp, total_str, conf)"
+            " luas_m2, volume_m3, skor_prioritas, total_str, conf)"
             " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (sid, i, t["track_id"], t["kelas"], t["dasar"], t["severity"], t["bahan"],
-             t["luas_m2"], t["volume_m3"], t["total_rp"], t["total_str"], t["conf"]))
+             t["luas_m2"], t["volume_m3"], t["skor_prioritas"], t["total_str"], t["conf"]))
     if image_b64:
         try:
             import io
@@ -497,7 +511,7 @@ def daftar_sesi(dari=None, sampai=None, severity=None, q=None, limit=200, offset
     db = get_db()
     where, arg = _klausa_sesi(dari, sampai, severity, q)
     cur = db.execute(
-        "SELECT id, waktu, sumber, lokasi, lat, lon, model, n_temuan, total_rp, worst"
+        "SELECT id, waktu, sumber, lokasi, lat, lon, model, n_temuan, skor_prioritas, worst"
         f" FROM sesi {where} ORDER BY id DESC LIMIT ? OFFSET ?", (*arg, limit, offset))
     return [dict(r) for r in cur.fetchall()]
 
@@ -527,21 +541,21 @@ def rekap_temuan(bap_id):
     ada di sini, berarti baris temuan-nya tidak pernah tersimpan dan
     nomor yang dikirim client tidak punya dasar apa pun.
 
-    Return dict {n_temuan, total_rp, worst} atau None bila sesi tidak ada.
+    Return dict {n_temuan, skor_prioritas, worst} atau None bila sesi tidak ada.
     """
     db = get_db()
     s = db.execute("SELECT id FROM sesi WHERE id = ?", (bap_id,)).fetchone()
     if s is None:
         return None
     agg = db.execute(
-        "SELECT COUNT(*) AS n, COALESCE(SUM(total_rp), 0) AS total FROM temuan"
+        "SELECT COUNT(*) AS n, COALESCE(SUM(skor_prioritas), 0) AS total FROM temuan"
         " WHERE sesi_id = ?", (bap_id,)).fetchone()
     baris = db.execute(
         "SELECT severity FROM temuan WHERE sesi_id = ?", (bap_id,)).fetchall()
     sev = [r["severity"] for r in baris if r["severity"]]
     worst = max(sev, key=lambda x: URUT_SEV.get(x, -1)) if sev else "-"
     return {"n_temuan": int(agg["n"] or 0),
-            "total_rp": int(agg["total"] or 0),
+            "skor_prioritas": int(agg["total"] or 0),
             "worst": worst}
 
 
@@ -566,7 +580,7 @@ def hapus_sesi(sid):
 def titik_peta():
     db = get_db()
     cur = db.execute(
-        "SELECT id, waktu, lokasi, lat, lon, n_temuan, total_rp, worst FROM sesi"
+        "SELECT id, waktu, lokasi, lat, lon, n_temuan, skor_prioritas, worst FROM sesi"
         " WHERE lat IS NOT NULL AND lon IS NOT NULL ORDER BY id DESC LIMIT 500")
     rows = [dict(r) for r in cur.fetchall()]
     hasil = _paths()[1]

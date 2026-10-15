@@ -1,7 +1,7 @@
-"""Agregasi ringkasan hasil deteksi + estimasi biaya (stdlib only).
+"""Agregasi ringkasan hasil deteksi + skor prioritas (stdlib only).
 
-Konsumen: ringkasan() buat kartu statistik di UI/laporan, tanpa logika
-duplikat dari app.biaya. Modul ini TIDAK Sentuh config/ atau jaringan.
+Konsumen: ringkasan() buat kartu statistik di UI/laporan.
+Modul ini TIDAK sentuh config/ atau jaringan.
 
 Ketentuan:
 - Tiga severity kanonik: Ringan, Sedang, Berat. `per_severity` selalu punya
@@ -10,11 +10,12 @@ Ketentuan:
 - Severity dari data dibersihkan (strip + lower) lalu dipetakan ke forma
   kanonik. Nilai di luar tiga itu diabaikan untuk `per_severity`, tapi item
   tetap dihitung di `jumlah` supaya tidak hilang diam-diam.
-- `total_rp` argumen dipakai kalau bukan None (mis. total live yang sudah
+- `total` argumen dipakai kalau bukan None (mis. total live yang sudah
   dihitung caller); None = jumlahkan dari item. 0 dianggap nilai nyata.
 - Pembagian persen memakai pembulatan half-away-from-zero. round() bawaan
   Python itu banker's rounding (0.125 -> 0.12) yang salah untuk laporan
   keuangan; persen yang meleset jauh dari perhitungan manual bikin pembaca ragu.
+- Skor agregat memakai `skor_prioritas` per item (0-100).
 """
 from collections import Counter
 from decimal import ROUND_HALF_UP, Decimal
@@ -23,7 +24,7 @@ SEVERITY = ("Ringan", "Sedang", "Berat")
 _URUT = {s: i for i, s in enumerate(SEVERITY)}
 _KANONIK = {s.lower(): s for s in SEVERITY}
 
-__all__ = ["SEVERITY", "ringkasan", "per_kelas", "persen_biaca"]
+__all__ = ["SEVERITY", "ringkasan", "per_kelas", "persen_skor"]
 
 
 def _num(v, default=0.0):
@@ -77,7 +78,7 @@ def _per_severity(items):
     return c
 
 
-def persen_biaca(per_sev_rp, total):
+def persen_skor(per_sev_skor, total):
     """Persen tiap severity terhadap total. Total 0/Nol -> semua 0.0."""
     out = {s: 0.0 for s in SEVERITY}
     t = _num(total)
@@ -88,20 +89,20 @@ def persen_biaca(per_sev_rp, total):
     return out
 
 
-def ringkasan(items, total_rp=None):
+def ringkasan(items, total=None):
     """Ringkasan list item deteksi. Kunci: jumlah, per_severity, per_kelas,
-    luas_total_cm2, total_rp, persen_biaya, severity_tertinggi."""
+    luas_total_cm2, total_skor, persen_skor, severity_tertinggi."""
     items = [it for it in (items or []) if _item_valid(it)]
 
     luas = sum(_num(it.get("luas_cm2")) for it in items)
-    per_sev_rp = {s: 0.0 for s in SEVERITY}
+    per_sev_skor = {s: 0.0 for s in SEVERITY}
     for it in items:
         s = _KANONIK.get(_teks(it.get("severity")).lower())
         if s:
-            per_sev_rp[s] += _num(it.get("total_rp"))
+            per_sev_skor[s] += _num(it.get("skor_prioritas"))
 
-    # total_rp=None -> jumlahkan; 0 dianggap eksplisit (nol nyata, bukan "hitung").
-    total = sum(_num(it.get("total_rp")) for it in items) if total_rp is None else _num(total_rp)
+    # total=None -> jumlahkan; 0 dianggap eksplisit (nol nyata, bukan "hitung").
+    total = sum(_num(it.get("skor_prioritas")) for it in items) if total is None else _num(total)
 
     per_sev = _per_severity(items)
     ada = [s for s in SEVERITY if per_sev[s] > 0]
@@ -112,7 +113,7 @@ def ringkasan(items, total_rp=None):
         "per_severity": per_sev,
         "per_kelas": per_kelas(items),
         "luas_total_cm2": _bulat(luas, 1),
-        "total_rp": int(round(total)),
-        "persen_biaya": persen_biaca(per_sev_rp, total),
+        "total_skor": int(round(total)),
+        "persen_skor": persen_skor(per_sev_skor, total),
         "severity_tertinggi": tertinggi,
     }

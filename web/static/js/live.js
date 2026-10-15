@@ -74,6 +74,9 @@ function esc(v) {
     "'": "&#39;", "`": "&#96;", "=": "&#61;",
   }[c]));
 }
+function fmtSkor(n) {
+  return Number(n || 0).toLocaleString("id-ID");
+}
 function confStr(c) {
   if (c == null) return "-";
   const v = Number(c);
@@ -197,11 +200,11 @@ async function ambilSnapshot() {
     const lokasi = document.getElementById("lokasi").value.trim();
     snapshot = { ...json, namaBerkas: `Live (${lokasi || "tanpa lokasi"})` };
     document.getElementById("total-live-nilai").textContent =
-      `Sesi: ${json.rows.length} titik unik · Total estimasi: ${json.total_str}`;
+      `Sesi: ${json.rows.length} titik unik · Total skor: ${fmtSkor(json.total)}`;
     document.getElementById("tabel-live").innerHTML =
-      `<table class="jp-table"><thead><tr><th>TRACK ID</th><th>KELAS KERUSAKAN</th><th>UKURAN</th><th>SEVERITY</th><th>CONF</th><th class="jp-num-right">ESTIMASI</th></tr></thead><tbody>` +
+      `<table class="jp-table"><thead><tr><th>TRACK ID</th><th>KELAS KERUSAKAN</th><th>UKURAN</th><th>SEVERITY</th><th>CONF</th><th class="jp-num-right">SKOR</th></tr></thead><tbody>` +
       json.rows.map((r) =>
-        `<tr><td class="jp-num">${esc(r.track_id)}</td><td><span class="jp-cell-main">${esc(r.kelas)}</span></td><td class="jp-num">${esc(r.dasar)}</td><td>${badge(r.severity)}</td><td class="jp-num">${esc(confStr(r.conf_max != null ? r.conf_max : r.conf))}</td><td class="jp-num-right">${esc(r.total_str)}</td></tr>`
+        `<tr><td class="jp-num">${esc(r.track_id)}</td><td><span class="jp-cell-main">${esc(r.kelas)}</span></td><td class="jp-num">${esc(r.dasar)}</td><td>${badge(r.severity)}</td><td class="jp-num">${esc(confStr(r.conf_max != null ? r.conf_max : r.conf))}</td><td class="jp-num-right">${esc(fmtSkor(r.skor_prioritas))}</td></tr>`
       ).join("") + `</tbody></table>`;
     hasilLive.hidden = false;
   } catch { /* abaikan bila server mati */ }

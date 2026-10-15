@@ -141,8 +141,8 @@ function ikon(worst) {
     iconAnchor: [9, 9],
   });
 }
-function rupiah(n) {
-  return "Rp" + Number(n).toLocaleString("id-ID");
+function fmtSkor(n) {
+  return Number(n || 0).toLocaleString("id-ID");
 }
 // P3: escape sebelum innerHTML/bindPopup (t.lokasi dari server bisa berisi HTML).
 function esc(v) {
@@ -172,13 +172,13 @@ function cocok(t, aktif, q) {
 
 function ringkasan(tampil) {
   const hitung = { Berat: 0, Sedang: 0, Ringan: 0 };
-  let anggaran = 0;
+  let totalSkor = 0;
   for (const t of tampil) {
     if (hitung[t.worst] !== undefined) hitung[t.worst] += 1;
-    anggaran += Number(t.total_rp) || 0;
+    totalSkor += Number(t.skor_prioritas) || 0;
   }
   document.getElementById("peta-total").textContent = tampil.length;
-  document.getElementById("peta-anggaran").textContent = rupiah(anggaran);
+  document.getElementById("peta-skor").textContent = fmtSkor(totalSkor);
   document.getElementById("peta-prop-angka").textContent =
     `${hitung.Berat}B • ${hitung.Sedang}S • ${hitung.Ringan}R`;
   const tot = tampil.length || 1;
@@ -191,7 +191,7 @@ function ringkasan(tampil) {
     const chip = document.querySelector(`[data-sev-count="${k}"]`);
     if (chip) chip.textContent = semua.filter((t) => t.worst === k).length;
   }
-  const top = [...tampil].sort((a, b) => (b.total_rp || 0) - (a.total_rp || 0)).slice(0, 5);
+  const top = [...tampil].sort((a, b) => (b.skor_prioritas || 0) - (a.skor_prioritas || 0)).slice(0, 5);
   var prioritasEl = document.getElementById("peta-list-prioritas");
   if (prioritasEl) {
     prioritasEl.innerHTML = top.length
@@ -200,7 +200,7 @@ function ringkasan(tampil) {
         `<span class="titik titik-${esc(String(t.worst).toLowerCase())}"></span>` +
         `<span class="jp-prio-teks"><strong>${esc(t.lokasi || "-")}</strong>` +
         `<small>${Number(t.n_temuan) || 0} temuan</small></span>` +
-        `<span class="jp-prio-rp">${esc(rupiah(t.total_rp))}</span></button>`
+        `<span class="jp-prio-skor">${esc(fmtSkor(t.skor_prioritas))}</span></button>`
       ).join("")
       : `<p class="jp-hint">Tidak ada titik pada filter ini.</p>`;
   }
@@ -231,7 +231,7 @@ function gambar(aturPandangan) {
       ? `<br><button type="button" class="jp-linkbtn" data-foto="${t.id}">Lihat foto bukti</button>` : "";
     m.bindPopup(
       `<div class="jp-popup"><strong>${esc(t.lokasi || "-")}</strong><br>` +
-      `${badgeHtml(t.worst)}<br>${Number(t.n_temuan) || 0} temuan · ${esc(rupiah(t.total_rp))}${foto}<br>` +
+      `${badgeHtml(t.worst)}<br>${Number(t.n_temuan) || 0} temuan · skor ${esc(fmtSkor(t.skor_prioritas))}${foto}<br>` +
       `<a href="/riwayat">Buka di Riwayat</a></div>`);
     batas.push([t.lat, t.lon]);
   }
@@ -404,18 +404,18 @@ function isiModalFoto(d) {
   // Tabel klasifikasi
   document.getElementById("foto-tabel-kerusakan").innerHTML = n
     ? `<table class="jp-table"><thead><tr><th>NO</th><th>KATEGORI</th>` +
-      `<th>SEVERITY</th><th>DIMENSI</th><th class="jp-num-right">ESTIMASI</th>` +
+      `<th>SEVERITY</th><th>DIMENSI</th><th class="jp-num-right">SKOR</th>` +
       `</tr></thead><tbody>` +
       temuan.map((t, i) =>
         `<tr><td class="jp-num">${String(i + 1).padStart(2, "0")}</td>` +
         `<td><span class="jp-cell-main">${esc(t.kelas)}</span></td>` +
         `<td>${badgeHtml(t.severity)}</td>` +
         `<td class="jp-num">${esc(t.dasar)}</td>` +
-        `<td class="jp-num-right">${esc(t.total_str)}</td></tr>`
+        `<td class="jp-num-right">${esc(fmtSkor(t.skor_prioritas))}</td></tr>`
       ).join("") + `</tbody></table>`
     : '<p class="jp-hint">Tidak ada temuan pada sesi ini.</p>';
-  // Estimasi biaya + rekomendasi (bahan dari temuan terparah)
-  document.getElementById("foto-est-biaya").textContent = rupiah(s.total_rp || 0);
+  // Skor prioritas + rekomendasi (bahan dari temuan terparah)
+  document.getElementById("foto-skor").textContent = fmtSkor(s.skor_prioritas || 0);
   document.getElementById("foto-est-note").textContent = `(${n} temuan)`;
   const urut = { Ringan: 0, Sedang: 1, Berat: 2 };
   const parah = [...temuan].sort((a, b) =>
@@ -467,7 +467,7 @@ document.getElementById("foto-download-pdf").addEventListener("click", async () 
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      rows: fotoDetail.temuan || [], total: s.total_rp || 0, image_b64,
+      rows: fotoDetail.temuan || [], total: s.skor_prioritas || 0, image_b64,
       source: `${s.sumber || "-"} (${s.lokasi || "-"})`, model: s.model || "-",
     }),
   });
