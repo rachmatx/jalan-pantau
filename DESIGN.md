@@ -1,4 +1,9 @@
-# DESIGN.md — JalanPantau (Deteksi Kerusakan Jalan Real-Time)
+# DESIGN.md — JalanPantau
+
+> **Catatan scope (Okt 2026):** dokumen ini ditulis untuk scope lama
+> (disposisi/SPK/kontraktor/estimasi biaya). Scope aktif: deteksi →
+> severity → indeks prioritas → peta GIS → riwayat → PDF. Bagian yang
+> menyebut SPK/kontraktor/disposisi/biaya adalah arsip historis.
 
 > Dokumen ini adalah **brief desain resmi** untuk redesign UI/UX — boleh dikerjakan
 > tool AI mana pun (Google Stitch, dsb.) lalu di-port ke Flask. Desain lama
@@ -6,12 +11,13 @@
 
 ## 1. Produk
 
-**JalanPantau** — aplikasi web Tugas Akhir: foto jalan → AI mendeteksi
-5 jenis kerusakan (`longitudinal_crack`, `transverse_crack`, `alligator_crack`,
-`other_corruption`, `pothole`) → severity (Ringan/Sedang/Berat) → estimasi biaya →
-laporan PDF → riwayat SQLite → peta GPS (Leaflet). Bahasa UI: **Indonesia**.
-Pengguna: mahasiswa saat **sidang** (demo live!) + petugas survei jalan.
-Run: `.\.venv\Scripts\python web/app.py` → `http://127.0.0.1:5000` (offline-safe wajib).
+**JalanPantau** — Sistem Inventarisasi Kerusakan Jalan Berbasis YOLOv11
+dengan Severity Terkalibrasi dan Visualisasi Geospasial: foto jalan → AI
+mendeteksi 5 jenis kerusakan (`longitudinal_crack`, `transverse_crack`,
+`alligator_crack`, `other_corruption`, `pothole`) → severity
+(Ringan/Sedang/Berat) → indeks prioritas 0–100 → laporan PDF → riwayat
+SQLite → peta GPS (Leaflet). Bahasa UI: **Indonesia**.
+Run: `python web/app.py` → `http://127.0.0.1:5000`.
 
 Model: **YOLOv11** dalam mode **deteksi (bounding box), bukan mask** —
 `best_yolo11s.pt` untuk foto statis, `best.onnx` (YOLOv11n) untuk live.
