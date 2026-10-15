@@ -143,6 +143,30 @@ bpid_test = m.val(data="/kaggle/working/bpid.yaml")
 # Sel 8 — export ONNX (untuk aplikasi Flask)
 # ============================================================
 m.export(format="onnx", imgsz=640, simplify=True)
-print("Selesai. Download dari /kaggle/working/runs/yolo11s_rdd2022_150ep/weights/:")
-print("  - best.pt   -> ganti app/weights/best_yolo11s.pt")
-print("  - best.onnx -> ganti app/weights/best.onnx")
+print("Export ONNX selesai.")
+
+# ============================================================
+# Sel 9 — zip hasil training untuk diunduh
+# ============================================================
+import zipfile
+
+run_dir = Path("/kaggle/working/runs/yolo11s_rdd2022_150ep")
+zip_path = Path("/kaggle/working/hasil-training-yolo11s-rdd2022.zip")
+
+def perlu(f: Path) -> bool:
+    if not f.is_file():
+        return False
+    if "tfevents" in f.name:      # log tensorboard, tidak perlu
+        return False
+    if f.suffix == ".cache":      # cache dataset, tidak perlu
+        return False
+    return True
+
+with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
+    for f in sorted(run_dir.rglob("*")):
+        if perlu(f):
+            z.write(f, f.relative_to(run_dir.parent))
+
+print(f"ZIP jadi: {zip_path} ({zip_path.stat().st_size / 1e6:.1f} MB)")
+print("Isi: best.pt, last.pt, best.onnx, results.csv/png, kurva F1/PR, confusion matrix, args.yaml")
+print("Download dari panel Output Kaggle (/kaggle/working) sebelum sesi ditutup.")
