@@ -165,9 +165,9 @@ class TestAutentikasiDan404(unittest.TestCase):
         c = _app().test_client()
         self.assertEqual(c.get("/laporan/preview/999999").status_code, 404)
 
-    def test_mobile_dan_kalibrasi_anon(self):
+    def test_mobile_dihapus_dan_kalibrasi_anon(self):
         c = _app().test_client()
-        self.assertEqual(c.get("/mobile").status_code, 200)
+        self.assertEqual(c.get("/mobile").status_code, 404)  # halaman mockup dihapus (Fase 2)
         self.assertEqual(c.get("/kalibrasi").status_code, 302)  # butuh login
 
 

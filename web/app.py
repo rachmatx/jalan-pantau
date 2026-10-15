@@ -350,10 +350,6 @@ def create_app():
     def tentang():
         return render_template("tentang.html", active="tentang")
 
-    @app.get("/mobile")
-    def mobile():
-        return render_template("mobile.html", active="deteksi")
-
     @app.get("/kalibrasi")
     @login_wajib
     def kalibrasi():

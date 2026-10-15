@@ -938,6 +938,24 @@ label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label da
 /* util */
 [hidden] { display: none ! important; }
 
+/* ---- Toast notifikasi ---- */
+.toast-container { position: fixed; top: 72px; right: 24px; z-index: 3000;
+  display: flex; flex-direction: column; gap: 12px; max-width: 360px; }
+.toast { background: var(--jp-surface); border-radius: 18px; padding: 17px 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: flex; align-items: flex-start;
+  gap: 12px; animation: jp-slide-in 200ms cubic-bezier(0.4, 0, 0.2, 1); }
+.toast-icon { font-size: 20px; }
+.toast-content { flex: 1; }
+.toast-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.toast-message { font-size: 12px; color: var(--jp-muted); }
+@keyframes jp-slide-in { from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; } }
+
+/* ---- Skip link aksesibilitas ---- */
+.skip { position: absolute; left: -9999px; top: 0; background: var(--jp-primary);
+  color: #fff; padding: 11px 22px; border-radius: 8px; z-index: 4000; }
+.skip:focus { left: 24px; top: 24px; }
+
 /* ============================================================
    RESPONSIVE MOBILE (< 768px)
    ============================================================ */
@@ -1122,12 +1140,6 @@ label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label da
   .jp-wrap > div[style*="grid-template-columns:1fr 1fr"] { grid-template-columns: 1fr !important; }
   #instansi-search { font-size: 13px; }
 
-  /* ---- Dashboard PUPR ---- */
-  .dash-sidebar { position: fixed; left: -280px; transition: left 0.3s; z-index: 1000; }
-  .dash-sidebar.show { left: 0; }
-  .dash-main { margin-left: 0 !important; }
-  .dash-kpis { grid-template-columns: repeat(2, 1fr) !important; }
-  .dash-header { flex-direction: column; align-items: flex-start; }
 
   /* ---- Fix overflow mobile ---- */
   body { overflow-x: hidden; }
@@ -1149,66 +1161,4 @@ label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label da
   .jp-brand svg { width: 20px; height: 20px; }
   .nav-tray { top: 48px; max-height: calc(100vh - 48px); }
   .nav-tray a { padding: 14px 16px; font-size: 14px; }
-}
-
-/* ---- Disposisi Page (Desktop First) ---- */
-.disp-header { display: flex; align-items: center; gap: 12px; background: var(--jp-surface); box-shadow: 0 1px 3px rgba(0,0,0,.03); padding: 12px 16px; margin-bottom: 16px; border-radius: 8px; }
-.disp-header-icon { width: 36px; height: 36px; border-radius: 8px; background: rgba(0,123,185,.1); display: flex; align-items: center; justify-content: center; color: var(--jp-primary); flex-shrink: 0; }
-.disp-header-icon svg { width: 20px; height: 20px; }
-.disp-header-text h1 { font-size: 16px; font-weight: 600; color: var(--jp-ink); margin: 0; }
-.disp-header-text p { font-size: 11px; color: var(--jp-tx2); margin: 2px 0 0; }
-.disp-badge { padding: 2px 8px; border-radius: 9999px; background: var(--jp-sev-h-bg); font-family: var(--jp-mono); font-size: 10px; color: #047857; white-space: nowrap; }
-.disp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.disp-col { display: flex; flex-direction: column; gap: 12px; }
-.disp-card { padding: 14px; }
-.disp-card-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; margin-bottom: 10px; border-bottom: 1px solid var(--jp-line); }
-.disp-card-head h2 { font-size: 12px; font-weight: 600; letter-spacing: .05em; color: var(--jp-ink); text-transform: uppercase; margin: 0; }
-.disp-count { font-family: var(--jp-mono); font-size: 11px; color: var(--jp-muted); }
-.disp-table-wrap { overflow-x: auto; }
-.disp-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.disp-table th, .disp-table td { padding: 8px 6px; text-align: left; border-bottom: 1px solid var(--jp-line); }
-.disp-table th { font-size: 10px; font-weight: 600; letter-spacing: .05em; color: var(--jp-muted); text-transform: uppercase; }
-.disp-pagination { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--jp-line); font-size: 11px; color: var(--jp-muted); }
-.disp-page-btn { padding: 6px 10px; border: 1px solid var(--jp-line); border-radius: 6px; background: var(--jp-surface); font-size: 12px; cursor: pointer; }
-.disp-card-title { font-size: 12px; font-weight: 600; letter-spacing: .05em; color: var(--jp-ink); text-transform: uppercase; margin: 0 0 10px; }
-.disp-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.disp-kpi { padding: 10px; border-radius: 8px; display: flex; flex-direction: column; }
-.disp-kpi-label { font-size: 10px; font-weight: 600; letter-spacing: .05em; }
-.disp-kpi-val { font-size: 20px; font-weight: 700; margin-top: 2px; }
-.kpi-red { background: var(--jp-sev-r-bg); color: var(--jp-sev-r-tx); }
-.kpi-yellow { background: var(--jp-sev-m-bg); color: var(--jp-sev-m-tx); }
-.kpi-gray { background: var(--jp-container-low); color: var(--jp-ink); }
-.kpi-blue { background: rgba(204,229,255,.3); color: var(--jp-primary); }
-.disp-rekomendasi { padding: 10px; border-radius: 8px; border: 2px solid var(--jp-primary); background: var(--jp-container); }
-.disp-rekomendasi-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.disp-badge-rekom { padding: 2px 8px; border-radius: 6px; background: var(--jp-primary-container); font-family: var(--jp-mono); font-size: 10px; color: #fdfcff; }
-.disp-search-box { position: relative; margin-top: 10px; }
-.disp-search-box svg { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--jp-muted); }
-.disp-search-input { width: 100%; padding: 8px 36px 8px 12px; border: 1px solid var(--jp-line); border-radius: 8px; font-size: 13px; background: var(--jp-surface); }
-.disp-search-input:focus { outline: none; border-color: var(--jp-primary); }
-.disp-instansi-list { max-height: 120px; overflow-y: auto; border: 1px solid var(--jp-line); border-radius: 8px; background: var(--jp-surface); }
-.disp-label { font-size: 12px; font-weight: 600; color: var(--jp-ink); display: block; margin-bottom: 8px; }
-.disp-urgensi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.disp-urgensi-btn { display: flex; align-items: center; padding: 10px; border-radius: 8px; background: var(--jp-sev-r-bg); cursor: pointer; border: 1px solid transparent; }
-.disp-urgensi-btn input { accent-color: var(--jp-sev-r-tx); }
-.disp-urgensi-btn span { font-size: 12px; font-weight: 600; margin-left: 8px; }
-.disp-textarea { width: 100%; resize: none; font-size: 13px; padding: 10px; border: 1px solid var(--jp-line); border-radius: 8px; background: var(--jp-surface); }
-.disp-textarea:focus { outline: none; border-color: var(--jp-primary); }
-.disp-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.disp-actions button { height: 40px; justify-content: center; }
-.disp-btn-kirim { width: 100%; height: 42px; margin-top: 8px; }
-
-/* ---- Disposisi Mobile (must be after desktop) ---- */
-@media (max-width: 768px) {
-  .disp-header { padding: 10px 12px !important; }
-  .disp-header-icon { width: 32px !important; height: 32px !important; }
-  .disp-header-icon svg { width: 16px !important; height: 16px !important; }
-  .disp-header-text h1 { font-size: 14px !important; }
-  .disp-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
-  .disp-card { padding: 10px !important; }
-  .disp-table th, .disp-table td { padding: 6px 4px !important; font-size: 11px !important; }
-  .hide-mobile { display: none !important; }
-  .disp-kpi-val { font-size: 16px !important; }
-  .disp-urgensi-grid { grid-template-columns: 1fr !important; }
-  .disp-actions { grid-template-columns: 1fr !important; }
 }
