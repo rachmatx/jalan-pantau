@@ -12,17 +12,24 @@ Strategi (disepakati 16 Okt 2026):
           SGD lr0=0.01 momentum 0.937, imgsz 640, batch 16, close_mosaic=10.
 
 Cara pakai: upload / copy-paste sel per sel ke Kaggle Notebook (GPU T4 ON),
-lalu jalankan berurutan. Output (best.pt, onnx) ada di /kaggle/working —
-download manual sebelum sesi berakhir.
+lalu jalankan via "Save & Run All" (commit run, kanan atas editor) agar aman
+ditinggal — browser boleh ditutup, training tetap jalan di server (maks 12 jam).
+Output (best.pt, onnx, zip) ada di /kaggle/working = tab Output versi notebook —
+download manual setelah selesai.
 """
 
 # ============================================================
-# Sel 1 — setup
+# Sel 1 — setup (otomatis install ultralytics bila belum ada;
+#              aman untuk "Save & Run All" / commit run)
 # ============================================================
-# !pip install -q ultralytics
+import importlib, subprocess, sys
+
+if importlib.util.find_spec("ultralytics") is None:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", "ultralytics"])
 
 import torch
-print("CUDA:", torch.cuda.is_available(), "|", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "-")
+print("ultralytics ok | CUDA:", torch.cuda.is_available(),
+      "|", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "-")
 
 # ============================================================
 # Sel 2 — path dataset (read-only, jangan diubah)
