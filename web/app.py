@@ -33,82 +33,13 @@ from database import (daftar_sesi, detail_sesi, hapus_sesi, simpan_sesi,
 
 WEB_DIR = Path(__file__).parent
 
-WEB_DIR = Path(__file__).parent
-
-# Slug URL dashboard -> nama daerah resmi (kolom instansi_daerah).
-# Handler /pupr-<daerah>/dashboard + normalisasi param ?daerah= di API,
-# agar klien boleh kirim slug ('kab-bogor') ATAU nama lengkap.
-SLUG_DAERAH = {
-    # Kota di Jawa Barat
-    "bogor": "Bogor", "sukabumi": "Sukabumi", "cianjur": "Cianjur",
-    "bandung": "Bandung", "garut": "Garut",
-    "tasikmalaya": "Tasikmalaya", "ciamis": "Ciamis",
-    "kuningan": "Kuningan", "cirebon": "Cirebon",
-    "majalengka": "Majalengka", "sumedang": "Sumedang",
-    "indramayu": "Indramayu", "subang": "Subang",
-    "purwakarta": "Purwakarta", "karawang": "Karawang",
-    "bekasi": "Bekasi", "depok": "Depok", "cimahi": "Cimahi",
-    "banjar": "Banjar",
-    # Kabupaten di Jawa Barat
-    "kab-bogor": "Kabupaten Bogor",
-    "kab-sukabumi": "Kabupaten Sukabumi",
-    "kab-cianjur": "Kabupaten Cianjur",
-    "kab-bandung": "Kabupaten Bandung",
-    "kab-garut": "Kabupaten Garut",
-    "kab-tasikmalaya": "Kabupaten Tasikmalaya",
-    "kab-ciamis": "Kabupaten Ciamis",
-    "kab-kuningan": "Kabupaten Kuningan",
-    "kab-cirebon": "Kabupaten Cirebon",
-    "kab-majalengka": "Kabupaten Majalengka",
-    "kab-sumedang": "Kabupaten Sumedang",
-    "kab-indramayu": "Kabupaten Indramayu",
-    "kab-subang": "Kabupaten Subang",
-    "kab-purwakarta": "Kabupaten Purwakarta",
-    "kab-karawang": "Kabupaten Karawang",
-    "kab-bekasi": "Kabupaten Bekasi",
-    "kab-bandung-barat": "Kabupaten Bandung Barat",
-    "kab-pangandaran": "Kabupaten Pangandaran",
-    # Luar Jawa Barat
-    "jakarta": "Jakarta", "tangerang": "Tangerang",
-    "semarang": "Semarang", "surabaya": "Surabaya", "medan": "Medan",
-}
-
-
-def normalisasi_daerah(nilai):
-    """Terima slug ('kab-bogor') atau nama lengkap ('Kabupaten Bogor'),
-    kembalikan nama daerah resmi. None bila tak dikenal."""
-    if not nilai:
-        return None
-    k = nilai.strip().lower()
-    if k in SLUG_DAERAH:
-        return SLUG_DAERAH[k]
-    for nama in SLUG_DAERAH.values():
-        if nama.lower() == k:
-            return nama
-    return None
-
-
-def slug_daerah(nilai):
-    """Kebalikan normalisasi: nama daerah resmi -> slug URL, None bila tak
-    dikenal. Dipakai login utk redirect ke dashboard yang benar."""
-    if not nilai:
-        return None
-    nama = normalisasi_daerah(nilai)
-    if not nama:
-        return None
-    for slug, n in SLUG_DAERAH.items():
-        if n == nama:
-            return slug
-    return None
-
 ALLOWED_IMG = {"jpg", "jpeg", "png"}
 ALLOWED_VIDEO = {"mp4", "avi", "mov", "mkv"}
 MAX_VIDEO_BYTES = 200 * 1024 * 1024  # video live (global Flask)
 MAX_IMG_BYTES = 15 * 1024 * 1024  # gambar deteksi: 12MP JPEG ~3-8MB; di atas ini tolak cepat
 CONF_MIN, CONF_MAX, CONF_DEFAULT = 0.05, 0.8, 0.25
-# Batas atas ?limit= untuk /api/disposisi. Dashboard meminta 201 supaya bisa
-# mendeteksi overflow (rows.length > 200) lalu memotong sendiri di sisi klien.
-DISPOSISI_LIMIT_MAX = 1000
+# Batas atas ?limit= untuk /api/riwayat (mencegah respons raksasa).
+RIWAYAT_LIMIT_MAX = 1000
 FRAME_SKIP_MIN, FRAME_SKIP_MAX = 1, 30
 _video_tmp = None
 _video_tmp_aktif = False  # True bila stream file saat ini memakai _video_tmp hasil upload
