@@ -253,6 +253,16 @@ def pilih_device(nilai="auto", model_file=None):
     return d
 
 
+def half_untuk(device):
+    """Half precision (FP16) hanya untuk GPU CUDA; di CPU dimatikan.
+
+    Di CPU, FP16 sering lebih lambat / tak didukung sebagian op — paksa False.
+    Model .onnx selalu 'cpu' via pilih_device, jadi otomatis False juga.
+    """
+    d = str(device).strip().lower()
+    return d not in ("cpu", "", "none")
+
+
 def get_config():
     global _cfg
     if _cfg is None:
@@ -935,9 +945,10 @@ def prediksi_ensemble(ma, mb, img, conf=0.25, imgsz=960, iou=0.5,
     import numpy as np
 
     ra = ma.predict(img, conf=conf, imgsz=imgsz, iou=iou, augment=bool(tta_a),
-                    device=device, verbose=False)[0]
+                    device=device, half=half_untuk(device), verbose=False)[0]
+    dev_b = device_b if device_b is not None else device
     rb = mb.predict(img, conf=conf, imgsz=imgsz, iou=iou, augment=bool(tta_b),
-                    device=device_b if device_b is not None else device,
+                    device=dev_b, half=half_untuk(dev_b),
                     verbose=False)[0]
     na, nb = len(ra.boxes), len(rb.boxes)
     per_kelas = {}
@@ -1000,7 +1011,8 @@ def prediksi_teliti(model, img, conf=0.25, iou=0.5, tcfg=None, ambang=None,
     for (x0, y0) in grid_tile(w, h, tile, tcfg.get("overlap", 0.25)):
         crop = img[y0:y0 + tile, x0:x0 + tile]
         res = model.predict(crop, conf=conf, imgsz=tile, iou=iou,
-                            device=device, verbose=False)[0]
+                            device=device, half=half_untuk(device),
+                            verbose=False)[0]
         for b in res.boxes:
             x1, y1, x2, y2 = map(float, b.xyxy[0])
             if buang_tepi and sentuh_tepi_dalam((x1, y1, x2, y2),
@@ -1137,7 +1149,8 @@ def analisis_gambar(raw: bytes, conf: float = 0.25, model_path=None,
             info = info_saring
         else:
             res = model.predict(img, conf=conf_run, imgsz=imgsz, iou=iou,
-                                augment=tta, device=device, verbose=False)[0]
+                                augment=tta, device=device,
+                                half=half_untuk(device), verbose=False)[0]
             semua = proses_detections(res, model.names)
             rows, info = saring_rows(semua, conf, ambang, batas, luas_min)
     if gf.get("aktif", True):

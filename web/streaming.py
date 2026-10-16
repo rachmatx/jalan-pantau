@@ -21,7 +21,7 @@ from pathlib import Path
 import cv2
 
 from deteksi import (ambang_efektif, cerahkan_malam, conf_prediksi, get_config,
-                     get_inferensi, get_model, kelas_mayoritas,
+                     get_inferensi, get_model, half_untuk, kelas_mayoritas,
                      masuk_akal, nama_kelas, nama_model, pilih_device)
 from severity import diagnose
 from prioritas import skor as skor_prioritas
@@ -262,6 +262,7 @@ class StreamManager:
             try:
                 res = model.track(umpan, persist=True, conf=conf_run,
                                   imgsz=imgsz, iou=iou, device=device,
+                                  half=half_untuk(device),
                                   tracker="bytetrack.yaml", verbose=False)[0]
             except Exception as e:
                 with self._lock:
