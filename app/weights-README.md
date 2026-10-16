@@ -7,17 +7,20 @@ Lihat `docs/Segmentasi-atau-Bounding-Box.md` untuk alasannya.
 
 ## Yang aktif
 
-| Berkas | Ukuran | Peran |
-|---|---|---|
-| `best_yolo11s.pt` | 18,3 MB | Model gambar (foto statis). 9,4M parameter. Val mAP50 0,648, test RDD 0,526, OOD lokal 0,452. Aktif sebagai `model_gambar`. |
-| `best.onnx` | 9,9 MB | Model live (webcam, IP-cam, video). YOLOv11n, lebih cepat di CPU. Aktif sebagai `model_live`. |
+Model tunggal **YOLOv11s**, dipakai untuk foto statis maupun live.
+Val mAP50 0,616 · test RDD2022 0,617 · OOD Bandung (BPID) 0,581.
+
+| Berkas | Peran |
+|---|---|
+| `best_yolo11s.pt` | Model gambar (foto statis), backend Ultralytics. Aktif sebagai `model_gambar`. |
+| `best.onnx` | Ekspor ONNX model yang sama untuk live (webcam, IP-cam, video). Aktif sebagai `model_live`. |
 
 ## Cadangan
 
-| Berkas | Ukuran | Peran |
-|---|---|---|
-| `best.pt` | 5,2 MB | Model kedua untuk ensemble di tab Gambar. Nonaktif. |
-| `best_yolo11s.onnx` | 36,3 MB | YOLOv11s dalam ONNX. Belum dipakai, live tetap `best.onnx` yang 2-5 kali lebih cepat. |
+| Berkas | Peran |
+|---|---|
+| `best.pt` | Model kedua untuk ensemble di tab Gambar (`ensemble.model_kedua`). Nonaktif. |
+| `best_yolo11s.onnx` | Ekspor ONNX `best_yolo11s.pt`, belum dipakai. |
 
 ## Catatan
 

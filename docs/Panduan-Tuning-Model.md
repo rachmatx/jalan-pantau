@@ -1,5 +1,10 @@
 # Panduan Tuning Model — JalanPantau
 
+> **⚠️ Catatan (Okt 2026):** angka & perbandingan di bawah berasal dari model
+> **pra-retrain** (saat itu live ONNX = YOLOv11n). Setelah retrain, model gambar
+> **dan** live = **YOLOv11s**, dengan metrik terkini di `README.md`.
+> Anggap dokumen ini catatan historis.
+
 Tujuan: menaikkan mAP50 (target ≥ 0,65) dan **generalisasi OOD** tanpa retrain
 membabi-buta. Urutkan berdasar (dampak ÷ usaha).
 

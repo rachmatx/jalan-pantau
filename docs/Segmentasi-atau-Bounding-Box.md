@@ -90,9 +90,8 @@ Implementasinya di `web/deteksi.py::pseudo_segmentation`:
 - **Bukan angka siap RAB.** Luas di sini adalah indeks prioritas, bukan
   luas-property dalam meter persegi yang siap jadi anggaran.
 
-Karena itu semua teks di aplikasi memakai sebutan "estimasi indeks biaya"
-atau "indeks prioritas". Aplikasi ini tidak pernah menyebut hasil ini sebagai
-"biaya perbaikan" secara mutlak.
+Karena itu semua teks di aplikasi memakai sebutan "indeks prioritas". Aplikasi
+ini tidak pernah menyebut hasil ini sebagai "biaya perbaikan" secara mutlak.
 
 ## 7. Kalau ditanya di sidang
 

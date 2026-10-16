@@ -29,21 +29,24 @@ penanganan.
 
 ## Stack
 
-- **Model foto statis:** YOLOv11s — `app/weights/best_yolo11s.pt` (18,3 MB)
-- **Model live:** YOLOv11n ONNX — `app/weights/best.onnx` (9,9 MB)
+- **Model (gambar & live):** YOLOv11s — foto statis `app/weights/best_yolo11s.pt`;
+  live `app/weights/best.onnx` (ONNX Runtime, CPU)
 - **Web:** Flask + Leaflet (OpenStreetMap)
 - **Database:** SQLite (`web/instance/riwayat.db`)
 - **Inferensi:** Ultralytics / ONNX Runtime (CPU)
 
 ### Akurasi terukur
 
-| Model | Val mAP50 | Test mAP50 | OOD Bandung mAP50 |
-|---|---|---|---|
-| YOLOv11s (`best_yolo11s.pt`) | 0,6483 | 0,5262 | 0,4516 |
-| YOLOv11n (`best.onnx`) | 0,5914 | 0,5557* | 0,5514 |
+Model tunggal **YOLOv11s** (dipakai untuk foto statis maupun live), epoch terbaik:
 
-\* Evaluasi pada 161 citra test (P 0,571 · R 0,574 · F1 0,573).
-Sumber: `reports/keputusan-ablasi-cbam-yolo26.md`, `reports/evaluasi-test-*.json`.
+| Split | mAP50 | mAP50-95 | Presisi | Recall | F1 |
+|---|---|---|---|---|---|
+| Validasi | 0,616 | 0,339 | 0,655 | 0,574 | 0,612 |
+| Test RDD2022 (5.758 citra / 9.675 instance) | 0,617 | 0,337 | 0,645 | 0,587 | 0,615 |
+| Bandung OOD — BPID (161 citra / 263 instance) | 0,581 | 0,313 | 0,572 | 0,567 | 0,569 |
+
+Per kelas (AP50, test RDD2022): `other_corruption` 0,748 · `alligator_crack`
+0,676 · `longitudinal_crack` 0,582 · `transverse_crack` 0,568 · `pothole` 0,513.
 
 Uji fungsional pada 17 foto jalan: **48 temuan**, kelima kelas
 (`longitudinal_crack`, `transverse_crack`, `alligator_crack`,
