@@ -334,11 +334,19 @@ class StreamManager:
         ids = bs.id
         if ids is None:
             return []
+        # Redam kedip: tampilkan hanya track yang sudah terlihat >= min_frames
+        # (aturan yang sama dengan snapshot(); _simpan_tracks dipanggil duluan).
+        infer = get_inferensi()
+        min_frames = max(int(infer.get("live", {}).get("min_frames", 1)), 1)
+        with self._lock:
+            frames = {tid: tr.get("frames", 0) for tid, tr in self.tracks.items()}
         cfg = get_config()
         boxes = []
         for i, b in enumerate(bs):
             tid = int(ids[i])
             if tid < 0:
+                continue
+            if frames.get(tid, 0) < min_frames:
                 continue
             cls = nama_kelas(model.names, int(b.cls[0]))
             x1, y1, x2, y2 = map(int, b.xyxy[0])
