@@ -62,17 +62,3 @@ def total_prioritas(rows):
         except (TypeError, ValueError):
             continue
     return total
-
-
-def urutkan(temuan):
-    """Urutkan temuan: skor menurun, lalu luas menurun (heuristik tampilan).
-
-    Mengembalikan list baru; tidak mengubah skor.
-    """
-    def kunci(t):
-        try:
-            luas = float(t.get("luas_cm2", 0) or 0)
-        except (TypeError, ValueError):
-            luas = 0.0
-        return (-int(t.get("skor_prioritas", 0) or 0), -luas)
-    return sorted(temuan or [], key=kunci)
