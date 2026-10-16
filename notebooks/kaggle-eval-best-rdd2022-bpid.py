@@ -92,6 +92,89 @@ print("\n===== BPID Bandung (OOD) =====")
 m.val(data="/kaggle/working/bpid.yaml")
 
 # ============================================================
+# Sel 5b — visualisasi untuk paper (jalankan SEBELUM Sel 6)
+# Mengumpulkan plot val + contoh prediksi + grafik AP50 per kelas.
+# Semua disimpan di /kaggle/working/hasil-eval/visual/ (otomatis ikut zip).
+# ============================================================
+import random
+import shutil
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import numpy as np
+
+vis_dir = Path("/kaggle/working/hasil-eval/visual")
+vis_dir.mkdir(parents=True, exist_ok=True)
+
+# --- 1) kumpulkan plot bawaan val (confusion matrix, kurva PR/F1/P/R) ---
+n_plot = 0
+for png in list(Path("/kaggle/working").rglob("confusion_matrix*.png")) + \
+           list(Path("/kaggle/working").rglob("*_curve.png")):
+    if "hasil-eval" in str(png):
+        continue
+    tag = "bpid" if "bpid" in str(png).lower() else "rdd"
+    dst = vis_dir / f"{tag}_{png.name}"
+    if not dst.exists():
+        shutil.copy(png, dst)
+        n_plot += 1
+print(f"plot val terkumpul: {n_plot} file")
+
+# --- 2) contoh prediksi (8 citra test, untuk gambar paper) ---
+pred_dir = vis_dir / "prediksi_contoh"
+pred_dir.mkdir(exist_ok=True)
+test_imgs = sorted((Path(RDD) / "test" / "images").glob("*.*"))
+sampel = test_imgs[::max(1, len(test_imgs) // 8)][:8]
+res = m.predict([str(p) for p in sampel], imgsz=640, conf=0.25, verbose=False)
+for r, img in zip(res, sampel):
+    r.save(filename=str(pred_dir / f"pred_{img.stem}.jpg"))
+print(f"contoh prediksi: {len(list(pred_dir.glob('*.jpg')))} gambar")
+
+# --- 3) grafik AP50 per kelas (subset 600 citra, cepat) ---
+sub_dir = Path("/kaggle/working/subset_eval")
+shutil.rmtree(sub_dir, ignore_errors=True)
+(sub_dir / "images").mkdir(parents=True)
+(sub_dir / "labels").mkdir(parents=True)
+random.seed(7)
+for img in random.sample(test_imgs, min(600, len(test_imgs))):
+    (sub_dir / "images" / img.name).symlink_to(img)
+    lbl = Path(RDD) / "test" / "labels" / (img.stem + ".txt")
+    if lbl.exists():
+        (sub_dir / "labels" / lbl.name).symlink_to(lbl)
+
+sub_yaml = Path("/kaggle/working/subset.yaml")
+sub_yaml.write_text(f"""path: {sub_dir}
+train: images
+val: images
+nc: 5
+names: {NAMES}
+""")
+sub_res = m.val(data=str(sub_yaml), verbose=False)
+ap50 = np.array(sub_res.box.maps)  # AP50 per kelas
+plt.figure(figsize=(9, 4.5))
+bars = plt.bar(NAMES, ap50)
+plt.ylim(0, 1)
+plt.ylabel("AP50")
+plt.title("AP50 per kelas (subset 600 citra test RDD2022)")
+for b, v in zip(bars, ap50):
+    plt.text(b.get_x() + b.get_width() / 2, v + 0.02, f"{v:.3f}",
+             ha="center", fontsize=9)
+plt.tight_layout()
+plt.savefig(vis_dir / "ap50_per_kelas_subset.png", dpi=150)
+plt.close()
+print("AP50 per kelas:", {n: round(float(v), 3) for n, v in zip(NAMES, ap50)})
+
+# --- 4) ringkasan metrik (txt) ---
+(vis_dir / "ringkasan_metrik.txt").write_text(
+    "RINGKASAN METRIK (YOLOv11s retrain RDD2022)\n"
+    "==========================================\n"
+    "Subset 600 citra test — AP50 per kelas: "
+    + ", ".join(f"{n}={v:.3f}" for n, v in zip(NAMES, ap50)) + "\n"
+    f"Subset mAP50: {float(np.mean(ap50)):.4f}\n"
+    "Angka final (full test 5758 citra + BPID): lihat output Sel 5.\n"
+)
+print("visual selesai ->", vis_dir)
+
+# ============================================================
 # Sel 6 — export ONNX + zip untuk diunduh
 # (best.pt asli di /kaggle/input read-only -> disalin ke working dulu)
 # ============================================================
