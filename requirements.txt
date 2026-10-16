@@ -1,5 +1,11 @@
-# Aplikasi web jalan-pantau — inferensi via ONNX Runtime (CPU only).
+# Aplikasi web jalan-pantau — CPU only.
 # Python 3.10/3.11. Pasang di virtual environment (lihat README).
+#
+# PENTING (Windows): pasang torch varian CPU DULU agar ringan (~200MB),
+# baru ultralytics — kalau tidak, pip menarik torch CUDA ~2,5GB:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+#   pip install -r requirements.txt
+ultralytics>=8.2  # dipakai: deteksi foto via best_yolo11s.pt (YOLO)
 opencv-python>=4.9
 flask>=3.0
 flask-limiter>=3.5
@@ -9,12 +15,6 @@ fpdf2>=2.7
 pyyaml>=6.0
 python-multipart>=0.0.9  # WAJIB: parsing multipart/form-data untuk upload foto & video
 onnxruntime>=1.17  # dipakai: inferensi best.onnx (live) via CPUExecutionProvider
-
-# Opsional — HANYA untuk skrip evaluasi/benchmark (scripts/evaluasi_model.py,
-# scripts/benchmark_inferensi.py), bukan untuk menjalankan aplikasi web:
-# ultralytics>=8.2
-# (bila dipasang di Windows, pakai varian CPU agar ringan:
-#  pip install torch --index-url https://download.pytorch.org/whl/cpu)
 
 # Legacy — hanya dipakai prototipe deprecated app/app_streamlit.py:
 # streamlit>=1.33
