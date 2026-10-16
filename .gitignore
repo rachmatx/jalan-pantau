@@ -54,8 +54,6 @@ web/instance/hasil/
 !web/static/demo/*.png
 !web/static/demo/*.jpg
 !web/static/demo/*.mp4
-!stitch_aplikasi_deteksi_kerusakan_jalan/**/*.png
-!stitch_aplikasi_deteksi_kerusakan_jalan/**/*.jpg
 
 # ============================================================
 # Folder dataset & hasil training
@@ -77,11 +75,10 @@ United_States_*.jpg
 Czech_*.jpg
 
 # ============================================================
-# Stitch exports (large HTML/CSS files)
+# Mockup UI lama (stitch) — sudah dihapus dari repo 2026-10-16,
+# jangan lacak lagi bila foldernya muncul lokal
 # ============================================================
-stitch_aplikasi_deteksi_kerusakan_jalan*.zip
-stitch_aplikasi_deteksi_kerusakan_jalan*.*
-stitch_aplikasi_deteksi_kerusakan_jalan/code.html
+stitch_aplikasi_deteksi_kerusakan_jalan/
 
 # ============================================================
 # IDE & OS

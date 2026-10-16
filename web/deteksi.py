@@ -985,11 +985,8 @@ def cerahkan_malam(img_bgr):
 
 def analisis_gambar(raw: bytes, conf: float = 0.25, model_path=None,
                     malam: bool = False, teliti: bool = False,
-                    imgsz=None, iou=None, segmentasi=False):
+                    imgsz=None, iou=None):
     """Upload bytes -> {rows, total, model, image_b64, gps, malam, teliti, disaring}.
-
-    Args:
-        segmentasi: jika True, generate pseudo-segmentation mask untuk setiap box
     """
     model_file = str(model_path or resolve_model(kunci="model_gambar"))
     model = get_model(model_file)
@@ -1055,8 +1052,7 @@ def analisis_gambar(raw: bytes, conf: float = 0.25, model_path=None,
         else:
             res = model.predict(img, conf=conf_run, imgsz=imgsz, iou=iou,
                                 augment=tta, verbose=False)[0]
-            semua = proses_detections(res, model.names, frame=img if segmentasi else None,
-                                      segmentasi=segmentasi)
+            semua = proses_detections(res, model.names)
             rows, info = saring_rows(semua, conf, ambang, batas, luas_min)
     if gf.get("aktif", True):
         rows, n_lebur = gabung_fragmen(rows,
