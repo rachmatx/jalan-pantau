@@ -140,3 +140,36 @@ yang mendukung `--augment`. Subset sama (40 gambar BPID, conf 0.25):
   recall aktual lebih tinggi lagi.
 
 
+### 6c. Prosedur kalibrasi `toleransi_kelas` per kelas (2026-10-16)
+
+Nilai saat ini (`config/inferensi.yaml`):
+
+| Kelas | Ambang | Rasional |
+|---|---|---|
+| longitudinal_crack | 0.13 | AP50 menengah (0.582); retak tipis butuh ambang agak rendah |
+| transverse_crack | 0.13 | sama seperti longitudinal |
+| alligator_crack | 0.10 | AP50 baik (0.676); pola khas, FP relatif rendah |
+| other_corruption | 0.10 | AP50 tertinggi (0.748) |
+| pothole | 0.08 | AP50 terendah (0.513); keselamatan → recall diprioritaskan |
+
+**Cara kalibrasi** (butuh dataset berlabel lokal, mis. BPID):
+
+```bash
+# 1. Sapuan ambang per kelas target, catat P/R/F1 per titik
+.\.venv\Scripts\python scripts\evaluasi_model.py --data data/publik/bpid/test \
+    --remap 0:4 --model best.pt --imgsz 640 --conf-list 0.05,0.08,0.10,0.13,0.15,0.20,0.25
+```
+
+**Aturan keputusan:**
+1. Pilih ambang di **titik F1-optimal** per kelas (kolom "Titik F1-optimal" di output).
+2. Untuk **pothole**, boleh 1–2 titik di bawah F1-optimal (recall > precision;
+   lubang yang terlewat lebih berbahaya daripada false alarm).
+3. Untuk kelas dengan **FP dominan** (banyak deteksi di background), naikkan 1–2 titik
+   di atas F1-optimal.
+4. Jangan ubah lebih dari satu kelas sekaligus tanpa mengukur ulang — interaksi
+   antar-kelas via `iou_agnostik` bisa menggeser hasil.
+
+**Catatan interaksi dengan filter baru (Okt 2026):**
+- `rasio_aspek_min_retak: 1.5` di `batas_ukuran` sudah membuang sebagian FP retak
+  (box near-square). Setelah filter ini aktif, ambang longitudinal/transverse
+  *boleh* diturunkan sedikit bila recall dirasa kurang — ukur dulu dengan skrip di atas.
