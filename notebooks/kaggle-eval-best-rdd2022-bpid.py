@@ -175,7 +175,7 @@ print("AP50 per kelas:", {n: round(float(v), 3) for n, v in zip(NAMES, ap50)})
 print("visual selesai ->", vis_dir)
 
 # ============================================================
-# Sel 6 — export ONNX + zip untuk diunduh
+# Sel 6 — export ONNX + zip SEMUA file penting untuk diunduh
 # (best.pt asli di /kaggle/input read-only -> disalin ke working dulu)
 # ============================================================
 import shutil
@@ -191,15 +191,27 @@ m2.export(format="onnx", imgsz=640, simplify=True)
 onnx_path = best_work.with_suffix(".onnx")
 print("ONNX:", onnx_path, "ada:", onnx_path.exists())
 
+# kumpulkan semua file penting ke satu folder (nama siap pakai di aplikasi)
 run_out = Path("/kaggle/working/hasil-eval")
 run_out.mkdir(exist_ok=True)
-for f in [best_work, onnx_path]:
-    if f.exists():
-        shutil.copy(f, run_out / f.name)
+if best_work.exists():
+    shutil.copy(best_work, run_out / "best.pt")          # -> app/weights/best_yolo11s.pt
+if onnx_path.exists():
+    shutil.copy(onnx_path, run_out / "best.onnx")        # -> app/weights/best.onnx
+for y in ["rdd2022.yaml", "bpid.yaml", "subset.yaml"]:
+    yf = Path("/kaggle/working") / y
+    if yf.exists():
+        shutil.copy(yf, run_out / yf.name)
+# (folder visual/ dari Sel 5b sudah di dalam hasil-eval/)
 
 zip_path = Path("/kaggle/working/hasil-eval-rdd2022-bpid.zip")
 with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
     for f in sorted(run_out.rglob("*")):
         if f.is_file():
             z.write(f, f.relative_to(run_out.parent))
-print(f"ZIP: {zip_path} ({zip_path.stat().st_size / 1e6:.1f} MB) — download dari tab Output")
+print(f"\nZIP: {zip_path} ({zip_path.stat().st_size / 1e6:.1f} MB)")
+print("Isi zip:")
+for f in sorted(run_out.rglob("*")):
+    if f.is_file():
+        print("  -", f.relative_to(run_out))
+print("Download dari tab Output.")
