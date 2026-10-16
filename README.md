@@ -71,13 +71,24 @@ Uji fungsional pada 17 foto jalan: **48 temuan**, kelima kelas
 ## Cara menjalankan
 
 ```bash
-# 1) Install dependensi
+# 1) Buat virtual environment (wajib — jangan install ke Python global)
+python -m venv .venv
+
+# 2) Aktifkan venv
+# Windows (PowerShell):
+.venv\Scripts\Activate.ps1
+# Windows (Git Bash):
+source .venv/Scripts/activate
+# Linux/Mac:
+source .venv/bin/activate
+
+# 3) Install dependensi
 pip install -r requirements.txt
 
-# 2) Pastikan bobot model ada di app/weights/
+# 4) Pastikan bobot model ada di app/weights/
 #    best_yolo11s.pt · best.onnx · best.pt (+ SHA256SUMS.txt)
 
-# 3) Jalankan server
+# 5) Jalankan server
 python web/app.py
 # -> http://127.0.0.1:5000
 ```

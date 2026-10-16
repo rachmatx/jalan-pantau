@@ -1,6 +1,5 @@
-# Inference CPU only (i5-3470 + RX550: tidak ada CUDA Windows untuk AMD)
-# Python 3.10 disarankan
-ultralytics>=8.2
+# Aplikasi web jalan-pantau — inferensi via ONNX Runtime (CPU only).
+# Python 3.10/3.11. Pasang di virtual environment (lihat README).
 opencv-python>=4.9
 flask>=3.0
 flask-limiter>=3.5
@@ -9,14 +8,14 @@ Pillow>=10.0
 fpdf2>=2.7
 pyyaml>=6.0
 python-multipart>=0.0.9  # WAJIB: parsing multipart/form-data untuk upload foto & video
+onnxruntime>=1.17  # dipakai: inferensi best.onnx (live) via CPUExecutionProvider
 
-# Legacy — hanya dipakai prototipe deprecated app/app_streamlit.py, bukan aplikasi web aktif:
+# Opsional — HANYA untuk skrip evaluasi/benchmark (scripts/evaluasi_model.py,
+# scripts/benchmark_inferensi.py), bukan untuk menjalankan aplikasi web:
+# ultralytics>=8.2
+# (bila dipasang di Windows, pakai varian CPU agar ringan:
+#  pip install torch --index-url https://download.pytorch.org/whl/cpu)
+
+# Legacy — hanya dipakai prototipe deprecated app/app_streamlit.py:
 # streamlit>=1.33
 # pandas>=2.0
-
-# Opsional optimasi CPU:
-# onnx>=1.16
-onnxruntime>=1.17  # dipakai (verifikasi best.onnx lokal, CPUExecutionProvider)
-# openvino>=2024.1
-# torch: pasang varian CPU agar ringan (jangan ikut CUDA yang ~2,5GB):
-# pip install torch --index-url https://download.pytorch.org/whl/cpu
