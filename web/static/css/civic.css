@@ -245,9 +245,12 @@ main { padding: 0; }
   font-size: 11px;
   color: var(--jp-muted);
 }
-/* zoom.js hooks, gaya civic terang (tinggi eksplisit: % dari parent auto = 0!) */
+/* zoom.js hooks, gaya civic terang (tinggi eksplisit: % dari parent auto = 0!)
+   transform-origin WAJIB 0 0: zoom.js menghitung translate/scale terhadap
+   sudut kiri-atas. Tanpa ini origin default 50% 50% dari wadah setinggi
+   gambar mentah -> skala mendorong gambar keluar area viewer (tampak kosong). */
 .viewer.zoomable { border: none; border-radius: 0; height: min(62vh, 560px); min-height: 380px; position: relative; overflow: hidden; }
-.zoom-inner { transition: transform 0.15s ease-out; }
+.zoom-inner { transition: transform 0.15s ease-out; transform-origin: 0 0; will-change: transform; }
 #viewer-live.zoomable { height: min(55vh, 480px); min-height: 320px; max-height: 520px; }
 #live-toolbar { position: absolute !important; top: 8px !important; right: 8px !important; left: auto !important; bottom: auto !important; }
 .viewer.zoomable .viewer-placeholder { color: #CBD5E1; }

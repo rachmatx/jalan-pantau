@@ -275,7 +275,7 @@ def create_app():
         return redirect(url_for("login_form"))
 
     # Cache-buster: versi ini akan ditambahkan ke semua asset static
-    STATIC_VERSION = "37"
+    STATIC_VERSION = "38"
 
     @app.context_processor
     def inject_static_version():
