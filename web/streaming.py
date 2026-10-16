@@ -22,7 +22,7 @@ import cv2
 
 from deteksi import (ambang_efektif, cerahkan_malam, conf_prediksi, get_config,
                      get_inferensi, get_model, kelas_mayoritas,
-                     masuk_akal)
+                     masuk_akal, nama_kelas)
 from severity import diagnose
 from prioritas import skor as skor_prioritas
 
@@ -279,7 +279,7 @@ class StreamManager:
                 tid = int(ids[i])
                 if tid < 0:
                     continue
-                cls = model.names[int(b.cls[0])]
+                cls = nama_kelas(model.names, int(b.cls[0]))
                 x1, y1, x2, y2 = map(float, b.xyxy[0])
                 area = abs(x2 - x1) * abs(y2 - y1)
                 n += 1
@@ -300,7 +300,8 @@ class StreamManager:
                         votes = dict(tr["votes"])
                         votes[cls] = votes.get(cls, 0) + 1
                         self.tracks[tid] = {
-                            "kelas": cls, "conf_max": cf,
+                            "kelas": cls,
+                            "conf_max": max(tr["conf_max"], cf),
                             "box_best": (x1, y1, x2, y2), "area_best": area,
                             "frames": tr["frames"] + 1, "votes": votes,
                         }
@@ -327,7 +328,7 @@ class StreamManager:
             tid = int(ids[i])
             if tid < 0:
                 continue
-            cls = model.names[int(b.cls[0])]
+            cls = nama_kelas(model.names, int(b.cls[0]))
             x1, y1, x2, y2 = map(int, b.xyxy[0])
             sev = diagnose(cls, x1, y1, x2, y2, cfg)["severity"]
             boxes.append((x1, y1, x2, y2, f"{tid} {cls} {sev}",

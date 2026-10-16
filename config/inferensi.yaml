@@ -6,7 +6,7 @@
 # 1 box bisa flip di batas NMS — wajar, acak, kecil):
 # - gambar = best_yolo11s.pt + TTA (YOLOv11s: test RDD 0,470->0,526; OOD Bandung
 #   seri vs n 0,4497->0,4516; recall naik, precision turun sedikit);
-#   live = best.onnx n (0,1-0,3s, track+ByteTrack OK).
+#   live = best.onnx (ekspor YOLOv11s, CPU; 0,1-0,3s, track+ByteTrack OK).
 #   ONNX mengabaikan TTA, jadi TTA hanya untuk backend pt.
 # Berlaku mulai start/deteksi berikutnya (live baca ulang tiap start).
 model_gambar: best_yolo11s.pt

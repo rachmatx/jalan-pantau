@@ -108,7 +108,7 @@ def get_inferensi(path=None):
             if isinstance(user.get("teliti"), dict):
                 data["teliti"].update(user["teliti"])
         data["imgsz_gambar"] = int(_klamp(data["imgsz_gambar"], 320, 1536, 960))
-        data["imgsz_live"] = int(_klamp(data["imgsz_live"], 320, 1280, 960))
+        data["imgsz_live"] = int(_klamp(data["imgsz_live"], 320, 1280, 480))
         data["iou"] = _klamp(data["iou"], 0.1, 0.95, 0.5)
         data["tta"] = bool(data["tta"])
         t = data["teliti"]
@@ -536,6 +536,34 @@ def resolve_model(nama=None, kunci="model_gambar"):
     return MODEL_DEFAULT
 
 
+def kanonik_kelas(nama):
+    """Normalkan nama kelas model ke bentuk kanonik repo (underscore, huruf kecil).
+
+    Bobot RDD2022 menyimpan nama dengan spasi & kapital (`longitudinal crack`,
+    `Pothole`), sedangkan kode/config/UI memakai `longitudinal_crack` dst.
+    Tanpa normalisasi: lookup `toleransi_kelas` selalu gagal (KeyError -> slider),
+    dan UI menampilkan nama mentah alih-alih label Indonesia.
+    """
+    return "_".join(str(nama).strip().lower().split())
+
+
+def _kanonik_names(names):
+    """Ubah mapping {id: nama} model jadi nama kanonik. Tak mengubah input asli."""
+    try:
+        return {int(k): kanonik_kelas(v) for k, v in dict(names).items()}
+    except (TypeError, ValueError, AttributeError):
+        return names
+
+
+def nama_kelas(names, idx):
+    """Nama kelas kanonik untuk indeks `idx` (names: dict/list milik model).
+
+    Satu-satunya jalur baca nama kelas dari model supaya normalisasi tak
+    terlewat di salah satu call-site (gambar, teliti, ensemble, live).
+    """
+    return kanonik_kelas(names[idx])
+
+
 def get_model(path=None, kunci="model_gambar"):
     """Cache per path: backend gambar (pt) + live (onnx) bisa berdampingan.
 
@@ -606,7 +634,7 @@ def proses_detections(res, names, conf_digits=3, frame=None):
     rows = []
     cfg = get_config()
     for b in res.boxes:
-        cls = names[int(b.cls[0])]
+        cls = nama_kelas(names, int(b.cls[0]))
         x1, y1, x2, y2 = map(float, b.xyxy[0])
         item = diagnose(cls, x1, y1, x2, y2, cfg)
         item["conf"] = round(float(b.conf[0]), conf_digits)
@@ -881,7 +909,7 @@ def prediksi_ensemble(ma, mb, img, conf=0.25, imgsz=960, iou=0.5,
         else:
             final = [(boxes[0], skor[0])]
         for (x1, y1, x2, y2), fs in final:
-            item = diagnose(names[ci], x1, y1, x2, y2, cfg)
+            item = diagnose(nama_kelas(names, ci), x1, y1, x2, y2, cfg)
             item["conf"] = round(float(fs), 3)
             item["box"] = [round(x1, 1), round(y1, 1), round(x2, 1),
                            round(y2, 1)]
@@ -953,7 +981,7 @@ def prediksi_teliti(model, img, conf=0.25, iou=0.5, tcfg=None, ambang=None,
     rows = []
     for xyxy, cf, ci in gabung:
         x1, y1, x2, y2 = map(float, xyxy)
-        item = diagnose(model.names[int(ci)], x1, y1, x2, y2, cfg)
+        item = diagnose(nama_kelas(model.names, int(ci)), x1, y1, x2, y2, cfg)
         item["conf"] = round(float(cf), conf_digits)
         item["box"] = [round(x1, 1), round(y1, 1), round(x2, 1), round(y2, 1)]
         rows.append(skor_prioritas(item))
@@ -1028,7 +1056,7 @@ def analisis_gambar(raw: bytes, conf: float = 0.25, model_path=None,
                 kedua = None  # sama dengan utama -> jalur tunggal
         if kedua is not None:
             model_b = get_model(file_b)
-            if (dict(model_b.names) != dict(model.names)):
+            if (_kanonik_names(model_b.names) != _kanonik_names(model.names)):
                 kedua = None  # kelas beda -> jalur tunggal (aman)
         if kedua is not None:
             tta_b = bool(inf["tta"]) and file_b.lower().endswith(".pt")

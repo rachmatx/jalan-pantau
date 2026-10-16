@@ -88,18 +88,71 @@ class TestConfigInferensi(unittest.TestCase):
         """Fallback harus mencerminkan config/inferensi.yaml.
 
         Kalau berbeda, mode degradasi diam-diam mengubah perilaku:
-        tta=False menurunkan recall, imgsz_live=960 memperlambat live.
+        tta=False menurunkan recall, imgsz_live=960 memperlambat live,
+        model_gambar/model_live yang beda memuat bobot keliru, dsb.
+        Semua kunci (termasuk dict bersarang) diperiksa, bukan hanya sebagian.
         """
         import deteksi
         import yaml as _yaml
         with open(os.path.join(ROOT, "config", "inferensi.yaml"), encoding="utf-8") as f:
             nyata = _yaml.safe_load(f) or {}
         fb = deteksi._INFER_FALLBACK
-        for k in ("imgsz_gambar", "imgsz_live", "iou", "tta"):
+
+        def cek(jalur, a, b):
+            if isinstance(a, dict):
+                self.assertIsInstance(b, dict, f"{jalur}: fallback dict, yaml bukan")
+                for kk in a:
+                    self.assertIn(kk, b, f"{jalur}.{kk}: tidak ada di config")
+                    cek(f"{jalur}.{kk}", a[kk], b[kk])
+            else:
+                self.assertEqual(a, b, f"{jalur}: fallback {a!r} != yaml {b!r}")
+
+        for k, v in fb.items():
             with self.subTest(kunci=k):
-                self.assertEqual(
-                    fb[k], nyata[k],
-                    f"_INFER_FALLBACK[{k}] tidak sama dengan config/inferensi.yaml")
+                self.assertIn(k, nyata, f"{k}: tidak ada di config/inferensi.yaml")
+                cek(k, v, nyata[k])
+
+
+class TestKanonikKelas(unittest.TestCase):
+    """Nama kelas model (spasi & kapital) harus dinormalkan ke bentuk kanonik.
+
+    Regresi: bobot RDD2022 memuat 'longitudinal crack' / 'Pothole'; tanpa
+    normalisasi, toleransi per kelas mati (KeyError -> slider) dan UI
+    menampilkan nama kelas mentah.
+    """
+
+    def test_kanonik_nama(self):
+        import deteksi
+        self.assertEqual(deteksi.kanonik_kelas("longitudinal crack"),
+                         "longitudinal_crack")
+        self.assertEqual(deteksi.kanonik_kelas("Pothole"), "pothole")
+        self.assertEqual(deteksi.kanonik_kelas(" other  corruption "),
+                         "other_corruption")
+        self.assertEqual(deteksi.kanonik_kelas("longitudinal_crack"),
+                         "longitudinal_crack")  # idempoten
+
+    def test_nama_kelas_terima_dict_dan_list(self):
+        import deteksi
+        self.assertEqual(deteksi.nama_kelas({4: "Pothole"}, 4), "pothole")
+        self.assertEqual(deteksi.nama_kelas(["a b", "c d"], 1), "c_d")
+
+    def test_kanonik_names_tak_mengubah_input(self):
+        import deteksi
+        asli = {0: "longitudinal crack", 4: "Pothole"}
+        self.assertEqual(deteksi._kanonik_names(asli),
+                         {0: "longitudinal_crack", 4: "pothole"})
+        self.assertEqual(asli, {0: "longitudinal crack", 4: "Pothole"})
+
+    def test_toleransi_berlaku_setelah_normalisasi(self):
+        import deteksi
+        tol = {"longitudinal_crack": 0.13, "pothole": 0.08}
+        # nama kanonik -> slider dikurangi toleransi (0,25 - 0,13)
+        self.assertAlmostEqual(
+            deteksi.ambang_efektif(deteksi.kanonik_kelas("longitudinal crack"),
+                                   0.25, tol), 0.12)
+        # nama mentah -> tak cocok -> tetap slider (bukti bug lama)
+        self.assertAlmostEqual(
+            deteksi.ambang_efektif("longitudinal crack", 0.25, tol), 0.25)
 
 
 class TestAmbangKelas(unittest.TestCase):
@@ -451,7 +504,7 @@ class TestBackendGanda(unittest.TestCase):
     def test_model_gambar_kelas_benar(self):
         import deteksi
         m = deteksi.get_model(kunci="model_gambar")
-        self.assertEqual(m.names[4], "pothole")
+        self.assertEqual(deteksi.nama_kelas(m.names, 4), "pothole")
         self.assertEqual(len(m.names), 5)
 
     def test_get_model_cache_per_path(self):
