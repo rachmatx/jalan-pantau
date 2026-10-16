@@ -201,6 +201,9 @@ async function ambilSnapshot() {
     snapshot = { ...json, namaBerkas: `Live (${lokasi || "tanpa lokasi"})` };
     document.getElementById("total-live-nilai").textContent =
       `Sesi: ${json.rows.length} titik unik · Total skor: ${fmtSkor(json.total)}`;
+    var dtlSub = document.getElementById("dtl-sub");
+    if (dtlSub) dtlSub.textContent =
+      `Sesi live: ${json.rows.length} titik unik · Total skor: ${fmtSkor(json.total)}`;
     document.getElementById("tabel-live").innerHTML =
       `<table class="jp-table"><thead><tr><th>TRACK ID</th><th>KELAS KERUSAKAN</th><th>UKURAN</th><th>SEVERITY</th><th>CONF</th><th class="jp-num-right">SKOR</th></tr></thead><tbody>` +
       json.rows.map((r) =>
@@ -445,6 +448,17 @@ document.getElementById("unduh-live").addEventListener("click", async () => {
           console.error("[JalanPantau] ambil log live", e);
           showToast("Log", "Gagal mengambil log dari server.", "galat");
       });
+  });
+
+  // Modal tabel skor prioritas live
+  var dlgTabelLive = document.getElementById("dialog-tabel-live");
+  var btnLihatTabel = document.getElementById("lihat-tabel-live");
+  if (btnLihatTabel && dlgTabelLive) btnLihatTabel.addEventListener("click", function() {
+    if (dlgTabelLive.showModal) dlgTabelLive.showModal();
+  });
+  ["dtl-x", "dtl-tutup"].forEach(function(id) {
+    var b = document.getElementById(id);
+    if (b && dlgTabelLive) b.addEventListener("click", function() { dlgTabelLive.close(); });
   });
 
   // Stop stream saat page di-refresh/tutup

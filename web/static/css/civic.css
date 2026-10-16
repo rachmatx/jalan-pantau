@@ -251,6 +251,10 @@ main { padding: 0; }
    gambar mentah -> skala mendorong gambar keluar area viewer (tampak kosong). */
 .viewer.zoomable { border: none; border-radius: 0; height: min(62vh, 560px); min-height: 380px; position: relative; overflow: hidden; }
 .zoom-inner { transition: transform 0.15s ease-out; transform-origin: 0 0; will-change: transform; }
+/* zoom.js menghitung posisi dari ukuran natural gambar -> gambar di dalam
+   viewer TIDAK boleh di-constrain CSS (mis. rule global mobile
+   `img{max-width:100%}`), kalau tidak hasil tampil kecil & tidak di tengah. */
+.viewer.zoomable .zoom-inner img { max-width: none; display: block; }
 #viewer-live.zoomable { height: min(55vh, 480px); min-height: 320px; max-height: 520px; }
 #live-toolbar { position: absolute !important; top: 8px !important; right: 8px !important; left: auto !important; bottom: auto !important; }
 .viewer.zoomable .viewer-placeholder { color: #CBD5E1; }
@@ -1259,6 +1263,13 @@ label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label da
   .jp-brand svg { width: 20px; height: 20px; }
   .nav-tray { top: 48px; max-height: calc(100vh - 48px); }
   .nav-tray a { padding: 14px 16px; font-size: 14px; }
+}
+
+/* Panel live <1024px: grid 1 kolom; abaikan span inline (span 8/4) yang
+   membuat track implisit sehingga kartu menyempit + ada gap kanan. */
+@media (max-width: 1023.98px) {
+  #panel-live .jp-col-main,
+  #panel-live .jp-col-side { grid-column: 1 / -1 !important; }
 }
 
 /* FIX 2026-10-16: cegah overflow horizontal di .jp-grid.
