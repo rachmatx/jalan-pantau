@@ -202,6 +202,14 @@ class TestValidasiInput(unittest.TestCase):
                         json={"source": "ipcam", "target": "http://localhost:8080/x"})
         self.assertEqual(r.status_code, 400)
 
+    def test_stream_start_ipcam_terobfuskasi_400(self):
+        """IP loopback dalam bentuk desimal/heksa/pendek tetap ditolak (SSRF)."""
+        for target in ("http://0x7f000001/", "http://2130706433/",
+                       "http://127.1/", "http://0177.0.0.1/"):
+            r = self.c.post("/api/stream/start",
+                            json={"source": "ipcam", "target": target})
+            self.assertEqual(r.status_code, 400, target)
+
     def test_stream_start_webcam_idx_bukan_angka_400(self):
         r = self.c.post("/api/stream/start",
                         json={"source": "webcam", "target": "bukan-angka"})

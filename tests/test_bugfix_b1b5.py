@@ -126,6 +126,24 @@ class TestB3Hapus(_BasisDB):
         self.assertFalse(hapus_sesi(sid))
 
 
+class TestB3SkorServerSide(_BasisDB):
+    def test_skor_dihitung_ulang_dari_severity(self):
+        """Skor dari klien TIDAK dipercaya: dihitung ulang dari severity."""
+        from database import detail_sesi, simpan_sesi
+        rows = [
+            {"kelas": "pothole", "dasar": "d", "severity": "Berat",
+             "skor_prioritas": 5},          # klien menyuntik 5 -> harus jadi 100
+            {"kelas": "crack", "dasar": "d", "severity": "Ringan",
+             "skor_prioritas": 999999},     # disuntik -> harus jadi 33
+        ]
+        sid = simpan_sesi("uji", "Jl Uji", "m", rows, 999999)  # total juga diabaikan
+        d = detail_sesi(sid)
+        skor = [t["skor_prioritas"] for t in d["temuan"]]
+        self.assertEqual(skor, [100, 33])
+        self.assertEqual(d["sesi"]["skor_prioritas"], 133)     # jumlah baris
+        self.assertEqual(d["sesi"]["worst"], "Berat")
+
+
 class TestB4Severity(unittest.TestCase):
     def test_ambang_dari_yaml(self):
         from severity import area_severity, diagnose, load_config
