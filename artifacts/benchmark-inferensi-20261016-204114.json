@@ -1,0 +1,23 @@
+{
+  "model": "best.onnx",
+  "format": "onnx",
+  "imgsz": 640,
+  "conf": 0.25,
+  "runs": 12,
+  "warmup": 2,
+  "gambar": "C:\\Users\\R\\Documents\\TA Machine Learning - Deteksi Kerusakan Jalan Real-Time\\data\\publik\\bpid\\test\\images\\0125c08e.jpeg",
+  "latency_ms": {
+    "mean": 603.23,
+    "median": 571.37,
+    "p95": 703.67,
+    "min": 549.57,
+    "max": 759.82
+  },
+  "fps_from_mean": 1.66,
+  "dibuat": "2026-10-16T20:41:14",
+  "hardware": {
+    "python": "3.11.0",
+    "platform": "Windows-10-10.0.19045-SP0",
+    "processor": "Intel64 Family 6 Model 58 Stepping 9, GenuineIntel"
+  }
+}

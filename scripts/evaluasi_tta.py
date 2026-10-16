@@ -12,9 +12,13 @@ Pakai (dari root repo):
 """
 import argparse
 import json
+import os
 import time
 from datetime import datetime
 from pathlib import Path
+
+# Cegah unduhan paket otomatis saat skrip berjalan (lihat evaluasi_model.py).
+os.environ.setdefault("YOLO_AUTOINSTALL", "false")
 
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = ROOT / "app" / "weights"
@@ -109,6 +113,7 @@ def main():
         raise SystemExit(f"Tidak ada gambar di {img_dir}")
 
     model = YOLO(str(mp))
+    dev = "cpu" if mp.suffix.lower() == ".onnx" else None
     tp = fp = fn = 0
     t0 = time.perf_counter()
     for p in gambar:
@@ -116,7 +121,7 @@ def main():
             w, h = im.size
         gt = baca_gt(lbl_dir / (p.stem + ".txt"), w, h, remap)
         r = model.predict(str(p), imgsz=args.imgsz, conf=args.conf,
-                          augment=args.augment, verbose=False)[0]
+                          augment=args.augment, device=dev, verbose=False)[0]
         pred = [(int(b.cls), tuple(float(v) for v in b.xyxy[0]), float(b.conf))
                 for b in r.boxes]
         pred.sort(key=lambda x: -x[2])

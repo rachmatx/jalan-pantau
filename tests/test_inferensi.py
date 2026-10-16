@@ -20,10 +20,11 @@ class TestConfigInferensi(unittest.TestCase):
         deteksi._infer = None
         inf = deteksi.get_inferensi()
         self.assertEqual(inf["imgsz_gambar"], 960)
-        self.assertEqual(inf["imgsz_live"], 480)  # default webcam (lihat README)
+        self.assertEqual(inf["imgsz_live"], 640)  # akurasi penuh (GPU real-time)
         self.assertEqual(inf["iou"], 0.5)
         self.assertTrue(inf["tta"])  # default true sejak trial 3 foto 2026-09-07
         self.assertEqual(inf["teliti"]["tile"], 640)
+        self.assertEqual(inf["device"], "auto")
 
     def test_fallback_bila_file_hilang(self):
         import deteksi
@@ -83,6 +84,50 @@ class TestConfigInferensi(unittest.TestCase):
             self.assertEqual(inf["imgsz_gambar"], 960)  # default, bukan 320
         finally:
             os.remove(path)
+
+    def test_device_disaring(self):
+        """device hanya boleh auto/cpu/gpu atau daftar indeks; lain -> auto."""
+        import deteksi
+        kasus = {"auto": "auto", "GPU": "gpu", "cpu": "cpu", "0": "0",
+                 "0,1": "0,1", " 0,1 ": "0,1", "jahat": "auto",
+                 "cuda:0": "auto", "": "auto", None: "auto"}
+        for masuk, harap in kasus.items():
+            with self.subTest(masuk=masuk):
+                fd, path = tempfile.mkstemp(suffix=".yaml")
+                try:
+                    with os.fdopen(fd, "w", encoding="utf-8") as f:
+                        f.write(f"device: {masuk if masuk is not None else ''}\n")
+                    inf = deteksi.get_inferensi(path=path)
+                    self.assertEqual(inf["device"], harap)
+                finally:
+                    os.remove(path)
+
+
+class TestPilihDevice(unittest.TestCase):
+    def test_cpu_dipaksa(self):
+        import deteksi
+        self.assertEqual(deteksi.pilih_device("cpu"), "cpu")
+
+    def test_gpu_dipaksa(self):
+        import deteksi
+        self.assertEqual(deteksi.pilih_device("gpu"), 0)
+
+    def test_indeks_diteruskan(self):
+        import deteksi
+        self.assertEqual(deteksi.pilih_device("0,1"), "0,1")
+
+    def test_auto_selalu_aman(self):
+        """auto -> 0 (bila CUDA ada) atau 'cpu'; tak boleh melempar."""
+        import deteksi
+        self.assertIn(deteksi.pilih_device("auto"), (0, "cpu"))
+        self.assertIn(deteksi.pilih_device(None), (0, "cpu"))
+
+    def test_onnx_selalu_cpu(self):
+        """Model .onnx -> 'cpu' walau device='auto'/'gpu' (tanpa onnxruntime-gpu)."""
+        import deteksi
+        self.assertEqual(deteksi.pilih_device("auto", "best.onnx"), "cpu")
+        self.assertEqual(deteksi.pilih_device("gpu", "best.onnx"), "cpu")
+        self.assertIn(deteksi.pilih_device("auto", "best.pt"), (0, "cpu"))
 
     def test_fallback_selaras_dengan_yaml(self):
         """Fallback harus mencerminkan config/inferensi.yaml.
@@ -487,9 +532,9 @@ class TestBackendGanda(unittest.TestCase):
         deteksi._infer = None
         inf = deteksi.get_inferensi()
         self.assertEqual(inf["model_gambar"], "best.pt")
-        self.assertEqual(inf["model_live"], "best.onnx")
+        self.assertEqual(inf["model_live"], "best.pt")
         self.assertTrue(deteksi.resolve_model(kunci="model_gambar").name.endswith(".pt"))
-        self.assertTrue(deteksi.resolve_model(kunci="model_live").name.endswith(".onnx"))
+        self.assertTrue(deteksi.resolve_model(kunci="model_live").name.endswith(".pt"))
         # hilang / traversal -> fallback best.pt
         self.assertEqual(deteksi.resolve_model("tak-ada.onnx").name, "best.pt")
         self.assertEqual(deteksi.resolve_model("../x.pt").name, "best.pt")
@@ -499,7 +544,7 @@ class TestBackendGanda(unittest.TestCase):
         import deteksi
         deteksi._infer = None
         self.assertEqual(deteksi.nama_model(kunci="model_gambar"), "best.pt")
-        self.assertEqual(deteksi.nama_model(kunci="model_live"), "best.onnx")
+        self.assertEqual(deteksi.nama_model(kunci="model_live"), "best.pt")
 
     def test_model_gambar_kelas_benar(self):
         import deteksi
@@ -522,7 +567,7 @@ class TestBackendGanda(unittest.TestCase):
         import deteksi
         m = deteksi.get_model(str(deteksi.WEIGHTS_DIR / "best.onnx"))
         img = np.zeros((96, 96, 3), dtype=np.uint8)
-        r = m.predict(img, conf=0.25, imgsz=96, verbose=False)[0]
+        r = m.predict(img, conf=0.25, imgsz=96, device="cpu", verbose=False)[0]
         self.assertIsNotNone(r)
 
 

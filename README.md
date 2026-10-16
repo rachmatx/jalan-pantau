@@ -21,19 +21,23 @@ penanganan.
 > - **Kalibrasi wajib.** Kamera mono tidak mengukur jarak absolut; parameter
 >   `pixels_per_cm` harus dikalibrasi per pemasangan kamera (halaman
 >   Kalibrasi). Tanpa kalibrasi, dimensi hanya estimasi kasar.
-> - **Inferensi ±3 FPS, bukan real-time.** Preview kamera berjalan ±15 FPS
->   lewat arsitektur *decouple* (capture/inferensi/tampil di thread
->   terpisah) — keduanya metrik yang berbeda.
+> - **Inferensi: CPU ±1–3 FPS, GPU ±40 FPS.** Di CPU (mis. i5 tanpa AVX2)
+>   YOLOv11s hanya ±1,6 FPS sehingga kotak tampak telat. Bila tersedia GPU CUDA
+>   (mis. GTX 1650) `device: auto` memakainya: ±40 FPS (real-time), **akurasi
+>   identik** — device tidak mengubah bobot.
+> - **Preview kamera ±25–30 FPS** lewat arsitektur *decouple* (capture/inferensi/
+>   tampil di thread terpisah) — metrik yang berbeda dari FPS inferensi.
 
 ---
 
 ## Stack
 
-- **Model (gambar & live):** YOLOv11s — foto statis `app/weights/best.pt`;
-  live `app/weights/best.onnx` (ONNX Runtime, CPU)
+- **Model (gambar & live):** YOLOv11s — `app/weights/best.pt` untuk keduanya;
+  `app/weights/best.onnx` disimpan sebagai cadangan CPU
 - **Web:** Flask + Leaflet (OpenStreetMap)
 - **Database:** SQLite (`web/instance/riwayat.db`)
-- **Inferensi:** Ultralytics / ONNX Runtime (CPU)
+- **Inferensi:** Ultralytics/PyTorch — GPU bila `device: auto` dan CUDA ada,
+  jika tidak CPU; ONNX Runtime (CPU) untuk cadangan `best.onnx`
 
 ### Akurasi terukur
 
@@ -88,8 +92,12 @@ source .venv/bin/activate
 # 3) Install dependensi
 pip install -r requirements.txt
 
+# 3b) OPSIONAL — agar real-time, pasang torch dengan CUDA:
+pip install --upgrade torch torchvision --index-url https://download.pytorch.org/whl/cu126
+#    Tanpa ini aplikasi tetap jalan, tapi inferensi di CPU (±1-3 FPS).
+
 # 4) Pastikan bobot model ada di app/weights/
-#    best.pt · best.onnx (+ SHA256SUMS.txt)
+#    best.pt (gambar + live) · best.onnx (cadangan CPU) · SHA256SUMS.txt
 
 # 5) Jalankan server
 python web/app.py
