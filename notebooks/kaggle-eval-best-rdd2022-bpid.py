@@ -93,14 +93,24 @@ m.val(data="/kaggle/working/bpid.yaml")
 
 # ============================================================
 # Sel 6 — export ONNX + zip untuk diunduh
+# (best.pt asli di /kaggle/input read-only -> disalin ke working dulu)
 # ============================================================
+import shutil
 import zipfile
 
-m.export(format="onnx", imgsz=640, simplify=True)
+best_work = Path("/kaggle/working/best_eval.pt")
+if not best_work.exists():
+    shutil.copy(BEST, best_work)
+    print(f"disalin: {BEST} -> {best_work}")
+
+m2 = YOLO(str(best_work))
+m2.export(format="onnx", imgsz=640, simplify=True)
+onnx_path = best_work.with_suffix(".onnx")
+print("ONNX:", onnx_path, "ada:", onnx_path.exists())
 
 run_out = Path("/kaggle/working/hasil-eval")
 run_out.mkdir(exist_ok=True)
-for f in [Path(BEST), Path(str(Path(BEST).with_suffix("")) + ".onnx")]:
+for f in [best_work, onnx_path]:
     if f.exists():
         shutil.copy(f, run_out / f.name)
 
