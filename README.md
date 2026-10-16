@@ -29,7 +29,7 @@ penanganan.
 
 ## Stack
 
-- **Model (gambar & live):** YOLOv11s — foto statis `app/weights/best_yolo11s.pt`;
+- **Model (gambar & live):** YOLOv11s — foto statis `app/weights/best.pt`;
   live `app/weights/best.onnx` (ONNX Runtime, CPU)
 - **Web:** Flask + Leaflet (OpenStreetMap)
 - **Database:** SQLite (`web/instance/riwayat.db`)
@@ -89,7 +89,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 # 4) Pastikan bobot model ada di app/weights/
-#    best_yolo11s.pt · best.onnx · best.pt (+ SHA256SUMS.txt)
+#    best.pt · best.onnx (+ SHA256SUMS.txt)
 
 # 5) Jalankan server
 python web/app.py
@@ -117,7 +117,7 @@ Halaman: `/` (Deteksi) · `/peta` · `/riwayat` · `/kalibrasi` · `/tentang` ·
 │   ├── severity.py      # dimensi -> Ringan/Sedang/Berat
 │   ├── prioritas.py     # skor prioritas 0-100
 │   ├── laporan.py       # PDF laporan (fpdf2)
-│   └── weights/         # best_yolo11s.pt · best.onnx · best.pt (gitignored)
+│   └── weights/         # best.pt · best.onnx (gitignored)
 ├── config/              # severity.yaml · inferensi.yaml (editable)
 ├── reports/             # hasil evaluasi model
 ├── scripts/             # utilitas (smoke test, benchmark, uji foto)

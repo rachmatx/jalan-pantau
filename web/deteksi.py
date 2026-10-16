@@ -41,7 +41,7 @@ _kalibrasi_lock = threading.Lock()  # P3: tulis severity.yaml atomik antar-threa
 # recall (0,69 -> 0,48 pada trial TTA) dan imgsz_live 960 memperlambat live ~2x.
 # config/inferensi.yaml: tta=true, imgsz_live=480 (komentar di sana: "480 untuk webcam").
 _INFER_FALLBACK = {
-    "model_gambar": "best_yolo11s.pt", "model_live": "best.onnx",
+    "model_gambar": "best.pt", "model_live": "best.onnx",
     "imgsz_gambar": 960, "imgsz_live": 480, "iou": 0.5, "tta": True,
     "teliti": {"aktif_default": False, "tile": 640, "overlap": 0.25,
                "iou_gabung": 0.5, "metode_gabung": "nms",

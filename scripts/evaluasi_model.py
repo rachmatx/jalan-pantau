@@ -13,7 +13,7 @@ Fitur:
 
 Pakai (dari root repo):
     .\\.venv\\Scripts\\python scripts\\evaluasi_model.py --data data/publik/bpid/test --remap 0:4 --model best.onnx --imgsz 640 --conf-list 0.15,0.25,0.35,0.45
-    .\\.venv\\Scripts\\python scripts\\evaluasi_model.py --data data/publik/bpid/test --remap 0:4 --model best_yolo11s.pt --imgsz 960
+    .\\.venv\\Scripts\\python scripts\\evaluasi_model.py --data data/publik/bpid/test --remap 0:4 --model best.pt --imgsz 960
 """
 import argparse
 import json

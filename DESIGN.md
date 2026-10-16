@@ -20,7 +20,7 @@ SQLite → peta GPS (Leaflet). Bahasa UI: **Indonesia**.
 Run: `python web/app.py` → `http://127.0.0.1:5000`.
 
 Model: **YOLOv11** dalam mode **deteksi (bounding box), bukan mask** —
-`best_yolo11s.pt` untuk foto statis, `best.onnx` (ekspor YOLOv11s) untuk live.
+`best.pt` untuk foto statis, `best.onnx` (ekspor YOLOv11s) untuk live.
 Dataset latih (RDD2022) hanya menyediakan anotasi kotak, jadi segmentasi mask
 tidak bisa dilatih tanpa annotasi ulang. Luas area temuan dihitung dari
 *kontur di dalam bounding box*, bukan keluaran mask model.

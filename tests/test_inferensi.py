@@ -477,7 +477,7 @@ class TestVerifikasiOperator(unittest.TestCase):
 
 _BOBOT_ADA = all(
     os.path.isfile(os.path.join(ROOT, "app", "weights", n))
-    for n in ("best_yolo11s.pt", "best.onnx", "best.pt"))
+    for n in ("best.pt", "best.onnx"))
 
 
 @unittest.skipUnless(_BOBOT_ADA, "bobot model tidak ada di app/weights/")
@@ -486,7 +486,7 @@ class TestBackendGanda(unittest.TestCase):
         import deteksi
         deteksi._infer = None
         inf = deteksi.get_inferensi()
-        self.assertEqual(inf["model_gambar"], "best_yolo11s.pt")
+        self.assertEqual(inf["model_gambar"], "best.pt")
         self.assertEqual(inf["model_live"], "best.onnx")
         self.assertTrue(deteksi.resolve_model(kunci="model_gambar").name.endswith(".pt"))
         self.assertTrue(deteksi.resolve_model(kunci="model_live").name.endswith(".onnx"))
@@ -498,7 +498,7 @@ class TestBackendGanda(unittest.TestCase):
     def test_nama_model(self):
         import deteksi
         deteksi._infer = None
-        self.assertEqual(deteksi.nama_model(kunci="model_gambar"), "best_yolo11s.pt")
+        self.assertEqual(deteksi.nama_model(kunci="model_gambar"), "best.pt")
         self.assertEqual(deteksi.nama_model(kunci="model_live"), "best.onnx")
 
     def test_model_gambar_kelas_benar(self):
@@ -513,7 +513,9 @@ class TestBackendGanda(unittest.TestCase):
         m1 = deteksi.get_model(onnx)
         m2 = deteksi.get_model(onnx)
         self.assertIs(m1, m2)
-        self.assertIn("pothole", list(m1.names.values()))
+        # nama mentah bobot berkapital/spasi ("Pothole"); bandingkan bentuk kanonik
+        kanonik = [deteksi.kanonik_kelas(v) for v in m1.names.values()]
+        self.assertIn("pothole", kanonik)
 
     def test_onnx_inferensi_kecil(self):
         import numpy as np
@@ -557,23 +559,23 @@ class TestEnsemble(unittest.TestCase):
         import numpy as np
         import deteksi
         deteksi.get_model(kunci="model_gambar")
-        deteksi.get_model(str(deteksi.WEIGHTS_DIR / "best.pt"))
+        deteksi.get_model(str(deteksi.WEIGHTS_DIR / "best.onnx"))
         ok, buf = cv2.imencode(".jpg", np.zeros((160, 160, 3),
                                                 dtype=np.uint8) + 128)
         self.assertTrue(ok)
         raw = buf.tobytes()
         deteksi._infer = None
         inf = deteksi.get_inferensi()
-        inf["ensemble"] = {"aktif": True, "model_kedua": "best.pt",
+        # model_kedua beda berkas (best.pt + best.onnx) -> jalur ensemble aktif
+        inf["ensemble"] = {"aktif": True, "model_kedua": "best.onnx",
                            "iou": 0.5, "metode": "wbf"}
         try:
             h = deteksi.analisis_gambar(raw, conf=0.9, imgsz=160)
             self.assertIn("+", h["model"])
             self.assertIn("ensemble", h["disaring"])
             self.assertIsInstance(h["rows"], list)
-            # model_kedua == utama -> jalur tunggal
-            inf["ensemble"] = {"aktif": True,
-                               "model_kedua": "best_yolo11s.pt",
+            # model_kedua == utama (best.pt) -> jalur tunggal
+            inf["ensemble"] = {"aktif": True, "model_kedua": "best.pt",
                                "iou": 0.5, "metode": "wbf"}
             h2 = deteksi.analisis_gambar(raw, conf=0.9, imgsz=160)
             self.assertNotIn("+", h2["model"])

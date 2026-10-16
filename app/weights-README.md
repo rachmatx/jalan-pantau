@@ -12,15 +12,14 @@ Val mAP50 0,616 · test RDD2022 0,617 · OOD Bandung (BPID) 0,581.
 
 | Berkas | Peran |
 |---|---|
-| `best_yolo11s.pt` | Model gambar (foto statis), backend Ultralytics. Aktif sebagai `model_gambar`. |
-| `best.onnx` | Ekspor ONNX model yang sama untuk live (webcam, IP-cam, video). Aktif sebagai `model_live`. |
+| `best.pt` | Model YOLOv11s (foto statis), backend Ultralytics. Aktif sebagai `model_gambar`. |
+| `best.onnx` | Ekspor ONNX `best.pt` untuk live (webcam, IP-cam, video). Aktif sebagai `model_live`. |
 
 ## Cadangan
 
-| Berkas | Peran |
-|---|---|
-| `best.pt` | Model kedua untuk ensemble di tab Gambar (`ensemble.model_kedua`). Nonaktif. |
-| `best_yolo11s.onnx` | Ekspor ONNX `best_yolo11s.pt`, belum dipakai. |
+Tidak ada. Ensemble dua model (`ensemble.model_kedua`) hanya bermakna bila kamu
+menambahkan bobot kedua ke folder ini; tanpa itu `model_kedua == model_gambar`
+dan deteksi memakai jalur tunggal.
 
 ## Catatan
 

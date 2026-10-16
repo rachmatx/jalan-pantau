@@ -5,7 +5,7 @@
 # baru ultralytics — kalau tidak, pip menarik torch CUDA ~2,5GB:
 #   pip install torch --index-url https://download.pytorch.org/whl/cpu
 #   pip install -r requirements.txt
-ultralytics>=8.2  # dipakai: deteksi foto via best_yolo11s.pt (YOLO)
+ultralytics>=8.2  # dipakai: deteksi foto via best.pt (YOLO)
 opencv-python>=4.9
 flask>=3.0
 flask-limiter>=3.5

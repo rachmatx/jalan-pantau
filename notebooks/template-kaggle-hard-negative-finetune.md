@@ -59,7 +59,7 @@ print(yaml_txt)
 ```python
 # Sel 5: FINE-TUNE dari bobot terbaik (bukan yolo11n.pt) dengan hyperparameter rekomendasi
 from ultralytics import YOLO
-model = YOLO("/kaggle/input/jalanpantau-weights/best_yolo11s.pt")  # SESUAIKAN
+model = YOLO("/kaggle/input/jalanpantau-weights/best.pt")  # SESUAIKAN
 model.train(
     data=str(WORK/"data.yaml"),
     epochs=120, imgsz=960, batch=8, patience=25,

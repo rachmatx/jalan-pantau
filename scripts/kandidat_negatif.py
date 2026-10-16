@@ -24,7 +24,7 @@ def main():
     ap.add_argument("--in", dest="masuk", required=True, help="folder berisi gambar (rekursif)")
     ap.add_argument("--out", dest="keluar",
                     default=str(ROOT / "data" / "lokal" / "negatif-kandidat"))
-    ap.add_argument("--model", default="best_yolo11s.pt",
+    ap.add_argument("--model", default="best.pt",
                     help="nama di app/weights/ atau path penuh")
     ap.add_argument("--imgsz", type=int, default=960)
     ap.add_argument("--conf", type=float, default=0.25)

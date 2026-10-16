@@ -195,7 +195,7 @@ print("ONNX:", onnx_path, "ada:", onnx_path.exists())
 run_out = Path("/kaggle/working/hasil-eval")
 run_out.mkdir(exist_ok=True)
 if best_work.exists():
-    shutil.copy(best_work, run_out / "best.pt")          # -> app/weights/best_yolo11s.pt
+    shutil.copy(best_work, run_out / "best.pt")          # -> app/weights/best.pt
 if onnx_path.exists():
     shutil.copy(onnx_path, run_out / "best.onnx")        # -> app/weights/best.onnx
 for y in ["rdd2022.yaml", "bpid.yaml", "subset.yaml"]:

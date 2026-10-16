@@ -6,7 +6,7 @@ punya sumber yang bisa diaudit (bukan angka tanpa jejak).
 
 Contoh pemakaian (dari root repo):
     .\\.venv\\Scripts\\python scripts\\benchmark_inferensi.py --runs 20
-    .\\.venv\\Scripts\\python scripts\\benchmark_inferensi.py --model best_yolo11s.pt --imgsz 960
+    .\\.venv\\Scripts\\python scripts\\benchmark_inferensi.py --model best.pt --imgsz 960
     .\\.venv\\Scripts\\python scripts\\benchmark_inferensi.py --model best.onnx --imgsz 480
 
 Catatan: ini mengukur inferensi GAMBAR STATIS. FPS live (webcam) bergantung
@@ -111,8 +111,8 @@ def benchmark(model_name, imgsz, runs, gambar, conf, warmup):
 
 def main():
     ap = argparse.ArgumentParser(description="Benchmark latensi inferensi YOLO (CPU).")
-    ap.add_argument("--model", default="best_yolo11s.pt",
-                    help="nama file di app/weights/ atau path penuh (default: best_yolo11s.pt)")
+    ap.add_argument("--model", default="best.pt",
+                    help="nama file di app/weights/ atau path penuh (default: best.pt)")
     ap.add_argument("--imgsz", type=int, default=960, help="ukuran input (default: 960)")
     ap.add_argument("--runs", type=int, default=15, help="jumlah iterasi terukur (default: 15)")
     ap.add_argument("--warmup", type=int, default=2, help="iterasi pemanasan (default: 2)")

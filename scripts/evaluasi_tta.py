@@ -6,8 +6,8 @@ operasi (conf) dengan pencocokan IoU 0.5 per kelas, sehingga perbandingan
 antar-model / dengan-vs-tanpa-TTA menjadi adil.
 
 Pakai (dari root repo):
-    .\\.venv\\Scripts\\python scripts\\evaluasi_tta.py --model best_yolo11s.pt --imgsz 960 --maks 60
-    .\\.venv\\Scripts\\python scripts\\evaluasi_tta.py --model best_yolo11s.pt --imgsz 960 --maks 60 --augment
+    .\\.venv\\Scripts\\python scripts\\evaluasi_tta.py --model best.pt --imgsz 960 --maks 60
+    .\\.venv\\Scripts\\python scripts\\evaluasi_tta.py --model best.pt --imgsz 960 --maks 60 --augment
     .\\.venv\\Scripts\\python scripts\\evaluasi_tta.py --model best.onnx --imgsz 640 --maks 60
 """
 import argparse
@@ -78,7 +78,7 @@ def cocokkan(pred, gt):
 def main():
     ap = argparse.ArgumentParser(description="Evaluasi P/R/F1 (IoU) dengan/TANPA TTA.")
     ap.add_argument("--data", default="data/publik/bpid/test")
-    ap.add_argument("--model", default="best_yolo11s.pt")
+    ap.add_argument("--model", default="best.pt")
     ap.add_argument("--imgsz", type=int, default=960)
     ap.add_argument("--conf", type=float, default=0.25)
     ap.add_argument("--augment", action="store_true", help="aktifkan TTA")

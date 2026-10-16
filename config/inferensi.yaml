@@ -4,12 +4,12 @@
 # - conf rendah (<0,25) menambah duplikat bertumpuk -> iou 0,5 menggabungkannya.
 # Benchmark 2026-09-08 (paritas pt vs onnx dinamis: skor IDENTIK 4 desimal;
 # 1 box bisa flip di batas NMS — wajar, acak, kecil):
-# - gambar = best_yolo11s.pt + TTA (YOLOv11s: test RDD 0,470->0,526; OOD Bandung
-#   seri vs n 0,4497->0,4516; recall naik, precision turun sedikit);
-#   live = best.onnx (ekspor YOLOv11s, CPU; 0,1-0,3s, track+ByteTrack OK).
+# - gambar = best.pt + TTA (YOLOv11s: test RDD 0,470->0,526; recall naik,
+#   precision turun sedikit);
+#   live = best.onnx (ekspor best.pt, CPU; 0,1-0,3s, track+ByteTrack OK).
 #   ONNX mengabaikan TTA, jadi TTA hanya untuk backend pt.
 # Berlaku mulai start/deteksi berikutnya (live baca ulang tiap start).
-model_gambar: best_yolo11s.pt
+model_gambar: best.pt
 model_live: best.onnx
 imgsz_gambar: 960
 imgsz_live: 480  # 480 untuk webcam (lebih cepat ~2x), 960 untuk akurasi maksimal
@@ -24,8 +24,8 @@ teliti:
   buang_tepi_tile: true  # buang box terpotong tepi-dalam tile (duplikat lintas tile)
   iou_agnostik: 0.6  # NMS lintas kelas: satu kerusakan = satu box kelas pemenang
 # Ensemble 2 model (tab Gambar saja): gabung box model_gambar + model_kedua
-# via WBF/NMS per kelas. Default MATI (biaya ~2x waktu). Nyalakan bila butuh
-# recall maksimal; komplemen s (recall) + n (precision) terbukti di OOD lokal.
+# via WBF/NMS per kelas. Default MATI (biaya ~2x waktu). Saat ini hanya ada
+# satu model (best.pt), jadi model_kedua == model_gambar -> jalur tunggal.
 ensemble:
   aktif: false
   model_kedua: best.pt
