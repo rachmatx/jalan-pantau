@@ -51,7 +51,7 @@ _INFER_FALLBACK = {
     "device": "auto",
     "imgsz_gambar": 960, "imgsz_live": 640, "iou": 0.5, "tta": True,
     "teliti": {"aktif_default": False, "tile": 640, "overlap": 0.25,
-               "iou_gabung": 0.5, "metode_gabung": "nms",
+               "iou_gabung": 0.5, "metode_gabung": "wbf",
                "buang_tepi_tile": True, "iou_agnostik": 0.6},
     "toleransi_kelas": {"longitudinal_crack": 0.13, "transverse_crack": 0.13,
                         "alligator_crack": 0.10, "other_corruption": 0.10,

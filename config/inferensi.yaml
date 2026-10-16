@@ -24,7 +24,7 @@ teliti:
   tile: 640
   overlap: 0.25
   iou_gabung: 0.5
-  metode_gabung: nms  # nms | wbf (weighted box fusion, lebih halus untuk box bertumpuk)
+  metode_gabung: wbf  # nms | wbf (wbf melebur box bertumpuk lintas tile, lebih halus dari nms)
   buang_tepi_tile: true  # buang box terpotong tepi-dalam tile (duplikat lintas tile)
   iou_agnostik: 0.6  # NMS lintas kelas: satu kerusakan = satu box kelas pemenang
 # Ensemble 2 model (tab Gambar saja): gabung box model_gambar + model_kedua
