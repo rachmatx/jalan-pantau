@@ -2,8 +2,9 @@
 from fpdf import FPDF
 
 DISCLAIMER = (
-    "Skor prioritas 0-100 per temuan (bobot severity x luas ternormalisasi). "
-    "Dimensi diestimasi dari bounding box kamera mono (pseudo-measurement)."
+    "Skor prioritas 0-100 per temuan (bobot severity: Ringan=33, Sedang=67, Berat=100). "
+    "Formula usulan yang belum tervalidasi; bukan estimasi biaya. "
+    "Dimensi diestimasi dari bounding box kamera mono terkalibrasi."
 )
 
 class LaporanPDF(FPDF):

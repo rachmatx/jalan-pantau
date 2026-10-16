@@ -354,7 +354,7 @@ class TestVerifikasiOperator(unittest.TestCase):
              "dasar": "d", "bahan": "b"},
             {"kelas": "longitudinal_crack", "conf": 0.5, "severity": "Ringan",
              "box": [0, 0, 400, 8], "panjang_cm": 50, "lebar_cm": 1,
-             "luas_cm2": 50, "luas_m2": 0.005, "skor_prioritas": 7,
+             "luas_cm2": 50, "luas_m2": 0.005, "skor_prioritas": 33,
              "dasar": "d", "bahan": "b"},
         ]
 
@@ -373,8 +373,8 @@ class TestVerifikasiOperator(unittest.TestCase):
         self.assertEqual(r["severity"], "Berat")
         self.assertEqual(r["diubah"], "severity Ringan->Berat")
         self.assertEqual(r["sumber"], "AI")
-        # skor dihitung ulang dari box + severity Berat (bukan angka asal 7)
-        self.assertNotEqual(r["skor_prioritas"], 7)
+        # skor dihitung ulang dari severity Berat -> 100 (bukan angka asal 33)
+        self.assertNotEqual(r["skor_prioritas"], 33)
         self.assertEqual(r["bahan"], "beton + lapis pondasi")
 
     def test_tidak_ubah_tetap_nol(self):
@@ -593,12 +593,13 @@ class TestSkorPrioritas(unittest.TestCase):
         self.assertEqual(skor({"severity": "Sedang", "luas_cm2": 10000})["skor_prioritas"], 67)
         self.assertEqual(skor({"severity": "Berat", "luas_cm2": 10000})["skor_prioritas"], 100)
 
-    def test_normalisasi_luas(self):
+    def test_skor_tidak_tergantung_luas(self):
         from prioritas import skor
-        # luas >= 10000 cm2 (1 m2) -> faktor 1
+        # revisi M8: skor hanya dari severity; luas tidak memengaruhi skor
         self.assertEqual(skor({"severity": "Berat", "luas_cm2": 50000})["skor_prioritas"], 100)
-        # luas kecil -> proporsional
-        self.assertEqual(skor({"severity": "Berat", "luas_cm2": 1000})["skor_prioritas"], 10)
+        self.assertEqual(skor({"severity": "Berat", "luas_cm2": 1000})["skor_prioritas"], 100)
+        self.assertEqual(skor({"severity": "Ringan", "luas_cm2": 1})["skor_prioritas"], 33)
+        self.assertEqual(skor({"severity": "Sedang"})["skor_prioritas"], 67)
 
     def test_rentang_0_100(self):
         from prioritas import skor
