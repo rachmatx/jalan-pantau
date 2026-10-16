@@ -10,6 +10,7 @@ import os
 import secrets
 import sys
 from datetime import timedelta
+from io import BytesIO
 import tempfile
 import threading
 from pathlib import Path
@@ -38,8 +39,6 @@ ALLOWED_VIDEO = {"mp4", "avi", "mov", "mkv"}
 MAX_VIDEO_BYTES = 200 * 1024 * 1024  # video live (global Flask)
 MAX_IMG_BYTES = 15 * 1024 * 1024  # gambar deteksi: 12MP JPEG ~3-8MB; di atas ini tolak cepat
 CONF_MIN, CONF_MAX, CONF_DEFAULT = 0.05, 0.8, 0.25
-# Batas atas ?limit= untuk /api/riwayat (mencegah respons raksasa).
-RIWAYAT_LIMIT_MAX = 1000
 FRAME_SKIP_MIN, FRAME_SKIP_MAX = 1, 30
 _video_tmp = None
 _video_tmp_aktif = False  # True bila stream file saat ini memakai _video_tmp hasil upload
@@ -199,8 +198,7 @@ def create_app():
         if request.method in _METODE_AMAN:
             return None
         kirim = (request.headers.get("X-CSRF-Token")
-                 or request.form.get("_csrf")
-                 or request.args.get("_csrf"))
+                 or request.form.get("_csrf"))
         simpan = session.get("_csrf")
         if (kirim and simpan
                 and secrets.compare_digest(str(kirim).encode("utf-8", "ignore"),
@@ -265,8 +263,9 @@ def create_app():
         session["admin_id"] = admin["id"]
         session["admin_user"] = admin["username"]
 
-        # cegah open-redirect: hanya path relatif
-        if not tujuan.startswith("/") or tujuan.startswith("//"):
+        # cegah open-redirect: hanya path relatif (tolak //, backslash, CR/LF)
+        if (not tujuan.startswith("/") or tujuan.startswith("//")
+                or "\\" in tujuan or "\n" in tujuan or "\r" in tujuan):
             tujuan = "/"
         return redirect(tujuan)
 
@@ -276,7 +275,7 @@ def create_app():
         return redirect(url_for("login_form"))
 
     # Cache-buster: versi ini akan ditambahkan ke semua asset static
-    STATIC_VERSION = "37"
+    STATIC_VERSION = "39"
 
     @app.context_processor
     def inject_static_version():
@@ -286,7 +285,7 @@ def create_app():
     def terlalu_besar(e):
         """Global 200MB (video) terlampaui -> JSON, bukan halaman HTML Flask."""
         return jsonify({"error": "Berkas terlalu besar (maks 200MB untuk "
-                                 "video, 15MB gambar, 5MB foto kalibrasi/disposisi)."}), 413
+                                 "video, 15MB gambar, 5MB foto kalibrasi)."}), 413
 
     @app.errorhandler(404)
     def halaman_tidak_ada(e):
@@ -512,10 +511,9 @@ def create_app():
         except Exception:
             app.logger.exception("buat pdf gagal")
             return jsonify({"error": "Gagal membuat PDF. Coba lagi."}), 500
-        try:
-            return send_file(pdf_path, as_attachment=True,
-                             download_name="laporan_jalan.pdf",
-                             mimetype="application/pdf")
+        try:  # baca ke memori dulu; di Windows file terkunci selama send_file
+            with open(pdf_path, "rb") as f:
+                isi_pdf = f.read()
         finally:
             for p in (pdf_path, ann_path):
                 try:
@@ -523,6 +521,9 @@ def create_app():
                         os.remove(p)
                 except OSError:
                     pass
+        return send_file(BytesIO(isi_pdf), as_attachment=True,
+                         download_name="laporan_jalan.pdf",
+                         mimetype="application/pdf")
 
     # ---- live stream (Fase 2) ----
     @app.get("/api/stream")
@@ -582,6 +583,13 @@ def create_app():
             if ip == _ip.ip_address("169.254.169.254"):
                 return "URL IP-camera tidak boleh metadata cloud."
         except ValueError:
+            # Bentuk IP terobfuskasi tetap ditafsirkan resolver/ffmpeg (desimal
+            # 2130706433, heksa 0x7f000001, oktal 0177.0.0.1, bentuk pendek
+            # 127.1) tetapi lolos dari ip_address() -> tolak eksplisit.
+            import re as _re
+            if _re.fullmatch(r"(0x[0-9a-f]+|0[0-7]+|[0-9]+)(\.[0-9a-f]+)*", host):
+                return ("URL IP-camera tidak boleh IP terobfuskasi; "
+                        "gunakan bentuk titik biasa.")
             # hostname biasa: hanya blokir suffix yang jelas-jelas lokal
             if host.endswith((".local", ".internal")):
                 return "URL IP-camera tidak boleh host lokal."
@@ -717,23 +725,24 @@ def create_app():
             return jsonify({
                 "error": "Stream sedang berjalan di tab/perangkat lain. "
                          "Hentikan dulu dari sana sebelum mulai yang baru."}), 409
-        # P1: simpan ke file baru dulu, stop stream lama, baru tukar pointer
-        # di bawah lock agar upload konkuren tidak saling unlink.
+        # P1: simpan ke file baru, lalu (tukar pointer + start + hapus lama)
+        # di bawah satu lock. Upload konkuren jadi berurutan, sehingga file
+        # lama tidak pernah di-unlink sebelum start menggantikannya.
         with tempfile.NamedTemporaryFile(suffix="." + ext, delete=False) as tmp:
             f.save(tmp.name)
             baru = tmp.name
-        MANAGER.stop()
         with _video_lock:
             lama = _video_tmp
+            MANAGER.stop()
             _video_tmp, _video_tmp_aktif = baru, True
-        if lama:
-            try:
-                os.remove(lama)
-            except OSError:
-                pass
-        MANAGER.start("file", baru, conf=conf, frame_skip=skip, label=f.filename,
-                      malam=malam,
-                      performa=(request.form.get("performa") or None))
+            MANAGER.start("file", baru, conf=conf, frame_skip=skip, label=f.filename,
+                          malam=malam,
+                          performa=(request.form.get("performa") or None))
+            if lama and lama != baru:
+                try:
+                    os.remove(lama)
+                except OSError:
+                    pass
         return jsonify({"ok": True, "token": _token_terbit()})
 
     # ---- riwayat + peta (Fase 3) ----
@@ -752,12 +761,16 @@ def create_app():
         return _f("lat", -90, 90), _f("lon", -180, 180)
 
     @app.post("/api/riwayat")
+    @(limiter.limit("20 per minute; 200 per hour") if limiter else (lambda f: f))
     def api_riwayat_simpan():
         from sqlite3 import IntegrityError
         data = request.get_json(force=True, silent=True) or {}
         rows = data.get("rows", [])
         if not rows:
             return jsonify({"error": "Tidak ada hasil untuk disimpan."}), 400
+        img = data.get("image_b64")
+        if img and len(str(img)) > 12 * 1024 * 1024:
+            return jsonify({"error": "Gambar terlalu besar untuk disimpan."}), 413
         client_ref = str(data.get("client_ref") or "").strip()[:128] or None
         # Idempotensi: simpan ulang dengan client_ref sama -> kembalikan yang lama
         # (mencegah baris ganda dari klik dobel / retry jaringan).

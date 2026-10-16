@@ -1,7 +1,12 @@
 # Cakupan Mockup Stitch vs Implementasi
 
 Sumber mockup: `stitch_aplikasi_deteksi_kerusakan_jalan/` (19 folder).
-Status: ✅ sesuai · ⚠️ sebagian/disederhanakan · ❌ belum.
+Status: ✅ sesuai · ⚠️ sebagian/disederhanakan · ❌ belum/dihapus.
+
+> **Catatan scope (Okt 2026):** aplikasi dipangkas ke satu peran (**admin**).
+> Layar disposisi/SPK/kontraktor/portal dinas dan mode mobile sudah **dihapus**
+> dari kode; entri di bawah ditandai ❌ agar tidak jadi klaim palsu. Scope aktif:
+> deteksi → severity → indeks prioritas → peta GIS → riwayat → PDF.
 
 | Layar Stitch | Implementasi | Status |
 |---|---|---|
@@ -17,23 +22,19 @@ Status: ✅ sesuai · ⚠️ sebagian/disederhanakan · ❌ belum.
 | `layar_4_tentang_jalanpantau` | `tentang.html` | ✅ |
 | `layar_pengaturan_kalibrasi_sensor_kamera_ai` | `kalibrasi.html` | ✅ |
 | `jalanpantau_pratinjau_berita_acara_laporan_audit_pdf` | `laporan_preview.html` | ✅ |
-| `layar_disposisi_kirim_laporan_ke_instansi_pemerintahan` | `disposisi_kirim.html` | ✅ |
-| `layar_disposisi_detail_pelacakan_log_penanganan_lapangan` | `disposisi_detail.html` | ✅ |
-| `jalanpantau_mode_mobile_petugas_lapangan` | `mobile.html` | ⚠️ mockup (banner DEMO; telemetri simulasi) |
-| `dashboard_eksekutif_verifikasi_kedinasan_..._dsdabm` | `dashboard/verifikasi.html` | ✅ (baru) |
-| `dashboard_eksekutif_dialog_penerbitan_spk_elektronik_alokasi_material` | `dashboard/verifikasi.html` (terbitkan SPK) | ⚠️ sebagian (dialog alokasi material belum) |
-| `dashboard_eksekutif_analitik_heatmap_indeks_kemantapan_jalan_ikj` | `dashboard/analitik.html` | ⚠️ sebagian (peta kerapatan internal; **bukan IKJ resmi**) |
+| `layar_disposisi_kirim_laporan_ke_instansi_pemerintahan` | — | ❌ dihapus (di luar scope) |
+| `layar_disposisi_detail_pelacakan_log_penanganan_lapangan` | — | ❌ dihapus (di luar scope) |
+| `jalanpantau_mode_mobile_petugas_lapangan` | — | ❌ dihapus (di luar scope) |
+| `dashboard_eksekutif_verifikasi_kedinasan_...` (SPK) | — | ❌ dihapus (di luar scope) |
+| `dashboard_eksekutif_dialog_penerbitan_spk_...` | — | ❌ dihapus (di luar scope) |
+| `dashboard_eksekutif_analitik_heatmap_indeks_kemantapan_jalan_ikj` | — | ❌ dihapus (IKJ tidak dihitung) |
 | `dashboard_eksekutif_manajemen_armada_trc_monitoring_lapangan` | — | ❌ belum |
 
 ## Catatan penyimpangan yang disengaja
-- **Tanpa data fiktif.** Layar `dashboard/verifikasi.html` mengikat data **nyata**
-  dari `/api/disposisi`, bukan nomor tiket/angka contoh dari mockup
+- **Tanpa data fiktif.** Tidak ada nomor tiket/angka contoh dari mockup
   (mis. `#DISP-BM-2025-084`, `88.42%`, `Node: bdg-dsdabm-prd-01`).
-- **Tanpa IKJ.** Mockup menampilkan "Indeks Kemantapan Jalan (IKJ) 88.42%", tetapi
-  sistem ini belum menghitung IKJ → sengaja tidak ditampilkan (jangan diklaim).
+- **Tanpa IKJ.** Sistem ini tidak menghitung Indeks Kemantapan Jalan (IKJ) →
+  sengaja tidak ditampilkan (jangan diklaim).
 - **Tanpa telemetri palsu.** Latensi/SHA-256/webhook dari mockup tidak dipakai.
-
-## Sisa pekerjaan (bila ingin melengkapi)
-- Heatmap IKJ (butuh definisi & data IKJ).
-- Manajemen armada TRC (butuh data armada).
-- Dialog alokasi material SPK (butuh master material/AHSP).
+- **Tanpa biaya rupiah.** Estimasi biaya diganti indeks prioritas 0–100
+  (lihat `app/prioritas.py`); ini jawaban atas kritik double-counting.

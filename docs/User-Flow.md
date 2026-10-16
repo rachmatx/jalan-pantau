@@ -1,10 +1,16 @@
 # User Flow — JalanPantau
 
 Dokumen ini memetakan alur pengguna (user flow) aplikasi **JalanPantau**: aplikasi
-deteksi kerusakan jalan *real-time* berbasis Flask + YOLOv11.
+deteksi kerusakan jalan berbasis Flask + YOLOv11.
 
 Dokumen ini bersifat **deskriptif**, bukan kontrak engineering. Batasan
-implementasi yang mengikat ada di [`../DESIGN.md`](../DESIGN.md).
+implementasi yang mengikat ada di [`../DESIGN.md`](../DESIGN.md); daftar route
+lengkap ada di [`API.md`](API.md).
+
+> **Scope (Okt 2026):** aplikasi ini **satu peran saja (admin)** dan berjalan
+> lokal (bind `127.0.0.1`). Fitur lama — dashboard PUPR, disposisi/instansi,
+> peran kontraktor, dan mode mobile — sudah **dihapus** dari kode; lihat riwayat
+> git. Alur di bawah mengikuti route yang benar-benar terdaftar di `web/app.py`.
 
 ---
 
@@ -15,13 +21,10 @@ implementasi yang mengikat ada di [`../DESIGN.md`](../DESIGN.md).
 - [4. Peta Navigasi](#4-peta-navigasi)
 - [5. Alur Utama — Deteksi Gambar](#5-alur-utama--deteksi-gambar)
 - [6. Alur Utama — Live Stream Real-Time](#6-alur-utama--live-stream-real-time)
-- [7. Alur Verifikasi & Penerbitan SPK](#7-alur-verifikasi--penerbitan-spk)
-- [8. Alur Kerja Kontraktor](#8-alur-kerja-kontraktor)
-- [9. Alur Penerimaan Hasil Kerja (BAST)](#9-alur-penerimaan-hasil-kerja-bast)
-- [10. Diagram State Machine Status](#10-diagram-state-machine-status)
-- [11. Diagram Pipeline Inferensi](#11-diagram-pipeline-inferensi)
-- [12. Arsitektur 3-Thread Live Streaming](#12-arsitektur-3-thread-live-streaming)
-- [13. Peta Kode Sumber](#13-peta-kode-sumber)
+- [7. Alur Riwayat, Peta & Laporan](#7-alur-riwayat-peta--laporan)
+- [8. Diagram Pipeline Inferensi](#8-diagram-pipeline-inferensi)
+- [9. Arsitektur 3-Thread Live Streaming](#9-arsitektur-3-thread-live-streaming)
+- [10. Peta Kode Sumber](#10-peta-kode-sumber)
 
 ---
 
@@ -55,40 +58,40 @@ menggunakan Jinja2, dan vanilla JavaScript di sisi klien.
 └────────────────────────────┘
 ```
 
-**Model Machine Learning:**
+**Model Machine Learning** (satu model: YOLOv11s untuk gambar **dan** live):
 
 | Peran | Model | Format | Config |
 |-------|-------|--------|--------|
 | Deteksi gambar (statis) | YOLOv11s | `.pt` (PyTorch) | `model_gambar` |
-| Live stream (webcam/IP-cam/video) | YOLOv11n | `.onnx` (ONNX Runtime) | `model_live` |
+| Live stream (webcam/IP-cam/video) | YOLOv11s | `.onnx` (ONNX Runtime) | `model_live` |
 | Cadangan (ensemble, nonaktif) | — | `.pt` | `ensemble` |
 
 Kelas yang dideteksi: `longitudinal_crack`, `transverse_crack`,
 `alligator_crack`, `other_corruption`, `pothole`.
 
-Dataset latih: **RDD2022** (14.176 gambar, anotasi *bounding box* 5 kolom).
+Dataset latih: **RDD2022** (anotasi *bounding box*, bukan mask).
 
 ---
 
 ## 3. Persona & Peran
 
-Aplikasi ini memiliki **tiga persona utama** dengan hak akses berbeda.
+Hanya ada **satu peran terautentikasi (admin)**. Operator lapangan memakai
+halaman publik tanpa login (aplikasi sengaja berjalan lokal untuk satu operator).
 
-| Persona | Peran di DB | Halaman Utama | Kemampuan |
-|---------|-------------|----------------|-----------|
-| **Operator lapangan** | (tanpa login, publik) | `/` , `/peta` , `/riwayat` , `/disposisi` | Deteksi, simpan riwayat, kirim laporan, pantau peta |
-| **Administrator dinas** | `admin` dengan `daerah` | `/pupr-<slug>/dashboard/*` | Verifikasi, terbitkan SPK, kelola kontraktor, terima hasil kerja |
-| **Kontraktor** | `kontraktor_akun` | `/kontraktor/*` | Lihat SPK sendiri, kerjakan, unggah foto bukti |
-| **Superadmin** | `admin` dengan `daerah = '-'` | Semua + `/dashboard/instansi` | Kelola instansi & akun daerah |
+| Persona | Login | Halaman | Kemampuan |
+|---------|-------|---------|-----------|
+| **Operator** (publik) | tidak | `/`, `/peta`, `/riwayat`, `/tentang` | Deteksi gambar/live, koreksi hasil, simpan riwayat, unduh PDF, lihat peta |
+| **Admin** | ya (session) | `+ /kalibrasi` | Semua di atas **plus** ubah kalibrasi `px/cm` dan hapus riwayat |
 
-### Aturan Otorisasi ( ditegakkan di server )
+### Aturan Otorisasi (ditegakkan di server)
 
-- Admin berdaerah **terkunci** ke daerahnya sendiri (`_dashboard_ok`, `_wewenang_ok`).
-- Kontraktor **hanya** melihat SPK miliknya (`spk_boleh_akses`). SPK milik
-  orang lain dijawab **404** (bukan 403) agar keberadaan tidak terkonfirmasi.
-- Peta kontraktor **tidak** memakai `/api/peta` publik; memakai
-  `titik_peta_kontraktor`.
-- Transisi status **hanya satu tahap** — tidak bisa melompat.
+- Hanya **`POST /api/kalibrasi`**, **`POST /api/kalibrasi/foto`**, dan
+  **`DELETE /api/riwayat/<sid>`** yang butuh login (API → `401` JSON; halaman
+  `/kalibrasi` → redirect `/login`).
+- Sisanya publik, namun dibatasi **rate-limit** (lihat [`API.md`](API.md)).
+- Kepemilikan stream live dijaga satu **token**: saat stream berjalan,
+  `start`/`stop`/`anotasi`/`snapshot` dari tab lain ditolak (`409`/`403`) bila
+  tak menyertakan token pemilik.
 
 ---
 
@@ -96,34 +99,19 @@ Aplikasi ini memiliki **tiga persona utama** dengan hak akses berbeda.
 
 ```mermaid
 graph TD
-    START([Buka aplikasi]) --> LOGIN{Ada sesi?}
-    LOGIN -->|Tidak| LOGIN_PAGE["/login"]
-    LOGIN -->|Ya| CEK{Peran apa?}
+    START([Buka aplikasi]) --> HOME["/ — Deteksi<br/>(tab: Gambar | Live)"]
 
-    LOGIN_PAGE -->|"admin"| DASH
-    LOGIN_PAGE -->|"kt_*"| KT_DASH
-    LOGIN_PAGE -->|lainnya| PUBLIK
+    HOME --> PETA["/peta"]
+    HOME --> RIWAYAT["/riwayat"]
+    HOME --> TENTANG["/tentang"]
+    HOME --> KALIBRASI["/kalibrasi 🔒"]
 
-    PUBLIK["Halaman Publik"]
-    PUBLIK --> HOME["/ — Deteksi<br/>(tab: Gambar | Live)"]
-    PUBLIK --> PETA["/peta"]
-    PUBLIK --> RIWAYAT["/riwayat"]
-    PUBLIK --> DISPOSISI["/disposisi"]
-    PUBLIK --> TENTANG["/tentang"]
-    PUBLIK --> KALIBRASI["/kalibrasi 🔒"]
+    KALIBRASI -->|belum login| LOGIN["/login"]
+    LOGIN -->|sukses| KALIBRASI
 
-    DASH["Dashboard Dinas"]
-    DASH --> D_BERANDA["/beranda — KPI"]
-    DASH --> D_VERIFIKASI["/verifikasi"]
-    DASH --> D_SPK["/spk"]
-    DASH --> D_KONTRAKTOR["/kontraktor"]
-    DASH --> D_INSTANSI["/instansi 🔑"]
-    DASH --> D_ANALITIK["/analitik"]
-
-    KT_DASH["Ruang Kerja Kontraktor"]
-    KT_DASH --> K_SPK["/kontraktor/spk"]
-    KT_DASH --> K_PETA["/kontraktor/peta"]
-    KT_DASH --> K_DETAIL["/kontraktor/spk/<id>"]
+    PETA --> DETAIL["Klik marker<br/>→ detail + foto bukti"]
+    RIWAYAT --> DETAILR["Klik baris<br/>→ modal detail"]
+    DETAILR --> PDF["Unduh / pratinjau PDF"]
 ```
 
 ---
@@ -134,16 +122,16 @@ graph TD
 flowchart TD
     U(["Pengguna membuka halaman utama"]) --> TAB["Tab: Gambar"]
     TAB --> PILIH["Pilih file gambar<br/>(jpg/png, ≤15MB)"]
-    PILIH --> KALIB["Butuh kalibrasi px/cm?<br/>/kalibrasi"]
+    PILIH --> KALIB["Butuh kalibrasi px/cm?<br/>/kalibrasi 🔒"]
 
     PILIH --> POST["POST /api/detect"]
     POST --> VAL{"Validasi:<br/>ext · magic-byte · ukuran"}
-    VAL -->|Gagal| ERR1["Tolak: /error"]
+    VAL -->|Gagal| ERR1["Tolak (400)"]
     VAL -->|OK| ANALISIS["analisis_gambar()"]
 
     ANALISIS --> PRE["Preprocessing:<br/>decode · CLAHE malam"]
-    PRE --> INFER["predict<br/>YOLOv11s @ imgsz=960"]
-    INFER --> POST1["Postprocessing:<br/>severity · biaya"]
+    PRE --> INFER["predict<br/>YOLOv11s @ imgsz=960 (+TTA)"]
+    INFER --> POST1["Postprocessing:<br/>severity · skor prioritas"]
     POST1 --> SARING["Saring 3 lapis:<br/>conf · masuk akal · luas min"]
     SARING --> GABUNG["Gabung fragmen<br/>union-find IoU"]
     GABUNG --> TOPK["Batas top-20"]
@@ -167,15 +155,16 @@ flowchart TD
 ### Kunci Teknis Alur Ini
 
 1. **Validasi berlapis** — ekstensi **dan** magic byte (`\xff\xd8\xff` /
-   `\x89PNG`) diperiksa, bukan hanya header.
+   `\x89PNG`) diperiksa, bukan hanya header. Batas ukuran 15 MB.
 2. **Mode malam** — CLAHE diterapkan di kanal L (LAB), hanya fotometrik;
    geometri tidak berubah.
 3. **Mode teliti** — *tiling* grid 640 dengan overlap 0,25; box yang menyentuh
    tepi dalam tile dibuang; digabung lintas tile via NMS/WBF.
 4. **Pseudo-segmentation** — luas diestimasi dari kontur (Otsu/adaptive +
    morphology) di dalam bounding box. **Bukan** mask segmentasi model.
-5. **Angka otoritatif** — saat kirim disposisi, angka total **diambil ulang
-   dari DB** (`rekap_temuan`), bukan dipercaya dari klien.
+5. **Angka otoritatif** — skor tidak dipercaya dari klien: server menghitung
+   ulang **total sesi** (= jumlah skor temuan) dan **skor tiap temuan** dari
+   `severity` (Ringan 33 / Sedang 67 / Berat 100, rumus `app/prioritas.py`).
 
 ---
 
@@ -187,18 +176,18 @@ flowchart TD
     TAB --> PILIH_SRC{"Pilih sumber"}
 
     PILIH_SRC -->|Webcam| WEBCAM["POST /api/stream/start<br/>sumber=webcam, index=0..10"]
-    PILIH_SRC -->|IP Camera| IPCAM["POST /api/stream/start<br/>sumber=ipcam, URL"]
+    PILIH_SRC -->|IP Camera| IPCAM["POST /api/stream/start<br/>sumber=ipcam, URL http/https"]
     PILIH_SRC -->|Upload Video| UPLOAD["POST /api/video<br/>≤200MB → tempfile"]
     PILIH_SRC -->|Contoh| DEMO["POST /api/demo<br/>demo_jalan.mp4"]
 
-    IPCAM --> SSRF{"Validasi anti-SSRF"}
-    SSRF -->|Gagal| ERR["Tolak"]
+    IPCAM --> SSRF{"Validasi anti-SSRF<br/>(loopback/IP terobfuskasi ditolak)"}
+    SSRF -->|Gagal| ERR["Tolak (400)"]
 
     WEBCAM --> TOKEN
     UPLOAD --> TOKEN
     DEMO --> TOKEN
 
-    TOKEN["Terbit token kepemilikan<br/>(_stream_token)"]
+    TOKEN["Terbit token kepemilikan"]
     TOKEN --> MJPEG["GET /api/stream<br/>MJPEG multipart"]
     TOKEN --> STATS["GET /api/stream/stats<br/>polling ~1 detik"]
 
@@ -210,196 +199,60 @@ flowchart TD
     SNAP -->|Toggle anotasi| ANNOTASI["POST /api/stream/anotasi"]
     SNAP -->|Berhenti| STOP["POST /api/stream/stop"]
 
-    SNAPSHOOT --> SAMA["Sama seperti alur gambar:<br/>PDF · Simpan riwayat · Disposisi"]
+    SNAPSHOOT --> SAMA["Sama seperti alur gambar:<br/>PDF · Simpan riwayat"]
     ANNOTASI --> SNAP
     STOP --> TAB
 ```
 
 ### Catatan Kinerja
 
-- Inferensi YOLOv11n ONNX @480 ≈ **326 ms/frame** (~3 FPS infer).
+- Inferensi live ONNX @480 ≈ **326 ms/frame** (~3 FPS infer).
 - FPS **tampil** preview tetap **15+** karena arsitektur *decouple* 3-thread.
 - Preset performa: `halus` (320/3/30) · `seimbang` (480/2/25) · `akurat` (640/1/15).
 
 ---
 
-## 7. Alur Verifikasi & Penerbitan SPK
+## 7. Alur Riwayat, Peta & Laporan
 
-Setelah operator menyimpan riwayat dan mengirim laporan ke instansi, pihak
-dinas melakukan verifikasi.
-
-```mermaid
-flowchart TD
-    LAPOR(["Laporan dikirim ke instansi<br/>status: Terkirim"]) --> VERIF
-
-    subgraph DINAS ["Dashboard Dinas · /verifikasi"]
-        VERIF["Verifikasi laporan"]
-        VERIF --> TINJAU{"Tinjau temuan<br/>+ foto bukti"}
-        TINJAU -->|"Terima / tolak"| KEPUTUSAN
-    end
-
-    KEPUTUSAN{Status disposisi?}
-    KEPUTUSAN -->|Terkirim| TERIMA["✅ Diterima Dinas"]
-    KEPUTUSAN -->|Ditolak| TOLAK["❌ Ditolak"]
-    KEPUTUSAN -->|Diproses| PROSES["🔄 Diproses"]
-
-    TERIMA --> SPK
-    PROSES --> SPK
-
-    subgraph SPKSTEP ["Terbitkan SPK · /spk"]
-        SPK["Pilih kontraktor"]
-        SPK --> CEK_TITIK["Centang titik damage<br/>dari peta / daftar"]
-        CEK_TITIK --> TERBIT["POST /api/spk<br/>terbitkan_spk()"]
-    end
-
-    TERBIT --> KERJA_INTI
-
-    subgraph KONTRAKTOR ["Kontraktor Mengerjakan · /kontraktor/spk/&lt;id&gt;"]
-        KERJA_INTI["Lihat titik kerja di peta"]
-        KERJA_INTI --> KERJAKAN["Status per titik:<br/>Menunggu → Dikerjakan → Selesai"]
-        KERJAKAN --> FOTO["Unggah foto bukti<br/>(WAJIB sebelum 'Selesai')"]
-    end
-
-    KERJA_INTI --> KEMBALIAN
-
-    subgraph KEMBALIAN ["Kembali ke Dinas"]
-        MONITOR["Dashboard memonitor progres"]
-        MONITOR --> BAST{"SPK selesai?"}
-    end
-
-    BAST -->|"Diterima Dinas"| SELESAI(["✅ Proyek Selesai"])
-    BAST -->|"Perlu revisi"| REVISI["↻ Minta revisi<br/>POST /api/spk/&lt;sid&gt;/revisi"]
-    REVISI --> KONTRAKTOR
-    BAST -->|"Batalkan"| BATAL["🚫 Batal<br/>POST /api/spk/&lt;sid&gt;/batal"]
-```
-
----
-
-## 8. Alur Kerja Kontraktor
-
-Kontraktor bekerja di ruang kerja terpisah dengan sidebar aksen **hijau**
-(berbeda dari dashboard dinas).
+Setelah hasil deteksi (gambar atau snapshot live) ditinjau dan — bila perlu —
+dikoreksi operator:
 
 ```mermaid
 flowchart TD
-    LOGIN(["Login kt_*"]) --> DASH["/kontraktor/dashboard<br/>KPI + 5 SPK terbaru"]
-    DASH --> DAFTAR["/kontraktor/spk<br/>daftar SPK + filter status"]
+    HASIL(["rows + total + image_b64"]) --> PILIH{"Pilih aksi"}
 
-    DAFTAR --> DETAIL["/kontraktor/spk/&lt;id&gt;"]
-    DAFTAR --> PETA["/kontraktor/peta<br/>hanya titik dalam SPK miliknya"]
+    PILIH --> SIMPAN["POST /api/riwayat"]
+    PILIH --> PDF["POST /api/laporan → PDF"]
 
-    DETAIL --> TITIK["Daftar tugas (titik damage)"]
-    TITIK --> AKSI{"Aksi per titik"}
+    SIMPAN --> IDEM{"client_ref sudah ada?"}
+    IDEM -->|Ya| DUP["Kembalikan id lama<br/>(idempoten)"]
+    IDEM -->|Tidak| CEK{"Koordinat sama<br/>≤10 menit?"}
+    CEK -->|Ya, tanpa izinkan_duplikat| TOLAK["Kembalikan id lama<br/>(alasan: koordinat)"]
+    CEK -->|Tidak| TULIS[("INSERT sesi + temuan<br/>+ gambar + thumbnail")]
+    TULIS --> MAP["Muncul di /peta<br/>(GET /api/peta)"]
 
-    AKSI -->|Mulai| KERJA["Status: Dikerjakan"]
-    KERJA --> UNGGAH["Unggah foto bukti<br/>POST /api/kontraktor/spk/&lt;sid&gt;/tugas/&lt;tid&gt;/foto"]
-    UNGGAH --> SELESAI["Status: Selesai"]
-
-    AKSI -->|Ajukan selesai| MENUNGGU["Status SPK:<br/>Menunggu Penerimaan"]
-
-    MENUNGGU --> WAIT["Tunggu verifikasi dinas"]
-
-    PETA --> LIHAT["Marker di peta<br/>hanya area kerja sendiri"]
+    RIWAYAT["/riwayat"] --> DAFTAR["GET /api/riwayat<br/>(filter dari/sampai/severity/q)"]
+    DAFTAR --> DETAIL["GET /api/riwayat/&lt;sid&gt;<br/>detail + temuan"]
+    DETAIL --> GAMBAR["GET /api/riwayat/&lt;sid&gt;/gambar<br/>(?thumb=1)"]
+    DETAIL --> PREVIEW["/laporan/preview/&lt;sid&gt;"]
+    RIWAYAT --> HAPUS["DELETE /api/riwayat/&lt;sid&gt; 🔒"]
 ```
 
-### Aturan Ketat
+### Aturan Penting
 
-- Kontraktor **tidak bisa** melihat SPK kontraktor lain → **404**.
-- Titik **tidak bisa** berstatus "Selesai" tanpa foto bukti.
-- Transisi status **hanya satu tahap** (`SPK_TRANSISI`, `TUGAS_TRANSISI`).
+- **Idempoten**: `client_ref` yang sama tidak membuat baris baru (aman dari klik
+  dobel / retry jaringan).
+- **Anti-duplikat titik**: koordinat sama dalam 10 menit terakhir ditolak kecuali
+  `izinkan_duplikat: true`.
+- **Skor server-side**: `total` = jumlah skor temuan, dan skor tiap temuan
+  diturunkan dari `severity` — nilai dari klien diabaikan.
+- **PDF** (`POST /api/laporan`) dibangun ulang tiap permintaan; berkas sementara
+  dihapus setelah dikirim (dibaca ke memori lebih dulu agar tidak terkunci di
+  Windows).
 
 ---
 
-## 9. Alur Penerimaan Hasil Kerja (BAST)
-
-```mermaid
-flowchart TD
-    MENUNGGU(["SPK: Menunggu Penerimaan"]) --> INSP["Inspeksi hasil kerja<br/>dinas"]
-    INSP --> TINJAU{"Cukup baik?"}
-
-    TINJAU -->|Ya| BAST1["POST /api/spk/&lt;sid&gt;/terima<br/>Isi BAST"]
-    BAST1 --> BAST2["Simpan: nomor_bast · diterima_oleh<br/>waktu_diterima · catatan_penerimaan"]
-    BAST2 --> FINAL(["✅ Status: Diterima Dinas<br/>SPK selesai · Terminasi"])
-
-    TINJAU -->|Tidak| REVISI["POST /api/spk/&lt;sid&gt;/revisi<br/>catatan revisi"]
-    REVISI --> BACK["Kembalikan ke kontraktor"]
-
-    subgraph KOREKSI ["Pembatalan Penerimaan (opsional)"]
-        BATAL_TERIMA["POST /api/spk/&lt;sid&gt;/batalkan-terima"]
-        BATAL_TERIMA --> UNDO["Batalkan BAST<br/>kembalikan ke Menunggu"]
-    end
-
-    FINAL -.-> BATAL_TERIMA
-```
-
----
-
-## 10. Diagram State Machine Status
-
-### 10a. Status SPK
-
-```mermaid
-stateDiagram-v2
-    [*] --> Diterahkan: dinas terbitkan SPK
-
-    Diterahkan --> Dikerjakan: kontraktor mulai
-    Dikerjakan --> Diterahkan: mundur
-
-    Diterahkan --> Selesai: semua tugas Selesai<br/>+ foto bukti lengkap
-    Selesai --> MenungguPenerimaan: kontraktor ajukan
-
-    MenungguPenerimaan --> DiterimaDinas: 🚀 DITERIMA (BAST)
-    MenungguPenerimaan --> Dikerjakan: ↻ revisi dari dinas
-
-    Diterahkan --> Dibatalkan: batal dari dinas
-    Dikerjakan --> Dibatalkan: batal dari dinas
-
-    DiterimaDinas --> MenungguPenerimaan: batalkan-terima
-    DiterimaDinas --> [*]
-
-    note right of DiterimaDinas
-        Status TERMINAL.
-        Ditulis dengan BAST:
-        nomor_bast · diterima_oleh
-        waktu_diterima
-    end note
-```
-
-### 10b. Status Tugas (per titik)
-
-```mermaid
-stateDiagram-v2
-    [*] --> Menunggu
-    Menunggu --> Dikerjakan: kontraktor mulai
-    Dikerjakan --> Selesai: + foto bukti WAJIB
-    Selesai --> [*]
-
-    note right of Selesai
-       _server_: titik tidak bisa
-        Selesai tanpa foto
-    end note
-```
-
-### 10c. Status Disposisi (laporan ke instansi)
-
-```mermaid
-stateDiagram-v2
-    [*] --> Terkirim: operator kirim laporan
-
-    Terkirim --> Diproses: instansi proses
-    Diproses --> Selesai: instansi selesaikan
-    Diproses --> Terkirim: dikembalikan
-    Terkirim --> Ditolak: instansi tolak
-
-    note right of Selesai
-        Selesai → opsional foto
-        sesudah perbaikan
-    end note
-```
-
----
-
-## 11. Diagram Pipeline Inferensi
+## 8. Diagram Pipeline Inferensi
 
 ```mermaid
 flowchart TD
@@ -415,9 +268,9 @@ flowchart TD
 
     LANJUT --> MODE{"Mode inferensi?"}
 
-    MODE -->|Normal| NORMAL["predict @ imgsz=960"]
+    MODE -->|Normal| NORMAL["predict @ imgsz=960 (+TTA)"]
     MODE -->|Teliti| TELITI["Tiling 640 · overlap 0.25<br/>buang tepi · gabung NMS/WBF"]
-    MODE -->|Ensemble| ENSEMBLE["prediksi_ensemble<br/>WBF / NMS per kelas"]
+    MODE -->|Ensemble| ENSEMBLE["prediksi_ensemble<br/>WBF / NMS per kelas (nonaktif)"]
     MODE -->|Live| LIVE["model.track + ByteTrack<br/>@ imgsz=480 · persist"]
 
     NORMAL --> HASIL
@@ -428,8 +281,8 @@ flowchart TD
     subgraph HASIL ["Postprocessing — analisis_gambar()"]
         H1["proses_detections()"]
         H1 --> H2["diagnose() → severity<br/>Ringan / Sedang / Berat"]
-        H2 --> H3["estimasi() → indeks biaya<br/>volume × harga acuan"]
-        H3 --> H4["Pseudo-segmentation<br/>kontur Otsu → mask_area_cm2"]
+        H2 --> H3["skor() → indeks prioritas<br/>Ringan 33 / Sedang 67 / Berat 100"]
+        H3 --> H4["Pseudo-segmentation<br/>kontur Otsu → luas (m²)"]
         H4 --> H5["saring_rows()<br/>3 lapis saringan"]
         H5 --> H6["gabung_fragmen()<br/>union-find IoU"]
         H6 --> H7["batas_topk()<br/>maks 20 temuan"]
@@ -443,13 +296,13 @@ flowchart TD
 
 | Lapis | Kriteria | Sumber |
 |-------|----------|--------|
-| 1 | `conf < ambang_efektif` per kelas | `toleransi_kelas` di `inferensi.yaml` |
+| 1 | `conf < ambang_efektif` per kelas | `toleransi_kelas` di `config/inferensi.yaml` |
 | 2 | Ukuran fisik tidak masuk akal | `batas_ukuran` (300cm / 100cm / 100m²) |
 | 3 | Luas piksel < `luas_min_px` (default 900) | `saring.luas_min_px` |
 
 ---
 
-## 12. Arsitektur 3-Thread Live Streaming
+## 9. Arsitektur 3-Thread Live Streaming
 
 Kunci kenapa preview tetap halus meski inferensi lambat: **decoupling** tiga
 pekerjaan ke thread terpisah.
@@ -487,50 +340,62 @@ lag, tapi preview tidak boleh *stall*.
 
 ---
 
-## 13. Peta Kode Sumber
+## 10. Peta Kode Sumber
 
-### Entry Point
+Baris dapat bergeser seiring perubahan; nama fungsi/route adalah acuan utama.
 
-| Peran | File | Baris |
-|-------|------|-------|
-| Web app (WAJIB) | `web/app.py` | `app = create_app()` @ 1951 |
-| Blok `__main__` | `web/app.py` | 1970–1974 |
-| Preload model di background | `web/app.py` | 1953–1968 |
-| Prototipe lama (deprecated) | `app/app_streamlit.py` | — |
+### Route (`web/app.py`)
 
-### Route Penting
-
-| Route | Baris | Fungsi |
-|-------|-------|--------|
-| `POST /api/detect` | 663 | Deteksi gambar |
-| `POST /api/verifikasi` | 776 | Koreksi operator |
-| `POST /api/laporan` | 797 | Generate PDF |
-| `POST /api/stream/start` | 889 | Mulai live stream |
-| `GET /api/stream` | 827 | MJPEG |
-| `POST /api/stream/snapshot` | 956 | Snapshot live |
-| `POST /api/riwayat` | 1053 | Simpan sesi |
-| `GET /api/peta` | 1141 | Titik peta (publik) |
-| `POST /api/disposisi` | 1282 | Kirim laporan |
-| `POST /api/spk` | 1826 | Terbitkan SPK |
-| `POST /api/spk/<sid>/terima` | 1869 | BAST |
-| `POST /api/kontraktor/spk/<sid>/tugas/<tid>/foto` | 1778 | Foto bukti |
+| Route | Baris | Catatan |
+|-------|-------|---------|
+| `GET/POST /login`, `GET /logout` | 244 / 250 / 272 | Autentikasi admin |
+| `GET /` | 336 | Deteksi (tab Gambar & Live) |
+| `GET /peta` | 340 | Peta sebaran GPS |
+| `GET /riwayat` | 344 | Riwayat inspeksi |
+| `GET /tentang` | 348 | Tentang & metrik model |
+| `GET /kalibrasi` | 352 | 🔒 Kalibrasi `px/cm` |
+| `GET /laporan/preview/<sid>` | 357 | Pratinjau berita acara |
+| `POST /api/detect` | 365 | Deteksi gambar |
+| `GET /api/kalibrasi` | 402 | Status kalibrasi |
+| `POST /api/kalibrasi` | 413 | 🔒 Simpan kalibrasi |
+| `POST /api/kalibrasi/foto` | 439 | 🔒 Foto penggaris → gambar+ukuran |
+| `POST /api/verifikasi` | 478 | Koreksi operator |
+| `POST /api/laporan` | 497 | Generate PDF |
+| `GET /api/stream` | 529 | MJPEG |
+| `POST /api/stream/start` | 598 | Mulai live stream |
+| `POST /api/stream/stop` | 640 | Hentikan (token pemilik) |
+| `GET /api/stream/stats` | 652 | FPS · track · deteksi |
+| `POST /api/stream/anotasi` | 657 | Toggle anotasi box |
+| `POST /api/stream/snapshot` | 666 | Snapshot per track |
+| `POST /api/demo` | 678 | Video contoh bawaan |
+| `POST /api/video` | 706 | Upload berkas video |
+| `POST /api/riwayat` | 763 | Simpan sesi |
+| `GET /api/riwayat` | 811 | Daftar riwayat |
+| `GET /api/riwayat/<sid>` | 827 | Detail sesi |
+| `DELETE /api/riwayat/<sid>` | 834 | 🔒 Hapus sesi |
+| `GET /api/riwayat/<sid>/gambar` | 842 | JPEG bukti |
+| `GET /api/peta` | 855 | Titik peta (publik) |
 
 ### Fungsi Inti
 
 | Fungsi | File | Baris |
 |--------|------|-------|
-| `analisis_gambar` | `web/deteksi.py` | 1085 |
-| `prediksi_teliti` | `web/deteksi.py` | 991 |
-| `proses_detections` | `web/deteksi.py` | 662 |
-| `gabung_fragmen` | `web/deteksi.py` | 700 |
-| `get_model` (singleton) | `web/deteksi.py` | 546 |
+| `analisis_gambar` | `web/deteksi.py` | 1014 |
+| `prediksi_teliti` | `web/deteksi.py` | 920 |
+| `proses_detections` | `web/deteksi.py` | 625 |
+| `gabung_fragmen` | `web/deteksi.py` | 647 |
+| `saring_rows` | `web/deteksi.py` | 384 |
+| `terapkan_koreksi` | `web/deteksi.py` | 419 |
+| `get_model` (singleton) | `web/deteksi.py` | 567 |
+| `kanonik_kelas` / `nama_kelas` | `web/deteksi.py` | 539 / 558 |
 | `diagnose` (severity) | `app/severity.py` | 53 |
-| `estimasi` (biaya) | `app/biaya.py` | 53 |
-| `buat_laporan` (PDF) | `app/laporan.py` | 34 |
-| `simpan_sesi` | `web/database.py` | 405 |
-| `rekap_temuan` | `web/database.py` | 522 |
-| `terbitkan_spk` | `web/database.py` | 1302 |
-| `terima_hasil_kerja` | `web/database.py` | 1708 |
+| `skor` (indeks prioritas) | `app/prioritas.py` | 31 |
+| `total_prioritas` | `app/prioritas.py` | 56 |
+| `buat_laporan` (PDF) | `app/laporan.py` | 35 |
+| `simpan_sesi` | `web/database.py` | 248 |
+| `daftar_sesi` | `web/database.py` | 344 |
+| `detail_sesi` | `web/database.py` | 360 |
+| `titik_peta` | `web/database.py` | 388 |
 | `StreamManager` | `web/streaming.py` | 42 |
 
 ---
@@ -541,16 +406,16 @@ Aplikasi ini **sengaja** menyatakan batasan berikut (dari README & DESIGN):
 
 1. **Bukan segmentasi.** Deteksi *bounding box*; luas diestimasi dari kontur
    di dalam box (*pseudo-segmentation*), bukan mask model.
-2. **Akurasi belum mencapai target.** YOLOv11s: mAP50 val 0,6483 (target
-   ≥ 0,65 belum tercapai). Dataset latih RDD2022 (India/Jepang).
+2. **Akurasi belum mencapai target.** YOLOv11s: mAP50 val 0,616, test 0,617
+   (target ≥ 0,65 belum tercapai). Dataset latih RDD2022 (India/Jepang).
 3. **Kamera mono tidak mengukur kedalaman.** Tebal = asumsi per severity.
-4. **Harga = indeks relatif**, bukan RAB resmi. Semua tabel harga berlabel
-   `CONTOH-...`.
+4. **Skor prioritas = indeks relatif** (Ringan 33 / Sedang 67 / Berat 100),
+   bukan RAB/biaya resmi. Tidak ada komponen harga.
 5. **Mode malam hanya fotometrik** (CLAHE), tidak menambah sumber cahaya.
-6. **Istilah**: selalu "indeks biaya" / "indeks prioritas", **tidak pernah**
-   "biaya perbaikan" mutlak.
+6. **Istilah**: selalu "indeks/skor prioritas", **tidak pernah** "biaya
+   perbaikan" mutlak.
 
 ---
 
 *Dokumen ini dibuat untuk keperluan dokumentasi skripsi. Struktur route dan
-nama fungsi diverifikasi langsung dari kode sumber.*
+nama fungsi diverifikasi langsung dari kode sumber (baris per Okt 2026).*

@@ -51,7 +51,8 @@ perlu disesuaikan.
 
 ## Catatan kejujuran
 - Ini **estimasi**, bukan pengukuran presisi (kamera monokular tak mengukur kedalaman).
-- Jangan mengklaim RAB; nilai rupiah = indeks prioritas dari tabel harga acuan.
+- Jangan mengklaim RAB/biaya rupiah; skor = indeks prioritas (Ringan 33 / Sedang
+  67 / Berat 100), tanpa komponen harga.
 - Selalu laporkan jumlah sampel (n) dan sebaran kelas.
 
 ---
@@ -84,7 +85,7 @@ cocok dengan label pita sampai **"24"** (inci) ≈ 61 cm → referensi valid.
 Reproduksi: `.\.venv\Scripts\python scripts\validasi_kalibrasi.py --csv docs/contoh-validasi/kalibrasi-jarak.csv --ppc 11.4342`
 
 **Implikasi skripsi:** satu `ppc` global hanya sah di dekat jarak kalibrasinya; estimasi
-ukuran (dan biaya) akan membengkak bila jarak foto berbeda. Mitigasi: kalibrasi per jarak
+ukuran (dan luas turunannya) akan membengkak bila jarak foto berbeda. Mitigasi: kalibrasi per jarak
 (atau catat jarak saat memotret) — nilai praktis `ppc ≈ 3700 / jarak_cm`.
 
 **Belum selesai — perlu foto ulang ± 2 m.** Dua percobaan belum bisa dipakai:

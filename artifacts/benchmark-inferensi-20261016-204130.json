@@ -1,0 +1,23 @@
+{
+  "model": "best.pt",
+  "format": "pytorch",
+  "imgsz": 480,
+  "conf": 0.25,
+  "runs": 8,
+  "warmup": 2,
+  "gambar": "C:\\Users\\R\\Documents\\TA Machine Learning - Deteksi Kerusakan Jalan Real-Time\\data\\publik\\bpid\\test\\images\\0125c08e.jpeg",
+  "latency_ms": {
+    "mean": 646.03,
+    "median": 535.55,
+    "p95": 1120.08,
+    "min": 408.46,
+    "max": 1264.56
+  },
+  "fps_from_mean": 1.55,
+  "dibuat": "2026-10-16T20:41:30",
+  "hardware": {
+    "python": "3.11.0",
+    "platform": "Windows-10-10.0.19045-SP0",
+    "processor": "Intel64 Family 6 Model 58 Stepping 9, GenuineIntel"
+  }
+}

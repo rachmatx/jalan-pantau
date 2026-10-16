@@ -37,7 +37,7 @@ cek(".env / JP_SECRET_KEY", punya_key,
 
 # 2. bobot + checksum
 W = ROOT / "app" / "weights"
-for n in ("best_yolo11s.pt", "best.onnx", "best.pt"):
+for n in ("best.pt", "best.onnx"):
     cek(f"bobot {n}", (W / n).is_file())
 manif = W / "SHA256SUMS.txt"
 if manif.is_file():

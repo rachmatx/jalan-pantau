@@ -22,20 +22,22 @@ import cv2
 
 from deteksi import (ambang_efektif, cerahkan_malam, conf_prediksi, get_config,
                      get_inferensi, get_model, kelas_mayoritas,
-                     masuk_akal)
+                     masuk_akal, nama_kelas, nama_model, pilih_device)
 from severity import diagnose
 from prioritas import skor as skor_prioritas
 
 WARNA = {"Ringan": (0, 180, 0), "Sedang": (0, 200, 200), "Berat": (0, 0, 220)}
 MAX_TRACKS = 500  # P1: cegah OOM sesi live berjam-jam
 JPEG_Q_DEFAULT = 72  # encode lebih murah dari 85 -> FPS tampil lebih tinggi
-FRAME_DIFF_THRESHOLD = 0.02  # 2% berbeda = layak diinferensi ulang
+FRAME_DIFF_THRESHOLD = 0.02  # fallback; nilai nyata dari config live.frame_diff_threshold
 
 # Preset "Mode Performa" (dikirim UI lewat /api/stream/start).
+# Nilai disetel untuk GPU (GTX 1650): inferensi ~15-30 ms, jadi interval 1
+# (tanpa skip) masih real-time. Di CPU, pakai "halus" + interval lebih besar.
 PERFORMA = {
-    "halus": {"imgsz_live": 320, "infer_interval": 3, "display_fps": 30},
-    "seimbang": {"imgsz_live": 480, "infer_interval": 2, "display_fps": 25},
-    "akurat": {"imgsz_live": 640, "infer_interval": 1, "display_fps": 15},
+    "halus": {"imgsz_live": 320, "infer_interval": 1, "display_fps": 30},
+    "seimbang": {"imgsz_live": 640, "infer_interval": 1, "display_fps": 30},
+    "akurat": {"imgsz_live": 960, "infer_interval": 1, "display_fps": 25},
 }
 
 
@@ -103,17 +105,21 @@ class StreamManager:
             pre = PERFORMA.get(self._performa) if self._performa else None
             self._live_cfg = {
                 "imgsz_live": int(pre["imgsz_live"]) if pre
-                else int(infer.get("imgsz_live", 480)),
+                else int(infer.get("imgsz_live", 640)),
                 "infer_interval": int(pre["infer_interval"]) if pre
                 else int(self.frame_skip),
                 "display_fps": float(pre["display_fps"]) if pre
-                else float(live.get("display_fps", 25)),
+                else float(live.get("display_fps", 30)),
                 "jpeg_quality": int(live.get("jpeg_quality", JPEG_Q_DEFAULT)),
                 "display_width": int(live.get("display_width", 640)),
                 "cam_width": int(live.get("cam_width", 640)),
                 "cam_height": int(live.get("cam_height", 480)),
                 "cam_fps": int(live.get("cam_fps", 30)),
                 "iou": float(infer.get("iou", 0.5)),
+                "frame_diff_threshold": float(live.get("frame_diff_threshold",
+                                                        FRAME_DIFF_THRESHOLD)),
+                "device": pilih_device(infer.get("device", "auto"),
+                                       nama_model(kunci="model_live")),
             }
         self._reset_tracker()
         self._thread = threading.Thread(target=self._loop,
@@ -215,11 +221,16 @@ class StreamManager:
             return
         cfg = self._live_cfg or {}
         infer = get_inferensi()
-        imgsz = int(cfg.get("imgsz_live", infer.get("imgsz_live", 480)))
+        imgsz = int(cfg.get("imgsz_live", infer.get("imgsz_live", 640)))
         iou = float(cfg.get("iou", infer.get("iou", 0.5)))
+        device = cfg.get("device", pilih_device(infer.get("device", "auto")))
         ambang = infer.get("toleransi_kelas")
         conf_run = conf_prediksi(self.conf, ambang)
         interval = max(int(cfg.get("infer_interval", 1)), 1)
+        # Frame-differencing hanya untuk kamera langsung (adegan diam -> hemat
+        # GPU). Untuk SUMBER VIDEO dimatikan: demo harus segar tiap frame.
+        thr = float(cfg.get("frame_diff_threshold", FRAME_DIFF_THRESHOLD))
+        pakai_diff = (source_type != "file") and thr > 0
         prev_gray = None
         k = 0
         while not stop.is_set():
@@ -235,21 +246,22 @@ class StreamManager:
                 continue
             # Frame differencing: skip inferensi kalau frame hampir sama
             # (tampilan tetap jalan dari compose -- tak lagi mem-freeze).
-            try:
-                small = cv2.resize(raw, (64, 64))
-                gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
-                dasar = prev_gray is not None and \
-                    cv2.absdiff(gray, prev_gray).mean() / 255.0 < FRAME_DIFF_THRESHOLD
-                prev_gray = gray
-                if dasar:
-                    continue
-            except Exception:
-                pass
+            if pakai_diff:
+                try:
+                    small = cv2.resize(raw, (64, 64))
+                    gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
+                    dasar = prev_gray is not None and \
+                        cv2.absdiff(gray, prev_gray).mean() / 255.0 < thr
+                    prev_gray = gray
+                    if dasar:
+                        continue
+                except Exception:
+                    pass
             t0 = time.time()
             umpan = cerahkan_malam(raw) if self.malam else raw
             try:
                 res = model.track(umpan, persist=True, conf=conf_run,
-                                  imgsz=imgsz, iou=iou,
+                                  imgsz=imgsz, iou=iou, device=device,
                                   tracker="bytetrack.yaml", verbose=False)[0]
             except Exception as e:
                 with self._lock:
@@ -279,7 +291,7 @@ class StreamManager:
                 tid = int(ids[i])
                 if tid < 0:
                     continue
-                cls = model.names[int(b.cls[0])]
+                cls = nama_kelas(model.names, int(b.cls[0]))
                 x1, y1, x2, y2 = map(float, b.xyxy[0])
                 area = abs(x2 - x1) * abs(y2 - y1)
                 n += 1
@@ -300,7 +312,8 @@ class StreamManager:
                         votes = dict(tr["votes"])
                         votes[cls] = votes.get(cls, 0) + 1
                         self.tracks[tid] = {
-                            "kelas": cls, "conf_max": cf,
+                            "kelas": cls,
+                            "conf_max": max(tr["conf_max"], cf),
                             "box_best": (x1, y1, x2, y2), "area_best": area,
                             "frames": tr["frames"] + 1, "votes": votes,
                         }
@@ -327,7 +340,7 @@ class StreamManager:
             tid = int(ids[i])
             if tid < 0:
                 continue
-            cls = model.names[int(b.cls[0])]
+            cls = nama_kelas(model.names, int(b.cls[0]))
             x1, y1, x2, y2 = map(int, b.xyxy[0])
             sev = diagnose(cls, x1, y1, x2, y2, cfg)["severity"]
             boxes.append((x1, y1, x2, y2, f"{tid} {cls} {sev}",

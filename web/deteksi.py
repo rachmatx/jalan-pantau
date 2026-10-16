@@ -5,6 +5,7 @@ app/prioritas.py, app/laporan.py. File ini hanya adaptor (I/O web) di atasnya.
 """
 import base64
 import logging
+import os
 import sys
 import tempfile
 import threading
@@ -12,6 +13,11 @@ from pathlib import Path
 
 import cv2
 import yaml
+
+# Cegah ultralytics meng-unduh paket saat runtime (mis. `onnxruntime-gpu` saat
+# model ONNX diarahkan ke GPU). Saat demo/ujian unduhan diam-diam = hang.
+# Harus di-set SEBELUM ultralytics diimpor (impor terjadi malas di get_model).
+os.environ.setdefault("YOLO_AUTOINSTALL", "false")
 
 _log = logging.getLogger(__name__)
 
@@ -41,17 +47,19 @@ _kalibrasi_lock = threading.Lock()  # P3: tulis severity.yaml atomik antar-threa
 # recall (0,69 -> 0,48 pada trial TTA) dan imgsz_live 960 memperlambat live ~2x.
 # config/inferensi.yaml: tta=true, imgsz_live=480 (komentar di sana: "480 untuk webcam").
 _INFER_FALLBACK = {
-    "model_gambar": "best_yolo11s.pt", "model_live": "best.onnx",
-    "imgsz_gambar": 960, "imgsz_live": 480, "iou": 0.5, "tta": True,
+    "model_gambar": "best.pt", "model_live": "best.pt",
+    "device": "auto",
+    "imgsz_gambar": 960, "imgsz_live": 640, "iou": 0.5, "tta": True,
     "teliti": {"aktif_default": False, "tile": 640, "overlap": 0.25,
                "iou_gabung": 0.5, "metode_gabung": "nms",
                "buang_tepi_tile": True, "iou_agnostik": 0.6},
     "toleransi_kelas": {"longitudinal_crack": 0.13, "transverse_crack": 0.13,
                         "alligator_crack": 0.10, "other_corruption": 0.10,
                         "pothole": 0.08},
-    "live": {"min_frames": 1, "display_fps": 25, "infer_interval": 2,
-             "jpeg_quality": 72, "display_width": 640,
-             "cam_width": 640, "cam_height": 480, "cam_fps": 30},
+    "live": {"min_frames": 2, "display_fps": 30, "infer_interval": 1,
+             "frame_diff_threshold": 0.02, "jpeg_quality": 72,
+             "display_width": 640, "cam_width": 640, "cam_height": 480,
+             "cam_fps": 30},
     "batas_ukuran": {"diameter_maks_cm": 300, "lebar_retak_maks_cm": 100,
                      "luas_maks_m2": 100},
     "gabung_fragmen": {"aktif": True, "iou_min": 0.05, "inter_min": 0.3,
@@ -76,6 +84,7 @@ def get_inferensi(path=None):
     if _infer is None or path is not None:
         data = {"model_gambar": _INFER_FALLBACK["model_gambar"],
                 "model_live": _INFER_FALLBACK["model_live"],
+                "device": _INFER_FALLBACK["device"],
                 "imgsz_gambar": _INFER_FALLBACK["imgsz_gambar"],
                 "imgsz_live": _INFER_FALLBACK["imgsz_live"],
                 "iou": _INFER_FALLBACK["iou"], "tta": _INFER_FALLBACK["tta"],
@@ -105,10 +114,17 @@ def get_inferensi(path=None):
                 nama = nama.split("/")[-1]  # hanya basename di weights/
                 if nama.lower().endswith((".pt", ".onnx")) and nama != ".":
                     data[k] = nama
+            dv = user.get("device", _INFER_FALLBACK["device"])
+            dv = (_INFER_FALLBACK["device"] if dv is None
+                  else str(dv).strip().lower())
+            if dv not in ("auto", "cpu", "gpu") and not (
+                    dv and all(c.isdigit() or c == "," for c in dv)):
+                dv = _INFER_FALLBACK["device"]
+            data["device"] = dv
             if isinstance(user.get("teliti"), dict):
                 data["teliti"].update(user["teliti"])
         data["imgsz_gambar"] = int(_klamp(data["imgsz_gambar"], 320, 1536, 960))
-        data["imgsz_live"] = int(_klamp(data["imgsz_live"], 320, 1280, 960))
+        data["imgsz_live"] = int(_klamp(data["imgsz_live"], 320, 1280, 480))
         data["iou"] = _klamp(data["iou"], 0.1, 0.95, 0.5)
         data["tta"] = bool(data["tta"])
         t = data["teliti"]
@@ -143,6 +159,9 @@ def get_inferensi(path=None):
             data["live"]["infer_interval"] = int(_klamp(
                 lv.get("infer_interval", lv_default["infer_interval"]), 1, 10,
                 lv_default["infer_interval"]))
+            data["live"]["frame_diff_threshold"] = _klamp(
+                lv.get("frame_diff_threshold", lv_default["frame_diff_threshold"]),
+                0.0, 1.0, lv_default["frame_diff_threshold"])
             data["live"]["jpeg_quality"] = int(_klamp(
                 lv.get("jpeg_quality", lv_default["jpeg_quality"]), 40, 95,
                 lv_default["jpeg_quality"]))
@@ -207,6 +226,30 @@ def get_inferensi(path=None):
         else:
             return data
     return _infer
+
+
+def pilih_device(nilai="auto", model_file=None):
+    """Terjemahkan setelan `device` menjadi argumen ultralytics.
+
+    'auto' (default) -> 0 bila CUDA tersedia, jika tidak 'cpu'.
+    'gpu' -> 0; 'cpu' -> 'cpu'; angka / '0,1' diteruskan apa adanya.
+    Model .onnx SELALU 'cpu': tanpa paket onnxruntime-gpu hanya ada
+    CPUExecutionProvider, dan memaksa GPU membuat ultralytics menuntut
+    paket itu (bisa memicu unduhan otomatis).
+    Selalu aman: bila torch/cuda tak ada, jatuh ke 'cpu' (bukan error).
+    """
+    if model_file and str(model_file).lower().endswith(".onnx"):
+        return "cpu"
+    d = str(nilai if nilai is not None else "auto").strip().lower()
+    if d in ("", "auto"):
+        try:
+            import torch
+            return 0 if torch.cuda.is_available() else "cpu"
+        except Exception:
+            return "cpu"
+    if d == "gpu":
+        return 0
+    return d
 
 
 def get_config():
@@ -536,6 +579,34 @@ def resolve_model(nama=None, kunci="model_gambar"):
     return MODEL_DEFAULT
 
 
+def kanonik_kelas(nama):
+    """Normalkan nama kelas model ke bentuk kanonik repo (underscore, huruf kecil).
+
+    Bobot RDD2022 menyimpan nama dengan spasi & kapital (`longitudinal crack`,
+    `Pothole`), sedangkan kode/config/UI memakai `longitudinal_crack` dst.
+    Tanpa normalisasi: lookup `toleransi_kelas` selalu gagal (KeyError -> slider),
+    dan UI menampilkan nama mentah alih-alih label Indonesia.
+    """
+    return "_".join(str(nama).strip().lower().split())
+
+
+def _kanonik_names(names):
+    """Ubah mapping {id: nama} model jadi nama kanonik. Tak mengubah input asli."""
+    try:
+        return {int(k): kanonik_kelas(v) for k, v in dict(names).items()}
+    except (TypeError, ValueError, AttributeError):
+        return names
+
+
+def nama_kelas(names, idx):
+    """Nama kelas kanonik untuk indeks `idx` (names: dict/list milik model).
+
+    Satu-satunya jalur baca nama kelas dari model supaya normalisasi tak
+    terlewat di salah satu call-site (gambar, teliti, ensemble, live).
+    """
+    return kanonik_kelas(names[idx])
+
+
 def get_model(path=None, kunci="model_gambar"):
     """Cache per path: backend gambar (pt) + live (onnx) bisa berdampingan.
 
@@ -606,7 +677,7 @@ def proses_detections(res, names, conf_digits=3, frame=None):
     rows = []
     cfg = get_config()
     for b in res.boxes:
-        cls = names[int(b.cls[0])]
+        cls = nama_kelas(names, int(b.cls[0]))
         x1, y1, x2, y2 = map(float, b.xyxy[0])
         item = diagnose(cls, x1, y1, x2, y2, cfg)
         item["conf"] = round(float(b.conf[0]), conf_digits)
@@ -842,7 +913,7 @@ def nms_gabung(boxes, skor, iou_thr=0.5):
 
 def prediksi_ensemble(ma, mb, img, conf=0.25, imgsz=960, iou=0.5,
                       tta_a=False, tta_b=False, iou_gabung=0.5,
-                      metode="wbf"):
+                      metode="wbf", device=None, device_b=None):
     """Dua model -> box gabungan per kelas (jalan Gambar saja).
 
     Kedua model diprediksi di conf_run yang sama, box per kelas dilebur via
@@ -852,8 +923,9 @@ def prediksi_ensemble(ma, mb, img, conf=0.25, imgsz=960, iou=0.5,
     import numpy as np
 
     ra = ma.predict(img, conf=conf, imgsz=imgsz, iou=iou, augment=bool(tta_a),
-                    verbose=False)[0]
+                    device=device, verbose=False)[0]
     rb = mb.predict(img, conf=conf, imgsz=imgsz, iou=iou, augment=bool(tta_b),
+                    device=device_b if device_b is not None else device,
                     verbose=False)[0]
     na, nb = len(ra.boxes), len(rb.boxes)
     per_kelas = {}
@@ -881,7 +953,7 @@ def prediksi_ensemble(ma, mb, img, conf=0.25, imgsz=960, iou=0.5,
         else:
             final = [(boxes[0], skor[0])]
         for (x1, y1, x2, y2), fs in final:
-            item = diagnose(names[ci], x1, y1, x2, y2, cfg)
+            item = diagnose(nama_kelas(names, ci), x1, y1, x2, y2, cfg)
             item["conf"] = round(float(fs), 3)
             item["box"] = [round(x1, 1), round(y1, 1), round(x2, 1),
                            round(y2, 1)]
@@ -891,7 +963,7 @@ def prediksi_ensemble(ma, mb, img, conf=0.25, imgsz=960, iou=0.5,
 
 def prediksi_teliti(model, img, conf=0.25, iou=0.5, tcfg=None, ambang=None,
                     batas=None, conf_digits=3, conf_slider=None,
-                    luas_min_px=0):
+                    luas_min_px=0, device=None):
     """Mode teliti: tile overlap -> deteksi per tile -> gabung per kelas.
 
     Mengembalikan (rows siap JSON, info_saring). Tiap tile dilihat model pada
@@ -916,7 +988,7 @@ def prediksi_teliti(model, img, conf=0.25, iou=0.5, tcfg=None, ambang=None,
     for (x0, y0) in grid_tile(w, h, tile, tcfg.get("overlap", 0.25)):
         crop = img[y0:y0 + tile, x0:x0 + tile]
         res = model.predict(crop, conf=conf, imgsz=tile, iou=iou,
-                            verbose=False)[0]
+                            device=device, verbose=False)[0]
         for b in res.boxes:
             x1, y1, x2, y2 = map(float, b.xyxy[0])
             if buang_tepi and sentuh_tepi_dalam((x1, y1, x2, y2),
@@ -953,7 +1025,7 @@ def prediksi_teliti(model, img, conf=0.25, iou=0.5, tcfg=None, ambang=None,
     rows = []
     for xyxy, cf, ci in gabung:
         x1, y1, x2, y2 = map(float, xyxy)
-        item = diagnose(model.names[int(ci)], x1, y1, x2, y2, cfg)
+        item = diagnose(nama_kelas(model.names, int(ci)), x1, y1, x2, y2, cfg)
         item["conf"] = round(float(cf), conf_digits)
         item["box"] = [round(x1, 1), round(y1, 1), round(x2, 1), round(y2, 1)]
         rows.append(skor_prioritas(item))
@@ -1013,11 +1085,12 @@ def analisis_gambar(raw: bytes, conf: float = 0.25, model_path=None,
     lat, lon = exif_gps(raw)
     gf = inf.get("gabung_fragmen") or {}
     model_label = Path(model_file).name
+    device = pilih_device(inf.get("device"), model_file)
     if teliti:
         rows, info = prediksi_teliti(model, img, conf=conf_run, iou=iou,
                                      tcfg=inf["teliti"], ambang=ambang,
                                      batas=batas, conf_slider=conf,
-                                     luas_min_px=luas_min)
+                                     luas_min_px=luas_min, device=device)
     else:
         ens = inf.get("ensemble") or {}
         file_b = kedua = None
@@ -1028,7 +1101,7 @@ def analisis_gambar(raw: bytes, conf: float = 0.25, model_path=None,
                 kedua = None  # sama dengan utama -> jalur tunggal
         if kedua is not None:
             model_b = get_model(file_b)
-            if (dict(model_b.names) != dict(model.names)):
+            if (_kanonik_names(model_b.names) != _kanonik_names(model.names)):
                 kedua = None  # kelas beda -> jalur tunggal (aman)
         if kedua is not None:
             tta_b = bool(inf["tta"]) and file_b.lower().endswith(".pt")
@@ -1036,7 +1109,8 @@ def analisis_gambar(raw: bytes, conf: float = 0.25, model_path=None,
                 model, model_b, img, conf=conf_run, imgsz=imgsz, iou=iou,
                 tta_a=tta, tta_b=tta_b,
                 iou_gabung=float(ens.get("iou", 0.5)),
-                metode=str(ens.get("metode", "wbf")))
+                metode=str(ens.get("metode", "wbf")), device=device,
+                device_b=pilih_device(inf.get("device"), file_b))
             info["ensemble"] = {"model_a": Path(model_file).name,
                                 "model_b": Path(file_b).name,
                                 "metode": str(ens.get("metode", "wbf")),
@@ -1051,7 +1125,7 @@ def analisis_gambar(raw: bytes, conf: float = 0.25, model_path=None,
             info = info_saring
         else:
             res = model.predict(img, conf=conf_run, imgsz=imgsz, iou=iou,
-                                augment=tta, verbose=False)[0]
+                                augment=tta, device=device, verbose=False)[0]
             semua = proses_detections(res, model.names)
             rows, info = saring_rows(semua, conf, ambang, batas, luas_min)
     if gf.get("aktif", True):

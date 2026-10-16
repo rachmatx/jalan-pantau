@@ -74,7 +74,7 @@ Semua latih di Kaggle (GPU T4/P100). Template sel: `notebooks/template-kaggle-yo
   resep pemenang) untuk model final + cek stabilitas ranking terhadap ukuran data.
 - Evaluasi 3 test set TERPISAH, catat mAP drop:
   1. RDD2022 test split (in-distribution)
-  2. BPID Bandung 50 foto (OOD cuaca Indonesia)
+  2. BPID Bandung 161 foto (OOD cuaca Indonesia)
   3. Foto lokal sendiri (target deployment)
 - Uji manhole: hitung false-positive pothole pada gambar manhole Roma.
 - Export: `best.pt` + `best.onnx` → `app/weights/` di laptop → uji FPS CPU i5.

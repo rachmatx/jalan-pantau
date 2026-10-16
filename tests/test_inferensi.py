@@ -20,10 +20,11 @@ class TestConfigInferensi(unittest.TestCase):
         deteksi._infer = None
         inf = deteksi.get_inferensi()
         self.assertEqual(inf["imgsz_gambar"], 960)
-        self.assertEqual(inf["imgsz_live"], 480)  # default webcam (lihat README)
+        self.assertEqual(inf["imgsz_live"], 640)  # akurasi penuh (GPU real-time)
         self.assertEqual(inf["iou"], 0.5)
         self.assertTrue(inf["tta"])  # default true sejak trial 3 foto 2026-09-07
         self.assertEqual(inf["teliti"]["tile"], 640)
+        self.assertEqual(inf["device"], "auto")
 
     def test_fallback_bila_file_hilang(self):
         import deteksi
@@ -84,22 +85,119 @@ class TestConfigInferensi(unittest.TestCase):
         finally:
             os.remove(path)
 
+    def test_device_disaring(self):
+        """device hanya boleh auto/cpu/gpu atau daftar indeks; lain -> auto."""
+        import deteksi
+        kasus = {"auto": "auto", "GPU": "gpu", "cpu": "cpu", "0": "0",
+                 "0,1": "0,1", " 0,1 ": "0,1", "jahat": "auto",
+                 "cuda:0": "auto", "": "auto", None: "auto"}
+        for masuk, harap in kasus.items():
+            with self.subTest(masuk=masuk):
+                fd, path = tempfile.mkstemp(suffix=".yaml")
+                try:
+                    with os.fdopen(fd, "w", encoding="utf-8") as f:
+                        f.write(f"device: {masuk if masuk is not None else ''}\n")
+                    inf = deteksi.get_inferensi(path=path)
+                    self.assertEqual(inf["device"], harap)
+                finally:
+                    os.remove(path)
+
+
+class TestPilihDevice(unittest.TestCase):
+    def test_cpu_dipaksa(self):
+        import deteksi
+        self.assertEqual(deteksi.pilih_device("cpu"), "cpu")
+
+    def test_gpu_dipaksa(self):
+        import deteksi
+        self.assertEqual(deteksi.pilih_device("gpu"), 0)
+
+    def test_indeks_diteruskan(self):
+        import deteksi
+        self.assertEqual(deteksi.pilih_device("0,1"), "0,1")
+
+    def test_auto_selalu_aman(self):
+        """auto -> 0 (bila CUDA ada) atau 'cpu'; tak boleh melempar."""
+        import deteksi
+        self.assertIn(deteksi.pilih_device("auto"), (0, "cpu"))
+        self.assertIn(deteksi.pilih_device(None), (0, "cpu"))
+
+    def test_onnx_selalu_cpu(self):
+        """Model .onnx -> 'cpu' walau device='auto'/'gpu' (tanpa onnxruntime-gpu)."""
+        import deteksi
+        self.assertEqual(deteksi.pilih_device("auto", "best.onnx"), "cpu")
+        self.assertEqual(deteksi.pilih_device("gpu", "best.onnx"), "cpu")
+        self.assertIn(deteksi.pilih_device("auto", "best.pt"), (0, "cpu"))
+
     def test_fallback_selaras_dengan_yaml(self):
         """Fallback harus mencerminkan config/inferensi.yaml.
 
         Kalau berbeda, mode degradasi diam-diam mengubah perilaku:
-        tta=False menurunkan recall, imgsz_live=960 memperlambat live.
+        tta=False menurunkan recall, imgsz_live=960 memperlambat live,
+        model_gambar/model_live yang beda memuat bobot keliru, dsb.
+        Semua kunci (termasuk dict bersarang) diperiksa, bukan hanya sebagian.
         """
         import deteksi
         import yaml as _yaml
         with open(os.path.join(ROOT, "config", "inferensi.yaml"), encoding="utf-8") as f:
             nyata = _yaml.safe_load(f) or {}
         fb = deteksi._INFER_FALLBACK
-        for k in ("imgsz_gambar", "imgsz_live", "iou", "tta"):
+
+        def cek(jalur, a, b):
+            if isinstance(a, dict):
+                self.assertIsInstance(b, dict, f"{jalur}: fallback dict, yaml bukan")
+                for kk in a:
+                    self.assertIn(kk, b, f"{jalur}.{kk}: tidak ada di config")
+                    cek(f"{jalur}.{kk}", a[kk], b[kk])
+            else:
+                self.assertEqual(a, b, f"{jalur}: fallback {a!r} != yaml {b!r}")
+
+        for k, v in fb.items():
             with self.subTest(kunci=k):
-                self.assertEqual(
-                    fb[k], nyata[k],
-                    f"_INFER_FALLBACK[{k}] tidak sama dengan config/inferensi.yaml")
+                self.assertIn(k, nyata, f"{k}: tidak ada di config/inferensi.yaml")
+                cek(k, v, nyata[k])
+
+
+class TestKanonikKelas(unittest.TestCase):
+    """Nama kelas model (spasi & kapital) harus dinormalkan ke bentuk kanonik.
+
+    Regresi: bobot RDD2022 memuat 'longitudinal crack' / 'Pothole'; tanpa
+    normalisasi, toleransi per kelas mati (KeyError -> slider) dan UI
+    menampilkan nama kelas mentah.
+    """
+
+    def test_kanonik_nama(self):
+        import deteksi
+        self.assertEqual(deteksi.kanonik_kelas("longitudinal crack"),
+                         "longitudinal_crack")
+        self.assertEqual(deteksi.kanonik_kelas("Pothole"), "pothole")
+        self.assertEqual(deteksi.kanonik_kelas(" other  corruption "),
+                         "other_corruption")
+        self.assertEqual(deteksi.kanonik_kelas("longitudinal_crack"),
+                         "longitudinal_crack")  # idempoten
+
+    def test_nama_kelas_terima_dict_dan_list(self):
+        import deteksi
+        self.assertEqual(deteksi.nama_kelas({4: "Pothole"}, 4), "pothole")
+        self.assertEqual(deteksi.nama_kelas(["a b", "c d"], 1), "c_d")
+
+    def test_kanonik_names_tak_mengubah_input(self):
+        import deteksi
+        asli = {0: "longitudinal crack", 4: "Pothole"}
+        self.assertEqual(deteksi._kanonik_names(asli),
+                         {0: "longitudinal_crack", 4: "pothole"})
+        self.assertEqual(asli, {0: "longitudinal crack", 4: "Pothole"})
+
+    def test_toleransi_berlaku_setelah_normalisasi(self):
+        import deteksi
+        tol = {"longitudinal_crack": 0.13, "pothole": 0.08}
+        # nama kanonik -> slider dikurangi toleransi (0,25 - 0,13)
+        self.assertAlmostEqual(
+            deteksi.ambang_efektif(deteksi.kanonik_kelas("longitudinal crack"),
+                                   0.25, tol), 0.12)
+        # nama mentah -> tak cocok -> tetap slider (bukti bug lama)
+        self.assertAlmostEqual(
+            deteksi.ambang_efektif("longitudinal crack", 0.25, tol), 0.25)
 
 
 class TestAmbangKelas(unittest.TestCase):
@@ -424,7 +522,7 @@ class TestVerifikasiOperator(unittest.TestCase):
 
 _BOBOT_ADA = all(
     os.path.isfile(os.path.join(ROOT, "app", "weights", n))
-    for n in ("best_yolo11s.pt", "best.onnx", "best.pt"))
+    for n in ("best.pt", "best.onnx"))
 
 
 @unittest.skipUnless(_BOBOT_ADA, "bobot model tidak ada di app/weights/")
@@ -433,10 +531,10 @@ class TestBackendGanda(unittest.TestCase):
         import deteksi
         deteksi._infer = None
         inf = deteksi.get_inferensi()
-        self.assertEqual(inf["model_gambar"], "best_yolo11s.pt")
-        self.assertEqual(inf["model_live"], "best.onnx")
+        self.assertEqual(inf["model_gambar"], "best.pt")
+        self.assertEqual(inf["model_live"], "best.pt")
         self.assertTrue(deteksi.resolve_model(kunci="model_gambar").name.endswith(".pt"))
-        self.assertTrue(deteksi.resolve_model(kunci="model_live").name.endswith(".onnx"))
+        self.assertTrue(deteksi.resolve_model(kunci="model_live").name.endswith(".pt"))
         # hilang / traversal -> fallback best.pt
         self.assertEqual(deteksi.resolve_model("tak-ada.onnx").name, "best.pt")
         self.assertEqual(deteksi.resolve_model("../x.pt").name, "best.pt")
@@ -445,13 +543,13 @@ class TestBackendGanda(unittest.TestCase):
     def test_nama_model(self):
         import deteksi
         deteksi._infer = None
-        self.assertEqual(deteksi.nama_model(kunci="model_gambar"), "best_yolo11s.pt")
-        self.assertEqual(deteksi.nama_model(kunci="model_live"), "best.onnx")
+        self.assertEqual(deteksi.nama_model(kunci="model_gambar"), "best.pt")
+        self.assertEqual(deteksi.nama_model(kunci="model_live"), "best.pt")
 
     def test_model_gambar_kelas_benar(self):
         import deteksi
         m = deteksi.get_model(kunci="model_gambar")
-        self.assertEqual(m.names[4], "pothole")
+        self.assertEqual(deteksi.nama_kelas(m.names, 4), "pothole")
         self.assertEqual(len(m.names), 5)
 
     def test_get_model_cache_per_path(self):
@@ -460,14 +558,16 @@ class TestBackendGanda(unittest.TestCase):
         m1 = deteksi.get_model(onnx)
         m2 = deteksi.get_model(onnx)
         self.assertIs(m1, m2)
-        self.assertIn("pothole", list(m1.names.values()))
+        # nama mentah bobot berkapital/spasi ("Pothole"); bandingkan bentuk kanonik
+        kanonik = [deteksi.kanonik_kelas(v) for v in m1.names.values()]
+        self.assertIn("pothole", kanonik)
 
     def test_onnx_inferensi_kecil(self):
         import numpy as np
         import deteksi
         m = deteksi.get_model(str(deteksi.WEIGHTS_DIR / "best.onnx"))
         img = np.zeros((96, 96, 3), dtype=np.uint8)
-        r = m.predict(img, conf=0.25, imgsz=96, verbose=False)[0]
+        r = m.predict(img, conf=0.25, imgsz=96, device="cpu", verbose=False)[0]
         self.assertIsNotNone(r)
 
 
@@ -504,23 +604,23 @@ class TestEnsemble(unittest.TestCase):
         import numpy as np
         import deteksi
         deteksi.get_model(kunci="model_gambar")
-        deteksi.get_model(str(deteksi.WEIGHTS_DIR / "best.pt"))
+        deteksi.get_model(str(deteksi.WEIGHTS_DIR / "best.onnx"))
         ok, buf = cv2.imencode(".jpg", np.zeros((160, 160, 3),
                                                 dtype=np.uint8) + 128)
         self.assertTrue(ok)
         raw = buf.tobytes()
         deteksi._infer = None
         inf = deteksi.get_inferensi()
-        inf["ensemble"] = {"aktif": True, "model_kedua": "best.pt",
+        # model_kedua beda berkas (best.pt + best.onnx) -> jalur ensemble aktif
+        inf["ensemble"] = {"aktif": True, "model_kedua": "best.onnx",
                            "iou": 0.5, "metode": "wbf"}
         try:
             h = deteksi.analisis_gambar(raw, conf=0.9, imgsz=160)
             self.assertIn("+", h["model"])
             self.assertIn("ensemble", h["disaring"])
             self.assertIsInstance(h["rows"], list)
-            # model_kedua == utama -> jalur tunggal
-            inf["ensemble"] = {"aktif": True,
-                               "model_kedua": "best_yolo11s.pt",
+            # model_kedua == utama (best.pt) -> jalur tunggal
+            inf["ensemble"] = {"aktif": True, "model_kedua": "best.pt",
                                "iou": 0.5, "metode": "wbf"}
             h2 = deteksi.analisis_gambar(raw, conf=0.9, imgsz=160)
             self.assertNotIn("+", h2["model"])

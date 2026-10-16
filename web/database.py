@@ -6,11 +6,19 @@ Thumbnail: <instance>/hasil/<id>.jpg. PDF tidak disimpan — selalu generate ula
 import base64
 import os
 import sqlite3
+import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
 from flask import current_app, g
 from werkzeug.security import check_password_hash, generate_password_hash
+
+# Formula skor prioritas (Ringan 33 / Sedang 67 / Berat 100) dipakai bersama
+# dengan app/prioritas.py supaya tidak ada dua sumber kebenaran.
+_APP_DIR = Path(__file__).resolve().parent.parent / "app"
+if str(_APP_DIR) not in sys.path:
+    sys.path.insert(0, str(_APP_DIR))
+from prioritas import bobot as _bobot_severity  # noqa: E402
 
 SKEMA = """
 CREATE TABLE IF NOT EXISTS admin (
@@ -54,6 +62,11 @@ CREATE INDEX IF NOT EXISTS idx_temuan_sesi ON temuan(sesi_id);
 
 URUT_SEV = {"Ringan": 0, "Sedang": 1, "Berat": 2}
 
+# Versi skema DB. Naikkan tiap kali menambah migrasi baru.
+# Dipakai (via PRAGMA user_version) agar skema + migrasi berat hanya dijalankan
+# SEKALI per database, bukan pada setiap koneksi/request.
+SKEMA_VERSI = 3
+
 
 def _paths():
     db = Path(current_app.config["DB_PATH"])
@@ -63,15 +76,34 @@ def _paths():
     return db, hasil
 
 
+def _siapkan(db):
+    """Buat skema + jalankan migrasi SEKALI per database (dijaga user_version).
+
+    Sebelumnya skema + `migrasi_prioritas_v2` (yang menulis ulang kolom skor
+    SELURUH tabel temuan + sesi) dijalankan pada SETIAP koneksi/request. Kini
+    blok berat itu hanya berjalan saat database masih di bawah SKEMA_VERSI.
+
+    Aman untuk DB baru (user_version = 0) dan untuk DB lama: migrasi bersifat
+    idempoten, jadi satu kali jalan tetap menghasilkan skema/nilai yang benar.
+    """
+    if db.execute("PRAGMA user_version").fetchone()[0] >= SKEMA_VERSI:
+        return
+    db.executescript(SKEMA)
+    migrasi_prioritas_v1(db)   # rename total_rp -> skor_prioritas (bila ada)
+    migrasi_admin_v2()         # kolom admin.sandi_diatur
+    migrasi_sesi_v2()          # kolom sesi.client_ref + indeks unik
+    migrasi_prioritas_v2(db)   # hitung ulang skor dari severity (berat)
+    db.execute("PRAGMA user_version = %d" % SKEMA_VERSI)
+    db.commit()
+
+
 def get_db():
     if "db" not in g:
         db_path, _ = _paths()
         g.db = sqlite3.connect(str(db_path))
         g.db.row_factory = sqlite3.Row
         g.db.execute("PRAGMA foreign_keys = ON")
-        g.db.executescript(SKEMA)
-        migrasi_prioritas_v1(g.db)
-        migrasi_prioritas_v2(g.db)
+        _siapkan(g.db)
     return g.db
 
 
@@ -232,19 +264,24 @@ def simpan_sesi(sumber, lokasi, model, rows, total, lat=None, lon=None, image_b6
     rows = [r for r in rows if isinstance(r, dict)]
     if not rows:
         raise ValueError("Tidak ada temuan untuk disimpan.")
-    # Batas wajar: luas, volume, dan nominal yang tidak mungkin melebihi ini.
-    B_SKOR, B_M2, B_M3, B_CONF = 10 ** 6, 10 ** 5, 10 ** 4, 1.0
+    # Batas wajar: luas dan volume yang tidak mungkin melebihi ini.
+    B_M2, B_M3, B_CONF = 10 ** 5, 10 ** 4, 1.0
     temuan = []
     for r in rows:
+        sev = str(r.get("severity", "-")).strip().capitalize()[:40] or "-"
+        # Skor TIDAK dipercaya dari klien: dihitung ulang dari severity
+        # (Ringan 33 / Sedang 67 / Berat 100) memakai bobot app/prioritas.py,
+        # supaya tiap baris selalu konsisten dengan rumus dan tidak bisa disuntik.
+        skor_server = int(max(0, min(100, round(100 * _bobot_severity(sev) / 3))))
         temuan.append({
             "kelas": str(r.get("kelas", "-"))[:120],
             "dasar": str(r.get("dasar", "-"))[:200],
-            "severity": str(r.get("severity", "-"))[:40],
+            "severity": sev,
             "bahan": str(r.get("bahan", "-"))[:120],
             "luas_m2": _angka(r.get("luas_m2"), B_M2),
             "volume_m3": _angka(r.get("volume_m3"), B_M3),
-            "skor_prioritas": int(_angka(r.get("skor_prioritas"), B_SKOR)),
-            "total_str": str(r.get("skor_prioritas", "-"))[:60],
+            "skor_prioritas": skor_server,
+            "total_str": str(skor_server)[:60],
             "conf": (_angka(r.get("conf"), B_CONF, bawaan=-1.0)
                      if r.get("conf") is not None else None),
             "track_id": (int(_angka(r.get("track_id"), 10 ** 6))

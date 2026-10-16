@@ -13,7 +13,7 @@ Fitur:
 
 Pakai (dari root repo):
     .\\.venv\\Scripts\\python scripts\\evaluasi_model.py --data data/publik/bpid/test --remap 0:4 --model best.onnx --imgsz 640 --conf-list 0.15,0.25,0.35,0.45
-    .\\.venv\\Scripts\\python scripts\\evaluasi_model.py --data data/publik/bpid/test --remap 0:4 --model best_yolo11s.pt --imgsz 960
+    .\\.venv\\Scripts\\python scripts\\evaluasi_model.py --data data/publik/bpid/test --remap 0:4 --model best.pt --imgsz 960
 """
 import argparse
 import json
@@ -22,6 +22,10 @@ import shutil
 import tempfile
 from datetime import datetime
 from pathlib import Path
+
+# Jangan biarkan ultralytics meng-unduh paket saat skrip berjalan (mis.
+# onnxruntime-gpu ketika model ONNX -> GPU). Bisa menggantung tanpa batas.
+os.environ.setdefault("YOLO_AUTOINSTALL", "false")
 
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = ROOT / "app" / "weights"
@@ -81,6 +85,9 @@ def main():
     ap.add_argument("--imgsz", type=int, default=640)
     ap.add_argument("--remap", default="", help='peta kelas, mis. "0:4"')
     ap.add_argument("--conf-list", default="0.15,0.25,0.35,0.45")
+    ap.add_argument("--workers", type=int, default=0,
+                    help="worker dataloader val; 0 disarankan di Windows "
+                         "(worker proses >0 bisa sangat lambat/menggantung)")
     args = ap.parse_args()
 
     from ultralytics import YOLO
@@ -107,10 +114,14 @@ def main():
         print("        BUKAN pada conf-floor yang diminta. conf-floor hanya menentukan")
         print("        batas bawah kurva PR -> mAP. Laporkan mAP pada floor rendah (mis. 0.001).")
         model = YOLO(str(mp))
+        # ONNX: paksa CPU (tanpa onnxruntime-gpu hanya ada CPU EP; memaksa GPU
+        # membuat ultralytics menuntut paket itu).
+        dev = "cpu" if mp.suffix.lower() == ".onnx" else None
         hasil = []
         for c in confs:
             m = model.val(data=str(yaml_path), split="val", imgsz=args.imgsz,
                           conf=c, iou=0.5, plots=False, verbose=False,
+                          device=dev, workers=args.workers,
                           project=tmp, name=f"v{c}", exist_ok=True)
             p, r = float(m.box.mp), float(m.box.mr)
             f1 = (2 * p * r / (p + r)) if (p + r) else 0.0

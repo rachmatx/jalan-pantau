@@ -11,8 +11,12 @@ Pakai (dari root repo):
     .\\.venv\\Scripts\\python scripts\\kandidat_negatif.py --in data/lokal/foto --conf 0.3
 """
 import argparse
+import os
 import shutil
 from pathlib import Path
+
+# Cegah unduhan paket otomatis saat skrip berjalan (lihat evaluasi_model.py).
+os.environ.setdefault("YOLO_AUTOINSTALL", "false")
 
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = ROOT / "app" / "weights"
@@ -24,7 +28,7 @@ def main():
     ap.add_argument("--in", dest="masuk", required=True, help="folder berisi gambar (rekursif)")
     ap.add_argument("--out", dest="keluar",
                     default=str(ROOT / "data" / "lokal" / "negatif-kandidat"))
-    ap.add_argument("--model", default="best_yolo11s.pt",
+    ap.add_argument("--model", default="best.pt",
                     help="nama di app/weights/ atau path penuh")
     ap.add_argument("--imgsz", type=int, default=960)
     ap.add_argument("--conf", type=float, default=0.25)
@@ -38,6 +42,7 @@ def main():
         print("Bobot tidak ditemukan:", mp)
         return 1
     model = YOLO(str(mp))
+    dev = "cpu" if mp.suffix.lower() == ".onnx" else None
 
     masuk = Path(args.masuk)
     keluar = Path(args.keluar)
@@ -52,7 +57,8 @@ def main():
 
     n_neg = 0
     for p in gambar:
-        r = model.predict(str(p), imgsz=args.imgsz, conf=args.conf, verbose=False)[0]
+        r = model.predict(str(p), imgsz=args.imgsz, conf=args.conf, device=dev,
+                          verbose=False)[0]
         if len(r.boxes) == 0:
             shutil.copy(p, keluar / p.name)
             n_neg += 1

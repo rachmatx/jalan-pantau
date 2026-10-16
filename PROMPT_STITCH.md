@@ -7,13 +7,12 @@
 
 ## Konteks aplikasi
 
-**JalanPantau** — web app Tugas Akhir. Alur: foto jalan difoto → AI (YOLOv11s
-untuk foto statis, YOLOv11n untuk live) mendeteksi 5 kerusakan (retak memanjang,
+**JalanPantau** — web app Tugas Akhir. Alur: foto jalan difoto → AI (YOLOv11s,
+dipakai untuk foto statis maupun live) mendeteksi 5 kerusakan (retak memanjang,
 retak melintang, retak kulit buaya, kerusakan lain, lubang) → tiap temuan diberi
-severity Ringan/Sedang/Berat + estimasi biaya → laporan PDF → tersimpan di riwayat
+severity Ringan/Sedang/Berat + skor prioritas → laporan PDF → tersimpan di riwayat
 → terpetakan GPS. Navigasi: Deteksi, Peta, Riwayat, Tentang. Angka resmi yang boleh
-tampil: YOLOv11s mAP val 0,65 / test 0,53 / OOD Bandung 0,45 (bobot 18,3 MB);
-YOLOv11n mAP val 0,59 / test 0,47 / OOD Bandung 0,55 (bobot live 9,9 MB).
+tampil: YOLOv11s mAP50 val 0,616 / test 0,617 / OOD Bandung (BPID) 0,581.
 
 ---
 
@@ -26,8 +25,8 @@ Workbench 2 kolom (desktop; HP menumpuk vertikal):
   (0,05–0,8), checkbox "foto malam", kolom lokasi + lintang + bujur (terisi otomatis),
   tombol primer "Deteksi".
 - **Bawah (full-width): panel hasil** — baris judul + tombol "Unduh PDF" dan
-  "Simpan ke riwayat"; 3 kartu KPI (Jumlah temuan, Prioritas berat, Estimasi total
-  biaya Rp); tabel temuan (No, Kelas, Ukuran, Severity badge warna, Estimasi Rp).
+  "Simpan ke riwayat"; 3 kartu KPI (Jumlah temuan, Prioritas berat, Total skor
+  prioritas); tabel temuan (No, Kelas, Ukuran, Severity badge warna, Skor prioritas).
 - Tab "Gambar | Live" di atas workbench. Tab Live berisi kontrol sumber
   (webcam / kamera HP / file video), kartu KPI kecil (FPS Tampil, FPS Inferensi,
   Titik Unik, Deteksi Aktif), tombol Mulai/Berhenti.
@@ -46,7 +45,7 @@ tertutup navigasi saat scroll.
 ## LAYAR 3 — Riwayat
 
 Bar filter (Dari tanggal, Sampai tanggal, Severity, pencarian, tombol Tampilkan),
-tabel (Waktu, Sumber, Lokasi, Severity, Temuan, Total Rp). Klik waktu → **modal
+tabel (Waktu, Sumber, Lokasi, Severity, Temuan, Total skor). Klik waktu → **modal
 detail**: judul, foto bukti, tabel temuan, tombol Unduh PDF / Hapus (konfirmasi) /
 Tutup / X. State kosong yang ramah + mengarahkan ke halaman Deteksi.
 
@@ -54,8 +53,8 @@ Tutup / X. State kosong yang ramah + mengarahkan ke halaman Deteksi.
 
  Blok alur 3 langkah (Deteksi → Ukur → Laporkan), blok metrik model (4 kartu angka
 resmi di atas), daftar batasan yang jujur (kamera mono tak ukur kedalaman; siang
-hari saja; harga = estimasi bukan RAB; wajib kalibrasi kamera), tabel harga acuan
-(Severity, Bahan, Harga Rp, Satuan).
+hari saja; skor = indeks prioritas, bukan RAB/biaya; wajib kalibrasi kamera),
+tabel bobot severity (Severity, Skor: Ringan 33 / Sedang 67 / Berat 100).
 
 ---
 

@@ -6,15 +6,19 @@ operasi (conf) dengan pencocokan IoU 0.5 per kelas, sehingga perbandingan
 antar-model / dengan-vs-tanpa-TTA menjadi adil.
 
 Pakai (dari root repo):
-    .\\.venv\\Scripts\\python scripts\\evaluasi_tta.py --model best_yolo11s.pt --imgsz 960 --maks 60
-    .\\.venv\\Scripts\\python scripts\\evaluasi_tta.py --model best_yolo11s.pt --imgsz 960 --maks 60 --augment
+    .\\.venv\\Scripts\\python scripts\\evaluasi_tta.py --model best.pt --imgsz 960 --maks 60
+    .\\.venv\\Scripts\\python scripts\\evaluasi_tta.py --model best.pt --imgsz 960 --maks 60 --augment
     .\\.venv\\Scripts\\python scripts\\evaluasi_tta.py --model best.onnx --imgsz 640 --maks 60
 """
 import argparse
 import json
+import os
 import time
 from datetime import datetime
 from pathlib import Path
+
+# Cegah unduhan paket otomatis saat skrip berjalan (lihat evaluasi_model.py).
+os.environ.setdefault("YOLO_AUTOINSTALL", "false")
 
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = ROOT / "app" / "weights"
@@ -78,7 +82,7 @@ def cocokkan(pred, gt):
 def main():
     ap = argparse.ArgumentParser(description="Evaluasi P/R/F1 (IoU) dengan/TANPA TTA.")
     ap.add_argument("--data", default="data/publik/bpid/test")
-    ap.add_argument("--model", default="best_yolo11s.pt")
+    ap.add_argument("--model", default="best.pt")
     ap.add_argument("--imgsz", type=int, default=960)
     ap.add_argument("--conf", type=float, default=0.25)
     ap.add_argument("--augment", action="store_true", help="aktifkan TTA")
@@ -109,6 +113,7 @@ def main():
         raise SystemExit(f"Tidak ada gambar di {img_dir}")
 
     model = YOLO(str(mp))
+    dev = "cpu" if mp.suffix.lower() == ".onnx" else None
     tp = fp = fn = 0
     t0 = time.perf_counter()
     for p in gambar:
@@ -116,7 +121,7 @@ def main():
             w, h = im.size
         gt = baca_gt(lbl_dir / (p.stem + ".txt"), w, h, remap)
         r = model.predict(str(p), imgsz=args.imgsz, conf=args.conf,
-                          augment=args.augment, verbose=False)[0]
+                          augment=args.augment, device=dev, verbose=False)[0]
         pred = [(int(b.cls), tuple(float(v) for v in b.xyxy[0]), float(b.conf))
                 for b in r.boxes]
         pred.sort(key=lambda x: -x[2])

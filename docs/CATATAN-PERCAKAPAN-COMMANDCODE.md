@@ -1,5 +1,12 @@
 # Catatan Percakapan Command-Code
 
+> **Catatan (Okt 2026): dokumen historis.** Ini log percakapan 2026-09-06 yang
+> merekam pembangunan fitur yang **kemudian dihapus**: dashboard PUPR,
+> disposisi/instansi, mode mobile, dan peran kontraktor. Daftar berkas di bawah
+> (mis. `disposisi_*`, `dashboard/*`, `mobile.html`) sudah **tidak ada** di repo.
+> Kondisi aplikasi kini (satu peran: admin) ada di [`../DESIGN.md`](../DESIGN.md),
+> [`API.md`](API.md), dan [`User-Flow.md`](User-Flow.md).
+
 > **Model**: longcat-2.0
 > **Aplikasi**: Command-Code CLI
 > **Tanggal**: 2026-09-06

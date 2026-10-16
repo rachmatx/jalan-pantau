@@ -20,7 +20,7 @@ Notebook run sebelumnya (contoh nyata): `yolov11s-rdd-only/Kaggle_Notebook_-_RDD
 
 **Data yang HARUS kamu unggah sebagai Kaggle Dataset (private)** — hanya terlihat olehmu:
 - `data/publik/bpid/` → dataset `bpid-bandung` (evaluasi OOD Bandung, test saja).
-- `app/weights/best_yolo11s.pt` → dataset `jalanpantau-weights` (titik awal fine-tune).
+- `app/weights/best.pt` → dataset `jalanpantau-weights` (titik awal fine-tune).
 - `negatives/` (foto aspal baik tanpa kerusakan) → dataset `negatives` (hard-negative mining).
 - `lokal-unlabeled/` (foto lokal tanpa label) → dataset `lokal-unlabeled` (pseudo-label).
 - `data/dataset-rdd2022.yaml` (dari repo) → ikutkan ke notebook.
@@ -72,7 +72,7 @@ Cara unggah: Kaggle → **Datasets → New Dataset** → unggah (boleh .zip) →
 
 ## 5. Taruh kembali ke repo
 
-- Bobot → `app/weights/` (mis. `best_yolo11s.pt`, `best.onnx`).
+- Bobot → `app/weights/` (mis. `best.pt`, `best.onnx`).
 - **Setelah mengganti bobot, perbarui checksum**: jalankan
   `python scripts/verifikasi_bobot.py` → akan melaporkan **[BEDA]**, lalu regenerasi
   `app/weights/SHA256SUMS.txt` (agar bukti integritas tetap valid).

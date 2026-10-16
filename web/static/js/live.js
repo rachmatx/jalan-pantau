@@ -53,7 +53,7 @@ sumber.addEventListener("change", () => {
 
 // Mode Performa: selaraskan interval inferensi dengan preset saat dipilih.
 const performa = document.getElementById("performa");
-const PRESET_SKIP = { halus: "3", seimbang: "2", akurat: "1" };
+const PRESET_SKIP = { halus: "1", seimbang: "1", akurat: "1" };
 if (performa) performa.addEventListener("change", () => {
   const s = document.getElementById("skip");
   if (s && PRESET_SKIP[performa.value]) s.value = PRESET_SKIP[performa.value];

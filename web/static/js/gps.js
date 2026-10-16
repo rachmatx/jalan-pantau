@@ -40,6 +40,3 @@ function mintaGPS() {
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
   );
 }
-
-const btnGps = document.getElementById("gps-sekarang");
-if (btnGps) btnGps.addEventListener("click", mintaGPS);

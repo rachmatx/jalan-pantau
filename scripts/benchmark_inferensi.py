@@ -6,7 +6,7 @@ punya sumber yang bisa diaudit (bukan angka tanpa jejak).
 
 Contoh pemakaian (dari root repo):
     .\\.venv\\Scripts\\python scripts\\benchmark_inferensi.py --runs 20
-    .\\.venv\\Scripts\\python scripts\\benchmark_inferensi.py --model best_yolo11s.pt --imgsz 960
+    .\\.venv\\Scripts\\python scripts\\benchmark_inferensi.py --model best.pt --imgsz 960
     .\\.venv\\Scripts\\python scripts\\benchmark_inferensi.py --model best.onnx --imgsz 480
 
 Catatan: ini mengukur inferensi GAMBAR STATIS. FPS live (webcam) bergantung
@@ -17,12 +17,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import platform
 import statistics
 import sys
 import time
 from datetime import datetime
 from pathlib import Path
+
+# Cegah unduhan paket otomatis saat skrip berjalan (lihat evaluasi_model.py).
+os.environ.setdefault("YOLO_AUTOINSTALL", "false")
 
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = ROOT / "app" / "weights"
@@ -74,15 +78,18 @@ def benchmark(model_name, imgsz, runs, gambar, conf, warmup):
         raise SystemExit(f"Bobot tidak ditemukan: {model_path}")
 
     model = YOLO(str(model_path))
+    dev = "cpu" if model_path.suffix.lower() == ".onnx" else None
 
     # Warmup (tidak dihitung): inisialisasi graph/runtime + cache ONNX.
     for _ in range(max(1, warmup)):
-        model.predict(source=str(gambar), imgsz=imgsz, conf=conf, verbose=False)
+        model.predict(source=str(gambar), imgsz=imgsz, conf=conf, device=dev,
+                      verbose=False)
 
     waktu_ms = []
     for _ in range(runs):
         t0 = time.perf_counter()
-        model.predict(source=str(gambar), imgsz=imgsz, conf=conf, verbose=False)
+        model.predict(source=str(gambar), imgsz=imgsz, conf=conf, device=dev,
+                      verbose=False)
         waktu_ms.append((time.perf_counter() - t0) * 1000.0)
 
     rata = statistics.fmean(waktu_ms)
@@ -111,8 +118,8 @@ def benchmark(model_name, imgsz, runs, gambar, conf, warmup):
 
 def main():
     ap = argparse.ArgumentParser(description="Benchmark latensi inferensi YOLO (CPU).")
-    ap.add_argument("--model", default="best_yolo11s.pt",
-                    help="nama file di app/weights/ atau path penuh (default: best_yolo11s.pt)")
+    ap.add_argument("--model", default="best.pt",
+                    help="nama file di app/weights/ atau path penuh (default: best.pt)")
     ap.add_argument("--imgsz", type=int, default=960, help="ukuran input (default: 960)")
     ap.add_argument("--runs", type=int, default=15, help="jumlah iterasi terukur (default: 15)")
     ap.add_argument("--warmup", type=int, default=2, help="iterasi pemanasan (default: 2)")

@@ -55,6 +55,15 @@ class FakeCap:
         pass
 
 
+class FakeCapStatis(FakeCap):
+    """VideoCapture palsu: frame IDENTIK terus (adegan diam)."""
+
+    def read(self):
+        self._n += 1
+        time.sleep(0.02)
+        return True, np.full((480, 640, 3), 128, np.uint8)
+
+
 class _NoBoxes:
     def __len__(self):
         return 0
@@ -175,6 +184,34 @@ class TestDecouple(_StreamCase):
         finally:
             self._lepas(m)
 
+    def test_frame_diff_dimatikan_untuk_video(self):
+        """Sumber video harus tetap diinferensi walau frame nyaris sama."""
+        self._pasang(model_delay=0.01)
+        self.streaming.cv2.VideoCapture = FakeCapStatis
+        m = self.m
+        try:
+            m.start("file", "x.mp4", frame_skip=1)
+            time.sleep(0.6)
+            self.assertGreaterEqual(
+                self.model.calls, 4,
+                "frame-diff salah aktif untuk sumber video (demo jadi beku)")
+        finally:
+            self._lepas(m)
+
+    def test_frame_diff_aktif_untuk_webcam_diam(self):
+        """Adegan webcam diam -> inferensi di-skip (hemat GPU), bukan diulang."""
+        self._pasang(model_delay=0.01)
+        self.streaming.cv2.VideoCapture = FakeCapStatis
+        m = self.m
+        try:
+            m.start("webcam", 0, frame_skip=1)
+            time.sleep(0.6)
+            self.assertLessEqual(
+                self.model.calls, 2,
+                "frame-diff tak menahan inferensi berulang di adegan diam")
+        finally:
+            self._lepas(m)
+
 
 class TestPresetPerforma(unittest.TestCase):
     def test_preset_mengoverride_knobs(self):
@@ -197,7 +234,7 @@ class TestClampLiveConfig(unittest.TestCase):
                 yaml.safe_dump({"live": {"display_fps": 9999, "infer_interval": 0,
                                          "jpeg_quality": 5, "display_width": 5,
                                          "cam_width": 99999, "cam_height": 1,
-                                         "cam_fps": 5000}}, f)
+                                         "cam_fps": 5000, "min_frames": 0}}, f)
             d = deteksi.get_inferensi(path=path)["live"]
             self.assertEqual(d["display_fps"], 30)
             self.assertEqual(d["infer_interval"], 1)
@@ -214,8 +251,8 @@ class TestClampLiveConfig(unittest.TestCase):
     def test_fallback_punya_semua_key_live(self):
         import deteksi
         for k in ("min_frames", "display_fps", "infer_interval",
-                  "jpeg_quality", "display_width", "cam_width",
-                  "cam_height", "cam_fps"):
+                  "frame_diff_threshold", "jpeg_quality", "display_width",
+                  "cam_width", "cam_height", "cam_fps"):
             self.assertIn(k, deteksi._INFER_FALLBACK["live"])
 
 

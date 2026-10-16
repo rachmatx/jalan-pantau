@@ -1,5 +1,13 @@
 # Rencana Implementasi 7 Screen Baru dari Stitch
 
+> **Status (Okt 2026): arsip.** Rencana ini disusun 2026-09-06. Sebagian sudah
+> dikerjakan, sebagian **dibatalkan**: halaman `mobile.html` (`/mobile`),
+> dashboard PUPR, disposisi, instansi, dan peran kontraktor sudah **dihapus**
+> dari kode. Yang tetap aktif: `kalibrasi.html`, `laporan_preview.html`, serta
+> pengayaan `deteksi.html` / `peta.html` / `riwayat.html`. Kondisi aplikasi kini
+> ada di [`DESIGN.md`](DESIGN.md), [`docs/API.md`](docs/API.md), dan
+> [`docs/User-Flow.md`](docs/User-Flow.md).
+
 ## 1. Hapus Pico CSS
 - Hapus `<link pico.min.css>` dari `web/templates/base.html`
 - Hapus semua `!important` netralisasi di `civic.css` (tidak diperlukan lagi)
