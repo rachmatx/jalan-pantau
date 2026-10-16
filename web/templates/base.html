@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>{% block title %}JalanPantau{% endblock %} — Deteksi Kerusakan Jalan</title>
-  <meta name="description" content="JalanPantau: deteksi kerusakan jalan dengan YOLOv11s dan YOLOv11n, penilaian severity terkalibrasi, dan peta sebaran GPS.">
+  <meta name="description" content="JalanPantau: deteksi kerusakan jalan dengan YOLOv11s, penilaian severity terkalibrasi, dan peta sebaran GPS.">
   <meta property="og:title" content="JalanPantau — Sistem Inventarisasi Kerusakan Jalan Berbasis YOLOv11">
   <meta property="og:description" content="Ubah foto jalan menjadi data inspeksi: deteksi AI, skor prioritas, laporan PDF, dan peta sebaran.">
   <meta property="og:type" content="website">
@@ -30,6 +30,7 @@
         <a href="/riwayat" class="{{ 'aktif' if active == 'riwayat' else '' }}">Riwayat</a>
         <a href="/kalibrasi" class="{{ 'aktif' if active == 'kalibrasi' else '' }}">Kalibrasi</a>
         <a href="/tentang" class="{{ 'aktif' if active == 'tentang' else '' }}">Tentang</a>
+        <a href="/logout" title="Keluar dari sesi admin">Keluar</a>
       </nav>
       <div class="jp-meta">
         <span class="jp-avatar" aria-hidden="true">JP</span>
@@ -45,6 +46,7 @@
     <a href="/riwayat" class="{{ 'aktif' if active == 'riwayat' else '' }}">Riwayat</a>
     <a href="/kalibrasi" class="{{ 'aktif' if active == 'kalibrasi' else '' }}">Kalibrasi</a>
     <a href="/tentang" class="{{ 'aktif' if active == 'tentang' else '' }}">Tentang</a>
+    <a href="/logout">Keluar</a>
   </div>
   {% block subnav %}{% endblock %}
   <main id="main-content">

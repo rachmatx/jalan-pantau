@@ -144,14 +144,14 @@
         <div class="jp-kpi jp-kpi-blue">
           <div class="jp-kpi-top"><span>SKOR PRIORITAS</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg></div>
           <div class="jp-kpi-val mono" id="total-nilai">0</div>
-          <p class="jp-kpi-sub">Agregat 0&ndash;100, bobot severity &times; luas</p>
+          <p class="jp-kpi-sub">Akumulasi skor temuan; tiap temuan 0&ndash;100 dari bobot severity (Ringan 33 / Sedang 67 / Berat 100)</p>
         </div>
       </div>
       <div style="margin-top:16px">
         <div class="jp-table-title"><h3>Rincian Klasifikasi Objek Kerusakan</h3><span class="jp-table-count" id="tabel-hitung"></span><span class="jp-table-count" id="verifikasi-hitung"></span><button type="button" id="verifikasi-reset" class="jp-gps-btn" hidden style="margin-left:auto">Kembalikan ke hasil AI</button></div>
         <div class="jp-table-scroll" id="tabel" style="margin-top:8px"></div>
         <div id="deteksi-paginasi" style="display:none;align-items:center;justify-content:center;gap:4px;margin-top:12px;flex-wrap:wrap"></div>
-        <p class="jp-note">Skor prioritas 0&ndash;100 per temuan, dari bobot severity dan luas area ternormalisasi.</p>
+        <p class="jp-note">Skor prioritas 0&ndash;100 per temuan dari bobot severity (luas area hanya heuristik urutan, bukan komponen skor).</p>
       </div>
     </section>
   </div>
@@ -189,7 +189,7 @@
       <div class="jp-col-main" style="grid-column: span 8">
         <div class="jp-card">
           <div class="jp-card-head">
-            <span class="jp-card-title jp-live-head"><span class="jp-dot pulse" style="background:#ba1a1a"></span><span>LIVE FEED YOLOv11n TRACKER</span></span>
+            <span class="jp-card-title jp-live-head"><span class="jp-dot pulse" style="background:#ba1a1a"></span><span>LIVE FEED YOLOv11s TRACKER</span></span>
             <span class="jp-live-flag" id="status-live">STREAM STANDBY</span>
           </div>
           <figure class="viewer zoomable" id="viewer-live" tabindex="0" role="application" aria-label="Penampil stream live. Roda mouse atau tombol untuk zoom, seret untuk geser, 0 pas layar, 1 ukuran asli, F layar penuh.">
@@ -224,7 +224,7 @@
           </figure>
           <div class="jp-viewmeta" id="status-live-footer" style="display:flex;align-items:center;gap:8px">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--jp-primary)" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-            <span style="font-size:12px;color:var(--jp-ink)">Stream terhubung • YOLOv11n aktif</span>
+            <span style="font-size:12px;color:var(--jp-ink)">Stream terhubung • YOLOv11s aktif</span>
           </div>
         </div>
         <!-- State Gangguan Kamera (hidden by default) - DI DALAM jp-col-main -->
@@ -243,7 +243,7 @@
               </div>
             </div>
             <div style="padding:12px;border-radius:8px;background:var(--jp-container-low);font-size:12px;color:var(--jp-tx2)">
-              <strong style="color:var(--jp-ink)">Diagnosa:</strong> Sensor kamera tidak merespons frame buffer. Aliran inferensi YOLOv11n dijeda otomatis untuk mencegah anomali data.
+              <strong style="color:var(--jp-ink)">Diagnosa:</strong> Sensor kamera tidak merespons frame buffer. Aliran inferensi YOLOv11s dijeda otomatis untuk mencegah anomali data.
             </div>
             <div style="display:flex;flex-direction:column;gap:8px">
               <span style="font-size:11px;font-weight:600;letter-spacing:0.05em;color:var(--jp-muted)">3 Langkah Troubleshooting Cepat</span>
@@ -280,7 +280,6 @@
               <option value="webcam">Webcam Perangkat / USB Cam</option>
               <option value="ipcam">IP Camera (RTSP / HTTP Stream)</option>
               <option value="file">Berkas Rekaman Video Jalan</option>
-              <option value="preset">Preset Demo</option>
             </select>
           </div>
           <div class="jp-box" id="in-webcam">
@@ -344,7 +343,7 @@
           </div>
           <div id="hasil-live" hidden>
             <div class="jp-box">
-              <span class="jp-hint">TOTAL ESTIMASI SESI</span>
+              <span class="jp-hint">TOTAL SKOR PRIORITAS</span>
               <strong class="jp-num" id="total-live-nilai">0</strong>
             </div>
             <div class="jp-table-scroll" id="tabel-live" style="margin-top:8px"></div>

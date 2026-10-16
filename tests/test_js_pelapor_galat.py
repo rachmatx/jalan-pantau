@@ -8,8 +8,7 @@ import os
 import re
 import unittest
 
-# Halaman yang punya helper bersama jp_core.js (bisa pakai jpLaporGagal).
-HELPER = "web/static/js/jp_core.js"
+# Berkas JS halaman yang punya handler .catch.
 BERKAS = [
     "web/static/js/deteksi.js",
     "web/static/js/live.js",
@@ -50,9 +49,7 @@ class TestCatchMelapor(unittest.TestCase):
             for m in DENGAN_PARAM.finditer(src):
                 # ambil teks handler sampai .then/.catch berikutnya
                 acct = src[m.start():m.start() + 600]
-                if ("jpLaporGagal(" not in acct
-                        and "jpLaporGagalSekali(" not in acct
-                        and "console.error" not in acct
+                if ("console.error" not in acct
                         and "console.warn" not in acct):
                     baris = src[:m.start()].count("\n") + 1
                     kurang.append(f"{p}:{baris}")
@@ -61,18 +58,12 @@ class TestCatchMelapor(unittest.TestCase):
             "Handler .catch yang menerima 'e' tapi tidak melapor:\n  "
             + "\n  ".join(kurang))
 
-    def test_pelapor_terdefinisi_di_helper(self):
-        src = _teks(HELPER)
-        self.assertIn("window.jpLaporGagal =", src)
-        self.assertIn("window.jpLaporGagalSekali =", src)
-
-
 
 class TestTanpaArtefakBahasa(unittest.TestCase):
     def test_tidak_ada_huruf_cjk_atau_cyrillic(self):
-        """Komentar helper sempat sempat berisi huruf CJK/cyrillic."""
+        """Berkas JS halaman tidak boleh berisi huruf CJK/cyrillic."""
         pola = re.compile(r"[\u0400-\u04FF\u4E00-\u9FFF\u3040-\u30FF]")
-        for p in BERKAS + [HELPER]:
+        for p in BERKAS:
             for i, ln in enumerate(_teks(p).splitlines(), 1):
                 m = pola.search(ln)
                 if m:
