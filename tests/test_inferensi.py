@@ -263,6 +263,23 @@ class TestPriorUkuran(unittest.TestCase):
         self.assertFalse(masuk_akal({"kelas": "transverse_crack", "panjang_cm": 200,
                                      "lebar_cm": 500, "luas_m2": 10}, self.BATAS))
 
+    def test_retak_near_square_ditolak(self):
+        from deteksi import masuk_akal
+        batas = dict(self.BATAS, rasio_aspek_min_retak=1.5)
+        # longitudinal/transversal near-square -> false positive -> tolak
+        self.assertFalse(masuk_akal({"kelas": "longitudinal_crack", "panjang_cm": 100,
+                                     "lebar_cm": 90, "luas_m2": 0.9}, batas))
+        self.assertFalse(masuk_akal({"kelas": "transverse_crack", "panjang_cm": 50,
+                                     "lebar_cm": 45, "luas_m2": 0.225}, batas))
+        # tepat di ambang -> lolos
+        self.assertTrue(masuk_akal({"kelas": "longitudinal_crack", "panjang_cm": 45,
+                                    "lebar_cm": 30, "luas_m2": 0.135}, batas))
+        # alligator & pothole boleh square -> lolos
+        self.assertTrue(masuk_akal({"kelas": "alligator_crack", "panjang_cm": 80,
+                                    "lebar_cm": 75, "luas_m2": 0.6}, batas))
+        self.assertTrue(masuk_akal({"kelas": "pothole", "panjang_cm": 40,
+                                    "lebar_cm": 38, "luas_m2": 0.152}, batas))
+
 
 class TestWbf(unittest.TestCase):
     def test_duplikat_dilebur_bukan_dibuang(self):

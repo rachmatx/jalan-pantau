@@ -74,3 +74,6 @@ batas_ukuran:
   diameter_maks_cm: 300
   lebar_retak_maks_cm: 100
   luas_maks_m2: 100
+  # Rasio aspek minimum (panjang/lebar) untuk retak longitudinal/transversal.
+  # Box near-square berlabel retak hampir pasti false positive.
+  rasio_aspek_min_retak: 1.5

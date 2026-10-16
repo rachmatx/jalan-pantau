@@ -61,7 +61,7 @@ _INFER_FALLBACK = {
              "display_width": 640, "cam_width": 640, "cam_height": 480,
              "cam_fps": 30},
     "batas_ukuran": {"diameter_maks_cm": 300, "lebar_retak_maks_cm": 100,
-                     "luas_maks_m2": 100},
+                     "luas_maks_m2": 100, "rasio_aspek_min_retak": 1.5},
     "gabung_fragmen": {"aktif": True, "iou_min": 0.05, "inter_min": 0.3,
                        "lintas_kelas": True},
     "saring": {"luas_min_px": 900, "maks_temuan": 20},
@@ -181,7 +181,8 @@ def get_inferensi(path=None):
             pass
         try:
             bu = dict(user.get("batas_ukuran") or {})
-            for k in ("diameter_maks_cm", "lebar_retak_maks_cm", "luas_maks_m2"):
+            for k in ("diameter_maks_cm", "lebar_retak_maks_cm", "luas_maks_m2",
+                        "rasio_aspek_min_retak"):
                 if k in bu:
                     data["batas_ukuran"][k] = max(float(bu[k]), 1.0)
         except (AttributeError, TypeError, ValueError):
@@ -409,7 +410,18 @@ def masuk_akal(item, batas=None):
     except (TypeError, ValueError):
         return True
     if "crack" in c and "alligator" not in c:
-        return lb <= l_maks
+        if not (lb <= l_maks):
+            return False
+        # Retak longitudinal/transversal yang valid memanjang; box yang
+        # near-square (rasio aspek < ambang) hampir pasti false positive
+        # (noda, bayangan, tekstur aspal). Alligator & pothole dikecualikan.
+        try:
+            rasio_min = float(b.get("rasio_aspek_min_retak", 1.5))
+        except (TypeError, ValueError):
+            rasio_min = 1.5
+        if rasio_min > 1.0 and lb > 0 and pj / lb < rasio_min:
+            return False
+        return True
     if "pothole" in c:
         return max(pj, lb) <= d_maks
     return luas <= luas_maks
