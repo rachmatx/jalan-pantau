@@ -75,6 +75,7 @@
     root.addEventListener("pointerdown", (e) => {
       if (e.target.closest("button") || e.button !== 0 || !img()) return;
       panning = true;
+      inner.style.transition = "none"; // matikan animasi saat drag-pan agar mengikuti kursor
       const o = curPos();
       pan0 = { x: e.clientX, y: e.clientY, ox: o.x, oy: o.y, moved: false };
       try { root.setPointerCapture(e.pointerId); } catch { /* pointer sintetis */ }
@@ -92,7 +93,7 @@
       pos = { x: pan0.ox + dx, y: pan0.oy + dy };
       apply();
     });
-    const endPan = () => { panning = false; pan0 = null; root.style.cursor = ""; };
+    const endPan = () => { panning = false; pan0 = null; root.style.cursor = ""; inner.style.transition = ""; };
     root.addEventListener("pointerup", endPan);
     root.addEventListener("pointercancel", endPan);
     root.addEventListener("dblclick", (e) => {
@@ -123,9 +124,14 @@
         else if (root.requestFullscreen) root.requestFullscreen().catch(() => {});
       }
     });
-    // Gambar baru (hasil deteksi) -> pas-layar ulang bila user belum mengatur.
+    // Gambar baru (pratinjau upload / hasil deteksi) -> selalu pas-layar ulang.
+    let srcTerakhir = "";
     root.addEventListener("load", (e) => {
-      if (e.target.tagName === "IMG" && !controlled) apply();
+      if (e.target.tagName === "IMG") {
+        const src = e.target.currentSrc || e.target.src || "";
+        if (src !== srcTerakhir) { srcTerakhir = src; controlled = false; }
+        apply();
+      }
     }, true);
     new ResizeObserver(() => apply()).observe(root);
     apply();

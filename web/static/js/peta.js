@@ -91,16 +91,9 @@ function mulaiLiveGPS() {
     },
     (err) => {
       console.log("GPS error:", err.message);
-      if (err.code === 1) {
-        // Permission denied - tampilkan notifikasi sekali
-        if (!document.getElementById("gps-notif")) {
-          var notif = document.createElement("div");
-          notif.id = "gps-notif";
-          notif.style.cssText = "position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:1000;background:rgba(254,242,242,.95);color:#ba1a1a;padding:8px 16px;border-radius:8px;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.15);border-left:4px solid #ba1a1a;max-width:90%;text-align:center";
-          notif.innerHTML = "<b>GPS tidak diizinkan</b><br>Aktifkan izin lokasi di browser untuk live tracking.<br>Menggunakan lokasi default: <b>" + (LOKASI.DAERAH[lokasiAktif] || lokasiDef).nama + "</b>";
-          document.querySelector(".jp-mapstage").appendChild(notif);
-        }
-      }
+      // Permission denied - tampilkan sekali sebagai strip inline di kartu
+      // filter (tidak menutupi peta/kontrol seperti toast atau notif absolut).
+      if (err.code === 1) tampilkanPeringatanGPSInline();
     },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000, distanceFilter: 10 }
   );
@@ -118,16 +111,22 @@ window.gantiLokasiDefault = function(key) {
   return false;
 };
 
-// Update notifikasi GPS error dengan lokasi dinamis
-function tampilkanNotifGPS(errorMsg) {
-  if (!document.getElementById("gps-notif")) {
-    var notif = document.createElement("div");
-    notif.id = "gps-notif";
-    notif.style.cssText = "position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:1000;background:rgba(254,242,242,.95);color:#ba1a1a;padding:8px 16px;border-radius:8px;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.15);border-left:4px solid #ba1a1a;max-width:90%;text-align:center";
-    var d = LOKASI.DAERAH[lokasiAktif];
-    notif.innerHTML = "<b>" + errorMsg + "</b><br>Aktifkan izin lokasi di browser.<br>Menggunakan: <b>" + d.nama + "</b>";
-    document.querySelector(".jp-mapstage").appendChild(notif);
-  }
+// Strip peringatan GPS inline di kartu filter (sekali, bisa ditutup).
+function tampilkanPeringatanGPSInline() {
+  if (document.getElementById("gps-inline-warn")) return;
+  var card = document.querySelector(".jp-mapfilter");
+  if (!card) return;
+  var namaDef = (LOKASI.DAERAH[lokasiAktif] || lokasiDef).nama;
+  var div = document.createElement("div");
+  div.id = "gps-inline-warn";
+  div.setAttribute("role", "alert");
+  div.style.cssText = "display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border-radius:8px;background:#FEF2F2;border:1px solid #FECACA;color:#991B1B;font-size:12px;line-height:1.45";
+  div.innerHTML = '<span style="flex:1"><b>GPS tidak diizinkan.</b> Aktifkan izin lokasi di browser untuk live tracking. Lokasi default: ' + esc(namaDef) + '.</span>' +
+    '<button type="button" aria-label="Tutup peringatan" style="border:none;background:none;color:#991B1B;font-size:15px;line-height:1;cursor:pointer;padding:0 2px">×</button>';
+  div.querySelector("button").addEventListener("click", function () { div.remove(); });
+  var top = card.querySelector(".jp-mapfilter-top");
+  if (top && top.nextSibling) card.insertBefore(div, top.nextSibling);
+  else card.appendChild(div);
 }
 
 // Jalankan deteksi GPS setelah semua terinisialisasi
@@ -282,7 +281,7 @@ function cariTerdekat(userLl) {
   var box = document.getElementById("peta-terdekat-box");
   var info = document.getElementById("peta-terdekat-info");
   if (!box || !info) return;  // P3: template belum render kartu (hindari TypeError)
-  if (!semua.length) { titikTerdekat = null; box.style.display = "none"; return; }
+  if (!semua.length) { titikTerdekat = null; box.hidden = true; return; }
   var minDist = Infinity, terdekat = null;
   for (const t of semua) {
     if (t.lat == null || t.lon == null) continue;
@@ -293,9 +292,9 @@ function cariTerdekat(userLl) {
   if (terdekat) {
     var jarak = (Math.sqrt(minDist) * 111).toFixed(2); // perkiraan km
     info.innerHTML = '<strong>' + esc(terdekat.lokasi || "-") + '</strong><br>' + (Number(terdekat.n_temuan) || 0) + ' temuan • ' + badgeHtml(terdekat.worst) + '<br><span style="font-family:var(--jp-mono);font-size:11px">±' + esc(jarak) + ' km dari lokasi Anda</span>';
-    box.style.display = "block";
+    box.hidden = false;
   } else {
-    box.style.display = "none";
+    box.hidden = true;
   }
 }
 
@@ -304,23 +303,17 @@ if (btnNavTerdekat) btnNavTerdekat.addEventListener("click", () => {
   if (titikTerdekat) fokusMarker(titikTerdekat.id);
 });
 
-/* === Search Feedback === */
-var searchInput = document.getElementById("peta-cari-jalan");
-if (searchInput) searchInput.addEventListener("input", function() {
-  var q = kataKunci();
-  // Tampilkan feedback pencarian
-  var hitung = semua.filter(function(t) { return t.lokasi && t.lokasi.toLowerCase().includes(q); }).length;
-  if (q.length > 0) {
-    var countEl = document.getElementById("peta-hitung");
-    if (countEl) countEl.textContent = hitung + " hasil untuk \"" + q + "\"";
-  }
-  gambar(false);
-});
 document.getElementById("toggle-drawer-btn").addEventListener("click", (e) => {
   const body = document.getElementById("drawer-body");
   body.hidden = !body.hidden;
   e.currentTarget.textContent = body.hidden ? "+" : "−";
 });
+// Mobile: lipat isi drawer secara default agar peta tetap lega; header tetap terlihat.
+if (window.matchMedia("(max-width: 768px)").matches) {
+  const db = document.getElementById("drawer-body");
+  const tb = document.getElementById("toggle-drawer-btn");
+  if (db && tb && !db.hidden) { db.hidden = true; tb.textContent = "+"; }
+}
 document.getElementById("foto-x").addEventListener("click", () => {
   const dlg = document.getElementById("foto-dialog");
   if (dlg.open) dlg.close();

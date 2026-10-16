@@ -206,6 +206,14 @@ document.getElementById("gambar").addEventListener("change", (e) => {
     const sub = document.getElementById("drop-sub");
     if (drop) drop.textContent = f.name;
     if (sub) sub.textContent = `${(f.size / 1048576).toFixed(1)} MB · tersimpan siap deteksi`;
+    // Pratinjau langsung: tampilkan gambar di viewer begitu dipilih (tanpa menunggu deteksi)
+    try {
+      if (window.__jpPratinjauUrl) URL.revokeObjectURL(window.__jpPratinjauUrl);
+      window.__jpPratinjauUrl = URL.createObjectURL(f);
+      slot.classList.remove("kosong");
+      slot.innerHTML = `<img src="${window.__jpPratinjauUrl}" alt="Pratinjau ${esc(f.name)}">`;
+      hasil.hidden = true; // hasil deteksi lama tidak lagi sesuai gambar baru
+    } catch (err) { /* abaikan: deteksi tetap bisa jalan */ }
   }
 });
 

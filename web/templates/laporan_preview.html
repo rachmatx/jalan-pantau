@@ -39,7 +39,7 @@
       <div style="background:var(--jp-container-low);padding:8px 12px;border-radius:8px;margin-bottom:8px">
         <h4 style="font-size:13px;font-weight:600;letter-spacing:.05em;margin:0;text-transform:uppercase">Bagian I: Data Sesi</h4>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;padding:12px">
+      <div class="laporan-grid2" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;padding:12px">
         <div style="display:flex;justify-content:space-between;gap:8px"><span style="font-size:12px;color:var(--jp-tx2)">Waktu:</span><span style="font-family:var(--jp-mono);font-size:11px;font-weight:600">{{ sesi.waktu }}</span></div>
         <div style="display:flex;justify-content:space-between;gap:8px"><span style="font-size:12px;color:var(--jp-tx2)">Sumber:</span><span style="font-size:12px;font-weight:600">{{ sesi.sumber }}</span></div>
         <div style="display:flex;justify-content:space-between;gap:8px"><span style="font-size:12px;color:var(--jp-tx2)">Lokasi:</span><span style="font-size:12px;font-weight:600">{{ sesi.lokasi }}</span></div>
@@ -54,6 +54,7 @@
         <h4 style="font-size:13px;font-weight:600;letter-spacing:.05em;margin:0;text-transform:uppercase">Bagian II: Daftar Temuan</h4>
       </div>
       {% if temuan %}
+      <div class="laporan-tabel-wrap">
       <table style="width:100%;font-size:12px;border-collapse:collapse">
         <thead><tr style="background:var(--jp-container);color:var(--jp-muted);font-size:10px;text-transform:uppercase">
           <th style="padding:8px 10px;text-align:left">No</th>
@@ -80,6 +81,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
       {% else %}
       <p style="font-size:13px;color:var(--jp-tx2)">Tidak ada temuan pada sesi ini.</p>
       {% endif %}
@@ -90,14 +92,14 @@
         <h4 style="font-size:13px;font-weight:600;letter-spacing:.05em;margin:0;text-transform:uppercase">Bagian III: Pengesahan</h4>
       </div>
       <p style="font-size:12px;color:var(--jp-tx2)">Draf ini sah dipakai setelah ditandatangani petugas berwenang. Kolom di bawah diisi manual.</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:24px;text-align:center">
+      <div class="laporan-grid2" style="display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:24px;text-align:center">
         <div><p style="font-size:12px;color:var(--jp-tx2)">Petugas lapangan,</p><div style="height:64px"></div><p style="margin:0">( ........................................ )</p><p style="font-size:11px;color:var(--jp-tx2)">Nama / NIP</p></div>
         <div><p style="font-size:12px;color:var(--jp-tx2)">Menyetujui,</p><div style="height:64px"></div><p style="margin:0">( ........................................ )</p><p style="font-size:11px;color:var(--jp-tx2)">Nama / NIP</p></div>
       </div>
     </div>
 
     <div style="margin-top:16px;padding-top:12px;border-top:1px dashed rgba(0,0,0,.2);font-size:10px;color:var(--jp-muted)">
-      <span>Draf otomatis JalanPantau · Estimasi acuan, bukan RAB resmi · Dimensi dari bounding box kamera mono yang wajib terkalibrasi.</span>
+      <span>Draf otomatis JalanPantau · Skor prioritas acuan, bukan estimasi biaya resmi · Dimensi dari bounding box kamera mono yang wajib terkalibrasi.</span>
     </div>
     {% else %}
     <p style="font-size:14px;color:var(--jp-tx2)">Sesi #{{ sid }} tidak ditemukan.</p>
@@ -107,6 +109,16 @@
 {% endblock %}
 
 {% block skrip %}
+<style>
+  /* Responsif kertas draf di layar kecil: tanpa mengubah tampilan cetak/A4. */
+  .laporan-tabel-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  @media (max-width: 640px) {
+    #paper-doc { padding: 20px 14px !important; }
+    #paper-doc .laporan-grid2 { grid-template-columns: 1fr !important; gap: 10px !important; }
+    #paper-doc table { font-size: 11px !important; min-width: 520px; }
+    #paper-doc th, #paper-doc td { padding: 6px 8px !important; }
+  }
+</style>
 <script>
 (function(){
   var currentScale = 1.0;

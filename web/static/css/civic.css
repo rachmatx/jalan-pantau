@@ -3,6 +3,8 @@
    Dimuat SETELAH style.css; menang by order. Token dari
    tailwind-config Stitch, di-port 1:1 agar setia pada desain.
    ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; }
 :root {
   --jp-primary: #006194;
   --jp-primary-container: #007bb9;
@@ -47,10 +49,6 @@ main { padding: 0; }
 
 /* ---- Topbar ---- */
 .jp-topbar {
-  position: fixed;
-  top: 0;
-  width: 100%;
-  z-index: 2000;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(8px);
   box-shadow: 0 1px 8px rgba(0, 0, 0, 0.04);
@@ -130,7 +128,6 @@ main { padding: 0; }
   font-size: 14px;
   font-weight: 700;
 }
-body { padding-top: 0; }
 
 /* ---- Workspace bar (tab + status) ---- */
 .jp-workbar {
@@ -249,12 +246,18 @@ body { padding-top: 0; }
   color: var(--jp-muted);
 }
 /* zoom.js hooks, gaya civic terang (tinggi eksplisit: % dari parent auto = 0!) */
-.viewer.zoomable { border: none; border-radius: 0; height: min(62vh, 560px); min-height: 380px; position: relative; }
+.viewer.zoomable { border: none; border-radius: 0; height: min(62vh, 560px); min-height: 380px; position: relative; overflow: hidden; }
+.zoom-inner { transition: transform 0.15s ease-out; }
 #viewer-live.zoomable { height: min(55vh, 480px); min-height: 320px; max-height: 520px; }
 #live-toolbar { position: absolute !important; top: 8px !important; right: 8px !important; left: auto !important; bottom: auto !important; }
 .viewer.zoomable .viewer-placeholder { color: #CBD5E1; }
 .viewer.zoomable .viewer-placeholder-icon { border-color: rgba(0, 191, 255, 0.5); }
 .zoom-bar {
+  position: absolute;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 2px;
   background: rgba(255, 255, 255, 0.94) !important;
   border: 1px solid var(--jp-line) !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
@@ -262,15 +265,23 @@ body { padding-top: 0; }
   right: 5px !important;
   left: auto !important;
   transform: none !important;
-  border-radius: 6px !important;
-  padding: 0 2px !important;
+  border-radius: 9999px !important;
+  padding: 3px 6px !important;
 }
 .zoom-bar button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: var(--jp-tx2) !important;
   font-size: 12px !important;
-  min-width: 20px !important;
-  height: 18px !important;
-  font-weight: 600;
+  font-weight: 700;
+  min-width: 28px !important;
+  height: 28px !important;
+  border-radius: 9999px;
+  padding: 0 6px;
 }
 .zoom-bar button:hover { background: var(--jp-high) !important; color: var(--jp-ink) !important; }
 .zoom-pct { color: var(--jp-ink) !important; min-width: 38px !important; font-size: 10px !important; }
@@ -291,6 +302,28 @@ body { padding-top: 0; }
   font-size: 11px;
   pointer-events: none;
 }
+
+/* Viewer generik (dipakai halaman kalibrasi untuk foto penggaris).
+   Status "kosong" tampil sebagai dropzone putus-putus. */
+.jp-viewer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  padding: 16px;
+  border-radius: 10px;
+  background: var(--jp-container-low);
+  color: var(--jp-muted);
+  font-size: 13px;
+  text-align: center;
+  overflow: hidden;
+}
+.jp-viewer.kosong {
+  border: 2px dashed var(--jp-line);
+  background: var(--jp-surface);
+}
+.jp-viewer img { max-width: 100%; height: auto; border-radius: 8px; display: block; }
 
 /* ---- Panel parameter ---- */
 .jp-params { padding: 20px; gap: 16px; }
@@ -397,6 +430,26 @@ body { padding-top: 0; }
 }
 .jp-input:focus, .jp-select:focus { outline: none; box-shadow: 0 0 0 2px var(--jp-primary); }
 .jp-input::placeholder { color: var(--jp-muted); }
+/* Input file native (kalibrasi & live): samarkan jadi tombol civic.
+   (Input di dalam .jp-dropzone disembunyikan via opacity:0 — tak terpengaruh visual.) */
+.jp-wrap input[type="file"],
+.jp-card input[type="file"] { font-size: 12px; color: var(--jp-muted); }
+.jp-wrap input[type="file"]::file-selector-button,
+.jp-card input[type="file"]::file-selector-button {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--jp-ink);
+  background: var(--jp-surface);
+  border: 1px solid var(--jp-line);
+  border-radius: 8px;
+  padding: 8px 14px;
+  margin-right: 10px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.jp-wrap input[type="file"]::file-selector-button:hover,
+.jp-card input[type="file"]::file-selector-button:hover { background: var(--jp-container); }
 .jp-mono-input { font-family: var(--jp-mono); font-size: 13px; }
 .jp-gps-btn {
   display: inline-flex;
@@ -455,7 +508,6 @@ body { padding-top: 0; }
 }
 .jp-btn-light { background: var(--jp-surface); color: var(--jp-ink); text-decoration: none; }
 .jp-btn-light:hover { background: var(--jp-container); text-decoration: none; }
-.jp-btn-light:hover { background: var(--jp-container); }
 .jp-btn-save { background: var(--jp-primary-container); color: #fdfcff; }
 .jp-btn-save:hover { background: var(--jp-primary); color: #fff; }
 .jp-btn-light svg, .jp-btn-save svg { width: 18px; height: 18px; }
@@ -640,6 +692,30 @@ th.jp-num-right { font-weight: 600; }
 }
 .jp-search input:focus { outline: none; box-shadow: 0 0 0 2px var(--jp-primary); }
 
+/* === Marker titik severity di peta (port dari style.css pra-Fase-2, token civic) ===
+   Dipakai peta.js: divIcon marker + daftar "Titik Prioritas Intervensi". */
+.titik {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+  flex-shrink: 0;
+}
+.titik-ringan { background: var(--jp-sev-h-tx); }
+.titik-sedang { background: var(--jp-sev-m-tx); }
+.titik-berat  { background: var(--jp-sev-r-tx); }
+/* Kartu "titik terdekat": jangan menumpuk kartu filter (keduanya absolute).
+   Posisikan di kiri-bawah, jauh dari drawer ringkasan (kanan-bawah). */
+.jp-mapfilter#peta-terdekat-box {
+  top: auto;
+  bottom: 16px;
+  left: 16px;
+  right: auto;
+  width: min(360px, calc(100% - 32px));
+}
+
 /* === GPS Marker (seperti Google Maps) === */
 .gps-marker { position: relative; width: 24px; height: 24px; }
 .gps-dot { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 16px; height: 16px; border-radius: 50%; background: #1a73e8; border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.4); z-index: 2; }
@@ -781,7 +857,7 @@ th.jp-num-right { font-weight: 600; }
 .jp-prio-teks { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .jp-prio-teks strong { font-size: 13px; font-weight: 600; color: var(--jp-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .jp-prio-teks small { font-family: var(--jp-mono); font-size: 11px; color: var(--jp-muted); }
-.jp-prio-rp { font-family: var(--jp-mono); font-size: 11px; font-weight: 600; color: var(--jp-primary); white-space: nowrap; }
+.jp-prio-skor { font-family: var(--jp-mono); font-size: 11px; font-weight: 600; color: var(--jp-primary); white-space: nowrap; }
 .jp-popup { font-family: var(--jp-font); font-size: 12px; }
 .jp-popup .badge { margin: 4px 0; }
 .jp-linkbtn {
@@ -798,8 +874,10 @@ th.jp-num-right { font-weight: 600; }
 .jp-foto-dialog #foto-img { display: block; max-width: min(860px, 88vw); max-height: 80vh; object-fit: contain; border-radius: 8px; }
 .jp-foto-dialog .dialog-x { background: rgba(255,255,255,0.9); }
 @media (max-width: 768px) {
-  .jp-drawer { display: none; }
   .jp-mapfilter { max-width: calc(100% - 32px); }
+  /* Drawer ringkasan jadi bottom-sheet lipat di mobile (bukan disembunyikan):
+     header selalu terlihat, isi dilipat default via JS. */
+  #peta-terdekat-box { bottom: 76px; left: 8px; right: 8px; width: auto; }
 }
 
 /* ---- Riwayat civic (Stitch Layar 3) ---- */
@@ -905,23 +983,21 @@ label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label da
 .jp-topbar { position: sticky; top: 0; z-index: 1000; }
 .nav-tray { position: sticky; top: 56px; z-index: 999; max-height: calc(100vh - 56px); overflow-y: auto; }
 .nav-tray a { display: block; padding: 12px 16px; border-bottom: 1px solid var(--jp-line); }
-.jp-status::before {
-  content: "";
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--jp-sev-h-tx);
-}
-.jp-status.galat::before { background: var(--jp-err); }
+
 .nav-toggle { display: none; }
 
 /* ---- Loading overlay ---- */
 .jp-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; width: 100%; height: 100%; min-height: 300px; color: var(--jp-muted); font-size: 15px; font-weight: 500; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.95); z-index: 10; border-radius: 8px; }
 .jp-loading-spinner { width: 64px; height: 64px; border: 5px solid var(--jp-container); border-top-color: var(--jp-primary); border-radius: 50%; animation: jp-spin 0.8s linear infinite; }
+/* Spinner kecil inline (dipakai riwayat.js saat memuat foto bukti di modal). */
+.jp-spinner {
+  display: inline-block;
+  border: 3px solid var(--jp-container);
+  border-top-color: var(--jp-primary);
+  border-radius: 50%;
+  animation: jp-spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
 .jp-loading p { margin: 0; font-weight: 600; color: var(--jp-ink); }
 @keyframes jp-spin { to { transform: rotate(360deg); } }
 @keyframes jp-skeleton { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
@@ -930,9 +1006,28 @@ label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label da
   .jp-nav, .jp-meta-chip, .jp-model-chip { display: none; }
   .nav-toggle { display: flex; }
 }
-.nav-toggle span { background: #0b1c30; }
+.nav-toggle {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
+  padding: 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.nav-toggle span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: #0b1c30;
+  border-radius: 9999px;
+}
 .nav-tray { background: #fff; border-bottom: 1px solid var(--jp-line); padding: 8px 16px 12px; }
-.nav-tray a { color: var(--jp-ink2); border-bottom-color: var(--jp-line); }
+.nav-tray a { color: var(--jp-ink2); border-bottom-color: var(--jp-line); text-decoration: none; }
+.nav-tray a:hover { text-decoration: none; }
 .nav-tray a.aktif { color: var(--jp-primary); font-weight: 700; }
 
 /* util */
@@ -1162,3 +1257,13 @@ label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label da
   .nav-tray { top: 48px; max-height: calc(100vh - 48px); }
   .nav-tray a { padding: 14px 16px; font-size: 14px; }
 }
+
+/* FIX 2026-10-16: cegah overflow horizontal di .jp-grid.
+   Grid item default min-width:auto sehingga konten panel kanan memaksa
+   grid (dan seluruh halaman) melebar melebihi viewport. */
+.jp-grid > .jp-col-main,
+.jp-grid > .jp-col-side { min-width: 0; }
+.jp-workbar > * { min-width: 0; }
+.jp-statusbar { flex-wrap: wrap; }
+.jp-wrap > * { min-width: 0; }
+.jp-statusbar > * { min-width: 0; }
