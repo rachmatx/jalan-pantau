@@ -462,6 +462,16 @@ document.getElementById("unduh-live").addEventListener("click", async () => {
   // Expose function to show error state (for live.js error handling)
   window.showCameraError = function(msg) {
     if (errState) errState.style.display = "grid";
+    // Tampilkan penyebab asli dari server; judul kartu disesuaikan bila
+    // bukan galat perangkat (mis. tracker/model gagal) agar tak menyesatkan.
+    var diag = document.getElementById("camera-error-diagnosa");
+    if (diag && msg) diag.textContent = msg;
+    var judul = document.getElementById("camera-error-judul");
+    if (judul) {
+      judul.textContent = (msg && /tracking|model/i.test(msg))
+        ? "Galat Pemrosesan Live"
+        : "Koneksi Kamera Inspeksi Terputus";
+    }
     if (statusLive) {
       statusLive.textContent = msg || "Koneksi kamera terputus.";
       statusLive.classList.add("galat");
