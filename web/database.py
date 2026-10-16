@@ -71,6 +71,7 @@ def get_db():
         g.db.execute("PRAGMA foreign_keys = ON")
         g.db.executescript(SKEMA)
         migrasi_prioritas_v1(g.db)
+        migrasi_prioritas_v2(g.db)
     return g.db
 
 
@@ -143,6 +144,26 @@ def migrasi_prioritas_v1(db):
         cols = {r[1] for r in db.execute(f"PRAGMA table_info({tabel})").fetchall()}
         if "total_rp" in cols and "skor_prioritas" not in cols:
             db.execute(f"ALTER TABLE {tabel} RENAME COLUMN total_rp TO skor_prioritas")
+    db.commit()
+
+
+def migrasi_prioritas_v2(db):
+    """Hitung ulang skor_prioritas dari severity (formula M8, 2026-10-16).
+
+    Formula lama memakai luas; formula baru hanya severity (33/67/100).
+    Idempoten dan aman dijalankan tiap startup: nilai baru maupun lama
+    selalu menghasilkan skor yang benar.
+    """
+    db.execute(
+        "UPDATE temuan SET skor_prioritas = CASE "
+        "WHEN LOWER(severity) = 'berat' THEN 100 "
+        "WHEN LOWER(severity) = 'sedang' THEN 67 "
+        "ELSE 33 END"
+    )
+    db.execute(
+        "UPDATE sesi SET skor_prioritas = COALESCE("
+        "(SELECT SUM(skor_prioritas) FROM temuan WHERE temuan.sesi_id = sesi.id), 0)"
+    )
     db.commit()
 
 
