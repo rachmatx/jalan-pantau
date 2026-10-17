@@ -15,13 +15,13 @@
 model_gambar: best.pt
 model_live: best.pt
 # Scene classifier (gate jalan basah): YOLOv11n-cls latih IROSCD (~5MB).
-# Bila scene=wet_road (keyakinan >= conf_min), ambang pothole naik ke
-# ambang_lubang -> menekan false positive bercak air. Model hilang = gate
-# nonaktif otomatis (perilaku normal, tanpa error).
+# Gate aktif bila probabilitas wet_road >= wet_min (bukan top-1), agar foto
+# ambigu — jalan basah yang rusak, terklasifikasi "damaged" — tetap memicu
+# gate. Model hilang = gate nonaktif otomatis (perilaku normal, tanpa error).
 model_scene: scene_cls.pt
 scene_gate:
   aktif: true
-  conf_min: 0.70
+  wet_min: 0.25
   ambang_lubang: 0.45
 device: auto
 imgsz_gambar: 960
@@ -44,6 +44,8 @@ half_gambar: false
 teliti:
   aktif_default: false
   tile: 640
+  imgsz: 960  # resolusi inferensi PER TILE (terpisah dari `tile`); 640 membuat
+              # model buta pada retak tipis (0 box vs 79 box @960, diag 17 Okt 2026)
   overlap: 0.25
   iou_gabung: 0.5
   metode_gabung: wbf  # nms | wbf (wbf melebur box bertumpuk lintas tile, lebih halus dari nms)

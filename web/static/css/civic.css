@@ -191,6 +191,7 @@ main { padding: 0; flex: 1 0 auto; }
   margin: 0;
 }
 .jp-status.galat { background: #fdecea; color: var(--jp-err); border: 1px solid var(--jp-err); }
+.jp-status.kosong { background: #fff6e0; color: #8a5a00; border: 1px solid #e0a800; font-weight: 700; }
 .jp-chip-model {
   display: flex;
   align-items: center;
