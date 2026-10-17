@@ -22,8 +22,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from flask import (Flask, Response, current_app, jsonify, redirect,
                    render_template, request, send_file, session, url_for)
 
-from deteksi import (analisis_gambar, buat_pdf, get_kalibrasi,
-                     hitung_ppc, nama_model, simpan_kalibrasi,
+from deteksi import (analisis_gambar, analisis_gambar_terjadwal, buat_pdf,
+                     get_kalibrasi, hitung_ppc, nama_model, simpan_kalibrasi,
                      terapkan_koreksi)
 from streaming import MANAGER
 from database import (daftar_sesi, detail_sesi, hapus_sesi, simpan_sesi,
@@ -434,8 +434,10 @@ def create_app():
                 or data[:8] == b"\x89PNG\r\n\x1a\n"):
             return jsonify({"error": "Berkas bukan gambar JPG/PNG yang valid."}), 400
         try:
-            hasil = analisis_gambar(data, conf=conf, malam=malam,
-                                    teliti=teliti)
+            # Via worker thread GPU khusus: tiap request Flask = thread baru dan
+            # inferensi CUDA pertama di thread baru memakan ~10 dtk (terukur).
+            hasil = analisis_gambar_terjadwal(data, conf=conf, malam=malam,
+                                              teliti=teliti)
         except ValueError as e:
             return jsonify({"error": str(e)}), 400
         except Exception:
@@ -1062,6 +1064,15 @@ def _preload_model_di_background():
                 print("[preload] Warmup model live selesai.")
             except Exception as e:
                 print(f"[preload] Warmup dilewati: {e}")
+            # Worker inferensi GPU khusus: start + warmup di thread-nya sendiri
+            # (anti pajak ~10 dtk inisialisasi CUDA per request Flask).
+            try:
+                from deteksi import start_worker_inferensi
+                print("[preload] Memulai worker inferensi GPU...")
+                start_worker_inferensi()
+                print("[preload] Worker inferensi GPU berjalan.")
+            except Exception as e:
+                print(f"[preload] Worker inferensi dilewati: {e}")
         except Exception as e:
             print(f"[preload] Gagal preload model: {e}")
     t = threading.Thread(target=_load, daemon=True)

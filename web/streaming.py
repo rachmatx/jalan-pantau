@@ -233,6 +233,10 @@ class StreamManager:
         pakai_diff = (source_type != "file") and thr > 0
         prev_gray = None
         k = 0
+        # Catatan (17 Okt 2026): warmup dummy di sini DICOBA lalu di-revert —
+        # terukur tidak menghilangkan kelambatan inferensi #1 (warmup 4,2 dtk +
+        # #1 3,54 dtk, vs tanpa warmup #1 ~3-4 dtk). Dead time ~3-4 dtk saat
+        # stream mulai adalah inisialisasi CUDA per-thread (satu kali).
         while not stop.is_set():
             with self._raw_lock:
                 raw = self._raw_frame

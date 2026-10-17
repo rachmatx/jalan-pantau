@@ -108,6 +108,7 @@ function refreshVerifikasiUI() {
   document.getElementById("verifikasi-reset").hidden = !info.total;
   hasil.hidden = false;
   status.classList.remove("galat");
+  status.classList.remove("kosong");
   status.textContent = `${terakhir.rows.length} temuan.` +
     (terakhir.teliti ? " (mode teliti)." : ".") +
     (label ? ` Terverifikasi operator: ${label}.` : "");
@@ -263,6 +264,7 @@ form.addEventListener("submit", async (e) => {
   var tombolAsli = tombol.innerHTML;
   tombol.innerHTML = '<span style="display:inline-block;width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:jp-spin .8s linear infinite;vertical-align:middle;margin-right:8px"></span><span style="vertical-align:middle">Menganalisis…</span>';
   status.classList.remove("galat");
+  status.classList.remove("kosong");
   status.textContent = "Mendeteksi…";
   hasil.hidden = true;
   slot.classList.add("kosong");
@@ -291,8 +293,13 @@ form.addEventListener("submit", async (e) => {
       if (sc && sc.label_id) {
         sb.hidden = false;
         sb.classList.toggle("gate", !!sc.gate_aktif);
-        sb.textContent = "Kondisi: " + sc.label_id + " (" + Math.round((sc.conf || 0) * 100) + "%)"
-          + (sc.gate_aktif ? " · gate anti-false-positive aktif" : "");
+        let teks = "Kondisi: " + sc.label_id + " (" + Math.round((sc.conf || 0) * 100) + "%)";
+        if (sc.gate_aktif && sc.label !== "wet_road" && sc.prob_basah != null) {
+          teks += " · sinyal basah " + Math.round(sc.prob_basah * 100) + "% → gate aktif";
+        } else if (sc.gate_aktif) {
+          teks += " · gate anti-false-positive aktif";
+        }
+        sb.textContent = teks;
       } else {
         sb.hidden = true;
       }
@@ -304,7 +311,9 @@ form.addEventListener("submit", async (e) => {
       status.classList.remove("galat");
     }
     if (!json.rows.length) {
-      status.textContent = "Tidak ada kerusakan terdeteksi pada confidence ini. Coba turunkan confidence, centang mode malam untuk foto gelap, centang mode teliti untuk retak kecil, atau gunakan foto siang hari.";
+      status.textContent = "Tidak ada kerusakan terdeteksi.";
+      status.classList.remove("galat");
+      status.classList.add("kosong");
       return;
     }
     barisAsli = json.rows;

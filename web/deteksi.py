@@ -19,6 +19,17 @@ import yaml
 # Harus di-set SEBELUM ultralytics diimpor (impor terjadi malas di get_model).
 os.environ.setdefault("YOLO_AUTOINSTALL", "false")
 
+# Redam spam "'half' is deprecated..." dari ultralytics baru (muncul tiap
+# predict). Perilaku TIDAK berubah: half=True tetap diteruskan & FP16 tetap
+# aktif; yang dibungkam hanya baris log-nya (LOGGER.warning, bukan warnings).
+# Bila ultralytics menghapus argumen `half`, migrasinya = set dtype sekali
+# saat load (model.model.half()) lalu hapus argumen half dari predict.
+class _FilterHalfDeprecated(logging.Filter):
+    def filter(self, record):
+        return "'half' is deprecated" not in record.getMessage()
+
+logging.getLogger("ultralytics").addFilter(_FilterHalfDeprecated())
+
 _log = logging.getLogger(__name__)
 
 WEB_DIR = Path(__file__).parent
@@ -32,7 +43,8 @@ from prioritas import skor as skor_prioritas  # noqa: E402
 from laporan import buat_laporan  # noqa: E402
 from scene_gate import (  # noqa: E402
     putuskan_gate, saring_gate_basah, label_id as label_scene_id,
-    CONF_MIN_BAWAAN as GATE_CONF_MIN, AMBANG_LUBANG_BAWAAN as GATE_AMBANG,
+    WET_MIN_BAWAAN as GATE_WET_MIN, AMBANG_LUBANG_BAWAAN as GATE_AMBANG,
+    WET_LABEL,
 )
 
 MODEL_DEFAULT = APP_DIR / "weights" / "best.pt"
@@ -701,20 +713,22 @@ def baca_konfig_gate():
     except Exception:
         aktif = True
     try:
-        conf_min = float(g.get("conf_min", GATE_CONF_MIN))
+        wet_min = float(g.get("wet_min", GATE_WET_MIN))
     except (TypeError, ValueError):
-        conf_min = GATE_CONF_MIN
+        wet_min = GATE_WET_MIN
     try:
         ambang = float(g.get("ambang_lubang", GATE_AMBANG))
     except (TypeError, ValueError):
         ambang = GATE_AMBANG
-    return {"aktif": aktif, "conf_min": conf_min, "ambang_lubang": ambang}
+    return {"aktif": aktif, "wet_min": wet_min, "ambang_lubang": ambang}
 
 
 def klasifikasi_scene(img):
-    """Klasifikasi kondisi jalan -> {'label','conf'} atau None.
+    """Klasifikasi kondisi jalan -> {'label','conf','probs'} atau None.
 
     img: numpy array BGR (hasil decode_image). None bila model tak tersedia.
+    'probs': 3 probabilitas teratas {label_kanonik: prob} — dipakai gate agar
+    foto ambigu (basah+rusak) tetap terdeteksi sinyal basahnya.
     """
     try:
         m = get_scene_model()
@@ -725,8 +739,15 @@ def klasifikasi_scene(img):
     try:
         r = m.predict(img, verbose=False)[0]
         idx = int(r.probs.top1)
+        import torch
+        p = r.probs.data.flatten()
+        k = min(3, len(p))
+        topk = torch.topk(p, k=k)
+        probs = {kanonik_kelas(r.names[int(i)]): round(float(c), 3)
+                 for i, c in zip(topk.indices, topk.values)}
         return {"label": kanonik_kelas(r.names[idx]),
-                "conf": round(float(r.probs.top1conf), 3)}
+                "conf": round(float(r.probs.top1conf), 3),
+                "probs": probs}
     except Exception:
         return None
 
@@ -1085,13 +1106,18 @@ def prediksi_teliti(model, img, conf=0.25, iou=0.5, tcfg=None, ambang=None,
             batas = _inf.get("batas_ukuran")
     h, w = img.shape[:2]
     tile = int(tcfg.get("tile", 640))
+    # Resolusi inferensi per tile TERPISAH dari ukuran tile. Bukti empiris
+    # (diag_teliti, 17 Okt 2026): model buta total pada imgsz 640 untuk retak
+    # tipis (0 box) tapi menemukan 79 box pada 960 — karena itu tile 640
+    # di-upscale ke imgsz_tile saat inferensi. Jangan samakan dengan `tile`.
+    imgsz_tile = int(tcfg.get("imgsz", 960))
     buang_tepi = bool(tcfg.get("buang_tepi_tile", True))
     iou_ag = float(tcfg.get("iou_agnostik", 0.6))
     kotak, skor, kls = [], [], []
     n_tepi = 0
     for (x0, y0) in grid_tile(w, h, tile, tcfg.get("overlap", 0.25)):
         crop = img[y0:y0 + tile, x0:x0 + tile]
-        res = model.predict(crop, conf=conf, imgsz=tile, iou=iou,
+        res = model.predict(crop, conf=conf, imgsz=imgsz_tile, iou=iou,
                             device=device, half=half_untuk(device),
                             verbose=False)[0]
         for b in res.boxes:
@@ -1190,8 +1216,7 @@ def analisis_gambar(raw: bytes, conf: float = 0.25, model_path=None,
     cfg_gate = baca_konfig_gate()
     scene = klasifikasi_scene(img) if cfg_gate["aktif"] else None
     gate_aktif = (scene is not None
-                  and putuskan_gate(scene.get("label"), scene.get("conf"),
-                                    cfg_gate["conf_min"]))
+                  and putuskan_gate(scene.get("probs"), cfg_gate["wet_min"]))
     if malam:
         img = cerahkan_malam(img)
     lat, lon = exif_gps(raw)
@@ -1273,6 +1298,8 @@ def analisis_gambar(raw: bytes, conf: float = 0.25, model_path=None,
         "scene": ({"label": scene.get("label"),
                    "label_id": label_scene_id(scene.get("label")),
                    "conf": scene.get("conf"),
+                   "prob_basah": round(float((scene.get("probs") or {})
+                                             .get(WET_LABEL, 0.0)), 3),
                    "gate_aktif": bool(gate_aktif)}
                   if scene else None),
     }
@@ -1311,3 +1338,76 @@ def buat_pdf(rows, total, image_b64=None, source="-", model_name="-",
             except OSError:
                 pass
         raise
+
+
+# ---------------------------------------------------------------------------
+# Worker inferensi GPU khusus (anti "10 detik per request").
+#
+# Temuan empiris (17 Okt 2026, GTX 1650 4GB): inferensi CUDA PERTAMA di sebuah
+# thread memakan ~10 detik (inisialisasi konteks CUDA per-thread), inferensi
+# berikutnya di thread yang sama ~0,7 detik. Server dev Werkzeug melahirkan
+# thread BARU per request -> setiap /api/detect membayar pajak 10 detik.
+# Solusi: satu worker thread permanen; request HTTP mengantrekan kerjaan.
+# ---------------------------------------------------------------------------
+import queue as _queue
+
+_kunci_pekerja = threading.Lock()
+_thread_pekerja = None
+_antrean_pekerja = None
+
+
+def _loop_pekerja(antrean):
+    # Pemanasan di thread ini: inisialisasi konteks CUDA sekali di awal,
+    # sehingga request pertama pengguna tidak membayar biayanya.
+    try:
+        import numpy as _np
+        inf = get_inferensi()
+        model = get_model(kunci="model_gambar")
+        device = pilih_device(inf.get("device"), str(resolve_model()))
+        model.predict(_np.zeros((480, 640, 3), dtype=_np.uint8),
+                      device=device, half=half_untuk(device), verbose=False)
+    except Exception:
+        _log.exception("warmup worker inferensi gagal (diabaikan)")
+    while True:
+        fn, args, kwargs, balasan = antrean.get()
+        try:
+            balasan.put((True, fn(*args, **kwargs)))
+        except Exception as e:  # noqa: BLE001 - teruskan ke peminta
+            balasan.put((False, e))
+
+
+def _pastikan_pekerja():
+    global _thread_pekerja, _antrean_pekerja
+    if _thread_pekerja is not None:
+        return
+    with _kunci_pekerja:
+        if _thread_pekerja is not None:
+            return
+        _antrean_pekerja = _queue.Queue()
+        _thread_pekerja = threading.Thread(
+            target=_loop_pekerja, args=(_antrean_pekerja,),
+            name="inferensi-gpu", daemon=True)
+        _thread_pekerja.start()
+
+
+def start_worker_inferensi():
+    """Mulai worker thread GPU + warmup. Dipanggil sekali saat startup server
+    agar request pertama pun tidak membayar inisialisasi CUDA."""
+    _pastikan_pekerja()
+
+
+def analisis_gambar_terjadwal(*args, **kwargs):
+    """analisis_gambar via worker thread GPU khusus.
+
+    Dipakai oleh route HTTP (tiap request = thread baru). Bila dipanggil dari
+    dalam worker itu sendiri, jalan langsung (anti-deadlock).
+    """
+    _pastikan_pekerja()
+    if threading.current_thread() is _thread_pekerja:
+        return analisis_gambar(*args, **kwargs)
+    balasan = _queue.Queue(maxsize=1)
+    _antrean_pekerja.put((analisis_gambar, args, kwargs, balasan))
+    ok, hasil = balasan.get()
+    if not ok:
+        raise hasil
+    return hasil
