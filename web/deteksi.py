@@ -30,6 +30,10 @@ if str(APP_DIR) not in sys.path:
 from severity import diagnose, load_config  # noqa: E402
 from prioritas import skor as skor_prioritas  # noqa: E402
 from laporan import buat_laporan  # noqa: E402
+from scene_gate import (  # noqa: E402
+    putuskan_gate, saring_gate_basah, label_id as label_scene_id,
+    CONF_MIN_BAWAAN as GATE_CONF_MIN, AMBANG_LUBANG_BAWAAN as GATE_AMBANG,
+)
 
 MODEL_DEFAULT = APP_DIR / "weights" / "best.pt"
 WEIGHTS_DIR = APP_DIR / "weights"
@@ -650,6 +654,83 @@ def nama_model(kunci="model_gambar"):
     return resolve_model(kunci=kunci).name
 
 
+def resolve_scene_model():
+    """Path bobot classifier kondisi jalan; None bila tidak tersedia.
+
+    TIDAK fallback ke MODEL_DEFAULT — itu detektor, bukan classifier.
+    """
+    try:
+        nama = str(get_inferensi().get("model_scene", "") or "").strip()
+    except Exception:
+        nama = ""
+    nama = nama.replace("\\", "/").split("/")[-1]
+    if nama.lower().endswith(".pt"):
+        p = WEIGHTS_DIR / nama
+        if p.exists():
+            return p
+    p = WEIGHTS_DIR / "scene_cls.pt"
+    return p if p.exists() else None
+
+
+_scene_model = None
+_scene_lock = threading.Lock()
+
+
+def get_scene_model():
+    """Classifier kondisi jalan (YOLOv11n-cls IROSCD); None bila tak ada."""
+    global _scene_model
+    if _scene_model is None:
+        with _scene_lock:
+            if _scene_model is None:
+                p = resolve_scene_model()
+                if p is None:
+                    return None
+                from ultralytics import YOLO
+                _scene_model = YOLO(str(p))
+    return _scene_model
+
+
+def baca_konfig_gate():
+    """Parameter gate dari config/inferensi.yaml + default aman."""
+    try:
+        g = get_inferensi().get("scene_gate") or {}
+    except Exception:
+        g = {}
+    try:
+        aktif = bool(g.get("aktif", True))
+    except Exception:
+        aktif = True
+    try:
+        conf_min = float(g.get("conf_min", GATE_CONF_MIN))
+    except (TypeError, ValueError):
+        conf_min = GATE_CONF_MIN
+    try:
+        ambang = float(g.get("ambang_lubang", GATE_AMBANG))
+    except (TypeError, ValueError):
+        ambang = GATE_AMBANG
+    return {"aktif": aktif, "conf_min": conf_min, "ambang_lubang": ambang}
+
+
+def klasifikasi_scene(img):
+    """Klasifikasi kondisi jalan -> {'label','conf'} atau None.
+
+    img: numpy array BGR (hasil decode_image). None bila model tak tersedia.
+    """
+    try:
+        m = get_scene_model()
+    except Exception:
+        return None
+    if m is None:
+        return None
+    try:
+        r = m.predict(img, verbose=False)[0]
+        idx = int(r.probs.top1)
+        return {"label": kanonik_kelas(r.names[idx]),
+                "conf": round(float(r.probs.top1conf), 3)}
+    except Exception:
+        return None
+
+
 def decode_image(raw: bytes):
     import numpy as np
 
@@ -1104,6 +1185,13 @@ def analisis_gambar(raw: bytes, conf: float = 0.25, model_path=None,
         maks_temuan = 0
     conf_run = conf_prediksi(conf, ambang)  # predict serendah kelas terendah
     img = decode_image(raw)
+    # --- Gate kondisi jalan: klasifikasi scene SEBELUM cerahkan_malam agar
+    # classifier melihat foto asli (sesuai data latih IROSCD). ---
+    cfg_gate = baca_konfig_gate()
+    scene = klasifikasi_scene(img) if cfg_gate["aktif"] else None
+    gate_aktif = (scene is not None
+                  and putuskan_gate(scene.get("label"), scene.get("conf"),
+                                    cfg_gate["conf_min"]))
     if malam:
         img = cerahkan_malam(img)
     lat, lon = exif_gps(raw)
@@ -1160,6 +1248,15 @@ def analisis_gambar(raw: bytes, conf: float = 0.25, model_path=None,
                                        lintas_kelas=bool(gf.get("lintas_kelas",
                                                                 True)))
         info["fragmen"] = n_lebur
+    # --- Gate jalan basah: buang pothole ber-confidence rendah (kemungkinan
+    # bercak air). Hanya saat scene wet_road terdeteksi; kegagalan gate =
+    # kembali ke perilaku normal (status quo), bukan kesalahan baru. ---
+    n_gate = 0
+    if gate_aktif:
+        rows, n_gate = saring_gate_basah(rows, cfg_gate["ambang_lubang"])
+    info["gate"] = {"aktif": bool(gate_aktif), "disaring": n_gate,
+                    "ambang_lubang": (cfg_gate["ambang_lubang"]
+                                      if gate_aktif else None)}
     rows, n_pangkas = batas_topk(rows, maks_temuan)
     info["topk"] = n_pangkas
     gambar = anotasi_dari_rows(img, rows)
@@ -1173,6 +1270,11 @@ def analisis_gambar(raw: bytes, conf: float = 0.25, model_path=None,
         "malam": malam,
         "teliti": bool(teliti),
         "disaring": info,
+        "scene": ({"label": scene.get("label"),
+                   "label_id": label_scene_id(scene.get("label")),
+                   "conf": scene.get("conf"),
+                   "gate_aktif": bool(gate_aktif)}
+                  if scene else None),
     }
 
 

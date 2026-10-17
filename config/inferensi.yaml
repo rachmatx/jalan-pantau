@@ -14,6 +14,15 @@
 # Berlaku mulai start/deteksi berikutnya (live baca ulang tiap start).
 model_gambar: best.pt
 model_live: best.pt
+# Scene classifier (gate jalan basah): YOLOv11n-cls latih IROSCD (~5MB).
+# Bila scene=wet_road (keyakinan >= conf_min), ambang pothole naik ke
+# ambang_lubang -> menekan false positive bercak air. Model hilang = gate
+# nonaktif otomatis (perilaku normal, tanpa error).
+model_scene: scene_cls.pt
+scene_gate:
+  aktif: true
+  conf_min: 0.70
+  ambang_lubang: 0.45
 device: auto
 imgsz_gambar: 960
 imgsz_live: 640  # 640 = akurasi penuh; 480/320 hanya bila mesin sangat lambat

@@ -28,6 +28,16 @@
     if (!res.ok) return;
     const data = await res.json();
     document.getElementById("kpi-segmen").textContent = data.length;
+    // Visual distribusi kategori.
+    var hit = { "Baik": 0, "Sedang": 0, "Rusak Ringan": 0, "Rusak Berat": 0 };
+    data.forEach(function(g) {
+      var k = (g.sdi || {}).kategori;
+      if (hit[k] !== undefined) hit[k]++;
+    });
+    document.getElementById("kat-baik").textContent = hit["Baik"];
+    document.getElementById("kat-sedang").textContent = hit["Sedang"];
+    document.getElementById("kat-ringan").textContent = hit["Rusak Ringan"];
+    document.getElementById("kat-berat").textContent = hit["Rusak Berat"];
     const tb = document.getElementById("tbl-segmen");
     if (!data.length) {
       tb.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--jp-muted)">'
@@ -67,6 +77,31 @@
       "<td>" + esc(ket || "-") + "</td></tr>";
   }
 
+  /* Bilah skala SDI 0-200 dengan penanda nilai visual & manual. */
+  function skalaSDI(total, manual) {
+    var pos = function(v) {
+      return Math.max(0, Math.min(200, Number(v) || 0)) / 200 * 100;
+    };
+    var ticks = [0, 50, 100, 150, 200].map(function(t) {
+      return '<span class="sdi-tick" style="left:' + (t / 200 * 100) + '%">' + t + "</span>";
+    }).join("");
+    var marks = "";
+    if (total !== null && total !== undefined) {
+      marks += '<div class="sdi-mark" style="left:' + pos(total) + '%"><span>'
+        + esc(total) + "</span></div>";
+    }
+    if (manual !== null && manual !== undefined && manual !== "") {
+      marks += '<div class="sdi-mark manual" style="left:' + pos(manual) + '%"><span>manual '
+        + esc(manual) + "</span></div>";
+    }
+    return '<div class="sdi-scale">' + ticks + marks + "</div>" +
+      '<div class="sdi-legend">' +
+      '<span><i style="background:#15803d"></i>Baik &lt;50</span>' +
+      "<span><i style=\"background:#a16207\"></i>Sedang 50–100</span>" +
+      "<span><i style=\"background:#c2410c\"></i>Rusak Ringan 100–150</span>" +
+      "<span><i style=\"background:#b91c1c\"></i>Rusak Berat &gt;150</span></div>";
+  }
+
   async function bukaDetail(id) {
     const res = await fetch("/api/segmen/" + id);
     if (!res.ok) return;
@@ -93,7 +128,7 @@
 
     document.getElementById("dg-judul").textContent = "Segmen: " + g.nama;
     document.getElementById("dg-isi").innerHTML =
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">' +
+      '<div class="dg-grid">' +
       "<div>" +
         "<h3 style='font-size:14px;margin:0 0 8px'>SDI-VISUAL</h3>" +
         '<table class="jp-table" style="width:100%"><tbody>' +
@@ -106,6 +141,8 @@
           + fmtSDI(sdi.sdi_total) + " " + badgeKat(sdi.kategori) + "</p>" +
         '<p style="font-size:12px;color:var(--jp-muted);margin:0 0 4px">' + selisih + "</p>" + tanpa +
         '<p style="font-size:12px;color:var(--jp-muted)">' + esc(sdi.varian || "") + "</p>" +
+        "<h3 style='font-size:14px;margin:14px 0 4px'>Posisi pada skala Bina Marga</h3>" +
+        skalaSDI(sdi.sdi_total, manual) +
       "</div>" +
       "<div>" +
         "<h3 style='font-size:14px;margin:0 0 8px'>DATA SEGMEN</h3>" +
@@ -187,13 +224,14 @@
   document.getElementById("b-batal").onclick = function() {
     document.getElementById("dlg-buat").close();
   };
-  document.getElementById("form-buat").addEventListener("submit", async function(ev) {
-    ev.preventDefault();
+  async function simpanBaru() {
+    const nama = document.getElementById("b-nama").value.trim();
+    if (!nama) { document.getElementById("b-nama").focus(); return; }
     const res = await fetch("/api/segmen", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        nama: document.getElementById("b-nama").value,
+        nama: nama,
         jalan: document.getElementById("b-jalan").value,
         panjang_m: document.getElementById("b-panjang").value,
         lebar_m: document.getElementById("b-lebar").value,
@@ -202,11 +240,17 @@
     });
     if (res.ok) {
       document.getElementById("dlg-buat").close();
-      ev.target.reset();
+      document.getElementById("b-nama").value = "";
+      document.getElementById("b-jalan").value = "";
+      document.getElementById("b-catatan").value = "";
       document.getElementById("b-panjang").value = "100";
       document.getElementById("b-lebar").value = "6";
       muat();
     }
+  }
+  document.getElementById("b-simpan").onclick = simpanBaru;
+  document.getElementById("dlg-buat").addEventListener("keydown", function(ev) {
+    if (ev.key === "Enter" && ev.target.tagName === "INPUT") { ev.preventDefault(); simpanBaru(); }
   });
   document.getElementById("dg-tutup").onclick = function() {
     document.getElementById("dlg-segmen").close();

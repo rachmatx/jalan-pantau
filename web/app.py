@@ -1034,13 +1034,26 @@ def _preload_model_di_background():
     import threading
     def _load():
         try:
-            from deteksi import get_model, nama_model
+            from deteksi import get_model, nama_model, get_scene_model, resolve_scene_model
             print("[preload] Memuat model gambar...")
             get_model(kunci="model_gambar")
             print(f"[preload] Model gambar siap: {nama_model(kunci='model_gambar')}")
             print("[preload] Memuat model live...")
             ml = get_model(kunci="model_live")
             print(f"[preload] Model live siap: {nama_model(kunci='model_live')}")
+            # Scene classifier (gate jalan basah, ~5MB): preload + warmup dummy
+            # agar klasifikasi foto pertama tidak menunggu.
+            try:
+                if resolve_scene_model() is not None:
+                    print("[preload] Memuat scene classifier...")
+                    ms = get_scene_model()
+                    import numpy as np
+                    ms.predict(np.zeros((224, 224, 3), dtype=np.uint8), verbose=False)
+                    print("[preload] Scene classifier siap.")
+                else:
+                    print("[preload] Scene classifier tidak ada -> gate nonaktif.")
+            except Exception as e:
+                print(f"[preload] Scene classifier dilewati: {e}")
             # Warmup: satu inferensi dummy agar sesi ONNX/CUDA + kernel siap,
             # sehingga deteksi pertama saat stream dimulai tidak menunggu.
             try:

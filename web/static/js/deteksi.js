@@ -285,6 +285,18 @@ form.addEventListener("submit", async (e) => {
       if (nm) nm.textContent = json.model;
       if (nc) nc.textContent = json.model;
     }
+    const sb = document.getElementById("scene-badge");
+    if (sb) {
+      const sc = json.scene;
+      if (sc && sc.label_id) {
+        sb.hidden = false;
+        sb.classList.toggle("gate", !!sc.gate_aktif);
+        sb.textContent = "Kondisi: " + sc.label_id + " (" + Math.round((sc.conf || 0) * 100) + "%)"
+          + (sc.gate_aktif ? " · gate anti-false-positive aktif" : "");
+      } else {
+        sb.hidden = true;
+      }
+    }
     slot.classList.remove("kosong");
     slot.innerHTML = `<img src="data:image/jpeg;base64,${json.image_b64}" alt="Hasil deteksi ${esc(berkas.name)}">`;
     if (json.gps && json.gps.lat != null && isiKoordinat("lat-gambar", "lon-gambar", json.gps.lat, json.gps.lon)) {

@@ -26,6 +26,26 @@
     </p>
   </div>
 
+  <div class="jp-card" style="padding:14px 16px;margin-bottom:14px">
+    <h2 style="font-size:14px;font-weight:700;margin:0 0 10px">Cara mengisi segmen</h2>
+    <div class="jp-steps">
+      <div class="jp-step"><b>1</b><p><strong>Buat segmen 100 m</strong> lewat tombol di atas — satu segmen mewakili satu ruas 100 meter jalan.</p></div>
+      <div class="jp-step"><b>2</b><p><strong>Simpan sesi foto</strong> dari halaman Deteksi (tombol <strong>Simpan ke Riwayat</strong>) untuk tiap titik di ruas itu.</p></div>
+      <div class="jp-step"><b>3</b><p>Buka <strong>Detail</strong> segmen, lalu <strong>masukkan sesi</strong> ke daftar Sesi Anggota.</p></div>
+      <div class="jp-step"><b>4</b><p><strong>SDI-visual terhitung otomatis</strong>; isi kolom SDI manual dari survei lapangan untuk pembanding.</p></div>
+    </div>
+  </div>
+
+  <div class="jp-card" style="padding:14px 16px;margin-bottom:14px">
+    <h2 style="font-size:14px;font-weight:700;margin:0 0 10px">Distribusi kategori segmen</h2>
+    <div class="jp-kat-grid" id="kat-grid">
+      <div class="jp-kat" style="background:#15803d"><span>Baik</span><b id="kat-baik">0</b><small>SDI &lt; 50</small></div>
+      <div class="jp-kat" style="background:#a16207"><span>Sedang</span><b id="kat-sedang">0</b><small>SDI 50–100</small></div>
+      <div class="jp-kat" style="background:#c2410c"><span>Rusak Ringan</span><b id="kat-ringan">0</b><small>SDI 100–150</small></div>
+      <div class="jp-kat" style="background:#b91c1c"><span>Rusak Berat</span><b id="kat-berat">0</b><small>SDI &gt; 150</small></div>
+    </div>
+  </div>
+
   <div class="jp-card" style="overflow:hidden">
     <div style="overflow-x:auto">
       <table class="jp-table" style="width:100%">
@@ -50,17 +70,17 @@
   </div>
 
   <dialog id="dlg-segmen" class="jp-dialog" style="max-width:860px">
-    <div style="padding:18px 20px">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+    <div style="display:flex;flex-direction:column;height:100%;max-height:92vh;overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px 0;flex:none">
         <h2 id="dg-judul" style="font-size:20px;font-weight:700;margin:0">Detail Segmen</h2>
         <button type="button" id="dg-tutup" class="jp-btn-demo" style="padding:8px 16px">Tutup (Esc)</button>
       </div>
-      <div id="dg-isi" style="margin-top:12px"></div>
+      <div id="dg-isi" class="dialog-body" style="padding:12px 20px 18px"></div>
     </div>
   </dialog>
 
-  <dialog id="dlg-buat" class="jp-dialog" style="max-width:520px">
-    <form method="dialog" style="padding:18px 20px" id="form-buat">
+  <dialog id="dlg-buat" class="jp-dialog jp-dialog-auto" style="max-width:520px">
+    <div style="padding:18px 20px">
       <h2 style="font-size:18px;font-weight:700;margin:0 0 12px">Buat Segmen Baru</h2>
       <div style="display:grid;gap:10px">
         <div><label class="jp-caps" for="b-nama">NAMA SEGMEN</label><input id="b-nama" class="jp-input" required maxlength="120" placeholder="cth: Segmen 1 - STA 0+000"></div>
@@ -73,9 +93,9 @@
       </div>
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
         <button type="button" class="jp-btn-demo" id="b-batal" style="padding:8px 16px">Batal</button>
-        <button type="submit" class="jp-btn-save" style="padding:8px 16px">Simpan</button>
+        <button type="button" class="jp-btn-save" id="b-simpan" style="padding:8px 16px">Simpan</button>
       </div>
-    </form>
+    </div>
   </dialog>
 </div>
 {% endblock %}

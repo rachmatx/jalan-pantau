@@ -41,9 +41,13 @@ body {
   font-size: 14px;
   line-height: 20px;
   letter-spacing: 0;
+  /* Sticky footer: dorong footer ke bawah bila konten pendek. */
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 h1, h2, h3, p, a, button, input, select, table { font-feature-settings: normal; }
-main { padding: 0; }
+main { padding: 0; flex: 1 0 auto; }
 
 /* Pico CSS sudah dihapus — civic.css adalah satu-satunya otoritas styling. */
 
@@ -499,6 +503,10 @@ main { padding: 0; }
 @media (min-width: 640px) { .jp-result-head { flex-direction: row; align-items: center; justify-content: space-between; } }
 .jp-result-title { display: flex; align-items: center; gap: 8px; font-size: 24px; font-weight: 700; letter-spacing: -0.02em; color: var(--jp-ink); margin: 0; }
 .jp-result-sub { font-size: 12px; color: var(--jp-muted); margin: 2px 0 0; }
+.jp-scene { display: inline-block; font-size: 12px; font-weight: 600; color: var(--jp-ink);
+  background: #eef2f7; border: 1px solid #d5dce6; border-radius: 999px;
+  padding: 3px 12px; margin: 8px 0 0; }
+.jp-scene.gate { background: #e8f4fd; border-color: #7cc0ee; color: #0b5d8f; }
 .jp-result-actions { display: flex; align-items: center; gap: 8px; }
 .jp-btn-light, .jp-btn-save {
   display: inline-flex;
@@ -953,6 +961,45 @@ label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label da
 .jp-dialog:not([open]) { display: none; }
 .jp-dialog { min-width: 0; margin: auto; border: none; border-radius: 12px; padding: 0; max-width: min(900px, 94vw); width: 900px; max-height: 92vh; height: 92vh; display: flex; flex-direction: column; overflow: hidden; position: relative; background: #fff; color: var(--jp-ink2); }
 .jp-dialog::backdrop { background: rgba(11, 28, 48, 0.55); }
+/* Dialog kecil (formulir): tinggi mengikuti isi, bukan 92vh. */
+.jp-dialog-auto { height: auto; }
+.jp-dialog-auto > div { height: auto; max-height: 92vh; }
+/* Bilah skala SDI-visual (0-200) dengan penanda nilai. */
+.sdi-scale { position: relative; height: 14px; border-radius: 999px; overflow: visible;
+  background: linear-gradient(to right,
+    #15803d 0%, #15803d 25%,
+    #a16207 25%, #a16207 50%,
+    #c2410c 50%, #c2410c 75%,
+    #b91c1c 75%, #b91c1c 100%); margin: 26px 0 8px; }
+.sdi-scale .sdi-tick { position: absolute; top: -18px; transform: translateX(-50%);
+  font-size: 10px; color: var(--jp-muted); font-family: var(--jp-mono); white-space: nowrap; }
+.sdi-scale .sdi-mark { position: absolute; top: -7px; width: 3px; height: 28px;
+  background: #0f172a; border-radius: 2px; transform: translateX(-50%); }
+.sdi-scale .sdi-mark span { position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+  font-size: 11px; font-weight: 700; color: #0f172a; background: #fff;
+  border: 1px solid var(--jp-line); border-radius: 6px; padding: 1px 6px; white-space: nowrap; }
+.sdi-scale .sdi-mark.manual { background: #0369a1; }
+.sdi-scale .sdi-mark.manual span { color: #0369a1; border-color: #0369a1; }
+.sdi-legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 11px; color: var(--jp-muted); }
+.sdi-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; }
+/* Langkah alur kerja (halaman Segmen). */
+.jp-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+.jp-step { display: flex; gap: 10px; align-items: flex-start; }
+.jp-step b { flex: none; width: 26px; height: 26px; border-radius: 50%;
+  background: var(--jp-primary); color: #fff; font-size: 13px;
+  display: flex; align-items: center; justify-content: center; }
+.jp-step p { margin: 2px 0 0; font-size: 12.5px; color: var(--jp-muted); line-height: 1.55; }
+.jp-step p strong { color: var(--jp-ink2); }
+/* Kartu mini distribusi kategori. */
+.jp-kat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+@media (min-width: 640px) { .jp-kat-grid { grid-template-columns: repeat(4, 1fr); } }
+.jp-kat { border-radius: 10px; padding: 10px 12px; color: #fff; }
+.jp-kat span { display: block; font-size: 11px; font-weight: 600; opacity: .9; }
+.jp-kat b { font-size: 22px; font-weight: 800; font-family: var(--jp-mono); }
+.jp-kat small { display: block; font-size: 11px; opacity: .85; }
+/* Grid responsif isi dialog detail segmen. */
+.dg-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+@media (min-width: 720px) { .dg-grid { grid-template-columns: 1fr 1fr; } }
 .jp-dialog > div { display: flex; flex-direction: column; height: 100%; max-height: 92vh; overflow: hidden; }
 .jp-dialog .dialog-body { flex: 1; overflow-y: auto; min-height: 0; }
 .jp-dialog .dialog-footer { flex-shrink: 0; }
