@@ -1039,8 +1039,16 @@ def _preload_model_di_background():
             get_model(kunci="model_gambar")
             print(f"[preload] Model gambar siap: {nama_model(kunci='model_gambar')}")
             print("[preload] Memuat model live...")
-            get_model(kunci="model_live")
+            ml = get_model(kunci="model_live")
             print(f"[preload] Model live siap: {nama_model(kunci='model_live')}")
+            # Warmup: satu inferensi dummy agar sesi ONNX/CUDA + kernel siap,
+            # sehingga deteksi pertama saat stream dimulai tidak menunggu.
+            try:
+                import numpy as np
+                ml.predict(np.zeros((480, 640, 3), dtype=np.uint8), verbose=False)
+                print("[preload] Warmup model live selesai.")
+            except Exception as e:
+                print(f"[preload] Warmup dilewati: {e}")
         except Exception as e:
             print(f"[preload] Gagal preload model: {e}")
     t = threading.Thread(target=_load, daemon=True)

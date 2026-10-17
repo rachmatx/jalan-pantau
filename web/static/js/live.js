@@ -21,10 +21,23 @@ const confLiveOut = document.getElementById("conf-live-out");
 const statusLive = document.getElementById("status-live");
 const slotLive = document.getElementById("slot-live");
 const hasilLive = document.getElementById("hasil-live");
+const dialogTabelLive = document.getElementById("dialog-tabel-live");
 const btnMulai = document.getElementById("mulai");
 const btnBerhenti = document.getElementById("berhenti");
 let polling = null;
 let snapshot = null;
+
+// Dialog tabel temuan live (tanpa skor prioritas).
+const btnBukaTabelLive = document.getElementById("buka-tabel-live");
+if (btnBukaTabelLive && dialogTabelLive) {
+  btnBukaTabelLive.addEventListener("click", () => {
+    document.getElementById("dtl-sub").textContent =
+      document.getElementById("total-live-nilai").textContent;
+    dialogTabelLive.showModal();
+  });
+  dialogTabelLive.querySelector("[data-tutup]").addEventListener("click", () => dialogTabelLive.close());
+  dialogTabelLive.addEventListener("click", (e) => { if (e.target === dialogTabelLive) dialogTabelLive.close(); });
+}
 
 // Token kepemilikan stream. Server hanya punya SATU StreamManager untuk
 // seluruh aplikasi, jadi tanpa token ini tab kedua bisa mematikan atau
@@ -99,7 +112,7 @@ async function refreshStats() {
     statusLive.textContent =
       `Tampil ${s.fps_tampil} FPS · Inferensi ${s.fps_infer} FPS · ${s.unik} titik unik · ${s.deteksi} deteksi · frame ${s.frame} · ${s.source}`;
     // isi KPI cards (jika ada)
-    const cards = document.getElementById("stat-cards");
+    const cards = document.getElementById("stat-cards-wrap");
     if (cards) {
       if (document.getElementById("fps-stat"))  document.getElementById("fps-stat").textContent = s.fps_tampil;
       if (document.getElementById("fps-infer-stat")) document.getElementById("fps-infer-stat").textContent = s.fps_infer;
@@ -180,7 +193,7 @@ async function hentikan(manual = true) {
   }
   btnMulai.disabled = false;
   btnBerhenti.disabled = true;
-  const cards = document.getElementById("stat-cards");
+  const cards = document.getElementById("stat-cards-wrap");
   if (cards) cards.hidden = true;
   await ambilSnapshot();
 }
@@ -216,6 +229,9 @@ document.getElementById("demo").addEventListener("click", async () => {
   statusLive.textContent = "Memutar video contoh…";
   hasilLive.hidden = true;
   snapshot = null;
+  // Hentikan stream sebelumnya (bila ada) agar video demo selalu mulai dari awal.
+  if (polling) { clearInterval(polling); polling = null; }
+  await fetch("/api/stream/stop", { method: "POST", ...jsonBody() }).catch(() => {});
   try {
     const res = await fetch("/api/demo", {
       method: "POST",
@@ -226,7 +242,10 @@ document.getElementById("demo").addEventListener("click", async () => {
     if (!res.ok) throw new Error(json.error || "Gagal memutar video contoh.");
     streamToken = json.token || null;
     slotLive.classList.remove("kosong");
-    slotLive.innerHTML = `<img src="/api/stream" alt="Stream video contoh">`;
+    // Cache-buster: paksa browser membuka koneksi stream baru (bukan memakai
+    // koneksi MJPEG lama yang sudah selesai).
+    const ts = Date.now();
+    slotLive.innerHTML = `<img src="/api/stream?t=${ts}" alt="Stream video contoh">`;
     btnBerhenti.disabled = false;
     polling = setInterval(refreshStats, 1000);
     refreshStats();
