@@ -7,7 +7,7 @@
   <title>{% block title %}JalanPantau{% endblock %} — Deteksi Kerusakan Jalan</title>
   <meta name="description" content="JalanPantau: deteksi kerusakan jalan dengan YOLOv11s, penilaian severity terkalibrasi, dan peta sebaran GPS.">
   <meta property="og:title" content="JalanPantau — Sistem Inventarisasi Kerusakan Jalan Berbasis YOLOv11">
-  <meta property="og:description" content="Ubah foto jalan menjadi data inspeksi: deteksi AI, skor prioritas, laporan PDF, dan peta sebaran.">
+  <meta property="og:description" content="Ubah foto jalan menjadi data inspeksi: deteksi AI, SDI-visual per segmen, laporan PDF, dan peta sebaran.">
   <meta property="og:type" content="website">
   <meta name="theme-color" content="#006194">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='28' height='28' rx='7' fill='%23006194'/%3E%3Cpath d='M10 22 L14 10 L18 10 L14 22 Z' fill='%23fff'/%3E%3C/svg%3E">
@@ -28,9 +28,14 @@
         <a href="/" class="{{ 'aktif' if active == 'deteksi' else '' }}">Deteksi</a>
         <a href="/peta" class="{{ 'aktif' if active == 'peta' else '' }}">Peta</a>
         <a href="/riwayat" class="{{ 'aktif' if active == 'riwayat' else '' }}">Riwayat</a>
+        <a href="/segmen" class="{{ 'aktif' if active == 'segmen' else '' }}">Segmen</a>
         <a href="/kalibrasi" class="{{ 'aktif' if active == 'kalibrasi' else '' }}">Kalibrasi</a>
         <a href="/tentang" class="{{ 'aktif' if active == 'tentang' else '' }}">Tentang</a>
-        <a href="/logout" title="Keluar dari sesi admin">Keluar</a>
+        {% if session.get("admin_id") %}
+        <a href="/logout" data-keluar title="Keluar dari sesi admin">Keluar</a>
+        {% else %}
+        <a href="/login" data-masuk title="Masuk sebagai admin">Masuk</a>
+        {% endif %}
       </nav>
       <div class="jp-meta">
         <span class="jp-avatar" aria-hidden="true">JP</span>
@@ -44,9 +49,14 @@
     <a href="/" class="{{ 'aktif' if active == 'deteksi' else '' }}">Deteksi</a>
     <a href="/peta" class="{{ 'aktif' if active == 'peta' else '' }}">Peta</a>
     <a href="/riwayat" class="{{ 'aktif' if active == 'riwayat' else '' }}">Riwayat</a>
+        <a href="/segmen" class="{{ 'aktif' if active == 'segmen' else '' }}">Segmen</a>
     <a href="/kalibrasi" class="{{ 'aktif' if active == 'kalibrasi' else '' }}">Kalibrasi</a>
     <a href="/tentang" class="{{ 'aktif' if active == 'tentang' else '' }}">Tentang</a>
-    <a href="/logout">Keluar</a>
+    {% if session.get("admin_id") %}
+    <a href="/logout" data-keluar>Keluar</a>
+    {% else %}
+    <a href="/login" data-masuk>Masuk</a>
+    {% endif %}
   </div>
   {% block subnav %}{% endblock %}
   <main id="main-content">
@@ -56,9 +66,9 @@
     <div class="jp-footer-in">
       <span>© 2026 JalanPantau • Platform Kecerdasan Artifisial Inspeksi Kerusakan Permukaan Jalan</span>
       <nav class="jp-footer-links" aria-label="Navigasi sekunder">
-        <a href="/">Deteksi</a><a href="/peta">Peta</a><a href="/riwayat">Riwayat</a><a href="/kalibrasi">Kalibrasi</a><a href="/tentang">Tentang</a>
+        <a href="/">Deteksi</a><a href="/peta">Peta</a><a href="/riwayat">Riwayat</a><a href="/segmen">Segmen</a><a href="/kalibrasi">Kalibrasi</a><a href="/tentang">Tentang</a>
       </nav>
-      <span class="jp-footer-mono">Skor prioritas 0&ndash;100 per temuan.</span>
+      <span class="jp-footer-mono">SDI-visual per segmen 100 m.</span>
     </div>
   </footer>
   <div class="toast-container" id="toast-container" aria-live="polite"></div>
@@ -98,6 +108,90 @@
         setTimeout(function() { toast.remove(); }, 300);
       }, 4500);
     };
+  </script>
+  <script>
+    // Konfirmasi logout: cegah keluar tak sengaja (terutama di mobile).
+    document.addEventListener("click", function(e) {
+      var a = e.target.closest("[data-keluar]");
+      if (!a) return;
+      e.preventDefault();
+      window.jpConfirm("Keluar Sesi", "Yakin ingin keluar dari sesi admin?",
+        { okText: "Ya, Keluar" }).then(function(yakin) {
+        if (yakin) window.location.href = "/logout";
+      });
+    });
+
+    // Dialog login modal: dipakai saat aksi butuh-login (simpan/hapus) dipicu
+    // pengguna yang belum login. Mengembalikan Promise<boolean>.
+    window.jpButuhLogin = function() {
+      return new Promise(function(resolve) {
+        var existing = document.getElementById("jp-login-modal");
+        if (existing) existing.remove();
+        var overlay = document.createElement("div");
+        overlay.id = "jp-login-modal";
+        overlay.style.cssText = "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);backdrop-filter:blur(2px);";
+        var modal = document.createElement("div");
+        modal.style.cssText = "background:#fff;border-radius:12px;padding:24px;max-width:360px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2);animation:jp-modal-in .2s ease;";
+        modal.innerHTML =
+          '<div style="font-size:16px;font-weight:600;color:#0F172A;margin-bottom:4px">Masuk Diperlukan</div>' +
+          '<div style="font-size:13px;color:#64748B;margin-bottom:16px">Aksi ini memerlukan sesi admin yang aktif.</div>' +
+          '<label style="display:block;font-size:12px;font-weight:600;color:#0F172A;margin-bottom:4px">Username</label>' +
+          '<input id="jp-login-user" type="text" autocomplete="username" style="width:100%;padding:10px 12px;border:1px solid #E2E8F0;border-radius:8px;font-size:14px;margin-bottom:12px;box-sizing:border-box">' +
+          '<label style="display:block;font-size:12px;font-weight:600;color:#0F172A;margin-bottom:4px">Password</label>' +
+          '<input id="jp-login-pass" type="password" autocomplete="current-password" style="width:100%;padding:10px 12px;border:1px solid #E2E8F0;border-radius:8px;font-size:14px;margin-bottom:4px;box-sizing:border-box">' +
+          '<div id="jp-login-err" style="display:none;font-size:12px;color:#DC2626;margin:8px 0"></div>' +
+          '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">' +
+          '<button type="button" id="jp-login-cancel" style="padding:8px 16px;border:1px solid #E2E8F0;border-radius:8px;background:#fff;color:#64748B;font-size:13px;font-weight:500;cursor:pointer">Batal</button>' +
+          '<button type="button" id="jp-login-ok" style="padding:8px 16px;border:none;border-radius:8px;background:#006194;color:#fff;font-size:13px;font-weight:500;cursor:pointer">Masuk</button>' +
+          '</div>';
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+        var userEl = document.getElementById("jp-login-user");
+        var passEl = document.getElementById("jp-login-pass");
+        var errEl = document.getElementById("jp-login-err");
+        var done = false;
+        function tutup(hasil) { if (!done) { done = true; overlay.remove(); resolve(hasil); } }
+        function tunjukGalat(pesan) { errEl.textContent = pesan; errEl.style.display = "block"; }
+        document.getElementById("jp-login-cancel").onclick = function() { tutup(false); };
+        overlay.onclick = function(e) { if (e.target === overlay) tutup(false); };
+        async function masuk() {
+          var u = userEl.value.trim(), p = passEl.value;
+          if (!u || !p) { tunjukGalat("Isi username dan password."); return; }
+          var btn = document.getElementById("jp-login-ok");
+          btn.disabled = true; btn.textContent = "Memeriksa…";
+          try {
+            var res = await fetch("/api/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ username: u, password: p }),
+            });
+            var json = await res.json().catch(function() { return {}; });
+            if (!res.ok) { tunjukGalat(json.error || "Login gagal."); return; }
+            tandaiSudahLogin();
+            tutup(true);
+          } catch (err) {
+            tunjukGalat("Jaringan bermasalah. Coba lagi.");
+          } finally {
+            btn.disabled = false; btn.textContent = "Masuk";
+          }
+        }
+        document.getElementById("jp-login-ok").onclick = masuk;
+        passEl.addEventListener("keydown", function(e) { if (e.key === "Enter") masuk(); });
+        userEl.addEventListener("keydown", function(e) { if (e.key === "Enter") passEl.focus(); });
+        setTimeout(function() { userEl.focus(); }, 50);
+      });
+    };
+
+    // Sesudah login via modal: tukar tautan Masuk -> Keluar tanpa reload halaman.
+    function tandaiSudahLogin() {
+      document.querySelectorAll("[data-masuk]").forEach(function(a) {
+        a.textContent = "Keluar";
+        a.setAttribute("href", "/logout");
+        a.setAttribute("data-keluar", "");
+        a.removeAttribute("data-masuk");
+        a.setAttribute("title", "Keluar dari sesi admin");
+      });
+    }
   </script>
   <script>
     // Sisipkan token CSRF otomatis ke semua fetch() yang mengubah state

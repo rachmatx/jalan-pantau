@@ -27,7 +27,7 @@
       </div>
       <div class="jp-kpi jp-kpi-blue">
         <div class="jp-kpi-top"><span>03 · INDEKS PRIORITAS &amp; PELAPORAN</span></div>
-        <p class="jp-kpi-sub" style="font-size:13px;color:#0F172A">Skor prioritas dari bobot severity; hasil tersimpan di SQLite lokal, terpetakan GPS, terunduh sebagai PDF.</p>
+        <p class="jp-kpi-sub" style="font-size:13px;color:#0F172A">SDI-visual per segmen 100 m; hasil tersimpan di SQLite lokal, terpetakan GPS, terunduh sebagai PDF.</p>
       </div>
     </div>
   </section>
@@ -38,7 +38,7 @@
       <div class="jp-kpi jp-kpi-blue">
         <div class="jp-kpi-top"><span>mAP VALIDASI</span><span class="jp-table-count">IoU 0,5</span></div>
         <div class="jp-kpi-val mono">0,62</div>
-        <p class="jp-kpi-sub">YOLOv11s, split validasi RDD-only.</p>
+        <p class="jp-kpi-sub">YOLOv11s retrain, validasi RDD2022 (5.758 citra).</p>
       </div>
       <div class="jp-kpi jp-kpi-blue">
         <div class="jp-kpi-top"><span>mAP PENGUJIAN</span><span class="jp-table-count">Test Split</span></div>
@@ -52,8 +52,8 @@
       </div>
       <div class="jp-kpi jp-kpi-blue">
         <div class="jp-kpi-top"><span>DATA LATIH</span><span class="jp-table-count">RDD2022</span></div>
-        <div class="jp-kpi-val mono">14.176</div>
-        <p class="jp-kpi-sub">gambar · model YOLOv11s (<span class="jp-num">best.pt</span>) + <span class="jp-num">best.onnx</span> untuk live.</p>
+        <div class="jp-kpi-val mono">26.900</div>
+        <p class="jp-kpi-sub">citra train · model YOLOv11s (<span class="jp-num">best.pt</span>) + <span class="jp-num">best.onnx</span> untuk live.</p>
       </div>
     </div>
   </section>
@@ -71,7 +71,7 @@
       </div>
       <div class="jp-kpi jp-kpi-blue">
         <div class="jp-kpi-top"><span>SKOR BUKAN BIAYA</span></div>
-        <p class="jp-kpi-sub" style="font-size:13px;color:#0F172A">Skor prioritas 0&ndash;100 per temuan dari bobot severity (Ringan 33 &middot; Sedang 67 &middot; Berat 100), bukan estimasi rupiah.</p>
+        <p class="jp-kpi-sub" style="font-size:13px;color:#0F172A">SDI-visual per segmen dari dimensi dan jumlah temuan terkalibrasi (Bina Marga 2011b), bukan estimasi rupiah.</p>
       </div>
       <div class="jp-kpi jp-kpi-blue">
         <div class="jp-kpi-top"><span>WAJIB KALIBRASI</span></div>

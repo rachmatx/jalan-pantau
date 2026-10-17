@@ -22,9 +22,6 @@ function esc(v) {
     "'": "&#39;", "`": "&#96;", "=": "&#61;",
   }[c]));
 }
-function fmtSkor(n) {
-  return Number(n || 0).toLocaleString("id-ID");
-}
 function tanggal(iso) {
   return new Date(iso).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
 }
@@ -35,18 +32,18 @@ function koordinat(s) {
 }
 
 function perbaruiKpi(rows, total_db) {
-  let temuan = 0, skorTot = 0;
+  let temuan = 0, tanpaSegmen = 0;
   const sev = { Ringan: 0, Sedang: 0, Berat: 0 };
   for (const r of rows) {
     temuan += Number(r.n_temuan) || 0;
-    skorTot += Number(r.skor_prioritas) || 0;
+    if (r.segmen_id == null) tanpaSegmen += 1;
     if (sev[r.worst] !== undefined) sev[r.worst] += 1;
   }
   document.getElementById("kpi-sesi").textContent = total_db ?? rows.length;
   document.getElementById("kpi-temuan").textContent = temuan;
   document.getElementById("kpi-berat").textContent = sev.Berat;
   document.getElementById("kpi-sedang").textContent = sev.Sedang;
-  document.getElementById("kpi-skor").textContent = fmtSkor(skorTot);
+  document.getElementById("kpi-tanpasegmen").textContent = tanpaSegmen;
 }
 
 function renderPaginasi(total) {
@@ -95,14 +92,14 @@ function renderTabel() {
       '<td>' + esc(r.sumber) + '</td>' +
       '<td><span class="jp-cell-main">' + esc(r.lokasi) + '</span><span class="jp-cell-sub">' + esc(koordinat(r)) + '</span></td>' +
       '<td>' + badge(r.worst) + '</td><td class="jp-num">' + esc(r.n_temuan) + '</td>' +
-      '<td class="jp-num-right">' + esc(fmtSkor(r.skor_prioritas)) + '</td>' +
+      '<td>' + (r.segmen_nama ? esc(r.segmen_nama) : '<span style="color:var(--jp-muted)">-</span>') + '</td>' +
       '<td><span class="jp-rowact">' +
       '<button type="button" data-act="detail" data-id="' + r.id + '" title="Lihat detail">Detail</button>' +
       '<button type="button" data-act="pdf" data-id="' + r.id + '" title="Unduh PDF">PDF</button>' +
       '<button type="button" data-act="hapus" data-id="' + r.id + '" title="Hapus">Hapus</button>' +
       '</span></td></tr>';
   }).join("");
-  var thead = '<tr><th>WAKTU &amp; ID</th><th>SUMBER</th><th>LOKASI &amp; GEOTAG</th><th>SEVERITY</th><th>TEMUAN</th><th class="jp-num-right">TOTAL</th><th>AKSI</th></tr>';
+  var thead = '<tr><th>WAKTU &amp; ID</th><th>SUMBER</th><th>LOKASI &amp; GEOTAG</th><th>SEVERITY</th><th>TEMUAN</th><th>SEGMEN</th><th>AKSI</th></tr>';
   daftar.innerHTML = '<table class="jp-table"><thead>' + thead + '</thead><tbody>' + tbody + '</tbody></table>';
   var btns = daftar.querySelectorAll("[data-act]");
   for (var i = 0; i < btns.length; i++) {
@@ -182,13 +179,12 @@ function renderTabelTemuan() {
 
   tabelEl.innerHTML =
     `<table class="jp-table"><thead><tr><th>NO</th><th>KATEGORI KERUSAKAN</th>` +
-    `<th>TINGKAT KEPARAHAN</th><th>DIMENSI</th><th>REKOMENDASI</th><th class="jp-num-right">SKOR</th></tr></thead><tbody>` +
+    `<th>TINGKAT KEPARAHAN</th><th>DIMENSI</th><th>REKOMENDASI</th></tr></thead><tbody>` +
     pageRows.map((r) =>
       `<tr><td class="jp-num">${esc(String(r.idx).padStart(2, "0"))}</td>` +
       `<td><span class="jp-cell-main">${esc(r.kelas)}</span><span class="jp-cell-sub">Kode: -</span></td>` +
       `<td>${badge(r.severity)}</td><td class="jp-num">${esc(r.dasar)}</td>` +
-      `<td style="font-size:12px;color:var(--jp-tx2)">-</td>` +
-      `<td class="jp-num-right">${esc(fmtSkor(r.skor_prioritas))}</td></tr>`
+      `<td style="font-size:12px;color:var(--jp-tx2)">-</td></tr>`
     ).join("") + `</tbody></table>`;
 
   // Render pagination
@@ -254,7 +250,7 @@ async function bukaDetail(id) {
   halamanTemuan = 1;
   renderTabelTemuan();
   var dTotal = document.getElementById("d-total");
-  if (dTotal) dTotal.textContent = fmtSkor(s.skor_prioritas);
+  if (dTotal) dTotal.textContent = s.segmen_nama ? ("Segmen: " + s.segmen_nama) : "Belum masuk segmen";
   var dTtd = document.getElementById("d-ttd");
   if (dTtd) dTtd.innerHTML =
     `<div style="display:flex;flex-direction:column;align-items:center;gap:8px"><div style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-muted)">PETUGAS SURVEYOR</div><div style="height:40px"></div><div style="font-size:13px;font-weight:700;color:var(--jp-ink)">( ……… )</div></div>` +
@@ -262,7 +258,44 @@ async function bukaDetail(id) {
     `<div style="display:flex;flex-direction:column;align-items:center;gap:8px"><div style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-muted)">MENGETAHUI</div><div style="height:40px"></div><div style="font-size:13px;font-weight:700;color:var(--jp-ink)">( ……… )</div></div>`;
   const st = document.getElementById("d-status");
   if (st) st.hidden = false;
+  await muatPilihanSegmen(s);
   detail.showModal();
+}
+
+async function muatPilihanSegmen(s) {
+  const sel = document.getElementById("d-segmen");
+  const info = document.getElementById("d-segmen-info");
+  if (!sel) return;
+  let daftar = [];
+  try {
+    const res = await fetch("/api/segmen");
+    if (res.ok) daftar = await res.json();
+  } catch { /* abaikan */ }
+  sel.innerHTML = '<option value="">-- Tanpa segmen --</option>' + daftar.map(function(g) {
+    return '<option value="' + g.id + '"' + (s.segmen_id === g.id ? " selected" : "") +
+      ">" + esc(g.nama) + "</option>";
+  }).join("");
+  if (!s.segmen_id) sel.value = "";
+  if (info) info.textContent = s.segmen_nama ? ("Saat ini: " + s.segmen_nama) : "";
+  const btn = document.getElementById("d-segmen-simpan");
+  btn.onclick = async function() {
+    const val = sel.value === "" ? null : Number(sel.value);
+    try {
+      const r = await fetch("/api/riwayat/" + s.id + "/segmen", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ segmen_id: val }),
+      });
+      if (!r.ok) return;
+      s.segmen_id = val;
+      const opt = sel.selectedOptions[0];
+      s.segmen_nama = val ? opt.textContent : null;
+      const dTotal = document.getElementById("d-total");
+      if (dTotal) dTotal.textContent = s.segmen_nama ? ("Segmen: " + s.segmen_nama) : "Belum masuk segmen";
+      if (info) info.textContent = s.segmen_nama ? ("Saat ini: " + s.segmen_nama) : "";
+      muat();
+    } catch { /* abaikan */ }
+  };
 }
 
 async function unduhPdfId(id) {
@@ -289,7 +322,7 @@ async function unduhPdf(data) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      rows: data.temuan, total: s.skor_prioritas, image_b64,
+      rows: data.temuan, image_b64,
       source: `${s.sumber} (${s.lokasi})`, model: s.model,
     }),
   });
@@ -306,11 +339,19 @@ function hapusId(id) {
   // Custom confirm modal untuk aksi destruktif
   window.jpConfirm("Hapus Riwayat", "Apakah Anda yakin ingin menghapus riwayat #" + id + "? Tindakan ini tidak bisa dibatalkan.", {type:"danger"}).then(function(yakin){
     if (!yakin) return;
+    lakukanHapus(id);
+  });
+}
+
+function lakukanHapus(id) {
     fetch(`/api/riwayat/${id}`, { method: "DELETE" })
       .then(function(r){ return r.json().then(function(j){ return {ok: r.ok, j: j, status: r.status}; }); })
       .then(function(res){
         if (!res.ok) {
-          if (res.status === 401) {
+          if (res.status === 401 && window.jpButuhLogin) {
+            // Belum login (atau sesi habis): tawarkan login, lalu ulangi hapus.
+            window.jpButuhLogin().then(function(masuk){ if (masuk) lakukanHapus(id); });
+          } else if (res.status === 401) {
             window.jpToast("error", "Login Diperlukan", "Silakan login sebagai admin dinas untuk menghapus riwayat.");
           } else {
             window.jpToast("error", "Gagal Menghapus", "Tidak dapat menghapus riwayat.");
@@ -323,14 +364,13 @@ function hapusId(id) {
         window.jpToast("success", "Berhasil", "Riwayat #" + id + " telah dihapus.");
       })
       .catch(function(e){ console.error("[JalanPantau] hapus riwayat", e); window.jpToast("error", "Gagal", "Gagal menghapus riwayat."); });
-  });
 }
 
 function eksporCsv() {
-  const head = "id;waktu;sumber;lokasi;lat;lon;worst;n_temuan;skor_prioritas\n";
+  const head = "id;waktu;sumber;lokasi;lat;lon;worst;n_temuan;segmen_id;segmen_nama\n";
   const isi = barisTerakhir.map((r) =>
     [r.id, r.waktu, r.sumber, r.lokasi, r.lat ?? "", r.lon ?? "",
-     r.worst, r.n_temuan, r.skor_prioritas].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(";")
+     r.worst, r.n_temuan, r.segmen_id ?? "", r.segmen_nama ?? ""].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(";")
   ).join("\n");
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([head + isi], { type: "text/csv" }));

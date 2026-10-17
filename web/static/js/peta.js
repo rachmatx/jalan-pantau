@@ -140,9 +140,6 @@ function ikon(worst) {
     iconAnchor: [9, 9],
   });
 }
-function fmtSkor(n) {
-  return Number(n || 0).toLocaleString("id-ID");
-}
 // P3: escape sebelum innerHTML/bindPopup (t.lokasi dari server bisa berisi HTML).
 function esc(v) {
   return String(v ?? "").replace(/[&<>"'`=]/g, (c) => ({
@@ -171,13 +168,10 @@ function cocok(t, aktif, q) {
 
 function ringkasan(tampil) {
   const hitung = { Berat: 0, Sedang: 0, Ringan: 0 };
-  let totalSkor = 0;
   for (const t of tampil) {
     if (hitung[t.worst] !== undefined) hitung[t.worst] += 1;
-    totalSkor += Number(t.skor_prioritas) || 0;
   }
   document.getElementById("peta-total").textContent = tampil.length;
-  document.getElementById("peta-skor").textContent = fmtSkor(totalSkor);
   document.getElementById("peta-prop-angka").textContent =
     `${hitung.Berat}B • ${hitung.Sedang}S • ${hitung.Ringan}R`;
   const tot = tampil.length || 1;
@@ -190,7 +184,7 @@ function ringkasan(tampil) {
     const chip = document.querySelector(`[data-sev-count="${k}"]`);
     if (chip) chip.textContent = semua.filter((t) => t.worst === k).length;
   }
-  const top = [...tampil].sort((a, b) => (b.skor_prioritas || 0) - (a.skor_prioritas || 0)).slice(0, 5);
+  const top = [...tampil].sort((a, b) => (b.n_temuan || 0) - (a.n_temuan || 0)).slice(0, 5);
   var prioritasEl = document.getElementById("peta-list-prioritas");
   if (prioritasEl) {
     prioritasEl.innerHTML = top.length
@@ -199,7 +193,7 @@ function ringkasan(tampil) {
         `<span class="titik titik-${esc(String(t.worst).toLowerCase())}"></span>` +
         `<span class="jp-prio-teks"><strong>${esc(t.lokasi || "-")}</strong>` +
         `<small>${Number(t.n_temuan) || 0} temuan</small></span>` +
-        `<span class="jp-prio-skor">${esc(fmtSkor(t.skor_prioritas))}</span></button>`
+        `<span class="jp-prio-skor">${esc(t.segmen_nama || "-")}</span></button>`
       ).join("")
       : `<p class="jp-hint">Tidak ada titik pada filter ini.</p>`;
   }
@@ -230,7 +224,7 @@ function gambar(aturPandangan) {
       ? `<br><button type="button" class="jp-linkbtn" data-foto="${t.id}">Lihat foto bukti</button>` : "";
     m.bindPopup(
       `<div class="jp-popup"><strong>${esc(t.lokasi || "-")}</strong><br>` +
-      `${badgeHtml(t.worst)}<br>${Number(t.n_temuan) || 0} temuan · skor ${esc(fmtSkor(t.skor_prioritas))}${foto}<br>` +
+      `${badgeHtml(t.worst)}<br>${Number(t.n_temuan) || 0} temuan · ${t.segmen_nama ? "Segmen: " + esc(t.segmen_nama) : "belum masuk segmen"}${foto}<br>` +
       `<a href="/riwayat">Buka di Riwayat</a></div>`);
     batas.push([t.lat, t.lon]);
   }
@@ -397,19 +391,25 @@ function isiModalFoto(d) {
   // Tabel klasifikasi
   document.getElementById("foto-tabel-kerusakan").innerHTML = n
     ? `<table class="jp-table"><thead><tr><th>NO</th><th>KATEGORI</th>` +
-      `<th>SEVERITY</th><th>DIMENSI</th><th class="jp-num-right">SKOR</th>` +
+      `<th>SEVERITY</th><th>DIMENSI</th>` +
       `</tr></thead><tbody>` +
       temuan.map((t, i) =>
         `<tr><td class="jp-num">${String(i + 1).padStart(2, "0")}</td>` +
         `<td><span class="jp-cell-main">${esc(t.kelas)}</span></td>` +
         `<td>${badgeHtml(t.severity)}</td>` +
-        `<td class="jp-num">${esc(t.dasar)}</td>` +
-        `<td class="jp-num-right">${esc(fmtSkor(t.skor_prioritas))}</td></tr>`
+        `<td class="jp-num">${esc(t.dasar)}</td></tr>`
       ).join("") + `</tbody></table>`
     : '<p class="jp-hint">Tidak ada temuan pada sesi ini.</p>';
-  // Skor prioritas + rekomendasi (bahan dari temuan terparah)
-  document.getElementById("foto-skor").textContent = fmtSkor(s.skor_prioritas || 0);
+  // SDI segmen (visual) + rekomendasi (bahan dari temuan terparah)
+  document.getElementById("foto-skor").textContent = "-";
   document.getElementById("foto-est-note").textContent = `(${n} temuan)`;
+  if (s.segmen_id) {
+    fetch("/api/segmen/" + s.segmen_id).then((r) => r.json()).then((g) => {
+      const sd = (g && g.sdi) || {};
+      document.getElementById("foto-skor").textContent =
+        sd.sdi_total != null ? `${sd.sdi_total} (${sd.kategori || "-"})` : "-";
+    }).catch(() => {});
+  }
   const urut = { Ringan: 0, Sedang: 1, Berat: 2 };
   const parah = [...temuan].sort((a, b) =>
     (urut[b.severity] ?? -1) - (urut[a.severity] ?? -1))[0];
@@ -460,7 +460,7 @@ document.getElementById("foto-download-pdf").addEventListener("click", async () 
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      rows: fotoDetail.temuan || [], total: s.skor_prioritas || 0, image_b64,
+      rows: fotoDetail.temuan || [], image_b64,
       source: `${s.sumber || "-"} (${s.lokasi || "-"})`, model: s.model || "-",
     }),
   });
@@ -480,6 +480,12 @@ fetch("/api/peta")
     document.getElementById("peta-hitung").textContent = "Gagal memuat titik.";
     document.getElementById("peta-kosong").hidden = false;
   });
+fetch("/api/segmen")
+  .then((r) => r.json())
+  .then((rows) => {
+    document.getElementById("peta-segmen").textContent = (rows || []).length;
+  })
+  .catch(() => {});
 
 /* ==========================================================================
    Viewer zoom modal foto bukti (#foto-viewport / #foto-img).

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Segmen{% endblock %}
+
+{% block konten %}
+<div class="jp-wrap">
+  <div class="jp-crumb"><span>LOG AUDIT INFRASTRUKTUR</span><span>›</span><span class="jp-crumb-aktif">SEGMEN JALAN + SDI-VISUAL</span></div>
+  <div class="jp-pagehead">
+    <div>
+      <h1>Segmen Jalan <span class="jp-countchip">Total: <b id="kpi-segmen">0</b> segmen</span></h1>
+    </div>
+    <div class="jp-pageactions">
+      <button type="button" class="jp-btn-primary-sm" id="btn-buat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+        <span>Buat Segmen</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="jp-card" style="padding:14px 16px;margin-bottom:14px">
+    <p style="font-size:13px;color:var(--jp-muted);margin:0;line-height:1.6">
+      SDI-visual (Surface Distress Index) dihitung per segmen dari gabungan temuan
+      seluruh sesi foto anggotanya: % luas retak, rata-rata lebar retak, dan jumlah
+      lubang per km (Bina Marga 2011b). Bekas roda tidak terdeteksi sehingga SDI
+      bersifat <b>parsial</b>. Masukkan SDI manual hasil survei lapangan untuk
+      pembanding validasi.
+    </p>
+  </div>
+
+  <div class="jp-card" style="overflow:hidden">
+    <div style="overflow-x:auto">
+      <table class="jp-table" style="width:100%">
+        <thead>
+          <tr>
+            <th>Segmen</th>
+            <th>Ruas</th>
+            <th style="text-align:right">Panjang</th>
+            <th style="text-align:right">Sesi</th>
+            <th style="text-align:right">SDI-visual</th>
+            <th>Kategori</th>
+            <th style="text-align:right">SDI manual</th>
+            <th style="text-align:right">Selisih</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbl-segmen">
+          <tr><td colspan="9" style="text-align:center;color:var(--jp-muted)">Memuat…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <dialog id="dlg-segmen" class="jp-dialog" style="max-width:860px">
+    <div style="padding:18px 20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <h2 id="dg-judul" style="font-size:20px;font-weight:700;margin:0">Detail Segmen</h2>
+        <button type="button" id="dg-tutup" class="jp-btn-demo" style="padding:8px 16px">Tutup (Esc)</button>
+      </div>
+      <div id="dg-isi" style="margin-top:12px"></div>
+    </div>
+  </dialog>
+
+  <dialog id="dlg-buat" class="jp-dialog" style="max-width:520px">
+    <form method="dialog" style="padding:18px 20px" id="form-buat">
+      <h2 style="font-size:18px;font-weight:700;margin:0 0 12px">Buat Segmen Baru</h2>
+      <div style="display:grid;gap:10px">
+        <div><label class="jp-caps" for="b-nama">NAMA SEGMEN</label><input id="b-nama" class="jp-input" required maxlength="120" placeholder="cth: Segmen 1 - STA 0+000"></div>
+        <div><label class="jp-caps" for="b-jalan">RUAS JALAN</label><input id="b-jalan" class="jp-input" maxlength="160" placeholder="cth: Jl. Gatot Subroto"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div><label class="jp-caps" for="b-panjang">PANJANG (m)</label><input id="b-panjang" class="jp-input" type="number" min="1" step="any" value="100"></div>
+          <div><label class="jp-caps" for="b-lebar">LEBAR (m)</label><input id="b-lebar" class="jp-input" type="number" min="1" step="any" value="6"></div>
+        </div>
+        <div><label class="jp-caps" for="b-catatan">CATATAN</label><input id="b-catatan" class="jp-input" maxlength="500"></div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+        <button type="button" class="jp-btn-demo" id="b-batal" style="padding:8px 16px">Batal</button>
+        <button type="submit" class="jp-btn-save" style="padding:8px 16px">Simpan</button>
+      </div>
+    </form>
+  </dialog>
+</div>
+{% endblock %}
+
+{% block skrip %}
+<script src="{{ url_for('static', filename='js/segmen.js') }}?v={{ static_v }}"></script>
+{% endblock %}

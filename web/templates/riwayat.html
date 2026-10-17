@@ -28,7 +28,7 @@
     <div class="jp-kpi4-card"><span class="jp-caps">TOTAL TEMUAN</span><strong><span id="kpi-temuan">0</span> <small>anomali</small></strong></div>
     <div class="jp-kpi4-card"><span class="jp-caps">SESI BERAT</span><strong class="sev-tx-berat"><span id="kpi-berat">0</span> <small>sesi</small></strong></div>
     <div class="jp-kpi4-card"><span class="jp-caps">SESI SEDANG</span><strong class="sev-tx-sedang"><span id="kpi-sedang">0</span> <small>sesi</small></strong></div>
-    <div class="jp-kpi4-card"><span class="jp-caps">SKOR PRIORITAS</span><strong class="mono" id="kpi-skor">0</strong></div>
+    <div class="jp-kpi4-card"><span class="jp-caps">TANPA SEGMEN</span><strong class="mono" id="kpi-tanpasegmen">0</strong></div>
   </div>
 
   <div class="jp-card jp-filtercard">
@@ -97,6 +97,12 @@
       <div class="dialog-body" style="flex:1;overflow-y:auto;padding:16px 24px;background:var(--jp-bg)">
         <!-- Metadata Grid -->
         <div class="jp-meta4" id="d-meta" style="margin-bottom:16px"></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+          <span style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-tx2)">SEGMEN:</span>
+          <select id="d-segmen" class="jp-select" style="min-width:220px"></select>
+          <button type="button" id="d-segmen-simpan" class="jp-btn-light">Tetapkan</button>
+          <span id="d-segmen-info" style="font-size:12px;color:var(--jp-muted)"></span>
+        </div>
         <!-- Foto Bukti -->
         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
           <div style="display:flex;align-items:center;justify-content:space-between">
@@ -112,14 +118,14 @@
             <div style="aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;color:#64748B;font-family:var(--jp-mono);font-size:11px">Foto bukti tidak tersedia</div>
           </div>
         </div>
-        <!-- Tabel inventarisasi temuan + skor prioritas -->
+        <!-- Tabel inventarisasi temuan -->
         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
           <div style="display:flex;align-items:center;justify-content:space-between">
             <span style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-tx2);display:flex;align-items:center;gap:6px">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--jp-primary)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-              Inventarisasi Temuan &amp; Skor Prioritas Penanganan
+              Inventarisasi Temuan
             </span>
-            <span style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-muted)">Skor 0-100 per temuan</span>
+            <span style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-muted)">Dimensi terkalibrasi</span>
           </div>
           <div class="jp-table-scroll" id="d-tabel"></div>
           <!-- Paginasi temuan -->
@@ -131,7 +137,7 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--jp-muted)" stroke-width="2" style="flex-shrink:0;margin-top:2px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
           <div style="display:flex;flex-direction:column;gap:4px">
             <span style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-tx2)">CATATAN LEGALISASI & AUDIT TRAIL</span>
-            <p style="font-size:12px;color:var(--jp-muted);margin:0;line-height:1.5">Catatan ini dihasilkan otomatis oleh sistem dari hasil deteksi yang tersimpan. Skor prioritas per temuan dihitung dari bobot severity (0-100: Ringan 33, Sedang 67, Berat 100).</p>
+            <p style="font-size:12px;color:var(--jp-muted);margin:0;line-height:1.5">Catatan ini dihasilkan otomatis oleh sistem dari hasil deteksi yang tersimpan. Prioritas penanganan ditentukan per segmen via SDI-visual (menu Segmen).</p>
           </div>
         </div>
         <!-- Pengesahan / Tanda Tangan -->

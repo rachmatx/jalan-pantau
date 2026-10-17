@@ -39,7 +39,7 @@ kontur dalam box dan beri label bahwa itu kontur Inside box, bukan mask model.
 - Kontras teks ≥ 4,5 (WCAG AA). Tanpa emoji sebagai ikon (SVG inline).
 - **Dilarang data fiktif**: tanpa testimoni palsu, tanpa paket harga. Angka yang
   boleh tampil — YOLOv11s (model tunggal, gambar & live): mAP50 val 0,616 /
-  test 0,617 / OOD Bandung (BPID) 0,581; latih 14.176 gambar. Selain itu hanya
+  test 0,617 / OOD Bandung (BPID) 0,581; latih 26.900 gambar. Selain itu hanya
   teks fungsional.
 - **Dilarang menjanjikan segmentasi.** Lihat bagian 1. Karena luas hanya
   estimasi dari kontur dalam bounding box, seluruh teks harus memakai

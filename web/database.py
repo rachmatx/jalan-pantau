@@ -19,6 +19,7 @@ _APP_DIR = Path(__file__).resolve().parent.parent / "app"
 if str(_APP_DIR) not in sys.path:
     sys.path.insert(0, str(_APP_DIR))
 from prioritas import bobot as _bobot_severity  # noqa: E402
+from sdi import agregasi_segmen as _agregasi_sdi, hitung_sdi as _hitung_sdi  # noqa: E402
 
 SKEMA = """
 CREATE TABLE IF NOT EXISTS admin (
@@ -39,7 +40,18 @@ CREATE TABLE IF NOT EXISTS sesi (
   n_temuan INTEGER NOT NULL,
   skor_prioritas INTEGER NOT NULL,
   worst TEXT NOT NULL DEFAULT '-',
-  client_ref TEXT
+  client_ref TEXT,
+  segmen_id INTEGER REFERENCES segmen(id)
+);
+CREATE TABLE IF NOT EXISTS segmen (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nama TEXT NOT NULL,
+  jalan TEXT NOT NULL DEFAULT '-',
+  panjang_m REAL NOT NULL DEFAULT 100,
+  lebar_m REAL NOT NULL DEFAULT 6,
+  sdi_manual REAL,
+  catatan TEXT NOT NULL DEFAULT '',
+  dibuat TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
 );
 CREATE TABLE IF NOT EXISTS temuan (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,9 +66,13 @@ CREATE TABLE IF NOT EXISTS temuan (
   volume_m3 REAL NOT NULL DEFAULT 0,
   skor_prioritas INTEGER NOT NULL,
   total_str TEXT NOT NULL DEFAULT '-',
-  conf REAL
+  conf REAL,
+  panjang_cm REAL,
+  lebar_cm REAL
 );
 CREATE INDEX IF NOT EXISTS idx_temuan_sesi ON temuan(sesi_id);
+-- idx_sesi_segmen dibuat di migrasi_segmen_v4 (kolom segmen_id belum ada
+-- saat SKEMA dieksekusi pada database lama).
 """
 
 
@@ -65,7 +81,7 @@ URUT_SEV = {"Ringan": 0, "Sedang": 1, "Berat": 2}
 # Versi skema DB. Naikkan tiap kali menambah migrasi baru.
 # Dipakai (via PRAGMA user_version) agar skema + migrasi berat hanya dijalankan
 # SEKALI per database, bukan pada setiap koneksi/request.
-SKEMA_VERSI = 3
+SKEMA_VERSI = 4
 
 
 def _paths():
@@ -93,6 +109,7 @@ def _siapkan(db):
     migrasi_admin_v2()         # kolom admin.sandi_diatur
     migrasi_sesi_v2()          # kolom sesi.client_ref + indeks unik
     migrasi_prioritas_v2(db)   # hitung ulang skor dari severity (berat)
+    migrasi_segmen_v4(db)      # tabel segmen + sesi.segmen_id + dimensi temuan
     db.execute("PRAGMA user_version = %d" % SKEMA_VERSI)
     db.commit()
 
@@ -199,6 +216,202 @@ def migrasi_prioritas_v2(db):
     db.commit()
 
 
+def migrasi_segmen_v4(db):
+    """Segmen jalan + relasi sesi->segmen + dimensi per temuan (2026-10-17).
+
+    Instrumen prioritas baru: SDI-visual per segmen (app/sdi.py), menggantikan
+    skor severity 33/67/100 sebagai acuan prioritas. Kolom skor_prioritas
+    dipertahankan apa adanya untuk kompatibilitas data lama.
+    Idempoten; aman diulang.
+    """
+    db.execute(
+        "CREATE TABLE IF NOT EXISTS segmen ("
+        " id INTEGER PRIMARY KEY AUTOINCREMENT,"
+        " nama TEXT NOT NULL,"
+        " jalan TEXT NOT NULL DEFAULT '-',"
+        " panjang_m REAL NOT NULL DEFAULT 100,"
+        " lebar_m REAL NOT NULL DEFAULT 6,"
+        " sdi_manual REAL,"
+        " catatan TEXT NOT NULL DEFAULT '',"
+        " dibuat TEXT NOT NULL DEFAULT (datetime('now', 'localtime')))")
+    for tabel, kolom, ddl in (
+        ("sesi", "segmen_id", "INTEGER REFERENCES segmen(id)"),
+        ("temuan", "panjang_cm", "REAL"),
+        ("temuan", "lebar_cm", "REAL"),
+    ):
+        cols = {r[1] for r in db.execute(f"PRAGMA table_info({tabel})").fetchall()}
+        if kolom not in cols:
+            db.execute(f"ALTER TABLE {tabel} ADD COLUMN {kolom} {ddl}")
+    db.execute("CREATE INDEX IF NOT EXISTS idx_sesi_segmen ON sesi(segmen_id)")
+    db.commit()
+
+
+# ---- Segmen jalan + SDI-visual ----
+# Segmen = ruas 100 m (baku) tempat temuan-temuan dikelompokkan untuk
+# dihitung SDI-visual-nya (app/sdi.py). Satu sesi foto dapat dimasukkan
+# ke satu segmen; SDI dihitung dari gabungan seluruh temuan anggotanya.
+
+def _angka_segmen(nilai, bawaan):
+    """Coerce ke float >= 0; junk/None -> bawaan."""
+    try:
+        x = float(nilai)
+    except (TypeError, ValueError):
+        return float(bawaan)
+    if x != x or x in (float("inf"), float("-inf")):
+        return float(bawaan)
+    return max(0.0, x)
+
+
+def tambah_segmen(nama, jalan="-", panjang_m=100, lebar_m=6, sdi_manual=None,
+                  catatan=""):
+    """Buat segmen baru. Kembalikan id."""
+    db = get_db()
+    nama = str(nama or "").strip()[:120] or "Segmen tanpa nama"
+    if sdi_manual in (None, ""):
+        sdi_manual = None
+    else:
+        try:
+            sdi_manual = float(sdi_manual)
+        except (TypeError, ValueError):
+            raise ValueError("SDI manual tidak valid.")
+    cur = db.execute(
+        "INSERT INTO segmen (nama, jalan, panjang_m, lebar_m, sdi_manual,"
+        " catatan, dibuat) VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))",
+        (nama, str(jalan or "-")[:160], _angka_segmen(panjang_m, 100) or 100,
+         _angka_segmen(lebar_m, 6) or 6, sdi_manual, str(catatan or "")[:500]))
+    db.commit()
+    return cur.lastrowid
+
+
+def daftar_segmen():
+    """Semua segmen + ringkasan SDI-visual tiap segmen."""
+    db = get_db()
+    rows = db.execute("SELECT * FROM segmen ORDER BY id DESC").fetchall()
+    out = []
+    for r in rows:
+        d = dict(r)
+        d["n_sesi"] = db.execute(
+            "SELECT COUNT(*) c FROM sesi WHERE segmen_id = ?",
+            (d["id"],)).fetchone()["c"]
+        d["sdi"] = sdi_segmen(d["id"])
+        out.append(d)
+    return out
+
+
+def detail_segmen(sid):
+    """Segmen + SDI-visual + daftar sesi anggota."""
+    db = get_db()
+    s = db.execute("SELECT * FROM segmen WHERE id = ?", (sid,)).fetchone()
+    if s is None:
+        return None
+    d = dict(s)
+    anggota = db.execute(
+        "SELECT id, waktu, sumber, lokasi, lat, lon, n_temuan, worst"
+        " FROM sesi WHERE segmen_id = ? ORDER BY id", (sid,)).fetchall()
+    d["anggota"] = [dict(r) for r in anggota]
+    d["sdi"] = sdi_segmen(sid)
+    return d
+
+
+def ubah_segmen(sid, nama=None, jalan=None, panjang_m=None, lebar_m=None,
+                sdi_manual="__kosong__", catatan=None):
+    """Ubah field segmen. sdi_manual=None menghapus nilai manual."""
+    db = get_db()
+    bagian, arg = [], []
+    if nama is not None:
+        bagian.append("nama = ?")
+        arg.append(str(nama).strip()[:120] or "Segmen tanpa nama")
+    if jalan is not None:
+        bagian.append("jalan = ?")
+        arg.append(str(jalan or "-")[:160])
+    if panjang_m is not None:
+        bagian.append("panjang_m = ?")
+        arg.append(_angka_segmen(panjang_m, 100) or 100)
+    if lebar_m is not None:
+        bagian.append("lebar_m = ?")
+        arg.append(_angka_segmen(lebar_m, 6) or 6)
+    if sdi_manual != "__kosong__":
+        if sdi_manual in (None, ""):
+            bagian.append("sdi_manual = NULL")
+        else:
+            try:
+                bagian.append("sdi_manual = ?")
+                arg.append(float(sdi_manual))
+            except (TypeError, ValueError):
+                raise ValueError("SDI manual tidak valid.")
+    if catatan is not None:
+        bagian.append("catatan = ?")
+        arg.append(str(catatan or "")[:500])
+    if not bagian:
+        return False
+    arg.append(sid)
+    cur = db.execute(f"UPDATE segmen SET {', '.join(bagian)} WHERE id = ?", arg)
+    db.commit()
+    return cur.rowcount > 0
+
+
+def hapus_segmen(sid):
+    """Hapus segmen; sesi anggotanya menjadi tak ber-segmen (tidak ikut terhapus)."""
+    db = get_db()
+    db.execute("UPDATE sesi SET segmen_id = NULL WHERE segmen_id = ?", (sid,))
+    cur = db.execute("DELETE FROM segmen WHERE id = ?", (sid,))
+    db.commit()
+    return cur.rowcount > 0
+
+
+def tetapkan_segmen_sesi(sesi_id, segmen_id):
+    """Masukkan/keluarkan sesi dari segmen (segmen_id=None = keluarkan)."""
+    db = get_db()
+    if segmen_id is not None:
+        ada = db.execute("SELECT id FROM segmen WHERE id = ?",
+                         (segmen_id,)).fetchone()
+        if ada is None:
+            raise ValueError("Segmen tidak ditemukan.")
+    cur = db.execute("UPDATE sesi SET segmen_id = ? WHERE id = ?",
+                     (segmen_id, sesi_id))
+    db.commit()
+    return cur.rowcount > 0
+
+
+def sesi_tanpa_segmen(limit=200):
+    """Sesi yang belum dimasukkan ke segmen mana pun (untuk UI penugasan)."""
+    db = get_db()
+    cur = db.execute(
+        "SELECT id, waktu, sumber, lokasi, lat, lon, n_temuan, worst"
+        " FROM sesi WHERE segmen_id IS NULL ORDER BY id DESC LIMIT ?",
+        (int(limit),))
+    return [dict(r) for r in cur.fetchall()]
+
+
+def sdi_segmen(segmen_id):
+    """SDI-visual satu segmen dari gabungan temuan seluruh sesi anggotanya.
+
+    Mengembalikan dict app/sdi.py::hitung_sdi() + info cakupan data.
+    None bila segmen tidak ada.
+    """
+    db = get_db()
+    s = db.execute("SELECT panjang_m, lebar_m FROM segmen WHERE id = ?",
+                   (segmen_id,)).fetchone()
+    if s is None:
+        return None
+    rows = db.execute(
+        "SELECT t.kelas, t.panjang_cm, t.lebar_cm FROM temuan t"
+        " JOIN sesi s ON s.id = t.sesi_id WHERE s.segmen_id = ?",
+        (segmen_id,)).fetchall()
+    det, tanpa_dimensi = [], 0
+    for r in rows:
+        if r["panjang_cm"] is None or r["lebar_cm"] is None:
+            tanpa_dimensi += 1
+            continue
+        det.append({"kelas": r["kelas"], "panjang_cm": r["panjang_cm"],
+                    "lebar_cm": r["lebar_cm"]})
+    komp = _agregasi_sdi(det, s["panjang_m"], s["lebar_m"])
+    hasil = _hitung_sdi(komp)
+    hasil["n_temuan_total"] = len(rows)
+    hasil["n_tanpa_dimensi"] = tanpa_dimensi
+    return hasil
+
+
 def sesi_by_client_ref(ref):
     """Id sesi untuk client_ref tertentu (idempotensi). None bila belum ada."""
     if not ref:
@@ -246,7 +459,7 @@ def _angka(nilai, batas, bawaan=0.0):
 
 
 def simpan_sesi(sumber, lokasi, model, rows, total, lat=None, lon=None, image_b64=None,
-                client_ref=None):
+                client_ref=None, segmen_id=None):
     """rows = list dict dari /api/detect atau snapshot. Kembalikan id sesi.
 
     `client_ref` (bila ada) dipakai sebagai kunci idempotensi: simpan ulang dengan
@@ -257,6 +470,10 @@ def simpan_sesi(sumber, lokasi, model, rows, total, lat=None, lon=None, image_b6
     selalu sama dengan jumlah baris temuan. Sebelumnya angka datang dari client,
     sehingga (a) bisa disuntik nilai berapa pun, dan (b) bisa tidak cocok
     dengan rincian temuan di bawahnya.
+
+    Kolom skor_prioritas dipertahankan sebagai data legacy (kompatibilitas);
+    instrumen prioritas kini SDI-visual per segmen (app/sdi.py). Dimensi
+    panjang_cm/lebar_cm disimpan untuk agregasi SDI.
     """
     db = get_db()
     if not isinstance(rows, (list, tuple)):
@@ -264,6 +481,11 @@ def simpan_sesi(sumber, lokasi, model, rows, total, lat=None, lon=None, image_b6
     rows = [r for r in rows if isinstance(r, dict)]
     if not rows:
         raise ValueError("Tidak ada temuan untuk disimpan.")
+    if segmen_id is not None:
+        ada = db.execute("SELECT id FROM segmen WHERE id = ?",
+                         (segmen_id,)).fetchone()
+        if ada is None:
+            raise ValueError("Segmen tidak ditemukan.")
     # Batas wajar: luas dan volume yang tidak mungkin melebihi ini.
     B_M2, B_M3, B_CONF = 10 ** 5, 10 ** 4, 1.0
     temuan = []
@@ -272,6 +494,8 @@ def simpan_sesi(sumber, lokasi, model, rows, total, lat=None, lon=None, image_b6
         # Skor TIDAK dipercaya dari klien: dihitung ulang dari severity
         # (Ringan 33 / Sedang 67 / Berat 100) memakai bobot app/prioritas.py,
         # supaya tiap baris selalu konsisten dengan rumus dan tidak bisa disuntik.
+        # LEGACY: kolom dipertahankan untuk data lama; tidak lagi ditampilkan
+        # sebagai instrumen prioritas (digantikan SDI per segmen).
         skor_server = int(max(0, min(100, round(100 * _bobot_severity(sev) / 3))))
         temuan.append({
             "kelas": str(r.get("kelas", "-"))[:120],
@@ -286,23 +510,26 @@ def simpan_sesi(sumber, lokasi, model, rows, total, lat=None, lon=None, image_b6
                      if r.get("conf") is not None else None),
             "track_id": (int(_angka(r.get("track_id"), 10 ** 6))
                          if r.get("track_id") is not None else None),
+            "panjang_cm": _angka(r.get("panjang_cm"), 10 ** 4),
+            "lebar_cm": _angka(r.get("lebar_cm"), 10 ** 4),
         })
     total = sum(t["skor_prioritas"] for t in temuan)
     sev = [t["severity"] for t in temuan]
     worst = max(sev, key=lambda s: URUT_SEV.get(s, -1))
     cur = db.execute(
-        "INSERT INTO sesi (waktu, sumber, lokasi, lat, lon, model, n_temuan, skor_prioritas, worst, client_ref)"
-        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO sesi (waktu, sumber, lokasi, lat, lon, model, n_temuan, skor_prioritas, worst, client_ref, segmen_id)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (datetime.now().isoformat(timespec="seconds"), sumber, lokasi or "-",
-         lat, lon, model, len(temuan), int(total), worst, client_ref))
+         lat, lon, model, len(temuan), int(total), worst, client_ref, segmen_id))
     sid = cur.lastrowid
     for i, t in enumerate(temuan, 1):
         db.execute(
             "INSERT INTO temuan (sesi_id, idx, track_id, kelas, dasar, severity, bahan,"
-            " luas_m2, volume_m3, skor_prioritas, total_str, conf)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            " luas_m2, volume_m3, skor_prioritas, total_str, conf, panjang_cm, lebar_cm)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (sid, i, t["track_id"], t["kelas"], t["dasar"], t["severity"], t["bahan"],
-             t["luas_m2"], t["volume_m3"], t["skor_prioritas"], t["total_str"], t["conf"]))
+             t["luas_m2"], t["volume_m3"], t["skor_prioritas"], t["total_str"], t["conf"],
+             t["panjang_cm"], t["lebar_cm"]))
     if image_b64:
         try:
             import io
@@ -344,9 +571,14 @@ def _klausa_sesi(dari=None, sampai=None, severity=None, q=None):
 def daftar_sesi(dari=None, sampai=None, severity=None, q=None, limit=200, offset=0):
     db = get_db()
     where, arg = _klausa_sesi(dari, sampai, severity, q)
+    # Kolom di klausa WHERE (waktu, sumber, lokasi, worst) hanya ada di tabel
+    # sesi sehingga tidak ambigu meski JOIN dengan segmen.
     cur = db.execute(
-        "SELECT id, waktu, sumber, lokasi, lat, lon, model, n_temuan, skor_prioritas, worst"
-        f" FROM sesi {where} ORDER BY id DESC LIMIT ? OFFSET ?", (*arg, limit, offset))
+        "SELECT sesi.id, sesi.waktu, sesi.sumber, sesi.lokasi, sesi.lat, sesi.lon,"
+        " sesi.model, sesi.n_temuan, sesi.skor_prioritas, sesi.worst,"
+        " sesi.segmen_id, segmen.nama AS segmen_nama"
+        " FROM sesi LEFT JOIN segmen ON segmen.id = sesi.segmen_id"
+        f" {where} ORDER BY sesi.id DESC LIMIT ? OFFSET ?", (*arg, limit, offset))
     return [dict(r) for r in cur.fetchall()]
 
 
@@ -359,7 +591,10 @@ def hitung_sesi(dari=None, sampai=None, severity=None, q=None):
 
 def detail_sesi(sid):
     db = get_db()
-    s = db.execute("SELECT * FROM sesi WHERE id = ?", (sid,)).fetchone()
+    s = db.execute(
+        "SELECT sesi.*, segmen.nama AS segmen_nama FROM sesi"
+        " LEFT JOIN segmen ON segmen.id = sesi.segmen_id WHERE sesi.id = ?",
+        (sid,)).fetchone()
     if s is None:
         return None
     rows = db.execute("SELECT * FROM temuan WHERE sesi_id = ? ORDER BY idx", (sid,)).fetchall()
@@ -388,8 +623,12 @@ def hapus_sesi(sid):
 def titik_peta():
     db = get_db()
     cur = db.execute(
-        "SELECT id, waktu, lokasi, lat, lon, n_temuan, skor_prioritas, worst FROM sesi"
-        " WHERE lat IS NOT NULL AND lon IS NOT NULL ORDER BY id DESC LIMIT 500")
+        "SELECT sesi.id, sesi.waktu, sesi.lokasi, sesi.lat, sesi.lon,"
+        " sesi.n_temuan, sesi.skor_prioritas, sesi.worst,"
+        " sesi.segmen_id, segmen.nama AS segmen_nama"
+        " FROM sesi LEFT JOIN segmen ON segmen.id = sesi.segmen_id"
+        " WHERE sesi.lat IS NOT NULL AND sesi.lon IS NOT NULL"
+        " ORDER BY sesi.id DESC LIMIT 500")
     rows = [dict(r) for r in cur.fetchall()]
     hasil = _paths()[1]
     for r in rows:

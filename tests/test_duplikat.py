@@ -10,7 +10,11 @@ import unittest
 
 
 def _client():
-    return _app_client()[1]
+    app, c = _app_client()
+    # Simpan riwayat kini butuh login (deferred login) -> masuk dulu.
+    from database import AKUN_DEMO
+    c.post("/login", data={"username": AKUN_DEMO[0], "password": AKUN_DEMO[1]})
+    return c
 
 
 def _app_client():
@@ -19,6 +23,11 @@ def _app_client():
     app = app_mod.create_app()
     app.config["DB_PATH"] = os.path.join(tempfile.mkdtemp(), "t.db")
     app.config["TESTING"] = True
+    with app.app_context():  # seed admin di DB sementara (sebelum login)
+        from database import migrasi_admin_v2, migrasi_sesi_v2, init_admin
+        migrasi_admin_v2()
+        migrasi_sesi_v2()
+        init_admin()
     return app, app.test_client()
 
 

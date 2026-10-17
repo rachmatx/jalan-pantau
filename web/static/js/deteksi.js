@@ -35,10 +35,10 @@ function renderTabelDeteksi() {
     return `<tr><td class="jp-num">${String(mulai + i + 1).padStart(2, "0")}</td>` +
       `<td><span class="jp-cell-main">${esc(namaKelas(r.kelas))}</span><span class="jp-cell-sub">class: ${esc(r.kelas)}</span></td>` +
       `<td class="jp-num">${esc(r.dasar)}</td><td>${badge(r.severity)}</td>` +
-      `<td class="jp-num">${esc(confStr(r.conf))}</td><td class="jp-num-right">${esc(fmtSkor(r.skor_prioritas))}</td>` +
+      `<td class="jp-num">${esc(confStr(r.conf))}</td>` +
       `<td>${sumber}</td><td style="white-space:nowrap">${aksi}</td></tr>`;
   }).join("");
-  var thead = `<tr><th>#</th><th>JENIS KERUSAKAN</th><th>AREA / DIMENSI ESTIMASI</th><th>TINGKAT KEPARAHAN</th><th>CONFIDENCE</th><th class="jp-num-right">SKOR</th><th>SUMBER</th><th>VERIFIKASI</th></tr>`;
+  var thead = `<tr><th>#</th><th>JENIS KERUSAKAN</th><th>AREA / DIMENSI ESTIMASI</th><th>TINGKAT KEPARAHAN</th><th>CONFIDENCE</th><th>SUMBER</th><th>VERIFIKASI</th></tr>`;
   document.getElementById("tabel").innerHTML = `<table class="jp-table"><thead>${thead}</thead><tbody>${tbody}</tbody></table>`;
   // Pagination
   var pagEl = document.getElementById("deteksi-paginasi");
@@ -80,7 +80,6 @@ async function syncVerifikasi() {
   if (terakhir) {
     terakhir.rows = json.rows;
     terakhir.total = json.total;
-    terakhir.total_str = fmtSkor(json.total);
     terakhir.info = json.info;
   }
   refreshVerifikasiUI();
@@ -97,7 +96,8 @@ function teksVerifikasi(info) {
 function refreshVerifikasiUI() {
   renderTabelDeteksi();
   if (!terakhir) return;
-  document.getElementById("total-nilai").textContent = terakhir.total_str;
+  document.getElementById("lubang-nilai").textContent = String(
+      terakhir.rows.filter(function(r) { return /pothole/i.test(r.kelas || ""); }).length);
   document.getElementById("temuan-nilai").textContent = terakhir.rows.length;
   const nBerat = terakhir.rows.filter((r) => r.severity === "Berat").length;
   document.getElementById("berat-nilai").textContent = `Berat (${nBerat})`;
@@ -183,9 +183,6 @@ const NAMA_KELAS = {
   other_corruption: "Kerusakan Lain (Other Corruption)",
 };
 function namaKelas(k) { return NAMA_KELAS[k] || k; }
-function fmtSkor(n) {
-  return Number(n || 0).toLocaleString("id-ID");
-}
 function confStr(c) {
   const v = Number(c);
   return `${String(v.toFixed(2)).replace(".", ",")} (${Math.round(v * 100)}%)`;
@@ -359,6 +356,17 @@ document.getElementById("simpan").addEventListener("click", async () => {
     });
     let res = await kirim(false);
     let json = await res.json().catch(() => ({}));
+    // Belum login (atau sesi habis): tawarkan login via modal, lalu ulangi sekali.
+    if (res.status === 401 && window.jpButuhLogin) {
+      const masuk = await window.jpButuhLogin();
+      if (!masuk) {
+        status.textContent = "Dibatalkan — masuk untuk menyimpan ke riwayat.";
+        status.classList.remove("galat");
+        return;
+      }
+      res = await kirim(false);
+      json = await res.json().catch(() => ({}));
+    }
     // Duplikat koordinat: tanya operator; boleh simpan ulang bila memang inspeksi baru.
     if (res.ok && json.duplikat && json.alasan === "koordinat") {
       const lanjut = await window.jpConfirm("Riwayat Serupa",
@@ -471,7 +479,8 @@ function showToast(title, message, type) {
       slot.innerHTML = '<img src="data:image/jpeg;base64,' + data.image_b64 + '" alt="Hasil deteksi ' + esc(data.namaBerkas) + '">';
     }
     if (data.rows && data.rows.length) {
-      document.getElementById("total-nilai").textContent = fmtSkor(data.total);
+      document.getElementById("lubang-nilai").textContent = String(
+        data.rows.filter(function(r) { return /pothole/i.test(r.kelas || ""); }).length);
       document.getElementById("temuan-nilai").textContent = data.rows.length;
       var nBerat = data.rows.filter(function(r) { return r.severity === "Berat"; }).length;
       document.getElementById("berat-nilai").textContent = "Berat (" + nBerat + ")";
@@ -582,3 +591,23 @@ function setupGeocodeTrigger(input) {
 }
 if (latInput) setupGeocodeTrigger(latInput);
 if (lonInput) setupGeocodeTrigger(lonInput);
+
+// Banner pengingat kalibrasi: tampil bila masih memakai kalibrasi bawaan.
+// Bisa ditutup; muncul lagi pada kunjungan berikutnya (sessionStorage).
+(function() {
+  var banner = document.getElementById("banner-kalibrasi");
+  if (!banner) return;
+  var tutup = document.getElementById("banner-kalibrasi-tutup");
+  if (tutup) tutup.addEventListener("click", function() {
+    banner.hidden = true;
+    try { sessionStorage.setItem("jp-banner-kalibrasi", "tutup"); } catch (e) {}
+  });
+  try {
+    if (sessionStorage.getItem("jp-banner-kalibrasi") === "tutup") return;
+  } catch (e) {}
+  fetch("/api/kalibrasi").then(function(r) { return r.json(); }).then(function(st) {
+    if (st && (st.metode === "bawaan" || !st.metode)) {
+      banner.hidden = false;
+    }
+  }).catch(function(err) { console.warn("[JalanPantau] banner kalibrasi", err); });
+})();

@@ -74,9 +74,6 @@ function esc(v) {
     "'": "&#39;", "`": "&#96;", "=": "&#61;",
   }[c]));
 }
-function fmtSkor(n) {
-  return Number(n || 0).toLocaleString("id-ID");
-}
 function confStr(c) {
   if (c == null) return "-";
   const v = Number(c);
@@ -200,14 +197,11 @@ async function ambilSnapshot() {
     const lokasi = document.getElementById("lokasi").value.trim();
     snapshot = { ...json, namaBerkas: `Live (${lokasi || "tanpa lokasi"})` };
     document.getElementById("total-live-nilai").textContent =
-      `Sesi: ${json.rows.length} titik unik · Total skor: ${fmtSkor(json.total)}`;
-    var dtlSub = document.getElementById("dtl-sub");
-    if (dtlSub) dtlSub.textContent =
-      `Sesi live: ${json.rows.length} titik unik · Total skor: ${fmtSkor(json.total)}`;
+      `Sesi: ${json.rows.length} titik unik`;
     document.getElementById("tabel-live").innerHTML =
-      `<table class="jp-table"><thead><tr><th>TRACK ID</th><th>KELAS KERUSAKAN</th><th>UKURAN</th><th>SEVERITY</th><th>CONF</th><th class="jp-num-right">SKOR</th></tr></thead><tbody>` +
+      `<table class="jp-table"><thead><tr><th>TRACK ID</th><th>KELAS KERUSAKAN</th><th>UKURAN</th><th>SEVERITY</th><th>CONF</th></tr></thead><tbody>` +
       json.rows.map((r) =>
-        `<tr><td class="jp-num">${esc(r.track_id)}</td><td><span class="jp-cell-main">${esc(r.kelas)}</span></td><td class="jp-num">${esc(r.dasar)}</td><td>${badge(r.severity)}</td><td class="jp-num">${esc(confStr(r.conf_max != null ? r.conf_max : r.conf))}</td><td class="jp-num-right">${esc(fmtSkor(r.skor_prioritas))}</td></tr>`
+        `<tr><td class="jp-num">${esc(r.track_id)}</td><td><span class="jp-cell-main">${esc(r.kelas)}</span></td><td class="jp-num">${esc(r.dasar)}</td><td>${badge(r.severity)}</td><td class="jp-num">${esc(confStr(r.conf_max != null ? r.conf_max : r.conf))}</td></tr>`
       ).join("") + `</tbody></table>`;
     hasilLive.hidden = false;
   } catch { /* abaikan bila server mati */ }
@@ -275,6 +269,17 @@ document.getElementById("simpan-live").addEventListener("click", async () => {
     });
     let res = await kirim(false);
     let json = await res.json().catch(() => ({}));
+    // Belum login (atau sesi habis): tawarkan login via modal, lalu ulangi sekali.
+    if (res.status === 401 && window.jpButuhLogin) {
+      const masuk = await window.jpButuhLogin();
+      if (!masuk) {
+        statusLive.textContent = "Dibatalkan — masuk untuk menyimpan ke riwayat.";
+        statusLive.classList.remove("galat");
+        return;
+      }
+      res = await kirim(false);
+      json = await res.json().catch(() => ({}));
+    }
     if (res.ok && json.duplikat && json.alasan === "koordinat") {
       const lanjut = await window.jpConfirm("Riwayat Serupa",
         `Sudah ada riwayat di titik ini (ID ${json.id}). Tetap simpan sebagai riwayat baru?`,
@@ -450,16 +455,6 @@ document.getElementById("unduh-live").addEventListener("click", async () => {
       });
   });
 
-  // Modal tabel skor prioritas live
-  var dlgTabelLive = document.getElementById("dialog-tabel-live");
-  var btnLihatTabel = document.getElementById("lihat-tabel-live");
-  if (btnLihatTabel && dlgTabelLive) btnLihatTabel.addEventListener("click", function() {
-    if (dlgTabelLive.showModal) dlgTabelLive.showModal();
-  });
-  ["dtl-x", "dtl-tutup"].forEach(function(id) {
-    var b = document.getElementById(id);
-    if (b && dlgTabelLive) b.addEventListener("click", function() { dlgTabelLive.close(); });
-  });
 
   // Stop stream saat page di-refresh/tutup
   window.addEventListener("beforeunload", function() {

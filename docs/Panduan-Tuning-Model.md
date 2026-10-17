@@ -12,7 +12,7 @@ membabi-buta. Urutkan berdasar (dampak ÷ usaha).
 - Galat dominan = **background**: miss 260–400/kelas, **false alarm 150–420/kelas**.
   Artinya model "melihat" kerusakan di tempat yang tidak ada → EOQ = data negatif +
   ambang, bukan arsitektur.
-- **Gap OOD Bandung besar** (±6–7 poin mAP50 vs val/test) → butuh *domain adaptation*.
+- **Gap OOD Bandung** (±3–4 poin mAP50 vs val/test) → butuh *domain adaptation*.
 - Rata-rata mAP menyembunyikan kelas lemah (longitudinal/transverse) → **laporkan per-kelas**.
 
 ## Urutan eksperimen

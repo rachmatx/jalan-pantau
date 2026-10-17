@@ -9,6 +9,7 @@ import functools
 import os
 import secrets
 import sys
+import time
 from datetime import timedelta
 from io import BytesIO
 import tempfile
@@ -30,7 +31,10 @@ from database import (daftar_sesi, detail_sesi, hapus_sesi, simpan_sesi,
                        migrasi_admin_v2, migrasi_sesi_v2, sesi_by_client_ref,
                        sesi_duplikat_coord,
                        init_admin, cek_login,
-                       hitung_sesi, get_db)
+                       hitung_sesi, get_db,
+                       tambah_segmen, daftar_segmen, detail_segmen, ubah_segmen,
+                       hapus_segmen, tetapkan_segmen_sesi, sesi_tanpa_segmen,
+                       sdi_segmen)
 
 WEB_DIR = Path(__file__).parent
 
@@ -139,9 +143,11 @@ def create_app():
     # P4: cookie session eksplisit aman (HttpOnly + SameSite).
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-    # Umur sesi login (jam). Default 12; override via env JP_SESSION_HOURS.
+    # Umur sesi login (jam). Default 8; override via env JP_SESSION_HOURS.
+    # Catatan: ini batas TETAP sejak login pertama (dicek via session["login_at"]
+    # di login_wajib), bukan sliding window.
     app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(
-        hours=int(os.environ.get("JP_SESSION_HOURS", "12")))
+        hours=int(os.environ.get("JP_SESSION_HOURS", "8")))
     # Cookie Secure saat di balik HTTPS (set JP_HTTPS=1).
     if str(os.environ.get("JP_HTTPS", "")).strip().lower() in ("1", "true", "yes"):
         app.config["SESSION_COOKIE_SECURE"] = True
@@ -230,12 +236,31 @@ def create_app():
 
     def login_wajib(fn):
         """Proteksi halaman/API: redirect ke login (HTML) atau 401 JSON (API)
-        bila belum login. Satu peran saja (admin)."""
+        bila belum login. Satu peran saja (admin).
+        Sesi bersifat TETAP: dihitung sejak login pertama (session["login_at"]);
+        lewat batas PERMANENT_SESSION_LIFETIME -> wajib login ulang."""
         @functools.wraps(fn)
         def pembungkus(*a, **kw):
-            if not session.get("admin_id"):
+            batas = app.config["PERMANENT_SESSION_LIFETIME"].total_seconds()
+            login_at = session.get("login_at")
+            if session.get("admin_id") and not login_at:
+                # Sesi lama (sebelum ada login_at): anggap baru login sekarang.
+                login_at = time.time()
+                session["login_at"] = login_at
+            kedaluwarsa = (not session.get("admin_id")
+                          or (time.time() - (login_at or 0) > batas))
+            if kedaluwarsa:
+                habis = bool(session.get("admin_id"))
+                # Bersihkan sesi tapi PERTAHANKAN token CSRF agar form/modal
+                # di halaman yang sama tetap bisa dipakai (mis. login ulang).
+                csrf = session.get("_csrf")
+                session.clear()
+                if csrf:
+                    session["_csrf"] = csrf
                 if request.path.startswith("/api/"):
-                    return jsonify({"error": "Login diperlukan."}), 401
+                    pesan = ("Sesi berakhir. Silakan login ulang." if habis
+                             else "Login diperlukan.")
+                    return jsonify({"error": pesan}), 401
                 return redirect(url_for("login_form", next=request.path))
             return fn(*a, **kw)
         return pembungkus
@@ -262,6 +287,7 @@ def create_app():
         session.permanent = True
         session["admin_id"] = admin["id"]
         session["admin_user"] = admin["username"]
+        session["login_at"] = time.time()
 
         # cegah open-redirect: hanya path relatif (tolak //, backslash, CR/LF)
         if (not tujuan.startswith("/") or tujuan.startswith("//")
@@ -273,6 +299,24 @@ def create_app():
     def logout():
         session.clear()
         return redirect(url_for("login_form"))
+
+    @app.post("/api/login")
+    @(limiter.limit("5 per minute; 20 per hour") if limiter else (lambda f: f))
+    def api_login():
+        """Login via JSON (dipakai dialog login modal saat aksi simpan).
+        Mengembalikan 200 + username bila sukses, 401 bila gagal."""
+        data = request.get_json(silent=True) or {}
+        user = (data.get("username") or "").strip().lower()
+        pwd = data.get("password") or ""
+        admin = cek_login(user, pwd)
+        if not admin:
+            return jsonify({"error": "Username atau password salah."}), 401
+        session.clear()
+        session.permanent = True
+        session["admin_id"] = admin["id"]
+        session["admin_user"] = admin["username"]
+        session["login_at"] = time.time()
+        return jsonify({"ok": True, "username": admin["username"]})
 
     # Cache-buster: versi ini akan ditambahkan ke semua asset static
     STATIC_VERSION = "39"
@@ -344,6 +388,10 @@ def create_app():
     @app.get("/riwayat")
     def riwayat():
         return render_template("riwayat.html", active="riwayat")
+
+    @app.get("/segmen")
+    def segmen():
+        return render_template("segmen.html", active="segmen")
 
     @app.get("/tentang")
     def tentang():
@@ -664,6 +712,7 @@ def create_app():
         return jsonify({"ok": True, "anotasi": MANAGER.anotasi_aktif})
 
     @app.post("/api/stream/snapshot")
+    @login_wajib
     def api_stream_snapshot():
         if MANAGER.running and not _token_dimiliki(
                 request.get_json(force=True, silent=True) or {}):
@@ -761,6 +810,7 @@ def create_app():
         return _f("lat", -90, 90), _f("lon", -180, 180)
 
     @app.post("/api/riwayat")
+    @login_wajib
     @(limiter.limit("20 per minute; 200 per hour") if limiter else (lambda f: f))
     def api_riwayat_simpan():
         from sqlite3 import IntegrityError
@@ -839,6 +889,24 @@ def create_app():
             return jsonify({"error": "Riwayat tidak ditemukan."}), 404
         return jsonify({"ok": True})
 
+    @app.put("/api/riwayat/<int:sid>/segmen")
+    @login_wajib
+    def api_riwayat_segmen(sid):
+        data = request.get_json(force=True, silent=True) or {}
+        segmen_id = data.get("segmen_id")
+        if segmen_id is not None:
+            try:
+                segmen_id = int(segmen_id)
+            except (TypeError, ValueError):
+                return jsonify({"error": "segmen_id tidak valid."}), 400
+        try:
+            ok = tetapkan_segmen_sesi(sid, segmen_id)
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+        if not ok:
+            return jsonify({"error": "Riwayat tidak ditemukan."}), 404
+        return jsonify({"ok": True})
+
     @app.get("/api/riwayat/<int:sid>/gambar")
     def api_riwayat_gambar(sid):
         # ?thumb=1 untuk thumbnail kecil (tabel), default = gambar penuh (detail)
@@ -855,6 +923,105 @@ def create_app():
     @app.get("/api/peta")
     def api_peta():
         return jsonify(titik_peta())
+
+    # ---- segmen jalan + SDI-visual (instrumen prioritas) ----
+    @app.post("/api/segmen")
+    @login_wajib
+    def api_segmen_buat():
+        data = request.get_json(force=True, silent=True) or {}
+        try:
+            sid = tambah_segmen(
+                data.get("nama"), jalan=data.get("jalan", "-"),
+                panjang_m=data.get("panjang_m", 100),
+                lebar_m=data.get("lebar_m", 6),
+                sdi_manual=data.get("sdi_manual"),
+                catatan=data.get("catatan", ""))
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+        return jsonify({"id": sid})
+
+    @app.get("/api/segmen")
+    def api_segmen_daftar():
+        return jsonify(daftar_segmen())
+
+    @app.get("/api/segmen/<int:sid>")
+    def api_segmen_detail(sid):
+        d = detail_segmen(sid)
+        if d is None:
+            return jsonify({"error": "Segmen tidak ditemukan."}), 404
+        d["tanpa_segmen"] = sesi_tanpa_segmen()
+        return jsonify(d)
+
+    @app.put("/api/segmen/<int:sid>")
+    @login_wajib
+    def api_segmen_ubah(sid):
+        data = request.get_json(force=True, silent=True) or {}
+        try:
+            ok = ubah_segmen(
+                sid, nama=data.get("nama"), jalan=data.get("jalan"),
+                panjang_m=data.get("panjang_m"), lebar_m=data.get("lebar_m"),
+                sdi_manual=data.get("sdi_manual", "__kosong__"),
+                catatan=data.get("catatan"))
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+        if not ok:
+            return jsonify({"error": "Segmen tidak ditemukan."}), 404
+        return jsonify({"ok": True})
+
+    @app.delete("/api/segmen/<int:sid>")
+    @login_wajib
+    def api_segmen_hapus(sid):
+        if not hapus_segmen(sid):
+            return jsonify({"error": "Segmen tidak ditemukan."}), 404
+        return jsonify({"ok": True})
+
+    @app.post("/api/segmen/<int:sid>/anggota")
+    @login_wajib
+    def api_segmen_tambah_anggota(sid):
+        data = request.get_json(force=True, silent=True) or {}
+        try:
+            sesi_id = int(data.get("sesi_id"))
+        except (TypeError, ValueError):
+            return jsonify({"error": "sesi_id tidak valid."}), 400
+        try:
+            ok = tetapkan_segmen_sesi(sesi_id, sid)
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+        if not ok:
+            return jsonify({"error": "Sesi tidak ditemukan."}), 404
+        return jsonify({"ok": True})
+
+    @app.delete("/api/segmen/<int:sid>/anggota/<int:sesi_id>")
+    @login_wajib
+    def api_segmen_hapus_anggota(sid, sesi_id):
+        # sid hanya untuk kejelasan URL; yang diubah adalah sesi tersebut.
+        if not tetapkan_segmen_sesi(sesi_id, None):
+            return jsonify({"error": "Sesi tidak ditemukan."}), 404
+        return jsonify({"ok": True})
+
+    @app.get("/api/segmen/<int:sid>/pdf")
+    def api_segmen_pdf(sid):
+        from laporan import buat_laporan_segmen
+        d = detail_segmen(sid)
+        if d is None:
+            return jsonify({"error": "Segmen tidak ditemukan."}), 404
+        try:
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+                pdf_path = f.name
+            buat_laporan_segmen(pdf_path, d)
+            with open(pdf_path, "rb") as f:
+                isi = f.read()
+        except Exception:
+            app.logger.exception("buat pdf segmen gagal")
+            return jsonify({"error": "Gagal membuat PDF."}), 500
+        finally:
+            try:
+                os.remove(pdf_path)
+            except OSError:
+                pass
+        return send_file(BytesIO(isi), as_attachment=True,
+                         download_name=f"sdi-segmen-{sid}.pdf",
+                         mimetype="application/pdf")
 
     return app
 
