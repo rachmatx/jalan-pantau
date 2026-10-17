@@ -28,6 +28,8 @@
     if (!res.ok) return;
     const data = await res.json();
     document.getElementById("kpi-segmen").textContent = data.length;
+    var hitung = document.getElementById("tabel-hitung");
+    if (hitung) hitung.textContent = data.length ? data.length + " segmen" : "";
     // Visual distribusi kategori.
     var hit = { "Baik": 0, "Sedang": 0, "Rusak Ringan": 0, "Rusak Berat": 0 };
     data.forEach(function(g) {
@@ -58,10 +60,10 @@
         "<td>" + badgeKat(sdi.kategori) + "</td>" +
         '<td class="jp-num-right">' + fmtSDI(manual) + "</td>" +
         '<td class="jp-num-right">' + esc(selisih) + "</td>" +
-        '<td style="white-space:nowrap">' +
-          '<button type="button" class="jp-btn-light" data-lihat="' + g.id + '">Detail</button> ' +
-          '<button type="button" class="jp-btn-light" data-hapus="' + g.id + '">Hapus</button>' +
-        "</td></tr>";
+        '<td><div class="jp-rowact">' +
+          '<button type="button" data-act="detail" data-lihat="' + g.id + '">Detail</button>' +
+          '<button type="button" data-act="hapus" data-hapus="' + g.id + '">Hapus</button>' +
+        "</div></td></tr>";
     }).join("");
     tb.querySelectorAll("[data-lihat]").forEach(function(b) {
       b.onclick = function() { bukaDetail(Number(b.getAttribute("data-lihat"))); };
@@ -107,9 +109,6 @@
     if (!res.ok) return;
     const g = await res.json();
     const sdi = g.sdi || {};
-    const tanpa = sdi.n_tanpa_dimensi
-      ? '<p style="font-size:12px;color:var(--jp-muted)">' + sdi.n_tanpa_dimensi
-        + " temuan tanpa data dimensi tidak masuk perhitungan.</p>" : "";
     const manual = g.sdi_manual;
     const selisih = (manual === null || manual === undefined) ? "-"
       : "Selisih vs manual: <b>" + Math.abs(Number(manual) - Number(sdi.sdi_total || 0)).toFixed(0) + "</b>";
@@ -117,59 +116,66 @@
       return "<tr><td>#" + s.id + "</td><td>" + esc(s.waktu) + "</td>" +
         "<td>" + esc(s.lokasi) + "</td>" +
         '<td class="jp-num-right">' + esc(s.n_temuan) + "</td>" +
-        '<td><button type="button" class="jp-btn-light" data-keluar="' + s.id + '">Keluarkan</button></td></tr>';
+        '<td><div class="jp-rowact"><button type="button" data-act="hapus" data-keluar="' + s.id + '">Keluarkan</button></div></td></tr>';
     }).join("") || '<tr><td colspan="5" style="color:var(--jp-muted)">Belum ada sesi anggota.</td></tr>';
     const bebas = (g.tanpa_segmen || []).map(function(s) {
       return "<tr><td>#" + s.id + "</td><td>" + esc(s.waktu) + "</td>" +
         "<td>" + esc(s.lokasi) + "</td>" +
         '<td class="jp-num-right">' + esc(s.n_temuan) + "</td>" +
-        '<td><button type="button" class="jp-btn-light" data-masuk="' + s.id + '">Masukkan</button></td></tr>';
+        '<td><div class="jp-rowact"><button type="button" data-act="detail" data-masuk="' + s.id + '">Masukkan</button></div></td></tr>';
     }).join("") || '<tr><td colspan="5" style="color:var(--jp-muted)">Semua sesi sudah ber-segmen.</td></tr>';
 
     document.getElementById("dg-judul").textContent = "Segmen: " + g.nama;
+    document.getElementById("dg-sub").textContent = [
+      g.jalan,
+      (g.panjang_m ? g.panjang_m + " m" : null),
+      ((g.anggota || []).length + " sesi anggota"),
+    ].filter(Boolean).join(" · ");
     document.getElementById("dg-isi").innerHTML =
-      '<div class="dg-grid">' +
-      "<div>" +
-        "<h3 style='font-size:14px;margin:0 0 8px'>SDI-VISUAL</h3>" +
-        '<table class="jp-table" style="width:100%"><tbody>' +
-        barisSDI("SDI1 - luas retak", sdi.sdi1, sdi.sdi1_ket) +
-        barisSDI("SDI2 - lebar retak", sdi.sdi2, sdi.sdi2_ket) +
-        barisSDI("SDI3 - jumlah lubang", sdi.sdi3, sdi.sdi3_ket) +
-        barisSDI("SDI4 - bekas roda", sdi.sdi4, sdi.sdi4_ket) +
-        "</tbody></table>" +
-        '<p style="font-size:16px;font-weight:700;margin:10px 0 2px">SDI total: '
-          + fmtSDI(sdi.sdi_total) + " " + badgeKat(sdi.kategori) + "</p>" +
-        '<p style="font-size:12px;color:var(--jp-muted);margin:0 0 4px">' + selisih + "</p>" + tanpa +
-        '<p style="font-size:12px;color:var(--jp-muted)">' + esc(sdi.varian || "") + "</p>" +
-        "<h3 style='font-size:14px;margin:14px 0 4px'>Posisi pada skala Bina Marga</h3>" +
-        skalaSDI(sdi.sdi_total, manual) +
-      "</div>" +
-      "<div>" +
-        "<h3 style='font-size:14px;margin:0 0 8px'>DATA SEGMEN</h3>" +
-        '<div style="display:grid;gap:8px">' +
-        '<div><label class="jp-caps">NAMA</label><input id="e-nama" class="jp-input" value="' + esc(g.nama) + '" maxlength="120"></div>' +
-        '<div><label class="jp-caps">RUAS</label><input id="e-jalan" class="jp-input" value="' + esc(g.jalan) + '" maxlength="160"></div>' +
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
-          '<div><label class="jp-caps">PANJANG (m)</label><input id="e-panjang" class="jp-input" type="number" min="1" step="any" value="' + esc(g.panjang_m) + '"></div>' +
-          '<div><label class="jp-caps">LEBAR (m)</label><input id="e-lebar" class="jp-input" type="number" min="1" step="any" value="' + esc(g.lebar_m) + '"></div>' +
-        "</div>" +
-        '<div><label class="jp-caps">SDI MANUAL (LAPANGAN, OPSIONAL)</label><input id="e-manual" class="jp-input" type="number" min="0" step="any" value="' + (manual === null || manual === undefined ? "" : esc(manual)) + '" placeholder="cth: 25"></div>' +
-        '<div><label class="jp-caps">CATATAN</label><input id="e-catatan" class="jp-input" value="' + esc(g.catatan || "") + '" maxlength="500"></div>' +
-        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-          '<button type="button" class="jp-btn-save" id="e-simpan" style="padding:8px 16px">Simpan Perubahan</button>' +
-          '<button type="button" class="jp-btn-light" id="e-pdf" style="padding:8px 16px">Unduh PDF</button>' +
-        "</div>" +
+      '<div class="jp-sdi-hero">' +
+        '<div class="jp-sdi-hero-num"><span>SDI-VISUAL</span><b>' + fmtSDI(sdi.sdi_total) + "</b></div>" +
+        '<div class="jp-sdi-hero-meta">' + badgeKat(sdi.kategori) +
+          "<p>" + selisih + "</p>" +
+          (sdi.n_tanpa_dimensi
+            ? "<p>" + sdi.n_tanpa_dimensi + " temuan tanpa data dimensi tidak masuk perhitungan.</p>"
+            : "") +
         "</div>" +
       "</div>" +
+      '<div class="dg-grid" style="margin-top:16px">' +
+        "<div>" +
+          "<h3>Komponen SDI</h3>" +
+          '<div class="jp-table-scroll"><table class="jp-table" style="width:100%"><tbody>' +
+            barisSDI("SDI1 - luas retak", sdi.sdi1, sdi.sdi1_ket) +
+            barisSDI("SDI2 - lebar retak", sdi.sdi2, sdi.sdi2_ket) +
+            barisSDI("SDI3 - jumlah lubang", sdi.sdi3, sdi.sdi3_ket) +
+            barisSDI("SDI4 - bekas roda", sdi.sdi4, sdi.sdi4_ket) +
+          "</tbody></table></div>" +
+          (sdi.varian ? '<p style="font-size:12px;color:var(--jp-muted);margin:8px 0 0">' + esc(sdi.varian) + "</p>" : "") +
+        "</div>" +
+        "<div>" +
+          "<h3>Data segmen</h3>" +
+          '<div style="display:grid;gap:10px">' +
+            '<div><label class="jp-caps">NAMA</label><input id="e-nama" class="jp-input" value="' + esc(g.nama) + '" maxlength="120"></div>' +
+            '<div><label class="jp-caps">RUAS</label><input id="e-jalan" class="jp-input" value="' + esc(g.jalan) + '" maxlength="160"></div>' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+              '<div><label class="jp-caps">PANJANG (m)</label><input id="e-panjang" class="jp-input" type="number" min="1" step="any" value="' + esc(g.panjang_m) + '"></div>' +
+              '<div><label class="jp-caps">LEBAR (m)</label><input id="e-lebar" class="jp-input" type="number" min="1" step="any" value="' + esc(g.lebar_m) + '"></div>' +
+            "</div>" +
+            '<div><label class="jp-caps">SDI MANUAL (LAPANGAN, OPSIONAL)</label><input id="e-manual" class="jp-input" type="number" min="0" step="any" value="' + (manual === null || manual === undefined ? "" : esc(manual)) + '" placeholder="cth: 25"></div>' +
+            '<div><label class="jp-caps">CATATAN</label><input id="e-catatan" class="jp-input" value="' + esc(g.catatan || "") + '" maxlength="500" placeholder="opsional"></div>' +
+          "</div>" +
+        "</div>" +
       "</div>" +
-      '<h3 style="font-size:14px;margin:16px 0 8px">SESI ANGGOTA (' + (g.anggota || []).length + ")</h3>" +
-      '<div style="overflow-x:auto"><table class="jp-table" style="width:100%">' +
-      "<thead><tr><th>ID</th><th>Waktu</th><th>Lokasi</th><th>Temuan</th><th></th></tr></thead>" +
-      "<tbody>" + anggota + "</tbody></table></div>" +
-      '<h3 style="font-size:14px;margin:16px 0 8px">SESI TANPA SEGMEN</h3>' +
-      '<div style="overflow-x:auto;max-height:260px;overflow-y:auto"><table class="jp-table" style="width:100%">' +
-      "<thead><tr><th>ID</th><th>Waktu</th><th>Lokasi</th><th>Temuan</th><th></th></tr></thead>" +
-      "<tbody>" + bebas + "</tbody></table></div>";
+      "<h3>Posisi pada skala Bina Marga</h3>" +
+      skalaSDI(sdi.sdi_total, manual) +
+      "<h3>Sesi anggota (" + (g.anggota || []).length + ")</h3>" +
+      '<div class="jp-table-scroll"><table class="jp-table" style="width:100%">' +
+        '<thead><tr><th>ID</th><th>Waktu</th><th>Lokasi</th><th class="jp-num-right">Temuan</th><th style="text-align:right">Aksi</th></tr></thead>' +
+        "<tbody>" + anggota + "</tbody></table></div>" +
+      "<h3>Sesi tanpa segmen</h3>" +
+      '<div class="jp-table-scroll" style="max-height:260px;overflow-y:auto"><table class="jp-table" style="width:100%">' +
+        '<thead><tr><th>ID</th><th>Waktu</th><th>Lokasi</th><th class="jp-num-right">Temuan</th><th style="text-align:right">Aksi</th></tr></thead>' +
+        "<tbody>" + bebas + "</tbody></table></div>";
 
     document.getElementById("e-simpan").onclick = async function() {
       const manualVal = document.getElementById("e-manual").value;
@@ -252,9 +258,17 @@
   document.getElementById("dlg-buat").addEventListener("keydown", function(ev) {
     if (ev.key === "Enter" && ev.target.tagName === "INPUT") { ev.preventDefault(); simpanBaru(); }
   });
-  document.getElementById("dg-tutup").onclick = function() {
-    document.getElementById("dlg-segmen").close();
-  };
+  // Tutup dialog: tombol X/footer bertanda [data-tutup], klik backdrop, atau Esc.
+  document.querySelectorAll("[data-tutup]").forEach(function(b) {
+    b.addEventListener("click", function() {
+      var d = b.closest("dialog");
+      if (d) d.close();
+    });
+  });
+  ["dlg-segmen", "dlg-buat"].forEach(function(id) {
+    var d = document.getElementById(id);
+    if (d) d.addEventListener("click", function(e) { if (e.target === d) d.close(); });
+  });
 
   muat();
 })();

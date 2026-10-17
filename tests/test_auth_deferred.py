@@ -1,6 +1,8 @@
 """Uji deferred login & sesi 8 jam tetap.
 
 - Simpan riwayat (foto & live snapshot) butuh login -> 401 tanpa sesi.
+- Lihat snapshot live (tabel temuan) TIDAK butuh login: tanpa sesi pun 400
+  (belum ada track), bukan 401.
 - POST /api/login (JSON): sukses -> 200 + sesi; gagal -> 401.
 - Sesi kedaluwarsa: login_at lebih tua dari batas -> 401 + pesan khusus.
 - Halaman publik tetap terbuka tanpa login; /kalibrasi redirect ke login.
@@ -42,10 +44,14 @@ class TestDeferredLogin(unittest.TestCase):
         self.assertEqual(r.status_code, 401)
         self.assertIn("Login", r.get_json()["error"])
 
-    def test_snapshot_tanpa_login_401(self):
+    def test_snapshot_tanpa_login_tetap_terbuka(self):
+        """Lihat tabel temuan tidak digerbangi login (hanya aksi simpan).
+
+        Tanpa sesi pun endpoint mengembalikan 400 "belum ada track", bukan 401.
+        """
         _, c = _app_client()
         r = c.post("/api/stream/snapshot", json={})
-        self.assertEqual(r.status_code, 401)
+        self.assertEqual(r.status_code, 400)
 
     def test_api_login_json_sukses(self):
         _, c = _app_client()

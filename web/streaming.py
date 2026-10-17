@@ -11,6 +11,13 @@ Dulu ketiganya satu loop bloking sehingga FPS tampil == FPS inferensi (~3 FPS)
 dan buffer kamera menumpuk -> patah-patah. Pengukuran/snapshot tetap dari
 self.tracks (box terbaik per ID), jadi angka severity/skor tak terpengaruh.
 
+Infer worker kini PERSISTEN (satu thread seumur server), bukan dibuat ulang
+tiap start(). Alasannya terukur: inferensi CUDA pertama di sebuah thread
+membayar inisialisasi per-thread (~3-8 dtk); kalau thread dibuat per sesi,
+biaya itu dibayar ulang dan penonton melihat video berjalan tanpa kotak
+selama beberapa detik. Dengan thread persisten, biaya dibayar sekali saat
+startup (panaskan()), jadi tiap "Mulai" langsung menampilkan kotak.
+
 Satu sesi aktif dalam satu waktu (cukup untuk demo sidang + hemat CPU).
 Setiap start() me-reset tracker sehingga ID mulai dari 1 lagi.
 """
@@ -46,6 +53,15 @@ class StreamManager:
         self._lock = threading.Lock()
         self._thread = None
         self._stop = threading.Event()
+        # --- thread inferensi live PERSISTEN (satu seumur proses) ---
+        self._infer_lock = threading.Lock()
+        self._infer_persisten = None
+        self._infer_siap = threading.Event()   # warmup selesai
+        self._infer_idle = threading.Event()   # sedang menganggur (aman reset state)
+        self._infer_idle.set()
+        self._infer_sesi = threading.Event()   # ada sesi aktif yang perlu dilayani
+        self._tutup = threading.Event()        # shutdown server
+        self._source_type = "webcam"
         self.reset_state()
 
     def reset_state(self):
@@ -78,7 +94,6 @@ class StreamManager:
         self._latest_seq = 0
         self._t_publish = 0.0
         self._cap_thread = None
-        self._infer_thread = None
 
     # ---- kontrol ----
     def start(self, source_type, target, conf=0.25, frame_skip=1, label=None,
@@ -97,6 +112,7 @@ class StreamManager:
             self.malam = bool(malam)
             self._performa = str(performa).lower() if performa else None
             self.running = True
+            self._source_type = source_type
             self.source_label = label or {
                 "webcam": f"Webcam {target}", "ipcam": "HP IP-camera",
                 "file": Path(str(target)).name}.get(source_type, "-")
@@ -122,20 +138,158 @@ class StreamManager:
                                        nama_model(kunci="model_live")),
             }
         self._reset_tracker()
+        self._pastikan_infer()
         self._thread = threading.Thread(target=self._loop,
                                         args=(source_type, target), daemon=True)
         self._thread.start()
+        # Aktifkan sesi di thread inferensi persisten (state sudah bersih).
+        self._infer_sesi.set()
         return True
 
     def stop(self):
+        # Cegah thread inferensi persisten mengambil sesi baru, lalu hentikan
+        # sesi berjalan lewat self._stop.
+        self._infer_sesi.clear()
         self._stop.set()
         t, self._thread = self._thread, None
         if t is not None:
             t.join(timeout=5)
+        # Tunggu thread inferensi persisten kembali menganggur sebelum state
+        # direset oleh start() berikutnya (hindari ia menulis state sesi lama).
+        self._infer_idle.wait(timeout=5)
         with self._lock:
             self.running = False
         with self._frame_cond:
             self._frame_cond.notify_all()
+
+    # ---- thread inferensi persisten ----
+    def _pastikan_infer(self):
+        """Pastikan thread inferensi live persisten hidup (lahirkan bila mati)."""
+        t = self._infer_persisten
+        if t is not None and t.is_alive():
+            return t
+        with self._infer_lock:
+            t = self._infer_persisten
+            if t is not None and t.is_alive():
+                return t
+            self._infer_siap.clear()
+            self._infer_persisten = threading.Thread(
+                target=self._infer_loop, name="inferensi-live", daemon=True)
+            self._infer_persisten.start()
+            return self._infer_persisten
+
+    def panaskan(self):
+        """Siapkan + hangatkan thread inferensi live sekali (panggil saat startup).
+
+        Biaya inisialisasi (CUDA per-thread + jalur pasca-deteksi) dibayar di
+        sini memakai frame NYATA, bukan di sesi pertama -- sehingga mulai stream
+        langsung menampilkan kotak.
+        """
+        self._pastikan_infer()
+        self._infer_siap.wait(timeout=120)
+
+    def _panaskan_infer(self):
+        """Warmup CUDA di THREAD INI memakai frame NYATA (bukan zeros).
+
+        Terukur (17 Okt 2026): warmup dengan `np.zeros` TIDAK menghangatkan
+        jalur pasca-deteksi (internal `model.warmup` + NMS) yang hanya berjalan
+        saat ada objek -> `track` pertama pada frame nyata tetap ~3-4 dtk.
+        Setelah satu frame asli, inferensi berikutnya ~0,2 dtk. Karena itu
+        warmup memakai frame dari video demo bawaan (pasti ada kerusakan),
+        pada tiap imgsz preset (320/640/960) + imgsz_live config; lalu tracker
+        dibersihkan agar ID sesi mulai dari 1.
+        """
+        try:
+            model = get_model(kunci="model_live")
+            infer = get_inferensi()
+        except Exception:
+            return
+        ukuran = {320, 640, 960}
+        try:
+            ukuran.add(int(infer.get("imgsz_live", 640)))
+        except (TypeError, ValueError):
+            pass
+        device = pilih_device(infer.get("device", "auto"),
+                              nama_model(kunci="model_live"))
+        iou = float(infer.get("iou", 0.5))
+        umpan = self._gambar_warmup()
+        for k in sorted(ukuran):
+            if self._tutup.is_set():
+                break
+            try:
+                model.track(umpan, persist=True, conf=0.25, imgsz=k, iou=iou,
+                            device=device, half=half_untuk(device),
+                            tracker="bytetrack.yaml", verbose=False)
+            except Exception:
+                pass
+            # Hemat VRAM di GPU kecil: lepas cache antar-ukuran (imgsz 960 bisa
+            # memicu peringatan OOM sesaat di GPU 4GB).
+            try:
+                import torch
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+            except Exception:
+                pass
+        # Buang track hasil warmup agar ID sesi nyata mulai dari 1.
+        self._reset_tracker()
+
+    def _gambar_warmup(self):
+        """Ambil 1 frame NYATA untuk warmup (fallback: frame kosong).
+
+        Frame berisi objek penting supaya jalur deteksi/NMS benar-benar jalan.
+        Utamakan video demo bawaan; bila tak ada, pakai gambar di folder demo;
+        terakhir frame hitam (paling tidak menghangatkan jalur inferensi).
+        """
+        import numpy as np
+        dasar = Path(__file__).resolve().parent / "static" / "demo"
+        video = dasar / "demo_jalan.mp4"
+        try:
+            if video.exists():
+                cap = cv2.VideoCapture(str(video))
+                ok, fr = cap.read()
+                try:
+                    cap.release()
+                except Exception:
+                    pass
+                if ok and fr is not None:
+                    return fr
+        except Exception:
+            pass
+        try:
+            for p in sorted(dasar.glob("*.jpg")):
+                fr = cv2.imread(str(p))
+                if fr is not None:
+                    return fr
+        except Exception:
+            pass
+        return np.zeros((480, 640, 3), dtype=np.uint8)
+
+    def _infer_loop(self):
+        """Thread inferensi live PERSISTEN: warmup sekali, lalu layani tiap sesi.
+
+        Antara sesi thread menganggur (tak menyentuh model). Biaya CUDA
+        per-thread dibayar sekali di sini saat startup.
+        """
+        try:
+            self._panaskan_infer()
+        finally:
+            self._infer_siap.set()
+            self._infer_idle.set()
+        while not self._tutup.is_set():
+            if not self._infer_sesi.wait(timeout=0.5):
+                continue
+            if self._tutup.is_set():
+                break
+            self._infer_idle.clear()
+            try:
+                self._infer_worker(self._source_type, self._stop)
+            except Exception as e:
+                with self._lock:
+                    self.error = f"Tracking gagal: {e}"
+                self._stop.set()
+            finally:
+                self._infer_idle.set()
+                self._infer_sesi.clear()
 
     def _reset_tracker(self):
         """Buang tracker lama agar ID sesi baru mulai dari 1 lagi."""
@@ -233,6 +387,12 @@ class StreamManager:
         pakai_diff = (source_type != "file") and thr > 0
         prev_gray = None
         k = 0
+        # Catatan (17 Okt 2026): dulu warmup dummy di sini DICOBA lalu di-revert
+        # karena "tidak menolong". Setelah diukur ulang: warmup MEMANG menolong,
+        # asalkan (a) dijalankan di THREAD YANG SAMA yang akan menginferensi dan
+        # (b) argumen device/imgsz sama dengan inferensi asli (percobaan lama
+        # diduga jalan di CPU / ukuran beda). Kini warmup dipusatkan sekali di
+        # thread inferensi persisten -> lihat _panaskan_infer().
         while not stop.is_set():
             with self._raw_lock:
                 raw = self._raw_frame
@@ -385,10 +545,7 @@ class StreamManager:
         self._cap_thread = threading.Thread(
             target=self._capture_worker, args=(cap, is_file, src_fps, stop),
             daemon=True)
-        self._infer_thread = threading.Thread(
-            target=self._infer_worker, args=(source_type, stop), daemon=True)
         self._cap_thread.start()
-        self._infer_thread.start()
         cfg = self._live_cfg or {}
         q = int(cfg.get("jpeg_quality", JPEG_Q_DEFAULT))
         interval = 1.0 / max(float(cfg.get("display_fps", 25)), 1.0)
@@ -427,9 +584,8 @@ class StreamManager:
                     time.sleep(sisa)
         finally:
             stop.set()
-            for t in (self._cap_thread, self._infer_thread):
-                if t is not None:
-                    t.join(timeout=3)
+            if self._cap_thread is not None:
+                self._cap_thread.join(timeout=3)
             try:
                 cap.release()
             except Exception:

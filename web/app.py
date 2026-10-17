@@ -22,7 +22,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from flask import (Flask, Response, current_app, jsonify, redirect,
                    render_template, request, send_file, session, url_for)
 
-from deteksi import (analisis_gambar, buat_pdf, get_kalibrasi,
+from deteksi import (WorkerInferensiMati, analisis_gambar,
+                     analisis_gambar_terjadwal, buat_pdf, get_kalibrasi,
                      hitung_ppc, nama_model, simpan_kalibrasi,
                      terapkan_koreksi)
 from streaming import MANAGER
@@ -434,10 +435,18 @@ def create_app():
                 or data[:8] == b"\x89PNG\r\n\x1a\n"):
             return jsonify({"error": "Berkas bukan gambar JPG/PNG yang valid."}), 400
         try:
-            hasil = analisis_gambar(data, conf=conf, malam=malam,
-                                    teliti=teliti)
+            # Via worker thread GPU khusus: tiap request Flask = thread baru dan
+            # inferensi CUDA pertama di thread baru memakan ~10 dtk (terukur).
+            hasil = analisis_gambar_terjadwal(data, conf=conf, malam=malam,
+                                              teliti=teliti)
         except ValueError as e:
             return jsonify({"error": str(e)}), 400
+        except WorkerInferensiMati:
+            # Worker GPU berhenti di tengah job -> layanan sedang pulih,
+            # bukan kesalahan gambar. 503 supaya klien tahu bisa coba lagi.
+            app.logger.warning("worker inferensi mati saat detect")
+            return jsonify({"error": "Layanan inferensi sedang pulih. "
+                                     "Coba lagi sebentar."}), 503
         except Exception:
             app.logger.exception("detect gagal")
             return jsonify({"error": "Deteksi gagal. Coba gambar lain."}), 500
@@ -712,8 +721,10 @@ def create_app():
         return jsonify({"ok": True, "anotasi": MANAGER.anotasi_aktif})
 
     @app.post("/api/stream/snapshot")
-    @login_wajib
     def api_stream_snapshot():
+        # Lihat tabel temuan TIDAK butuh login (konsisten dengan /api/stream,
+        # /api/stream/stats, dan /api/laporan yang publik). Gerbang login ada di
+        # penyimpanan sesi (/api/riwayat) dan aksi tulis lain.
         if MANAGER.running and not _token_dimiliki(
                 request.get_json(force=True, silent=True) or {}):
             return jsonify({"error": "Stream ini milik sesi lain."}), 403
@@ -1062,6 +1073,25 @@ def _preload_model_di_background():
                 print("[preload] Warmup model live selesai.")
             except Exception as e:
                 print(f"[preload] Warmup dilewati: {e}")
+            # Worker inferensi GPU khusus: start + warmup di thread-nya sendiri
+            # (anti pajak ~10 dtk inisialisasi CUDA per request Flask).
+            try:
+                from deteksi import start_worker_inferensi
+                print("[preload] Memulai worker inferensi GPU...")
+                start_worker_inferensi()
+                print("[preload] Worker inferensi GPU berjalan.")
+            except Exception as e:
+                print(f"[preload] Worker inferensi dilewati: {e}")
+            # Thread inferensi live PERSISTEN: hangatkan CUDA sekali di thread
+            # yang sama yang akan menginferensi live, agar mulai stream langsung
+            # menampilkan kotak (tanpa jeda inisialisasi per-thread ~3-8 dtk).
+            try:
+                from streaming import MANAGER as _mgr
+                print("[preload] Menghangatkan inferensi live...")
+                _mgr.panaskan()
+                print("[preload] Inferensi live siap.")
+            except Exception as e:
+                print(f"[preload] Warmup live dilewati: {e}")
         except Exception as e:
             print(f"[preload] Gagal preload model: {e}")
     t = threading.Thread(target=_load, daemon=True)

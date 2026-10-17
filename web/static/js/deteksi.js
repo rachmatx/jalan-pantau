@@ -93,6 +93,81 @@ function teksVerifikasi(info) {
   return info.total + " perubahan (" + bagian.join(", ") + ")";
 }
 
+/* Pesan "tanpa temuan" yang menjelaskan APA yang terjadi. Tanpa ini pengguna
+   hanya melihat "tidak ada kerusakan" dan tak bisa membedakan "model memang
+   tidak melihat" dari "kandidat ada tapi dibuang penyaring" — pertanyaan yang
+   berulang ("conf sudah saya turunkan ke 0,1, kok tetap kosong?").
+   Angka diambil apa adanya dari `disaring` balasan /api/detect. */
+function pesanKosong(json) {
+  var d = json.disaring || {};
+  var gugur = [];
+  var rusak = Number(d.rusak || 0);
+  if (rusak) gugur.push(rusak + " keluaran rusak dari model (diabaikan)");
+  if (d.ambang) gugur.push(d.ambang + " di bawah ambang kepercayaan");
+  if (d.ukuran) gugur.push(d.ukuran + " ukuran tidak masuk akal");
+  if (d.mungil) gugur.push(d.mungil + " terlalu kecil");
+  var nGate = (d.gate && d.gate.disaring) || 0;
+  if (nGate) gugur.push(nGate + " lubang ditahan gate jalan-basah");
+  var sebab = gugur.length
+    ? " Kandidat model yang gugur: " + gugur.join(", ") + "."
+    : " Model tidak menghasilkan satu kandidat pun.";
+  // "Rusak" = box/conf NaN (model mengeluarkan nilai cacat), BUKAN kerusakan
+  // yang geometrinya aneh. Tanpa penjelasan ini pengguna menyangka penyaring
+  // ukuran yang salah lalu menuntut penyaringnya dilonggarkan.
+  var totalGugur = rusak + Number(d.ambang || 0) + Number(d.ukuran || 0) +
+    Number(d.mungil || 0) + nGate;
+  if (rusak > 0 && rusak >= totalGugur * 0.5) {
+    sebab += " \"Keluaran rusak\" berarti model mengembalikan koordinat tak sah" +
+      " (NaN) — bukan deteksi berukuran aneh yang ditolak penyaring.";
+  }
+  var auto = json.teliti_otomatis
+    ? " Mode teliti otomatis sudah dicoba karena gambar besar." : "";
+  return "Tidak ada temuan pada ambang ini." + sebab + auto + " " +
+    saranLanjutan(json);
+}
+
+/* Saran yang DISESUAIKAN keadaan. Menyarankan "turunkan confidence" saat
+   slider sudah di batas bawah (0,05) hanya membuat pengguna bingung, begitu
+   pula "centang mode teliti" saat mode itu sudah berjalan. */
+function saranLanjutan(json) {
+  var saran = [];
+  var diBatasBawah = false;
+  try {
+    var min = parseFloat(conf.min);
+    diBatasBawah = !!conf && conf.value !== "" &&
+      parseFloat(conf.value) <= (isFinite(min) ? min : 0) + 1e-9;
+  } catch (e) { /* slider tak ada: anggap belum di batas bawah */ }
+  if (json.gelap && !json.malam) {
+    saran.push("centang \"Pencahayaan Rendah / Malam\" (foto ini gelap)");
+  }
+  if (!diBatasBawah) saran.push("turunkan confidence");
+  if (!json.teliti) saran.push("centang mode teliti");
+  saran.push("ambil foto dari jarak lebih dekat", "ambil foto saat siang hari");
+  return "Coba " + saran.join(", ") + ".";
+}
+
+/* Ukuran piksel gambar terpilih. Dipakai hanya untuk menyetel ekspektasi waktu:
+   foto besar (sisi > ~1920 px) dianalisis per bagian oleh server dan bisa
+   memakan 15-30 detik; tanpa petunjuk ini pengguna menyangka aplikasi
+   menggantung padahal masih bekerja. */
+function ukuranGambar(berkas) {
+  return new Promise(function (resolve) {
+    try {
+      var url = URL.createObjectURL(berkas);
+      var im = new Image();
+      im.onload = function () {
+        URL.revokeObjectURL(url);
+        resolve({ w: im.naturalWidth, h: im.naturalHeight });
+      };
+      im.onerror = function () { URL.revokeObjectURL(url); resolve(null); };
+      im.src = url;
+    } catch (e) {
+      console.warn("gagal membaca dimensi gambar:", e);
+      resolve(null);
+    }
+  });
+}
+
 function refreshVerifikasiUI() {
   renderTabelDeteksi();
   if (!terakhir) return;
@@ -108,8 +183,12 @@ function refreshVerifikasiUI() {
   document.getElementById("verifikasi-reset").hidden = !info.total;
   hasil.hidden = false;
   status.classList.remove("galat");
-  status.textContent = `${terakhir.rows.length} temuan.` +
-    (terakhir.teliti ? " (mode teliti)." : ".") +
+  const mode = terakhir.teliti
+    ? (terakhir.teliti_otomatis
+      ? " (mode teliti otomatis — gambar besar)"
+      : " (mode teliti)")
+    : "";
+  status.textContent = `${terakhir.rows.length} temuan${mode}.` +
     (label ? ` Terverifikasi operator: ${label}.` : "");
 }
 
@@ -266,7 +345,18 @@ form.addEventListener("submit", async (e) => {
   status.textContent = "Mendeteksi…";
   hasil.hidden = true;
   slot.classList.add("kosong");
-  slot.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;width:100%;height:100%;min-height:200px;color:var(--jp-muted);background:var(--jp-bg);border-radius:8px"><p style="font-size:14px;font-weight:600;margin:0;color:var(--jp-ink)">Menganalisis gambar dengan YOLOv11s…</p></div>`;
+  slot.innerHTML = '<div class="jp-loading"><div class="jp-loading-spinner"></div><p>Menganalisis gambar dengan YOLOv11s…</p></div>';
+  // Setel ekspektasi waktu untuk foto besar (tanpa menahan unggahan).
+  ukuranGambar(berkas).then(function (dim) {
+    if (!dim || Math.max(dim.w, dim.h) < 1920) return;
+    const p = slot.querySelector(".jp-loading p");
+    if (p) {
+      p.textContent = "Gambar " + (dim.w * dim.h / 1e6).toFixed(1).replace(".", ",") +
+        " MP — analisis foto besar bisa 15–30 detik…";
+    }
+  }).catch(function (e) {
+    console.warn("petunjuk ukuran gambar gagal:", e);
+  });
   try {
     const data = new FormData();
     data.append("gambar", berkas);
@@ -304,7 +394,7 @@ form.addEventListener("submit", async (e) => {
       status.classList.remove("galat");
     }
     if (!json.rows.length) {
-      status.textContent = "Tidak ada kerusakan terdeteksi pada confidence ini. Coba turunkan confidence, centang mode malam untuk foto gelap, centang mode teliti untuk retak kecil, atau gunakan foto siang hari.";
+      status.textContent = pesanKosong(json);
       return;
     }
     barisAsli = json.rows;

@@ -3,6 +3,7 @@
 Jalankan dari root repo:
     .\\.venv\\Scripts\\python -m unittest tests.test_inferensi -v
 """
+import math
 import os
 import sys
 import tempfile
@@ -374,6 +375,74 @@ class TestDedupTeliti(unittest.TestCase):
         t = deteksi.get_inferensi()["teliti"]
         self.assertTrue(t["buang_tepi_tile"])
         self.assertEqual(t["iou_agnostik"], 0.6)
+
+
+class TestTelitiOtomatis(unittest.TestCase):
+    """Tiling otomatis untuk gambar besar (retak tipis hilang saat downscale).
+
+    Full-frame @960 pada foto 12 MP = turun resolusi 4x; retak tipis hilang.
+    Diukur 17 Okt 2026 (FP32): 4080x3060 -> 3 temuan, tiling -> 3 (retak
+    bertambah); 3000x4000 -> 3 vs 14. CATATAN: angka "full-frame 0 temuan"
+    yang sempat tercatat tidak sah — jalur FP16 saat itu mengeluarkan box NaN.
+    """
+
+    def test_config_terbaca(self):
+        import deteksi
+        deteksi._infer = None
+        t = deteksi.get_inferensi()["teliti"]
+        self.assertTrue(t["otomatis_aktif"])
+        self.assertEqual(t["otomatis_ambang"], 2.0)
+
+    def test_ambang_diklem(self):
+        import deteksi
+        for ditulis, harap in (("99", 8.0), ("0", 1.0), ("abc", 2.0)):
+            with self.subTest(ditulis=ditulis):
+                fd, path = tempfile.mkstemp(suffix=".yaml")
+                try:
+                    with os.fdopen(fd, "w", encoding="utf-8") as f:
+                        f.write(f"teliti:\n  otomatis_ambang: {ditulis}\n")
+                    inf = deteksi.get_inferensi(path=path)
+                    self.assertEqual(inf["teliti"]["otomatis_ambang"], harap)
+                finally:
+                    os.remove(path)
+
+    def test_gambar_kecil_tidak_di_tile(self):
+        """Downscale ringan -> tiling tak sepadan (tile 640 memotong objek besar)."""
+        from deteksi import perlu_teliti_otomatis
+        for w, h in ((512, 512), (1280, 720), (1600, 1200), (1920, 1080)):
+            with self.subTest(ukuran=(w, h)):
+                self.assertFalse(perlu_teliti_otomatis(w, h, 960))
+
+    def test_gambar_besar_di_tile(self):
+        from deteksi import perlu_teliti_otomatis
+        for w, h in ((1921, 500), (3000, 4000), (4080, 3060), (4032, 2268)):
+            with self.subTest(ukuran=(w, h)):
+                self.assertTrue(perlu_teliti_otomatis(w, h, 960))
+
+    def test_tepi_perbandingan_pakai_sisi_terpanjang(self):
+        """Ambang pakai max(w,h): foto lebar-pendek pun ikut di-tile."""
+        from deteksi import perlu_teliti_otomatis
+        self.assertFalse(perlu_teliti_otomatis(4000, 120, 960, {
+            "otomatis_aktif": True, "otomatis_ambang": 8.0}))  # 8x960 = 7680
+        self.assertTrue(perlu_teliti_otomatis(4000, 120, 960, {
+            "otomatis_aktif": True, "otomatis_ambang": 2.0}))
+
+    def test_bisa_dimatikan(self):
+        from deteksi import perlu_teliti_otomatis
+        t = {"otomatis_aktif": False, "otomatis_ambang": 2.0}
+        self.assertFalse(perlu_teliti_otomatis(4000, 3000, 960, t))
+
+    def test_imgsz_besar_menaikkan_ambang(self):
+        """imgsz 1536 -> ambang 3072 px; gambar 2000 px tidak lagi di-tile."""
+        from deteksi import perlu_teliti_otomatis
+        t = {"otomatis_aktif": True, "otomatis_ambang": 2.0}
+        self.assertTrue(perlu_teliti_otomatis(2000, 2000, 960, t))
+        self.assertFalse(perlu_teliti_otomatis(2000, 2000, 1536, t))
+
+    def test_input_ngawur_tidak_melempar(self):
+        from deteksi import perlu_teliti_otomatis
+        self.assertFalse(perlu_teliti_otomatis(None, "x", 960))
+        self.assertFalse(perlu_teliti_otomatis(4000, 3000, None))
 
 
 class TestGabungFragmen(unittest.TestCase):
@@ -786,6 +855,232 @@ class TestNmsGabung(unittest.TestCase):
         self.assertIn(0, simpan)
         self.assertNotIn(1, simpan)
         self.assertIn(2, simpan)
+
+
+class TestWorkerInferensi(unittest.TestCase):
+    """Anti-gantung worker inferensi GPU.
+
+    Regresi: `balasan.get()` tanpa timeout membuat /api/detect menggantung
+    selamanya bila worker mati. Simulasi tanpa model/kamera: worker diganti
+    thread palsu sehingga test tidak memuat bobot maupun menyentuh CUDA.
+    """
+
+    def setUp(self):
+        import deteksi
+        self.d = deteksi
+        self._orig = (deteksi._thread_pekerja, deteksi._antrean_pekerja,
+                      deteksi._pastikan_pekerja)
+
+    def tearDown(self):
+        (self.d._thread_pekerja, self.d._antrean_pekerja,
+         self.d._pastikan_pekerja) = self._orig
+
+    def _thread_mati(self):
+        import threading
+        t = threading.Thread(target=lambda: None)
+        t.start()
+        t.join()
+        return t
+
+    def test_worker_mati_gagal_cepat_bukan_menggantung(self):
+        import queue
+        import time
+        d = self.d
+        d._pastikan_pekerja = lambda: None   # jangan lahirkan worker nyata
+        d._thread_pekerja = self._thread_mati()
+        d._antrean_pekerja = queue.Queue()   # tak ada yang melayani
+        t0 = time.time()
+        with self.assertRaises(d.WorkerInferensiMati):
+            d.analisis_gambar_terjadwal(b"\xff\xd8\xff")
+        self.assertLess(time.time() - t0, 5.0, "harus gagal-cepat")
+
+    def test_jalur_normal_mengembalikan_hasil(self):
+        import queue
+        import threading
+        d = self.d
+        d._pastikan_pekerja = lambda: None
+        q = queue.Queue()
+        berhenti = threading.Event()
+
+        def worker():
+            while not berhenti.is_set():
+                try:
+                    fn, args, kwargs, balasan = q.get(timeout=0.1)
+                except queue.Empty:
+                    continue
+                balasan.put((True, fn(*args, **kwargs)))
+
+        th = threading.Thread(target=worker, daemon=True)
+        d._antrean_pekerja = q
+        d._thread_pekerja = th
+        th.start()
+        asli = d.analisis_gambar
+        d.analisis_gambar = lambda *a, **k: {"rows": [], "total": 0}
+        try:
+            out = d.analisis_gambar_terjadwal(b"x", conf=0.25)
+        finally:
+            d.analisis_gambar = asli
+            berhenti.set()
+        self.assertEqual(out["total"], 0)
+
+    def test_pastikan_pekerja_lahirkan_ulang(self):
+        import unittest.mock as mock
+        d = self.d
+        mati = self._thread_mati()
+        dibuat = []
+
+        class Palsu:
+            """Thread palsu: tak menyentuh memori/OS, cukup catat start()."""
+            def __init__(self, target=None, args=(), name=None, daemon=None):
+                self.target, self.args = target, args
+                self._alive = False
+                dibuat.append(self)
+
+            def start(self):
+                self._alive = True
+
+            def is_alive(self):
+                return self._alive
+
+        d._thread_pekerja = mati
+        with mock.patch.object(d.threading, "Thread", Palsu):
+            d._pastikan_pekerja()
+        self.assertEqual(len(dibuat), 1, "worker baru harus dibuat")
+        self.assertIsNot(d._thread_pekerja, mati)
+        self.assertTrue(d._thread_pekerja.is_alive())
+
+    def test_route_detect_worker_mati_503(self):
+        import io
+        import unittest.mock as mock
+        import web.app as app_mod
+        app = app_mod.create_app()
+        app.config["TESTING"] = True
+        c = app.test_client()
+        data = {"gambar": (io.BytesIO(b"\xff\xd8\xff" + b"0" * 64), "x.jpg")}
+        with mock.patch.object(
+                app_mod, "analisis_gambar_terjadwal",
+                side_effect=app_mod.WorkerInferensiMati("mati")):
+            r = c.post("/api/detect", data=data,
+                       content_type="multipart/form-data")
+        self.assertEqual(r.status_code, 503)
+        self.assertIn("error", r.get_json())
+
+
+class TestNanGuard(unittest.TestCase):
+    """Regresi bug FP16/TTA 2026-10-17: box NaN tidak boleh lolos ke pengguna.
+
+    NaN berasal dari overflow FP16 (half=True + TTA @imgsz 960). Dampaknya bukan
+    sekadar "satu box aneh": wbf_gabung melebur dengan rata-rata berbobot
+    sehingga NaN menulari temuan asli, lalu masuk_akal() melaporkannya sebagai
+    "ukuran tidak masuk akal" (menyesatkan) dan NaN bisa bocor ke JSON.
+    """
+
+    @staticmethod
+    def _row(conf=0.9, box=(0, 0, 100, 100)):
+        return {"kelas": "pothole", "conf": conf, "box": list(box),
+                "panjang_cm": 10, "lebar_cm": 10, "luas_m2": 0.01}
+
+    def test_saring_rows_hitung_rusak_bukan_ukuran(self):
+        from deteksi import saring_rows
+        nan = float("nan")
+        rows = [self._row(0.9, (nan, nan, nan, nan)),
+                self._row(0.8, (0, 0, 100, 100))]
+        ok, info = saring_rows(rows, 0.25, {}, None)
+        self.assertEqual(len(ok), 1)
+        self.assertEqual(info["rusak"], 1)
+        self.assertEqual(info["ukuran"], 0)  # dulu salah masuk ke sini
+        self.assertEqual(info["ambang"], 0)
+
+    def test_conf_nan_dihitung_rusak(self):
+        from deteksi import saring_rows
+        ok, info = saring_rows([self._row(float("nan"))], 0.25, {}, None)
+        self.assertEqual(ok, [])
+        self.assertEqual(info["rusak"], 1)
+
+    def test_inf_juga_dihitung_rusak(self):
+        from deteksi import saring_rows
+        rows = [self._row(0.9, (0, 0, float("inf"), 100))]
+        ok, info = saring_rows(rows, 0.25, {}, None)
+        self.assertEqual(ok, [])
+        self.assertEqual(info["rusak"], 1)
+
+    def test_cm_nan_dihitung_rusak(self):
+        from deteksi import saring_rows
+        r = self._row(0.9)
+        r["panjang_cm"] = float("nan")
+        ok, info = saring_rows([r], 0.25, {}, None)
+        self.assertEqual(ok, [])
+        self.assertEqual(info["rusak"], 1)
+
+    def test_wbf_tidak_menulari_nan(self):
+        from deteksi import wbf_gabung
+        nan = float("nan")
+        hasil = wbf_gabung([[0, 0, 100, 100], [nan, nan, nan, nan],
+                            [0, 0, 100, 100]], [0.9, 0.95, 0.8], 0.5)
+        self.assertTrue(hasil)
+        for fb, fs, _anggota in hasil:
+            self.assertTrue(all(math.isfinite(v) for v in fb))
+            self.assertTrue(math.isfinite(fs))
+
+    def test_wbf_skor_nol_tidak_menghasilkan_nan(self):
+        from deteksi import wbf_gabung
+        hasil = wbf_gabung([[0, 0, 10, 10], [0, 0, 10, 10]],
+                           [0.0, 0.0], 0.5)
+        self.assertTrue(hasil)
+        self.assertTrue(all(math.isfinite(v) for v in hasil[0][0]))
+
+    def test_wbf_masukan_kosong(self):
+        from deteksi import wbf_gabung
+        self.assertEqual(wbf_gabung([], [], 0.5), [])
+
+
+class TestHalfGambarDanGelap(unittest.TestCase):
+    def tearDown(self):
+        import deteksi
+        deteksi._infer = None
+
+    def test_half_gambar_default_false(self):
+        import deteksi
+        deteksi._infer = None
+        inf = deteksi.get_inferensi()
+        self.assertFalse(inf["half_gambar"])
+        # Live (imgsz 640, tanpa TTA) tetap FP16 di GPU; jalur gambar tidak.
+        self.assertTrue(deteksi.half_untuk("0"))
+        self.assertFalse(deteksi.half_gambar_untuk("0"))
+        self.assertFalse(deteksi.half_gambar_untuk("cpu"))
+
+    def test_half_gambar_bisa_dinyalakan(self):
+        import deteksi
+        with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False,
+                                         encoding="utf-8") as f:
+            f.write("half_gambar: true\n")
+            tmp = f.name
+        try:
+            self.assertTrue(deteksi.get_inferensi(tmp)["half_gambar"])
+        finally:
+            os.remove(tmp)
+            deteksi._infer = None
+
+    def test_fallback_tanpa_kunci_half_gambar(self):
+        import deteksi
+        with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False,
+                                         encoding="utf-8") as f:
+            f.write("imgsz_gambar: 960\n")
+            tmp = f.name
+        try:
+            self.assertFalse(deteksi.get_inferensi(tmp)["half_gambar"])
+        finally:
+            os.remove(tmp)
+            deteksi._infer = None
+
+    def test_deteksi_gelap(self):
+        import numpy as np
+        import deteksi
+        hitam = np.zeros((40, 40, 3), dtype=np.uint8)
+        putih = np.full((40, 40, 3), 255, dtype=np.uint8)
+        self.assertTrue(deteksi.deteksi_gelap(hitam))
+        self.assertFalse(deteksi.deteksi_gelap(putih))
+        self.assertFalse(deteksi.deteksi_gelap(putih, ambang=0))
 
 
 if __name__ == "__main__":

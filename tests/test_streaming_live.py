@@ -79,9 +79,12 @@ class FakeModel:
     def __init__(self, delay=0.12):
         self.delay = delay
         self.calls = 0
+        self.track_threads = []     # nama thread tiap panggilan track (termasuk warmup)
 
     def track(self, img, **k):
+        import threading
         self.calls += 1
+        self.track_threads.append(threading.current_thread().name)
         time.sleep(self.delay)  # model lambat -> FPS inferensi rendah
         return [FakeRes()]
 
@@ -106,6 +109,10 @@ class _StreamCase(unittest.TestCase):
         streaming.get_inferensi = lambda *a, **k: INFER
         streaming.cv2.VideoCapture = FakeCap
         self.m = streaming.StreamManager()
+        # Hangatkan sekali (sinkron) lalu nolkan hitungan: test mengukur
+        # panggilan inferensi SESI saja, bukan panggilan warmup.
+        self.m.panaskan()
+        self.model.calls = 0
 
     def _lepas(self, m):
         try:
@@ -254,6 +261,55 @@ class TestClampLiveConfig(unittest.TestCase):
                   "frame_diff_threshold", "jpeg_quality", "display_width",
                   "cam_width", "cam_height", "cam_fps"):
             self.assertIn(k, deteksi._INFER_FALLBACK["live"])
+
+
+class TestInferPersisten(_StreamCase):
+    """Thread inferensi live harus PERSISTEN antar sesi (biaya CUDA sekali)."""
+
+    def test_warmup_jalan_di_thread_persisten(self):
+        self._pasang(model_delay=0.02)
+        m = self.m
+        try:
+            self.assertTrue(m._infer_siap.is_set(), "warmup tak selesai")
+            self.assertTrue(m._infer_persisten.is_alive())
+            self.assertGreaterEqual(len(self.model.track_threads), 1,
+                                    "warmup track tak dijalankan")
+            for nama in self.model.track_threads:
+                self.assertEqual(nama, "inferensi-live",
+                                 "warmup harus di thread inferensi, bukan main")
+        finally:
+            self._lepas(m)
+
+    def test_thread_dipakai_ulang_antar_sesi(self):
+        self._pasang(model_delay=0.02)
+        m = self.m
+        try:
+            m.start("webcam", 0)
+            time.sleep(0.2)
+            t1 = m._infer_persisten
+            self.assertIsNotNone(t1)
+            m.stop()
+            m.start("webcam", 0)
+            time.sleep(0.2)
+            self.assertIs(m._infer_persisten, t1,
+                          "thread inferensi dibuat ulang tiap sesi")
+            self.assertTrue(t1.is_alive())
+        finally:
+            self._lepas(m)
+
+    def test_stop_mengembalikan_ke_idle(self):
+        self._pasang(model_delay=0.02)
+        m = self.m
+        try:
+            m.panaskan()
+            m.start("webcam", 0)
+            time.sleep(0.15)
+            m.stop()
+            self.assertTrue(m._infer_idle.is_set(),
+                            "thread inferensi tak kembali menganggur")
+            self.assertFalse(m._infer_sesi.is_set())
+        finally:
+            self._lepas(m)
 
 
 if __name__ == "__main__":

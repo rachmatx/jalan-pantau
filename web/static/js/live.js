@@ -27,15 +27,26 @@ const btnBerhenti = document.getElementById("berhenti");
 let polling = null;
 let snapshot = null;
 
-// Dialog tabel temuan live (tanpa skor prioritas).
+// Dialog tabel temuan live (tanpa skor prioritas). Tombol dibiarkan selalu
+// tampil di panel live; bila sesi belum punya snapshot, ambil dulu saat diklik.
 const btnBukaTabelLive = document.getElementById("buka-tabel-live");
 if (btnBukaTabelLive && dialogTabelLive) {
-  btnBukaTabelLive.addEventListener("click", () => {
+  btnBukaTabelLive.addEventListener("click", async () => {
+    if (!snapshot) await ambilSnapshot();
+    if (!snapshot) {
+      // Pesan mengikuti status terakhir (mis. "Belum ada track terekam…" atau
+      // peringatan login dari server) agar tidak menyesatkan.
+      const pesan = (statusLive.textContent || "").trim()
+        || "Belum ada temuan terekam pada sesi ini.";
+      showToast("Tabel Temuan", pesan, "info");
+      return;
+    }
     document.getElementById("dtl-sub").textContent =
       document.getElementById("total-live-nilai").textContent;
     dialogTabelLive.showModal();
   });
-  dialogTabelLive.querySelector("[data-tutup]").addEventListener("click", () => dialogTabelLive.close());
+  dialogTabelLive.querySelectorAll("[data-tutup]").forEach((b) =>
+    b.addEventListener("click", () => dialogTabelLive.close()));
   dialogTabelLive.addEventListener("click", (e) => { if (e.target === dialogTabelLive) dialogTabelLive.close(); });
 }
 
@@ -93,6 +104,16 @@ function confStr(c) {
   return `${String(v.toFixed(2)).replace(".", ",")} (${Math.round(v * 100)}%)`;
 }
 
+// Kosongkan kartu KPI live saat sesi baru dimulai agar angka sesi lama tidak
+// nyangkut. Kartu sendiri tidak disembunyikan saat sesi berakhir (lihat
+// hentikan) supaya angka terakhir sesi tetap terbaca.
+function resetKartuLive() {
+  ["fps-stat", "fps-infer-stat", "unik-stat", "deteksi-stat"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = "0";
+  });
+}
+
 async function refreshStats() {
   try {
     const res = await fetch("/api/stream/stats");
@@ -131,6 +152,7 @@ async function mulai() {
   statusLive.textContent = "Membuka sumber…";
   hasilLive.hidden = true;
   snapshot = null;
+  resetKartuLive();
   // Hentikan stream yang sedang berjalan sebelum mulai yang baru
   if (polling) { clearInterval(polling); polling = null; }
   await fetch("/api/stream/stop", { method: "POST", ...jsonBody() }).catch(() => {});
@@ -193,8 +215,8 @@ async function hentikan(manual = true) {
   }
   btnMulai.disabled = false;
   btnBerhenti.disabled = true;
-  const cards = document.getElementById("stat-cards-wrap");
-  if (cards) cards.hidden = true;
+  // Kartu KPI live sengaja TIDAK disembunyikan di sini: angka sesi terakhir
+  // tetap terbaca setelah video selesai. Direset saat sesi baru dimulai.
   await ambilSnapshot();
 }
 
@@ -229,6 +251,7 @@ document.getElementById("demo").addEventListener("click", async () => {
   statusLive.textContent = "Memutar video contoh…";
   hasilLive.hidden = true;
   snapshot = null;
+  resetKartuLive();
   // Hentikan stream sebelumnya (bila ada) agar video demo selalu mulai dari awal.
   if (polling) { clearInterval(polling); polling = null; }
   await fetch("/api/stream/stop", { method: "POST", ...jsonBody() }).catch(() => {});
@@ -399,15 +422,6 @@ document.getElementById("unduh-live").addEventListener("click", async () => {
     osd.style.display = osdVisible ? "flex" : "none";
     btnOsd.style.background = osdVisible ? "var(--jp-container)" : "var(--jp-primary)";
     btnOsd.style.color = osdVisible ? "var(--jp-tx2)" : "#fff";
-  });
-
-  // Fullscreen
-  var btnFull = document.getElementById("btn-fullscreen");
-  if (btnFull) btnFull.addEventListener("click", () => {
-    var viewer = document.getElementById("viewer-live");
-    if (!viewer) return;
-    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-    else if (viewer.requestFullscreen) viewer.requestFullscreen().catch(() => {});
   });
 
   // Camera error state

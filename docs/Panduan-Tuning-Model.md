@@ -173,3 +173,128 @@ Nilai saat ini (`config/inferensi.yaml`):
 - `rasio_aspek_min_retak: 1.5` di `batas_ukuran` sudah membuang sebagian FP retak
   (box near-square). Setelah filter ini aktif, ambang longitudinal/transverse
   *boleh* diturunkan sedikit bila recall dirasa kurang — ukur dulu dengan skrip di atas.
+
+
+### 6d. Skala inferensi & bug FP16: kenapa foto besar bisa 0 temuan (2026-10-17)
+
+Gejala: foto yang jelas rusak, confidence sudah diturunkan sampai **minimum 0,05**,
+tetap "tidak ada temuan" — dengan pesan ratusan kandidat "ukuran tidak masuk akal"
+(pernah 913).
+
+> **Koreksi penting.** Versi pertama bagian ini (pagi 17 Okt) diukur lewat jalur
+> **FP16 yang ternyata rusak**, sehingga angka "0 box @960" tidak sah. Semua angka
+> di bawah sudah diukur ulang pada jalur FP32 (`half_gambar: false`).
+
+#### Penyebab utama: FP16 + TTA menghasilkan box NaN
+
+`half=True` (FP16) + `augment=True` (TTA) pada `imgsz_gambar: 960` meluap secara
+numerik di GPU: model mengeluarkan box `[nan, nan, nan, nan]` yang tetap membawa
+confidence tinggi.
+
+| 4080x3060 @960, conf 0,01 | box | NaN |
+|---|---|---|
+| TTA + FP16 (setelan lama) | 107 | **102** |
+| TTA + FP32 | 28 | **0** |
+| tanpa TTA + FP16 | 0 | 0 |
+| tanpa TTA + FP32 | 25 | 0 |
+
+Rantai kerusakannya:
+1. Box NaN masuk `wbf_gabung()` yang melebur dengan **rata-rata berbobot** → satu
+   box NaN membuat seluruh box tetangganya NaN.
+2. `masuk_akal()` membandingkan `NaN > 300` → selalu `False` → box dibuang dan
+   dihitung sebagai "ukuran tidak masuk akal". Pesan UI jadi menyesatkan: bukan
+   soal geometri, dan bukan salah penyaring.
+3. Deteksi **asli** yang bertumpuk dengan box NaN ikut menjadi NaN → **hilang**.
+
+Bukan hanya foto malam: foto **siang** 12 MP pun 89% box-nya NaN (16 dari 18).
+Foto kecil (512x512) tidak terpengaruh karena tak ada overflow.
+
+**Perbaikan:** `half_gambar: false` (FP32) untuk jalur gambar. Jalur live (imgsz
+640, tanpa TTA) tetap FP16 karena terbukti 0 NaN dan hemat VRAM 4 GB.
+
+| 000003.jpg (12,5 MP), conf 0,25 | FP16 | FP32 |
+|---|---|---|
+| temuan | 2 | **3** |
+| `ukuran` ditolak | 34 | **2** |
+| waktu (auto-tiling) | 47,9 dtk | **9,7 dtk** |
+
+FP32 juga **lebih cepat** di sini: tensor penuh NaN membuat NMS/fusion lambat.
+
+Selain itu `saring_rows()` kini menghitung kategori `rusak` terpisah, dan
+`wbf_gabung()` / `prediksi_teliti()` membuang baris non-finite **sebelum** fusion.
+Kalaupun bug serupa muncul lagi (model/driver lain), NaN tidak bisa menulari
+temuan asli, tidak menyamar sebagai "ukuran tidak masuk akal", dan tidak bocor ke
+JSON (browser gagal `JSON.parse` bila ada `NaN`).
+
+**Kenapa confidence bukan tuasnya.** `conf_prediksi()` memanggil `predict()` di
+`slider − maks(toleransi_kelas)` (≈ slider − 0,13, lantai 0,01). Slider 0,05 → model
+sudah berjalan di conf 0,01: menurunkan slider tidak menambah apa yang *dilihat*
+model, hanya melonggarkan penyaring setelahnya. Karena itu UI tidak lagi menyarankan
+"turunkan confidence" bila slider sudah di batas bawah.
+
+**Kenapa penyaring ukuran juga bukan penyebabnya.** Diuji dengan mematikan
+`luas_min_px` dan `masuk_akal`: temuan akhir tidak bertambah (di beberapa foto
+malah berkurang karena `gabung_fragmen` melebur lebih banyak box). Setelah bug FP16
+diperbaiki, `ukuran` langsung anjlok (34 → 2; 12 → 0) tanpa mengubah penyaring —
+bukti bahwa angka besar itu berasal dari NaN, bukan geometri.
+
+#### Penyebab kedua (masih nyata): downscale
+
+Setelah FP16 diperbaiki, jalur full-frame memang **tidak** buta — tetapi retak tipis
+tetap kehilangan detail saat 12 MP dipaksa ke 960 (4,2x). Diukur ulang pada FP32,
+conf 0,10:
+
+| Foto | mentah @960 | mentah @1280 | full-frame | tiling |
+|---|---|---|---|---|
+| 4080x3060 (12,5 MP) | 28 | 32 | 2 (1,2 dtk) | **18** (9,1 dtk) |
+| 3000x4000 (12,0 MP) | 21 | 47 | 4 (0,6 dtk) | **20** (5,0 dtk) |
+| 4032x2268 ( 9,1 MP) | 12 | 17 | 2 (0,5 dtk) | **20** (4,6 dtk) |
+| 1280x720  ( 0,9 MP) | 26 | 22 | 2 (0,2 dtk) | 5 (0,7 dtk) |
+| 512x512   ( 0,3 MP) | 6 | 12 | 3 (0,3 dtk) | 3 (0,1 dtk) |
+
+Tiling menambah recall terutama untuk **retak** (`longitudinal`/`transverse`), tetapi
+box retak itu umumnya ber-confidence rendah (0,14–0,34). Jadi tiling adalah alat
+**recall retak**, bukan penambah presisi.
+
+Dua hal yang **tidak** dipakai:
+1. **`imgsz_gambar` 1280** — menaikkan box mentah, tetapi memperbesar biaya untuk
+   semua foto tanpa menjamin presisi. Tetap **960**.
+2. **Tiling global** — pada 0,3–0,9 MP, tile 640 px memotong objek besar
+   (`buang_tepi_tile`) dan menambah waktu tanpa manfaat sepadan.
+
+**Yang diterapkan:**
+- `half_gambar: false` — FP32 untuk jalur gambar (lihat di atas).
+- `teliti.otomatis_aktif: true` + `otomatis_ambang: 2.0` → bila
+  `max(w,h) > imgsz_gambar × 2` (> 1920 px pada 960), `analisis_gambar()` beralih
+  ke tiling (`perlu_teliti_otomatis()`) dan mengembalikan `teliti_otomatis: true`.
+- `disaring.rusak` — jumlah box NaN/Inf yang diabaikan (kategori baru).
+- `gelap: true` bila rata-rata kanal L < 60 → UI menyarankan opsi
+  "Pencahayaan Rendah / Malam" (model dilatih pada RDD2022 = siang).
+
+**Biayanya jujur:** foto 12 MP full-frame ≈ 0,5–1,2 dtk, tiling 5–9 dtk (≈ 48 tile
+640 px + lebur WBF). UI menyetel ekspektasi: "Gambar N MP — analisis foto besar bisa
+15–30 detik…". Untuk foto ≤ 2 MP ambang 2x membuat tiling tak terpicu.
+
+**Cara memastikan untuk satu foto tertentu** (sebelum mengubah config apa pun):
+
+```bash
+.\.venv\Scripts\python scripts\diag_teliti.py test_foto\foto.jpg
+```
+
+> Catatan: `scripts/diag_teliti.py` masih memakai `half_untuk()` (FP16) demi
+> hemat VRAM, sedangkan aplikasi kini memakai FP32 di jalur gambar. Pada GPU,
+> langkah [1] skrip itu bisa mencetak **0 box** karena overflow FP16 — jangan
+> simpulkan "model buta" dari skrip sebelum skripnya disamakan dengan
+> `half_gambar`.
+
+Pesan "tanpa temuan" di UI kini menyebut `disaring.ambang` / `ukuran` / `mungil` /
+`rusak`, dan menyesuaikan saran: tidak lagi menyuruh menurunkan confidence bila
+slider sudah di batas bawah 0,05, dan tidak menyuruh mengaktifkan mode teliti bila
+sudah aktif.
+
+**Catatan jujur untuk laporan:** setelah bug FP16 diperbaiki, foto 12 MP yang
+sebelumnya 0 temuan memberi 2–4 temuan full-frame dan 18–20 dengan tiling (conf
+0,10). Tetapi **foto malam tetap lemah** — `000059.jpg` hanya 2 temuan berkualitas
+rendah dan CLAHE tidak menyelamatkannya. Itu masalah domain/data (foto malam/lokal
+tidak ada di data latih, §2), bukan tuning ambang. Solusinya retrain dengan data
+lokal, bukan menurunkan ambang sampai noise lolos.

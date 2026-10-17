@@ -5,6 +5,7 @@ app/prioritas.py, app/laporan.py. File ini hanya adaptor (I/O web) di atasnya.
 """
 import base64
 import logging
+import math
 import os
 import sys
 import tempfile
@@ -19,6 +20,17 @@ import yaml
 # Harus di-set SEBELUM ultralytics diimpor (impor terjadi malas di get_model).
 os.environ.setdefault("YOLO_AUTOINSTALL", "false")
 
+# Redam spam "'half' is deprecated..." dari ultralytics baru (muncul tiap
+# predict). Perilaku TIDAK berubah: half=True tetap diteruskan & FP16 tetap
+# aktif; yang dibungkam hanya baris log-nya (LOGGER.warning, bukan warnings).
+# Bila ultralytics menghapus argumen `half`, migrasinya = set dtype sekali
+# saat load (model.model.half()) lalu hapus argumen half dari predict.
+class _FilterHalfDeprecated(logging.Filter):
+    def filter(self, record):
+        return "'half' is deprecated" not in record.getMessage()
+
+logging.getLogger("ultralytics").addFilter(_FilterHalfDeprecated())
+
 _log = logging.getLogger(__name__)
 
 WEB_DIR = Path(__file__).parent
@@ -32,7 +44,8 @@ from prioritas import skor as skor_prioritas  # noqa: E402
 from laporan import buat_laporan  # noqa: E402
 from scene_gate import (  # noqa: E402
     putuskan_gate, saring_gate_basah, label_id as label_scene_id,
-    CONF_MIN_BAWAAN as GATE_CONF_MIN, AMBANG_LUBANG_BAWAAN as GATE_AMBANG,
+    WET_MIN_BAWAAN as GATE_WET_MIN, AMBANG_LUBANG_BAWAAN as GATE_AMBANG,
+    WET_LABEL,
 )
 
 MODEL_DEFAULT = APP_DIR / "weights" / "best.pt"
@@ -54,9 +67,14 @@ _INFER_FALLBACK = {
     "model_gambar": "best.pt", "model_live": "best.pt",
     "device": "auto",
     "imgsz_gambar": 960, "imgsz_live": 640, "iou": 0.5, "tta": True,
+    # half_gambar: FP16 untuk jalur GAMBAR. Default false = FP32. Alasan: FP16
+    # + TTA @imgsz 960 menghasilkan box NaN (hilang temuan, lihat catatan di
+    # config/inferensi.yaml). Jalur live tetap FP16 lewat half_untuk().
+    "half_gambar": False,
     "teliti": {"aktif_default": False, "tile": 640, "overlap": 0.25,
                "iou_gabung": 0.5, "metode_gabung": "wbf",
-               "buang_tepi_tile": True, "iou_agnostik": 0.6},
+               "buang_tepi_tile": True, "iou_agnostik": 0.6,
+               "otomatis_aktif": True, "otomatis_ambang": 2.0},
     "toleransi_kelas": {"longitudinal_crack": 0.13, "transverse_crack": 0.13,
                         "alligator_crack": 0.10, "other_corruption": 0.10,
                         "pothole": 0.08},
@@ -92,6 +110,7 @@ def get_inferensi(path=None):
                 "imgsz_gambar": _INFER_FALLBACK["imgsz_gambar"],
                 "imgsz_live": _INFER_FALLBACK["imgsz_live"],
                 "iou": _INFER_FALLBACK["iou"], "tta": _INFER_FALLBACK["tta"],
+                "half_gambar": _INFER_FALLBACK["half_gambar"],
                 "teliti": dict(_INFER_FALLBACK["teliti"]),
                 "toleransi_kelas": dict(_INFER_FALLBACK["toleransi_kelas"]),
                 "live": dict(_INFER_FALLBACK["live"]),
@@ -110,7 +129,7 @@ def get_inferensi(path=None):
             _log.warning("config inferensi tidak terbaca (%s) - pakai default", exc)
             user = {}
         if isinstance(user, dict):
-            for k in ("imgsz_gambar", "imgsz_live", "iou", "tta"):
+            for k in ("imgsz_gambar", "imgsz_live", "iou", "tta", "half_gambar"):
                 if k in user:
                     data[k] = user[k]
             for k in ("model_gambar", "model_live"):
@@ -131,6 +150,7 @@ def get_inferensi(path=None):
         data["imgsz_live"] = int(_klamp(data["imgsz_live"], 320, 1280, 480))
         data["iou"] = _klamp(data["iou"], 0.1, 0.95, 0.5)
         data["tta"] = bool(data["tta"])
+        data["half_gambar"] = bool(data["half_gambar"])
         t = data["teliti"]
         t["tile"] = int(_klamp(t.get("tile"), 320, 1280, 640))
         t["overlap"] = _klamp(t.get("overlap"), 0.0, 0.5, 0.25)
@@ -142,6 +162,9 @@ def get_inferensi(path=None):
             t["metode_gabung"] = str(t.get("metode_gabung", "nms")).lower()
         t["buang_tepi_tile"] = bool(t.get("buang_tepi_tile", True))
         t["iou_agnostik"] = _klamp(t.get("iou_agnostik", 0.6), 0.1, 0.95, 0.6)
+        t["otomatis_aktif"] = bool(t.get("otomatis_aktif", True))
+        t["otomatis_ambang"] = _klamp(t.get("otomatis_ambang", 2.0),
+                                      1.0, 8.0, 2.0)
         try:
             tk = {(k or ""): _klamp(v, 0.0, 0.9, None)
                   for k, v in dict(user.get("toleransi_kelas") or {}).items()}
@@ -265,6 +288,58 @@ def half_untuk(device):
     """
     d = str(device).strip().lower()
     return d not in ("cpu", "", "none")
+
+
+def half_gambar_untuk(device):
+    """FP16 untuk JALUR GAMBAR — dipagari knob `half_gambar`.
+
+    Ditemukan 2026-10-17: FP16 + TTA @imgsz_gambar 960 meluap (numerik) dan
+    model mengeluarkan box NaN -> temuan asli hilang & pesan "ukuran tidak
+    masuk akal" meledak. Default knob = false (FP32). Jalur live tetap
+    memakai half_untuk() karena di imgsz 640 terbukti aman.
+    """
+    if not get_inferensi().get("half_gambar", False):
+        return False
+    return half_untuk(device)
+
+
+def _finite(*nilai):
+    """True bila semua nilai bisa dikonversi float dan finite (bukan NaN/Inf)."""
+    for v in nilai:
+        try:
+            if not math.isfinite(float(v)):
+                return False
+        except (TypeError, ValueError):
+            return False
+    return True
+
+
+def _baris_rusak(row, conf=None):
+    """True bila baris deteksi membawa NaN/Inf (box atau conf) dari model.
+
+    Box NaN hanya bisa lolos dari overflow FP16 (lihat half_gambar_untuk).
+    Tanpa penjaga ini NaN menyebar: wbf_gabung melebur rata-rata -> satu box
+    NaN menulari tetangganya, lalu masuk_akal() menolaknya sebagai "ukuran
+    tidak masuk akal" (menyesatkan) dan NaN bisa bocor ke JSON (browser gali
+    JSON.parse). Return True = buang.
+    """
+    if conf is None:
+        conf = row.get("conf", 0)
+    if not _finite(conf):
+        return True
+    box = row.get("box")
+    if box is not None:  # baris tanpa box (mis. hasil koreksi manual) dilewatkan
+        try:
+            b = [float(v) for v in box]
+        except (TypeError, ValueError):
+            return True
+        if len(b) != 4 or not _finite(*b):
+            return True
+    for k in ("panjang_cm", "lebar_cm", "luas_m2"):
+        v = row.get(k)
+        if v is not None and not _finite(v):
+            return True
+    return False
 
 
 def get_config():
@@ -451,13 +526,23 @@ def luas_px(row):
 
 
 def saring_rows(rows, conf_global, ambang=None, batas=None, luas_min_px=0):
-    """Saring rows -> (lolos, {'ambang': n, 'ukuran': n, 'mungil': n})."""
-    ok, buang_ambang, buang_ukuran, buang_mungil = [], 0, 0, 0
+    """Saring rows -> (lolos, {'ambang': n, 'ukuran': n, 'mungil': n,
+    'rusak': n}).
+
+    'rusak' = box/conf NaN atau Inf (overflow FP16, lihat half_gambar_untuk).
+    Dibuang lebih dulu agar lolos dari hitungan "ukuran tidak masuk akal" —
+    tanpa ini NaN tersamar sebagai geometri tak wajar dan pesannya menyesatkan.
+    """
+    ok = []
+    buang_ambang = buang_ukuran = buang_mungil = buang_rusak = 0
     for r in rows:
         try:
             cf = float(r.get("conf", 0))
         except (TypeError, ValueError):
             buang_ambang += 1
+            continue
+        if _baris_rusak(r, cf):
+            buang_rusak += 1
             continue
         if cf < ambang_efektif(r.get("kelas", ""), conf_global, ambang):
             buang_ambang += 1
@@ -471,7 +556,7 @@ def saring_rows(rows, conf_global, ambang=None, batas=None, luas_min_px=0):
             continue
         ok.append(r)
     return ok, {"ambang": buang_ambang, "ukuran": buang_ukuran,
-                "mungil": buang_mungil}
+                "mungil": buang_mungil, "rusak": buang_rusak}
 
 
 def batas_topk(rows, maks=0):
@@ -569,6 +654,15 @@ def wbf_gabung(boxes, skor, iou_thr=0.5):
 
     boxes = np.asarray(boxes, dtype=float)
     skor = np.asarray(skor, dtype=float)
+    if boxes.ndim != 2 or boxes.shape[1] != 4:
+        return []
+    # Buang baris non-finite dulu: fusion = rata-rata berbobot, jadi satu box
+    # NaN (overflow FP16) membuat SELURUH cluster NaN dan temuan asli hilang.
+    baik = np.isfinite(boxes).all(axis=1) & np.isfinite(skor)
+    if not bool(baik.all()):
+        boxes, skor = boxes[baik], skor[baik]
+    if boxes.shape[0] == 0:
+        return []
     cluster = []
     for i in np.argsort(-skor):
         for cl in cluster:
@@ -581,7 +675,9 @@ def wbf_gabung(boxes, skor, iou_thr=0.5):
     for cl in cluster:
         m = np.array(cl["anggota"])
         w = skor[m]
-        w = w / max(w.sum(), 1e-9)
+        tot = float(w.sum())
+        w = (w / tot if (tot > 0 and math.isfinite(tot))
+             else np.full(w.shape, 1.0 / len(w)))
         fb = (boxes[m] * w[:, None]).sum(axis=0)
         cl["box"] = fb
         hasil.append((fb, float(skor[m].mean()),
@@ -701,20 +797,22 @@ def baca_konfig_gate():
     except Exception:
         aktif = True
     try:
-        conf_min = float(g.get("conf_min", GATE_CONF_MIN))
+        wet_min = float(g.get("wet_min", GATE_WET_MIN))
     except (TypeError, ValueError):
-        conf_min = GATE_CONF_MIN
+        wet_min = GATE_WET_MIN
     try:
         ambang = float(g.get("ambang_lubang", GATE_AMBANG))
     except (TypeError, ValueError):
         ambang = GATE_AMBANG
-    return {"aktif": aktif, "conf_min": conf_min, "ambang_lubang": ambang}
+    return {"aktif": aktif, "wet_min": wet_min, "ambang_lubang": ambang}
 
 
 def klasifikasi_scene(img):
-    """Klasifikasi kondisi jalan -> {'label','conf'} atau None.
+    """Klasifikasi kondisi jalan -> {'label','conf','probs'} atau None.
 
     img: numpy array BGR (hasil decode_image). None bila model tak tersedia.
+    'probs': 3 probabilitas teratas {label_kanonik: prob} — dipakai gate agar
+    foto ambigu (basah+rusak) tetap terdeteksi sinyal basahnya.
     """
     try:
         m = get_scene_model()
@@ -725,8 +823,15 @@ def klasifikasi_scene(img):
     try:
         r = m.predict(img, verbose=False)[0]
         idx = int(r.probs.top1)
+        import torch
+        p = r.probs.data.flatten()
+        k = min(3, len(p))
+        topk = torch.topk(p, k=k)
+        probs = {kanonik_kelas(r.names[int(i)]): round(float(c), 3)
+                 for i, c in zip(topk.indices, topk.values)}
         return {"label": kanonik_kelas(r.names[idx]),
-                "conf": round(float(r.probs.top1conf), 3)}
+                "conf": round(float(r.probs.top1conf), 3),
+                "probs": probs}
     except Exception:
         return None
 
@@ -1026,10 +1131,11 @@ def prediksi_ensemble(ma, mb, img, conf=0.25, imgsz=960, iou=0.5,
     import numpy as np
 
     ra = ma.predict(img, conf=conf, imgsz=imgsz, iou=iou, augment=bool(tta_a),
-                    device=device, half=half_untuk(device), verbose=False)[0]
+                    device=device, half=half_gambar_untuk(device),
+                    verbose=False)[0]
     dev_b = device_b if device_b is not None else device
     rb = mb.predict(img, conf=conf, imgsz=imgsz, iou=iou, augment=bool(tta_b),
-                    device=dev_b, half=half_untuk(dev_b),
+                    device=dev_b, half=half_gambar_untuk(dev_b),
                     verbose=False)[0]
     na, nb = len(ra.boxes), len(rb.boxes)
     per_kelas = {}
@@ -1065,6 +1171,36 @@ def prediksi_ensemble(ma, mb, img, conf=0.25, imgsz=960, iou=0.5,
     return semua, {"n_mentah_a": na, "n_mentah_b": nb, "n_lebur": n_gabung}
 
 
+def perlu_teliti_otomatis(lebar, tinggi, imgsz, tcfg=None):
+    """True bila gambar terlalu besar untuk satu kali inferensi full-frame.
+
+    Full-frame memaksa turun resolusi sebesar max(w,h)/imgsz. Begitu faktor itu
+    >= `teliti.otomatis_ambang` (bawaan 2x -> sisi > 1920 px), retak tipis
+    hilang di downscale. Tiling mengembalikan skala objek yang wajar (tiap tile
+    di-crop dari resolusi asli) sehingga retak kecil ikut terdeteksi.
+
+    Diukur 17 Okt 2026, jalur FP32 (`half_gambar: false`), conf 0,25:
+      000003.jpg  4080x3060 (12,5 MP) -> 3 temuan | tiling -> 3
+      000002.jpg  3000x4000 (12,0 MP) -> 3 temuan | tiling -> 14
+      04a8f35f    4032x2268 ( 9,1 MP) -> 1 temuan | tiling -> 3 (retak)
+      000059.jpg  3000x4000 (malam)   -> 0 temuan | tiling -> 2
+    Catatan: angka "full-frame 0 temuan" yang sempat tercatat pagi 17 Okt TIDAK
+    sah — jalur FP16 saat itu mengeluarkan box NaN (lihat half_gambar_untuk).
+    Tiling tetap dipakai karena menambah recall retak, tetapi box retak itu
+    umumnya low-conf: alat recall, bukan penambah presisi.
+    Ambang 2x menjaga foto <= 2 MP tetap full-frame (tile 640 px memotong objek
+    besar dan menambah waktu tanpa manfaat sepadan).
+    """
+    t = tcfg if isinstance(tcfg, dict) else get_inferensi()["teliti"]
+    if not t.get("otomatis_aktif", True):
+        return False
+    try:
+        return max(int(lebar), int(tinggi)) > float(imgsz) * float(
+            t.get("otomatis_ambang", 2.0))
+    except (TypeError, ValueError):
+        return False
+
+
 def prediksi_teliti(model, img, conf=0.25, iou=0.5, tcfg=None, ambang=None,
                     batas=None, conf_digits=3, conf_slider=None,
                     luas_min_px=0, device=None):
@@ -1085,25 +1221,37 @@ def prediksi_teliti(model, img, conf=0.25, iou=0.5, tcfg=None, ambang=None,
             batas = _inf.get("batas_ukuran")
     h, w = img.shape[:2]
     tile = int(tcfg.get("tile", 640))
+    # Resolusi inferensi per tile TERPISAH dari ukuran tile. Bukti empiris
+    # (diag_teliti, 17 Okt 2026): model buta total pada imgsz 640 untuk retak
+    # tipis (0 box) tapi menemukan 79 box pada 960 — karena itu tile 640
+    # di-upscale ke imgsz_tile saat inferensi. Jangan samakan dengan `tile`.
+    imgsz_tile = int(tcfg.get("imgsz", 960))
     buang_tepi = bool(tcfg.get("buang_tepi_tile", True))
     iou_ag = float(tcfg.get("iou_agnostik", 0.6))
     kotak, skor, kls = [], [], []
     n_tepi = 0
+    n_rusak = 0  # box/conf NaN-Inf (overflow FP16) dibuang SEBELUM wbf_gabung
     for (x0, y0) in grid_tile(w, h, tile, tcfg.get("overlap", 0.25)):
         crop = img[y0:y0 + tile, x0:x0 + tile]
-        res = model.predict(crop, conf=conf, imgsz=tile, iou=iou,
-                            device=device, half=half_untuk(device),
+        res = model.predict(crop, conf=conf, imgsz=imgsz_tile, iou=iou,
+                            device=device, half=half_gambar_untuk(device),
                             verbose=False)[0]
         for b in res.boxes:
             x1, y1, x2, y2 = map(float, b.xyxy[0])
+            cf_b = float(b.conf[0])
+            # Wajib duluan: wbf_gabung melebur rata-rata, jadi satu box NaN
+            # akan membuat SELURUH box tetangganya NaN -> temuan asli hilang.
+            if not _finite(x1, y1, x2, y2, cf_b):
+                n_rusak += 1
+                continue
             if buang_tepi and sentuh_tepi_dalam((x1, y1, x2, y2),
                                                x0, y0, tile, w, h):
                 n_tepi += 1
                 continue
             kotak.append([x1 + x0, y1 + y0, x2 + x0, y2 + y0])
-            skor.append(float(b.conf[0]))
+            skor.append(cf_b)
             kls.append(int(b.cls[0]))
-    info_awal = {"tepi_tile": n_tepi}
+    info_awal = {"tepi_tile": n_tepi, "rusak": n_rusak}
     if not kotak:
         info_awal.update({"ambang": 0, "ukuran": 0, "silang_kelas": 0})
         return [], info_awal
@@ -1137,6 +1285,10 @@ def prediksi_teliti(model, img, conf=0.25, iou=0.5, tcfg=None, ambang=None,
     # Saring terhadap ambang SLIDER (predict memakai conf terendah).
     lolos, info_saring = saring_rows(rows, conf if conf_slider is None else conf_slider,
                                      ambang, batas, luas_min_px)
+    # Jumlahkan rusak dari penjaga sumber (n_rusak) dengan yang tertangkap
+    # saring_rows (kalau-kalau WBF masih meloloskan NaN).
+    info_saring["rusak"] = (int(info_saring.get("rusak", 0))
+                            + int(info_awal.pop("rusak", 0)))
     info_saring.update(info_awal)
     return lolos, info_saring
 
@@ -1160,10 +1312,29 @@ def cerahkan_malam(img_bgr):
     return cv2.cvtColor(cv2.merge([clahe.apply(l), a, b]), cv2.COLOR_LAB2BGR)
 
 
+GELAP_AMBANG_L = 60.0  # rata-rata kanal L (0-255) di bawah ini = foto gelap
+
+
+def deteksi_gelap(img_bgr, ambang=GELAP_AMBANG_L):
+    """True bila citra gelap (rata-rata kanal L LAB < ambang).
+
+    Dipakai UI untuk menyarankan opsi 'Pencahayaan Rendah / Malam (CLAHE)'
+    saat temuan kosong: model dilatih pada RDD2022 (siang), jadi foto malam
+    adalah titik lemahnya dan pengguna sering tidak sadar opsinya ada.
+    Murah (satu konversi warna, tanpa inferensi).
+    """
+    try:
+        rerata_l = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2LAB)[:, :, 0].mean()
+        return float(rerata_l) < float(ambang)
+    except cv2.error:
+        return False
+
+
 def analisis_gambar(raw: bytes, conf: float = 0.25, model_path=None,
                     malam: bool = False, teliti: bool = False,
                     imgsz=None, iou=None):
-    """Upload bytes -> {rows, total, model, image_b64, gps, malam, teliti, disaring}.
+    """Upload bytes -> {rows, total, model, image_b64, gps, malam, teliti,
+    teliti_otomatis, gelap, disaring, scene}.
     """
     model_file = str(model_path or resolve_model(kunci="model_gambar"))
     model = get_model(model_file)
@@ -1185,13 +1356,23 @@ def analisis_gambar(raw: bytes, conf: float = 0.25, model_path=None,
         maks_temuan = 0
     conf_run = conf_prediksi(conf, ambang)  # predict serendah kelas terendah
     img = decode_image(raw)
+    # Dicek SEBELUM cerahkan_malam: yang diukur kondisi asli unggahan, karena
+    # flag ini justru untuk menyarankan opsi malam ke pengguna.
+    gelap = deteksi_gelap(img)
+    # Mode teliti OTOMATIS: gambar yang sisi-nya jauh lebih besar dari imgsz
+    # (downscale >= 2x) kehilangan retak tipis di jalur full-frame. Lihat
+    # perlu_teliti_otomatis() untuk angka pengukuran 17 Okt 2026.
+    teliti_otomatis = False
+    if not teliti and perlu_teliti_otomatis(img.shape[1], img.shape[0], imgsz,
+                                            inf["teliti"]):
+        teliti = True
+        teliti_otomatis = True
     # --- Gate kondisi jalan: klasifikasi scene SEBELUM cerahkan_malam agar
     # classifier melihat foto asli (sesuai data latih IROSCD). ---
     cfg_gate = baca_konfig_gate()
     scene = klasifikasi_scene(img) if cfg_gate["aktif"] else None
     gate_aktif = (scene is not None
-                  and putuskan_gate(scene.get("label"), scene.get("conf"),
-                                    cfg_gate["conf_min"]))
+                  and putuskan_gate(scene.get("probs"), cfg_gate["wet_min"]))
     if malam:
         img = cerahkan_malam(img)
     lat, lon = exif_gps(raw)
@@ -1238,7 +1419,8 @@ def analisis_gambar(raw: bytes, conf: float = 0.25, model_path=None,
         else:
             res = model.predict(img, conf=conf_run, imgsz=imgsz, iou=iou,
                                 augment=tta, device=device,
-                                half=half_untuk(device), verbose=False)[0]
+                                half=half_gambar_untuk(device),
+                                verbose=False)[0]
             semua = proses_detections(res, model.names)
             rows, info = saring_rows(semua, conf, ambang, batas, luas_min)
     if gf.get("aktif", True):
@@ -1269,10 +1451,14 @@ def analisis_gambar(raw: bytes, conf: float = 0.25, model_path=None,
         "gps": {"lat": lat, "lon": lon},
         "malam": malam,
         "teliti": bool(teliti),
+        "teliti_otomatis": teliti_otomatis,
+        "gelap": bool(gelap),
         "disaring": info,
         "scene": ({"label": scene.get("label"),
                    "label_id": label_scene_id(scene.get("label")),
                    "conf": scene.get("conf"),
+                   "prob_basah": round(float((scene.get("probs") or {})
+                                             .get(WET_LABEL, 0.0)), 3),
                    "gate_aktif": bool(gate_aktif)}
                   if scene else None),
     }
@@ -1311,3 +1497,112 @@ def buat_pdf(rows, total, image_b64=None, source="-", model_name="-",
             except OSError:
                 pass
         raise
+
+
+# ---------------------------------------------------------------------------
+# Worker inferensi GPU khusus (anti "10 detik per request").
+#
+# Temuan empiris (17 Okt 2026, GTX 1650 4GB): inferensi CUDA PERTAMA di sebuah
+# thread memakan ~10 detik (inisialisasi konteks CUDA per-thread), inferensi
+# berikutnya di thread yang sama ~0,7 detik. Server dev Werkzeug melahirkan
+# thread BARU per request -> setiap /api/detect membayar pajak 10 detik.
+# Solusi: satu worker thread permanen; request HTTP mengantrekan kerjaan.
+# ---------------------------------------------------------------------------
+import queue as _queue
+
+_kunci_pekerja = threading.Lock()
+_thread_pekerja = None
+_antrean_pekerja = None
+_POLL_DETIK = 0.5  # jeda poll balasan worker (deteksi worker mati)
+
+
+class WorkerInferensiMati(RuntimeError):
+    """Worker inferensi berhenti saat sebuah job menunggu balasannya.
+
+    Subclass RuntimeError agar pemanggil lama yang menangkap RuntimeError
+    tetap aman, tetapi route bisa membedakannya dari kegagalan lain
+    (mis. encode JPEG) dan membalas 503 alih-alih 500.
+    """
+
+
+def _loop_pekerja(antrean):
+    # Pemanasan di thread ini: inisialisasi konteks CUDA sekali di awal,
+    # sehingga request pertama pengguna tidak membayar biayanya.
+    try:
+        import numpy as _np
+        inf = get_inferensi()
+        model = get_model(kunci="model_gambar")
+        device = pilih_device(inf.get("device"), str(resolve_model()))
+        model.predict(_np.zeros((480, 640, 3), dtype=_np.uint8),
+                      device=device, half=half_gambar_untuk(device),
+                      verbose=False)
+    except Exception:
+        _log.exception("warmup worker inferensi gagal (diabaikan)")
+    while True:
+        fn, args, kwargs, balasan = antrean.get()
+        try:
+            balasan.put((True, fn(*args, **kwargs)))
+        except Exception as e:  # noqa: BLE001 - teruskan ke peminta
+            balasan.put((False, e))
+
+
+def _pastikan_pekerja():
+    """Pastikan ada worker hidup; lahirkan (ulang) bila belum ada atau mati.
+
+    Worker hanya benar-benar mati bila thread-nya berhenti (mis. crash native
+    di sisi CUDA). Tanpa cek `is_alive`, thread mati tetap dianggap hidup dan
+    request baru mengantre pada queue yang tak akan pernah dilayani ->
+    menggantung selamanya.
+    """
+    global _thread_pekerja, _antrean_pekerja
+    t = _thread_pekerja
+    if t is not None and t.is_alive():
+        return
+    with _kunci_pekerja:
+        t = _thread_pekerja
+        if t is not None and t.is_alive():
+            return
+        if t is not None:
+            _log.warning("worker inferensi berhenti; memulai ulang")
+        _antrean_pekerja = _queue.Queue()
+        _thread_pekerja = threading.Thread(
+            target=_loop_pekerja, args=(_antrean_pekerja,),
+            name="inferensi-gpu", daemon=True)
+        _thread_pekerja.start()
+
+
+def start_worker_inferensi():
+    """Mulai worker thread GPU + warmup. Dipanggil sekali saat startup server
+    agar request pertama pun tidak membayar inisialisasi CUDA."""
+    _pastikan_pekerja()
+
+
+def analisis_gambar_terjadwal(*args, **kwargs):
+    """analisis_gambar via worker thread GPU khusus.
+
+    Dipakai oleh route HTTP (tiap request = thread baru). Bila dipanggil dari
+    dalam worker itu sendiri, jalan langsung (anti-deadlock).
+
+    Batas tunggu berbasis LIVENESS, bukan jam dinding: selama worker yang
+    melayani masih hidup kita tetap menunggu (job CPU / mode teliti bisa lama
+    dan tetap sah). Bila worker mati atau diganti, gagal-cepat dengan
+    WorkerInferensiMati alih-alih menggantung menanti balasan yang tak akan
+    datang.
+    """
+    _pastikan_pekerja()
+    if threading.current_thread() is _thread_pekerja:
+        return analisis_gambar(*args, **kwargs)
+    antrean, pekerja = _antrean_pekerja, _thread_pekerja
+    balasan = _queue.Queue(maxsize=1)
+    antrean.put((analisis_gambar, args, kwargs, balasan))
+    while True:
+        try:
+            ok, hasil = balasan.get(timeout=_POLL_DETIK)
+            break
+        except _queue.Empty:
+            if _thread_pekerja is not pekerja or not pekerja.is_alive():
+                raise WorkerInferensiMati(
+                    "Worker inferensi berhenti mendadak; coba lagi.")
+    if not ok:
+        raise hasil
+    return hasil

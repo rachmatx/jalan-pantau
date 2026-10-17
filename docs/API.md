@@ -50,7 +50,7 @@ Semua respons JSON (`application/json`) kecuali yang bertanda lain.
 
 | Metode | Endpoint | Batas | Catatan |
 |---|---|---|---|
-| POST | `/api/detect` | 30/menit | multipart: `gambar`, `conf`, `malam`, `teliti` → `{rows, total, model, image_b64, gps, malam, teliti, disaring}` |
+| POST | `/api/detect` | 30/menit | multipart: `gambar`, `conf`, `malam`, `teliti` → `{rows, total, model, image_b64, gps, malam, teliti, teliti_otomatis, gelap, disaring, scene}` |
 | POST | `/api/verifikasi` | — | JSON `{rows, hapus[], severity{}}` → hasil koreksi operator + total |
 | POST | `/api/laporan` | 20/menit | JSON `{rows, total, image_b64, source, model, verifikasi}` → **PDF** (`application/pdf`) |
 
@@ -60,7 +60,28 @@ Semua respons JSON (`application/json`) kecuali yang bertanda lain.
 
 Parameter `conf` dijepit ke rentang `0.05–0.8` (default `0.25`). `malam` dan
 `teliti` bernilai `1`/`true`/`on`. Deteksi dengan `teliti=1` memakai mode tiling
-(lihat `config/inferensi.yaml` → `teliti`).
+(lihat `config/inferensi.yaml` → `teliti`). `teliti_otomatis: true` berarti server
+yang menyalakan tiling sendiri karena gambar jauh lebih besar dari `imgsz_gambar`
+(lihat `perlu_teliti_otomatis()`). `gelap: true` = rata-rata kanal L < 60; UI
+memakainya untuk menyarankan opsi `malam` (CLAHE).
+
+Kunci `disaring` merinci kandidat yang dibuang (semua bilangan bulat):
+
+| Kunci | Arti |
+|---|---|
+| `rusak` | box/conf NaN atau Inf dari model (mis. overflow FP16) — diabaikan |
+| `ambang` | confidence di bawah ambang efektif kelasnya |
+| `ukuran` | geometri mustahil menurut kalibrasi px/cm (`masuk_akal`) |
+| `mungil` | luas box < `saring.luas_min_px` |
+| `tepi_tile` | box terpotong tepi-dalam tile (hanya mode teliti) |
+| `silang_kelas` | box lintas kelas yang dilebur NMS agnostik (hanya mode teliti) |
+| `fragmen` | fragmen yang dilebur `gabung_fragmen` |
+| `gate` | `{aktif, disaring, ambang_lubang}` — gate jalan basah |
+| `topk` | baris dipangkas `saring.maks_temuan` |
+
+`rusak` **bukan** kesalahan penyaring: box-nya memang tidak sah, dan bila
+dibiarkan bisa merusak deteksi lain lewat `wbf_gabung` serta membuat JSON
+mengandung `NaN` (ditolak `JSON.parse` di browser).
 
 ## Kalibrasi
 

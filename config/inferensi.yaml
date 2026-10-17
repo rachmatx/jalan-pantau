@@ -28,6 +28,19 @@ imgsz_gambar: 960
 imgsz_live: 640  # 640 = akurasi penuh; 480/320 hanya bila mesin sangat lambat
 iou: 0.5
 tta: true  # augment=True; trial 3 foto: conf top naik konsisten (0.4x->0.8x), biaya 0.3s->0.7s. Matikan bila terlalu PD.
+# --- FP16 (half) khusus JALUR GAMBAR — diukur 2026-10-17, GTX 1650 ---
+# BUG: half=true + TTA (augment) pada imgsz_gambar 960 meluap secara numerik
+# -> model mengeluarkan box [nan,nan,nan,nan]. 000003.jpg (4080x3060) @960:
+#   TTA+FP16 = 107 box (102 NaN) | TTA+FP32 = 28 box (0 NaN) | noTTA+FP16 = 0 box
+# Box NaN lalu dilebur wbf_gabung -> hasil NaN -> ditolak masuk_akal() dan
+# dilaporkan sebagai "ukuran tidak masuk akal" (di UI terlihat seperti 913 box
+# geometri aneh, padahal rusak). Efek samping: deteksi ASLI ikut terlebur jadi
+# NaN -> hilang. Bukan hanya foto gelap: foto siang 12 MP pun kena.
+# FP32 juga LEBIH CEPAT di sini (tensor penuh NaN + NMS NaN lambat):
+#   000003 auto-tiling 47,9s -> 9,7s; temuan 2 -> 3.
+# Jalur live (imgsz 640, tanpa TTA) terbukti aman dengan FP16 -> biarkan true
+# (hemat VRAM 4GB saat demo kamera). Lihat web/deteksi.py half_gambar_untuk().
+half_gambar: false
 teliti:
   aktif_default: false
   tile: 640
@@ -36,6 +49,21 @@ teliti:
   metode_gabung: wbf  # nms | wbf (wbf melebur box bertumpuk lintas tile, lebih halus dari nms)
   buang_tepi_tile: true  # buang box terpotong tepi-dalam tile (duplikat lintas tile)
   iou_agnostik: 0.6  # NMS lintas kelas: satu kerusakan = satu box kelas pemenang
+  # --- Tiling OTOMATIS untuk gambar besar (2026-10-17, diukur ulang FP32) ---
+  # Bila sisi gambar > imgsz_gambar x otomatis_ambang, jalur full-frame sudah
+  # menurunkan resolusi >= 2x -> retak tipis hilang. Tiling melihat tiap 640 px
+  # pada resolusi penuh, jadi retak kecil ikut terdeteksi.
+  # Temuan akhir, slider conf 0,25 (full-frame -> tiling):
+  #   000003 4080x3060 (12,5 MP): 3 -> 3   |  000002 3000x4000:  3 -> 14
+  #   04a8f35f 4032x2268 (9,1 MP): 1 -> 3  |  000059 malam:      0 -> 2
+  #   1280x720 & 512x512: tak terpicu (ambang 2x).
+  # Catatan: tiling menambah RECALL terutama retak, tetapi box retak umumnya
+  # low-conf (0,14-0,34) -> presisi tidak ikut naik. Bukan pengganti data lokal.
+  # BIAYA (000003.jpg 12,5 MP, GPU hangat, FP32): full-frame ~1,2 dtk ->
+  # tiling ~9 dtk (~48 tile + lebur WBF).
+  # Matikan (otomatis_aktif: false) bila ingin full-frame selalu.
+  otomatis_aktif: true
+  otomatis_ambang: 2.0
 # Ensemble 2 model (tab Gambar saja): gabung box model_gambar + model_kedua
 # via WBF/NMS per kelas. Default MATI (biaya ~2x waktu). Saat ini hanya ada
 # satu model (best.pt), jadi model_kedua == model_gambar -> jalur tunggal.

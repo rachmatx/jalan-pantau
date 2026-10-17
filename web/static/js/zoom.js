@@ -9,7 +9,11 @@
     const inner = document.createElement("div");
     inner.className = "zoom-inner";
     [...root.childNodes].forEach((n) => {
-      if (n !== bar) inner.appendChild(n);
+      if (n === bar) return;
+      // Elemen bertanda data-zoom-fixed (mis. toolbar melayang) tetap di luar
+      // .zoom-inner supaya posisinya tidak ikut transform pan/zoom.
+      if (n.nodeType === 1 && n.hasAttribute("data-zoom-fixed")) return;
+      inner.appendChild(n);
     });
     root.insertBefore(inner, bar);
     const pct = bar ? bar.querySelector(".zoom-pct") : null;
@@ -30,6 +34,15 @@
     };
     const apply = () => {
       const hasImg = !!img();
+      // Tanpa gambar (placeholder / overlay "Menganalisis…") state pan/zoom
+      // tak bermakna -> paksa identitas agar overlay selalu tepat di tengah,
+      // tak mewarisi transform & skala gambar sebelumnya.
+      if (!hasImg) {
+        controlled = false;
+        // Jangan animasikan transisi saat beralih ke state kosong: overlay
+        // harus LANGSUNG pas di tengah, bukan meluncur dari posisi gambar lama.
+        inner.style.transition = "none";
+      }
       inner.classList.toggle("has-img", hasImg);
       const s = controlled ? scale : fitScale();
       const n = nat();
@@ -38,8 +51,11 @@
         y: n ? (ch() - n.h * s) / 2 : 0,
       };
       inner.style.transform = `translate(${p.x}px, ${p.y}px) scale(${s})`;
-      if (pct) pct.textContent = `${Math.round(s * 100)}%`;
-      root.dataset.zoom = String(Math.round(s * 100));
+      // Tulis DOM hanya bila nilainya berubah -> pan/zoom tak membebani main-thread.
+      const label = `${Math.round(s * 100)}%`;
+      if (pct && pct.textContent !== label) pct.textContent = label;
+      const zoomAttr = String(Math.round(s * 100));
+      if (root.dataset.zoom !== zoomAttr) root.dataset.zoom = zoomAttr;
     };
     const cur = () => (controlled ? scale : fitScale());
     const curPos = () => {
@@ -74,6 +90,7 @@
     }, { passive: false });
     root.addEventListener("pointerdown", (e) => {
       if (e.target.closest("button") || e.button !== 0 || !img()) return;
+      e.preventDefault(); // cegah native image-drag & seleksi teks saat pan
       panning = true;
       inner.style.transition = "none"; // matikan animasi saat drag-pan agar mengikuti kursor
       const o = curPos();
@@ -81,17 +98,22 @@
       try { root.setPointerCapture(e.pointerId); } catch { /* pointer sintetis */ }
       root.style.cursor = "grab";
     });
+    // Pan di-koalesensi ke SATU apply() per frame: mouse polling tinggi bisa
+    // memicu ratusan pointermove per frame -> main-thread jenuh (terasa berat
+    // & patah-patah). Simpan posisi terbaru, gambar sekali di rAF.
+    let rafPan = 0;
     root.addEventListener("pointermove", (e) => {
       if (!panning || !pan0) return;
       const dx = e.clientX - pan0.x, dy = e.clientY - pan0.y;
-      if (Math.hypot(dx, dy) > 3) {
+      if (!pan0.moved && Math.hypot(dx, dy) > 3) {
         pan0.moved = true;
         root.style.cursor = "grabbing";
       }
       if (!pan0.moved) return;
       if (!controlled) { controlled = true; scale = cur(); }
       pos = { x: pan0.ox + dx, y: pan0.oy + dy };
-      apply();
+      if (rafPan) return;
+      rafPan = requestAnimationFrame(() => { rafPan = 0; apply(); });
     });
     const endPan = () => { panning = false; pan0 = null; root.style.cursor = ""; inner.style.transition = ""; };
     root.addEventListener("pointerup", endPan);
@@ -128,12 +150,21 @@
     let srcTerakhir = "";
     root.addEventListener("load", (e) => {
       if (e.target.tagName === "IMG") {
+        inner.style.transition = ""; // pulihkan animasi fit setelah state kosong
         const src = e.target.currentSrc || e.target.src || "";
         if (src !== srcTerakhir) { srcTerakhir = src; controlled = false; }
         apply();
       }
     }, true);
     new ResizeObserver(() => apply()).observe(root);
+    // Isi viewer bisa ditukar (placeholder <-> gambar hasil <-> overlay
+    // "Menganalisis…"). Tanpa re-apply, .zoom-inner tetap memakai transform
+    // gambar LAMA sehingga overlay tampak tidak di tengah / ikut terskala.
+    // Observer dipasang pada `inner` (bukan `root`) agar tak memicu loop
+    // lewat pct.textContent di .zoom-bar.
+    new MutationObserver(() => apply()).observe(inner, {
+      childList: true, subtree: true,
+    });
     apply();
   });
 })();

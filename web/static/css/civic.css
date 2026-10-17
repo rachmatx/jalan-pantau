@@ -253,16 +253,36 @@ main { padding: 0; flex: 1 0 auto; }
    transform-origin WAJIB 0 0: zoom.js menghitung translate/scale terhadap
    sudut kiri-atas. Tanpa ini origin default 50% 50% dari wadah setinggi
    gambar mentah -> skala mendorong gambar keluar area viewer (tampak kosong). */
-.viewer.zoomable { border: none; border-radius: 0; height: min(62vh, 560px); min-height: 380px; position: relative; overflow: hidden; }
-.zoom-inner { transition: transform 0.15s ease-out; transform-origin: 0 0; will-change: transform; }
+/* contain:paint membatasi area repaint ke kotak viewer (gambar bisa jauh lebih
+   besar dari viewer) -> panning lebih ringan. touch-action:none mencegah
+   gesture scroll/zoom browser menyerobot drag-pan. */
+.viewer.zoomable { border: none; border-radius: 0; height: min(62vh, 560px); min-height: 380px; position: relative; overflow: hidden; contain: paint; touch-action: none; }
+/* height:100% memberi wadah ini tinggi pasti (= tinggi viewer) supaya anak
+   ber-height:100% / position:absolute inset:0 (placeholder & overlay loading)
+   benar-benar mengisi viewer. Tanpa ini, % tinggi terhadap parent auto = 0
+   sehingga status "Menganalisis…" menempel di atas viewer. */
+.zoom-inner { transition: transform 0.15s ease-out; transform-origin: 0 0; will-change: transform; height: 100%; }
 /* zoom.js menghitung posisi dari ukuran natural gambar -> gambar di dalam
    viewer TIDAK boleh di-constrain CSS (mis. rule global mobile
    `img{max-width:100%}`), kalau tidak hasil tampil kecil & tidak di tengah. */
-.viewer.zoomable .zoom-inner img { max-width: none; display: block; }
+.viewer.zoomable .zoom-inner img { max-width: none; display: block; -webkit-user-drag: none; user-select: none; }
 #viewer-live.zoomable { height: min(55vh, 480px); min-height: 320px; max-height: 520px; }
 #live-toolbar { position: absolute !important; top: 8px !important; right: 8px !important; left: auto !important; bottom: auto !important; }
-.viewer.zoomable .viewer-placeholder { color: #CBD5E1; }
-.viewer.zoomable .viewer-placeholder-icon { border-color: rgba(0, 191, 255, 0.5); }
+/* Status kosong viewer: dipusatkan penuh di area viewer (bukan menempel atas
+   karena % tinggi terhadap parent auto). Ikon diberi ukuran + border agar
+   benar-benar tampil; teks pakai warna muted yang terbaca di latar putih. */
+.viewer.zoomable .viewer-placeholder {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; padding: 24px; text-align: center;
+  color: var(--jp-muted); font-size: 14px; font-weight: 500;
+}
+.viewer.zoomable .viewer-placeholder p { margin: 0; }
+.viewer.zoomable .viewer-placeholder-icon {
+  width: 56px; height: 56px;
+  border: 2px dashed rgba(0, 145, 194, 0.5);
+  border-radius: 12px;
+}
 .zoom-bar {
   position: absolute;
   z-index: 5;
@@ -619,6 +639,47 @@ th.jp-num-right { font-weight: 600; }
 .jp-btn-demo:hover { background: var(--jp-container); }
 .jp-btn-go svg, .jp-btn-stop svg, .jp-btn-demo svg { width: 18px; height: 18px; }
 
+/* Tombol lebar penuh untuk aksi utama di panel sempit. */
+.jp-btn-block { width: 100%; justify-content: center; }
+/* Fokus keyboard & status nonaktif yang seragam untuk seluruh tombol civic. */
+.jp-btn-light:focus-visible, .jp-btn-save:focus-visible, .jp-btn-demo:focus-visible,
+.jp-btn-go:focus-visible, .jp-btn-stop:focus-visible, .jp-icon-btn:focus-visible,
+.jp-rowact button:focus-visible { outline: 2px solid var(--jp-primary); outline-offset: 2px; }
+.jp-btn-light:disabled, .jp-btn-save:disabled, .jp-btn-demo:disabled,
+.jp-btn-go:disabled, .jp-btn-stop:disabled { opacity: 0.55; cursor: not-allowed; }
+/* Tautan aksi berbasis teks (mis. nama segmen di tabel). */
+.jp-link {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--jp-primary);
+  cursor: pointer;
+  text-align: left;
+}
+.jp-link:hover { text-decoration: underline; }
+.jp-link:focus-visible { outline: 2px solid var(--jp-primary); outline-offset: 2px; border-radius: 3px; }
+/* Chip ikon yang dipakai ulang di beberapa kartu. */
+.jp-ic-chip {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--jp-container-low);
+  color: var(--jp-primary);
+}
+.jp-ic-chip svg { width: 20px; height: 20px; }
+/* Strip ringkasan hasil sesi live. */
+.jp-live-summary { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; background: var(--jp-container-low); }
+.jp-live-summary .jp-ic-chip { background: var(--jp-sev-h-bg); color: #047857; }
+.jp-live-summary .jp-hint { display: block; }
+.jp-live-summary #total-live-nilai { display: block; font-size: 14px; margin-top: 3px; }
+.jp-section-title { font-size: 14px; font-weight: 700; color: var(--jp-ink); margin: 0 0 10px; }
+
 /* ---- Footer civic ---- */
 .jp-footer { width: 100%; background: var(--jp-surface); padding: 16px 0; box-shadow: 0 -1px 6px rgba(0,0,0,0.03); margin-top: 24px; }
 .jp-footer-in {
@@ -961,9 +1022,12 @@ label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label da
 .jp-dialog:not([open]) { display: none; }
 .jp-dialog { min-width: 0; margin: auto; border: none; border-radius: 12px; padding: 0; max-width: min(900px, 94vw); width: 900px; max-height: 92vh; height: 92vh; display: flex; flex-direction: column; overflow: hidden; position: relative; background: #fff; color: var(--jp-ink2); }
 .jp-dialog::backdrop { background: rgba(11, 28, 48, 0.55); }
-/* Dialog kecil (formulir): tinggi mengikuti isi, bukan 92vh. */
-.jp-dialog-auto { height: auto; }
-.jp-dialog-auto > div { height: auto; max-height: 92vh; }
+/* Dialog kompak (formulir/tabel pendek): tinggi mengikuti isi, maksimum 92vh.
+   `height: auto` justru melar karena UA <dialog> memakai inset:0 — pakai
+   `fit-content` agar benar-benar menyesuaikan isi. Spesifisitas dinaikkan
+   supaya menang atas `.jp-dialog` dan `.jp-dialog > div`. */
+.jp-dialog.jp-dialog-auto { height: fit-content; max-height: 92vh; }
+.jp-dialog.jp-dialog-auto > div { height: auto; max-height: 92vh; }
 /* Bilah skala SDI-visual (0-200) dengan penanda nilai. */
 .sdi-scale { position: relative; height: 14px; border-radius: 999px; overflow: visible;
   background: linear-gradient(to right,
@@ -993,10 +1057,25 @@ label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label da
 /* Kartu mini distribusi kategori. */
 .jp-kat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 @media (min-width: 640px) { .jp-kat-grid { grid-template-columns: repeat(4, 1fr); } }
-.jp-kat { border-radius: 10px; padding: 10px 12px; color: #fff; }
-.jp-kat span { display: block; font-size: 11px; font-weight: 600; opacity: .9; }
-.jp-kat b { font-size: 22px; font-weight: 800; font-family: var(--jp-mono); }
-.jp-kat small { display: block; font-size: 11px; opacity: .85; }
+.jp-kat {
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: var(--jp-surface);
+  border: 1px solid var(--jp-line);
+  border-left: 4px solid var(--jp-muted);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.jp-kat span { display: block; font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--jp-muted); }
+.jp-kat b { font-size: 24px; font-weight: 800; font-family: var(--jp-mono); color: var(--jp-ink); line-height: 1.2; }
+.jp-kat small { display: block; font-size: 11px; color: var(--jp-muted); }
+.jp-kat[data-kat="baik"] { border-left-color: #15803d; }
+.jp-kat[data-kat="baik"] b { color: #15803d; }
+.jp-kat[data-kat="sedang"] { border-left-color: #a16207; }
+.jp-kat[data-kat="sedang"] b { color: #a16207; }
+.jp-kat[data-kat="ringan"] { border-left-color: #c2410c; }
+.jp-kat[data-kat="ringan"] b { color: #c2410c; }
+.jp-kat[data-kat="berat"] { border-left-color: #b91c1c; }
+.jp-kat[data-kat="berat"] b { color: #b91c1c; }
 /* Grid responsif isi dialog detail segmen. */
 .dg-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
 @media (min-width: 720px) { .dg-grid { grid-template-columns: 1fr 1fr; } }
@@ -1014,6 +1093,69 @@ label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label da
 .jp-dialog-total { display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding: 12px 16px; background: var(--jp-container-low); border-radius: 8px; margin-top: 12px; font-size: 14px; }
 .jp-dialog-total strong { font-family: var(--jp-mono); font-size: 18px; color: var(--jp-primary); }
 .jp-dialog-actions { display: flex; align-items: center; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+
+/* Struktur dialog standar: kepala tetap, isi dapat digulir, kaki tetap. */
+.jp-dialog-head {
+  flex: none;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--jp-line);
+  background: var(--jp-surface);
+}
+.jp-dialog .jp-dialog-title { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; color: var(--jp-ink); margin: 0; }
+.jp-dialog .jp-dialog-sub { font-size: 12px; color: var(--jp-muted); margin: 3px 0 0; }
+.jp-dialog-body { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 20px; background: var(--jp-bg); }
+.jp-dialog-foot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--jp-line);
+  background: var(--jp-surface);
+}
+.jp-dialog-foot-note { font-size: 12px; color: var(--jp-muted); }
+.jp-icon-btn {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  background: var(--jp-container-low);
+  color: var(--jp-tx2);
+  cursor: pointer;
+  transition: background 150ms, color 150ms;
+}
+.jp-icon-btn:hover { background: var(--jp-container); color: var(--jp-ink); }
+.jp-icon-btn svg { width: 18px; height: 18px; }
+
+/* Halaman Segmen: pengantar + kartu hero SDI. */
+.jp-seg-intro { padding: 18px; display: grid; gap: 18px; }
+@media (min-width: 1000px) { .jp-seg-intro { grid-template-columns: minmax(240px, 1fr) 1.5fr; } }
+.jp-seg-intro-lead { display: flex; gap: 12px; align-items: flex-start; }
+.jp-seg-lede { margin: 0; font-size: 13px; line-height: 1.65; color: var(--jp-tx2); }
+.jp-seg-lede strong { color: var(--jp-ink); }
+.jp-sdi-hero {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 16px 18px;
+  border-radius: 10px;
+  background: var(--jp-container-low);
+}
+.jp-sdi-hero-num { display: flex; flex-direction: column; gap: 2px; }
+.jp-sdi-hero-num span { font-size: 11px; font-weight: 600; letter-spacing: .05em; color: var(--jp-muted); }
+.jp-sdi-hero-num b { font-family: var(--jp-mono); font-size: 34px; line-height: 1; font-weight: 800; color: var(--jp-primary); }
+.jp-sdi-hero-meta { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.jp-sdi-hero-meta p { margin: 0; font-size: 12px; color: var(--jp-muted); }
 
 /* ---- Paginasi ---- */
 #riwayat-paginasi button { min-width: 36px; height: 36px; padding: 0 12px; border: 1px solid var(--jp-line); border-radius: 8px; background: var(--jp-surface); color: var(--jp-ink); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 150ms; }
