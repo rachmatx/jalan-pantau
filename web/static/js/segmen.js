@@ -27,6 +27,19 @@
   var halamanSegmen = 1;
   var PER_HALAMAN_SEGMEN = 10;
 
+  // Toggle penjelasan SDI-visual (hidden by default, minimalis).
+  (function() {
+    var btn = document.getElementById("btn-sdi-info");
+    var body = document.getElementById("sdi-info-body");
+    if (!btn || !body) return;
+    btn.addEventListener("click", function() {
+      var buka = body.hasAttribute("hidden");
+      if (buka) { body.removeAttribute("hidden"); }
+      else { body.setAttribute("hidden", ""); }
+      btn.setAttribute("aria-expanded", buka ? "true" : "false");
+    });
+  })();
+
   async function muat() {
     const res = await fetch("/api/segmen");
     if (!res.ok) return;

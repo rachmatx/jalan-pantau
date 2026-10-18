@@ -1158,12 +1158,21 @@ label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label da
 .jp-sdi-hero-meta { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .jp-sdi-hero-meta p { margin: 0; font-size: 12px; color: var(--jp-muted); }
 
+/* ---- Toggle info SDI-visual (halaman Segmen, hidden by default) ---- */
+.jp-sdi-toggle { display: flex; align-items: center; gap: 10px; width: 100%; background: none; border: 0; padding: 4px 2px; cursor: pointer; color: var(--jp-ink); font: inherit; text-align: left; }
+.jp-sdi-toggle:hover .jp-sdi-toggle-teks { color: var(--jp-primary); }
+.jp-sdi-toggle-teks { font-size: 14px; font-weight: 600; line-height: 1.35; }
+.jp-sdi-toggle-teks small { display: block; font-weight: 400; font-size: 12px; color: var(--jp-muted); }
+.jp-sdi-toggle .jp-chev { margin-left: auto; width: 20px; height: 20px; flex: none; color: var(--jp-muted); transition: transform 160ms ease; }
+.jp-sdi-toggle[aria-expanded="true"] .jp-chev { transform: rotate(180deg); }
+#sdi-info-body { border-top: 1px solid var(--jp-line); margin-top: 8px; padding-bottom: 6px; }
+
 /* ---- Paginasi ---- */
-#riwayat-paginasi button { min-width: 36px; height: 36px; padding: 0 12px; border: 1px solid var(--jp-line); border-radius: 8px; background: var(--jp-surface); color: var(--jp-ink); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 150ms; }
-#riwayat-paginasi button:hover:not(:disabled) { background: var(--jp-container); border-color: var(--jp-primary); }
-#riwayat-paginasi button.aktif { background: var(--jp-primary); color: #fff; border-color: var(--jp-primary); }
-#riwayat-paginasi button:disabled { opacity: 0.5; cursor: not-allowed; }
-#riwayat-paginasi button.pag-num { min-width: 32px; padding: 0 8px; }
+#riwayat-paginasi button, #segmen-paginasi button { min-width: 36px; height: 36px; padding: 0 12px; border: 1px solid var(--jp-line); border-radius: 8px; background: var(--jp-surface); color: var(--jp-ink); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 150ms; }
+#riwayat-paginasi button:hover:not(:disabled), #segmen-paginasi button:hover:not(:disabled) { background: var(--jp-container); border-color: var(--jp-primary); }
+#riwayat-paginasi button.aktif, #segmen-paginasi button.aktif { background: var(--jp-primary); color: #fff; border-color: var(--jp-primary); }
+#riwayat-paginasi button:disabled, #segmen-paginasi button:disabled { opacity: 0.5; cursor: not-allowed; }
+#riwayat-paginasi button.pag-num, #segmen-paginasi button.pag-num { min-width: 32px; padding: 0 8px; }
 .jp-btn-danger {
   border: none;
   border-radius: 8px;
@@ -1396,8 +1405,8 @@ label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label da
   .jp-filterbtns button { width: 100%; }
   .jp-idlink { font-size: 12px; }
   .jp-rowact button { padding: 4px 8px; font-size: 11px; }
-  #riwayat-paginasi { gap: 3px; }
-  #riwayat-paginasi button { min-width: 32px; height: 32px; padding: 0 8px; font-size: 12px; }
+  #riwayat-paginasi, #segmen-paginasi { gap: 3px; }
+  #riwayat-paginasi button, #segmen-paginasi button { min-width: 32px; height: 32px; padding: 0 8px; font-size: 12px; }
 
   /* ---- Modal Detail ---- */
   .jp-dialog { max-width: 95vw; width: 95vw; padding: 16px; border-radius: 10px; }

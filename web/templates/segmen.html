@@ -16,31 +16,30 @@
     </div>
   </div>
 
-  <div class="jp-card jp-seg-intro" style="margin-bottom:14px">
-    <div class="jp-seg-intro-lead">
+  <div class="jp-card" style="margin-bottom:14px;padding:8px 14px">
+    <button type="button" id="btn-sdi-info" class="jp-sdi-toggle" aria-expanded="false" aria-controls="sdi-info-body">
       <span class="jp-ic-chip" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14"/><path d="M2 20h20"/><path d="M8 9l4 3 4-3"/></svg>
       </span>
-      <div>
-        <h2 class="jp-section-title">Apa itu SDI-visual?</h2>
-        <p class="jp-seg-lede">
-          <strong>SDI-visual</strong> (Surface Distress Index) dihitung per segmen dari
-          gabungan temuan seluruh sesi foto anggotanya: % luas retak, rata-rata lebar
-          retak, dan jumlah lubang per km (Bina Marga 2011b). Bekas roda tidak terdeteksi
-          sehingga SDI bersifat <strong>parsial</strong> — lengkapi dengan SDI manual
-          hasil survei lapangan sebagai pembanding validasi.
-        </p>
-        <h2 class="jp-section-title" style="margin-top:14px">Cara kerja SDI-visual</h2>
-        <div class="jp-steps">
-          <div class="jp-step"><b>1</b><p><strong>Deteksi</strong> — YOLO menemukan jenis tiap kerusakan pada foto anggota segmen.</p></div>
-          <div class="jp-step"><b>2</b><p><strong>Ukur</strong> — tiap bounding box dikonversi ke cm via kalibrasi kamera.</p></div>
-          <div class="jp-step"><b>3</b><p><strong>Agregasi</strong> — seluruh temuan se-segmen diringkas jadi 5 angka: jumlah retak, % luas retak, rerata lebar retak, jumlah lubang/km.</p></div>
-          <div class="jp-step"><b>4</b><p><strong>Skor</strong> — SDI1–SDI4 dihitung dari 5 angka itu, dijumlahkan → total &amp; kategori (Baik … Rusak Berat) untuk prioritas dinas.</p></div>
-        </div>
+      <span class="jp-sdi-toggle-teks">Apa itu SDI-visual?<small>Penjelasan singkat &amp; cara mengisi segmen</small></span>
+      <svg class="jp-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+    <div id="sdi-info-body" hidden>
+      <p class="jp-seg-lede" style="margin:10px 2px 0">
+        <strong>SDI-visual</strong> (Surface Distress Index) dihitung per segmen dari
+        gabungan temuan seluruh sesi foto anggotanya: % luas retak, rata-rata lebar
+        retak, dan jumlah lubang per km (Bina Marga 2011b). Bekas roda tidak terdeteksi
+        sehingga SDI bersifat <strong>parsial</strong> — lengkapi dengan SDI manual
+        hasil survei lapangan sebagai pembanding validasi.
+      </p>
+      <h2 class="jp-section-title" style="margin-top:12px">Cara kerja SDI-visual</h2>
+      <div class="jp-steps">
+        <div class="jp-step"><b>1</b><p><strong>Deteksi</strong> — YOLO menemukan jenis tiap kerusakan pada foto anggota segmen.</p></div>
+        <div class="jp-step"><b>2</b><p><strong>Ukur</strong> — tiap bounding box dikonversi ke cm via kalibrasi kamera.</p></div>
+        <div class="jp-step"><b>3</b><p><strong>Agregasi</strong> — seluruh temuan se-segmen diringkas jadi 5 angka: jumlah retak, % luas retak, rerata lebar retak, jumlah lubang/km.</p></div>
+        <div class="jp-step"><b>4</b><p><strong>Skor</strong> — SDI1–SDI4 dihitung dari 5 angka itu, dijumlahkan → total &amp; kategori (Baik … Rusak Berat) untuk prioritas dinas.</p></div>
       </div>
-    </div>
-    <div>
-      <h2 class="jp-section-title">Cara mengisi segmen</h2>
+      <h2 class="jp-section-title" style="margin-top:12px">Cara mengisi segmen</h2>
       <div class="jp-steps">
         <div class="jp-step"><b>1</b><p><strong>Buat segmen</strong> lewat tombol di atas — satu segmen mewakili satu ruas 100 meter.</p></div>
         <div class="jp-step"><b>2</b><p><strong>Simpan sesi foto</strong> dari halaman Deteksi (<strong>Simpan ke Riwayat</strong>) untuk tiap titik di ruas itu.</p></div>
