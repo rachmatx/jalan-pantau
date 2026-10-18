@@ -148,11 +148,13 @@ gabung_fragmen:
 # dari ambang pothole yang terlalu longgar ini, bukan dari penyaring.
 # Toleransi retak lain belum diukur ulang (BPID tidak berlabel retak).
 toleransi_kelas:
-  longitudinal_crack: 0.13
-  transverse_crack: 0.13
-  alligator_crack: 0.10
-  other_corruption: 0.10
-  pothole: 0
+  longitudinal_crack: 0.0   # terukur 18 Okt 2026 (sweep RDD val n=5758, F1-opt 0.30)
+  transverse_crack: 0.05    # terukur 18 Okt 2026 (sweep RDD val n=5758, F1-opt 0.25)
+  alligator_crack: 0.05     # terukur 18 Okt 2026 (sweep RDD val n=5758, F1-opt 0.25)
+  other_corruption: 0.10    # heuristik 16 Okt 2026; optimum di tepi sapuan (>=0.35) — ukur ulang
+  pothole: 0               # KONFIRMASI GANDA di BPID: pipeline app (F1-opt 0.35) + sweep mentah
+                          # notebook ini (F1 masih naik di 0.35: 0.620). RDD val bilang 0.20 —
+                          # beda dataset, bukan beda metodologi; domain target = jalan Indonesia → ikut BPID
 live:
   min_frames: 2  # track sah untuk snapshot bila terlihat >= N frame (redam kedip)
   display_fps: 30   # batas atas laju TAMPIL preview (terpisah dari laju inferensi)

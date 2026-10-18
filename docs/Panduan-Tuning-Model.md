@@ -381,6 +381,41 @@ Jadi `toleransi_kelas.pothole` → **0**. Keluhan operator "batu/daun terbaca po
 sebagian besar berasal dari ambang yang terlalu longgar ini. Toleransi retak belum
 diukur ulang (BPID tidak berlabel retak) — biarkan dulu, jangan ikut diturunkan.
 
+#### Sapuan ambang per kelas di RDD val: toleransi retak terukur (18 Okt 2026)
+
+Berawal dari temuan operator: pada satu foto, slider 0,20 menangkap 3 true positive
+(alligator 0,11/0,12, other 0,17) yang dibuang slider default 0,30. Notebook
+`~/workspace/sweep_ambang_per_kelas.ipynb`: inferensi **sekali** @conf 0,01
+(imgsz 640, +TTA, FP32), sapuan 9 ambang di Python, matching IoU 0,5 per kelas —
+val RDD n=5758 gambar (GT: longitudinal 3890, transverse 1769, alligator 1553,
+other 1564, pothole 965):
+
+| kelas | ambang F1-opt | P | R | F1 | toleransi lama → baru |
+|---|---|---|---|---|---|
+| longitudinal_crack | 0,30 | 0,687 | 0,531 | 0,599 | 0,13 → **0,0** |
+| transverse_crack | 0,25 | 0,637 | 0,553 | 0,592 | 0,13 → **0,05** |
+| alligator_crack | 0,25 | 0,705 | 0,661 | 0,682 | 0,10 → **0,05** |
+| other_corruption | 0,35* | 0,754 | 0,735 | 0,744 | 0,10 → **tunda** |
+| pothole | 0,20 | 0,604 | 0,515 | 0,556 | 0 → **tunda** |
+
+\* Optimum tepat di tepi sapuan dan kurva masih naik — kemungkinan optimum
+sebenarnya >0,35. Perlu sapuan lanjutan (0,40/0,45/0,50); cache inferensi sudah
+ada sehingga tanpa GPU tambahan.
+
+**Dua hal yang ditahan jujur:**
+1. `other_corruption` menunggu sapuan lanjutan (lihat \*).
+2. `pothole`: **SELESAI 18 Okt 2026** — konflik RDD val (optimum 0,20) vs BPID
+   (optimum 0,35) diselesaikan dengan menjalankan notebook yang *sama* di BPID
+   (161 gambar, REMAP {0:4}, 263 GT): F1 masih naik di 0,35 (0,620; P 0,605 /
+   R 0,635). Jadi bedanya **dataset, bukan metodologi** — dua metodologi
+   berbeda di BPID sepakat (≥0,35). Domain target aplikasi = jalan Indonesia →
+   ikut BPID: `pothole` **tetap 0**. (Optimum tepatnya mungkin >0,35, tetapi
+   itu tidak mengubah keputusan: toleransi tidak bisa negatif.)
+
+Catatan metodologi: sapuan ini memakai deteksi mentah model (tanpa filter
+geometri `saring_rows` aplikasi yang membuang FP) — sehingga ambang optimumnya
+cenderung konservatif (arah aman). Validasi akhir tetap di foto asli operator.
+
 #### Ringkasan yang diterapkan (18 Okt 2026)
 
 **Hasil akhir — aplikasi sungguhan di 161 gambar BPID** (slider sesuai default app,
