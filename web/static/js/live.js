@@ -131,7 +131,7 @@ async function refreshStats() {
     }
     statusLive.classList.remove("galat");
     statusLive.textContent =
-      `Tampil ${s.fps_tampil} FPS · Inferensi ${s.fps_infer} FPS · ${s.unik} titik unik · ${s.deteksi} deteksi · terlihat ~${s.tampil ?? 0} · frame ${s.frame} · ${s.source}`;
+      `Tampil ${s.fps_tampil} FPS · Inferensi ${s.fps_infer} FPS · ${s.unik} titik unik (total sesi) · ${s.deteksi} deteksi (total sesi) · ${s.rata_deteksi ?? 0} deteksi/inferensi · terlihat ~${s.tampil ?? 0} · frame ${s.frame} · ${s.source}`;
     // isi KPI cards (jika ada)
     const cards = document.getElementById("stat-cards-wrap");
     if (cards) {

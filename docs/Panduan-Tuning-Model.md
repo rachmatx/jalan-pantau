@@ -339,6 +339,32 @@ menekan duplikat lintas tile, hanya bukan penyebab kebutaan.
 tetap ada sebagai kotak centang manual untuk eksperimen recall retak, tapi tidak
 lagi diaktifkan sendiri, dan UI tidak lagi menyarankannya.
 
+#### Preset live "akurat" (960): label menyesatkan, metrik kumulatif menipu (2026-10-18)
+
+Preset live `akurat` (`imgsz_live: 960`) diukur di desktop user (i5-3470 + GTX 1650,
+video yang sama sampai selesai): inferensi 12,2 FPS vs 45,5 FPS (halus/320) vs
+22 FPS (seimbang/640); "titik unik" 17 vs 41 vs 33; "deteksi aktif" 193 vs 816
+vs 686. Kelihatannya akurat paling buruk — dan memang buruk, tapi angkanya
+menipu karena dua sebab:
+
+1. **Metriknya kumulatif.** "Deteksi aktif" (`n_deteksi`) dan "titik unik"
+   (`len(tracks)`) adalah total sepanjang sesi. Mode lambat menginferensi ~4x
+   lebih sedikit frame dalam durasi yang sama, jadi otomatis kalah angka tanpa
+   mencerminkan kualitas per frame.
+2. **960 memang lebih buruk untuk model ini** (§ "Penyebab kedua" di atas):
+   F1 0,536 vs 0,630 di 640. Label "Akurat" tidak terbukti pengukuran.
+
+Tindakan (18 Okt 2026):
+- Label UI: "Akurat (FPS rendah)" → "Resolusi tinggi (FPS rendah)";
+  "Halus (FPS tinggi, akurasi turun)" → "Halus (FPS tinggi)" (klaim penurunan
+  akurasi di 320 belum diukur); catatan terukur ditampilkan di bawah dropdown.
+- Metrik adil: `stats()` kini menyertakan `n_inferensi` dan `rata_deteksi`
+  (deteksi per inferensi) — apel-ke-apel antar mode; metrik kumulatif dilabeli
+  "total sesi" di UI.
+- Preset 960 **dipertahankan** (bukan dihapus): recall objek sangat kecil 58%
+  vs 47% di 640 — berguna untuk kasus retak tipis, hanya bukan default dan
+  bukan "akurat".
+
 #### Ambang pothole: lowering 0,08 justru merusak
 
 `conf_prediksi()`/`ambang_efektif()` memakai `slider − toleransi_kelas`. Nilai lama

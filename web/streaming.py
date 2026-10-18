@@ -78,6 +78,7 @@ class StreamManager:
         self.frame_skip = 1
         self.n_frame = 0
         self.n_deteksi = 0
+        self.n_inferensi = 0  # jumlah pemanggilan model.track() (penyebut metrik adil)
         self.fps_ema = 0.0        # FPS inferensi (kompat UI lama)
         self.fps_infer = 0.0
         self.fps_tampil = 0.0
@@ -444,6 +445,10 @@ class StreamManager:
                 stop.set()
                 break
             dt = time.time() - t0
+            with self._lock:
+                # Hitung inferensi sukses (penyebut "rata-rata deteksi per
+                # inferensi" — metrik adil antar mode performa).
+                self.n_inferensi += 1
             self._simpan_tracks(res, model)
             with self._boxes_lock:
                 self._boxes = self._bangun_overlay(res, model)
@@ -640,6 +645,11 @@ class StreamManager:
         with self._lock:
             riw = list(self._tampil_riwayat)
             tampil = round(sum(riw) / len(riw)) if riw else 0
+            # Metrik adil antar mode: deteksi & titik unik bersifat kumulatif
+            # (mode lambat selalu kalah angka), sedangkan rata-rata per
+            # inferensi membandingkan kualitas per frame yang setara.
+            rata = (round(self.n_deteksi / self.n_inferensi, 2)
+                    if self.n_inferensi else 0)
             return {"running": self.running, "error": self.error,
                     "finished": self.finished, "source": self.source_label,
                     "fps": round(self.fps_infer or self.fps_ema, 1),
@@ -647,6 +657,7 @@ class StreamManager:
                     "fps_infer": round(self.fps_infer, 1),
                     "frame": self.n_frame,
                     "unik": len(self.tracks), "deteksi": self.n_deteksi,
+                    "n_inferensi": self.n_inferensi, "rata_deteksi": rata,
                     # Rata-rata bergerak box terlihat (display-only, redam
                     # kedip). BUKAN dasar snapshot/riwayat.
                     "tampil": tampil}
