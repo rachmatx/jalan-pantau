@@ -337,6 +337,10 @@ document.getElementById("simpan-live").addEventListener("click", async () => {
     if (!res.ok) {
       statusLive.textContent = json.error || "Gagal menyimpan.";
       statusLive.classList.add("galat");
+      if (window.jpToast) {
+        var judulGagal = res.status === 403 ? "Aksi Ditolak (403)" : "Gagal Menyimpan";
+        window.jpToast("error", judulGagal, json.error || "Gagal menyimpan ke riwayat.");
+      }
       return;
     }
     if (json.duplikat) {
@@ -348,9 +352,14 @@ document.getElementById("simpan-live").addEventListener("click", async () => {
     const amin = peringatanGPS(lat, lon);
     statusLive.classList.toggle("galat", amin !== null);
     statusLive.textContent = amin !== null ? `${amin} (ID ${json.id}).` : `Tersimpan ke riwayat (ID ${json.id}).`;
+    if (window.jpToast) {
+      if (amin !== null) window.jpToast("warning", "Tersimpan Tanpa Titik Peta", amin + " (ID " + json.id + ").");
+      else window.jpToast("success", "Tersimpan", "Hasil live tersimpan ke riwayat (ID " + json.id + ").");
+    }
   } catch (err) {
     statusLive.textContent = `Gagal menyimpan: ${err.message}`;
     statusLive.classList.add("galat");
+    if (window.jpToast) window.jpToast("error", "Gagal Menyimpan", "Gagal menyimpan: " + err.message);
   } finally {
     btn.disabled = false;
   }
