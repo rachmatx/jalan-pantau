@@ -43,8 +43,29 @@ ALLOWED_IMG = {"jpg", "jpeg", "png"}
 ALLOWED_VIDEO = {"mp4", "avi", "mov", "mkv"}
 MAX_VIDEO_BYTES = 200 * 1024 * 1024  # video live (global Flask)
 MAX_IMG_BYTES = 15 * 1024 * 1024  # gambar deteksi: 12MP JPEG ~3-8MB; di atas ini tolak cepat
-CONF_MIN, CONF_MAX, CONF_DEFAULT = 0.05, 0.8, 0.25
+# Default 0,30 (18 Okt 2026): diukur pada 161 gambar BPID berlabel, recall
+# pothole tetap 0,60 sementara FP turun 111 -> 90 dibanding 0,25 (F1 0,591 ->
+# 0,616). Slider tetap bisa diturunkan operator ke 0,05.
+CONF_MIN, CONF_MAX, CONF_DEFAULT = 0.05, 0.8, 0.30
 FRAME_SKIP_MIN, FRAME_SKIP_MAX = 1, 30
+_PESAN_MEMORI = ("Memori tidak cukup untuk memproses gambar ini. "
+                 "Tutup tab lain, tunggu sebentar, atau pakai gambar beresolusi lebih kecil.")
+
+
+def _kurang_memori(e):
+    """True bila exception menandakan kehabisan memori, bukan gambar rusak.
+
+    Python melempar MemoryError, tetapi OpenCV melempar cv2.error dengan
+    "Insufficient memory" / "OutOfMemoryError" (terukur saat decode 12 MP di
+    mesin yang RAM-nya habis). Keduanya harus dibalas 503, bukan 500, supaya
+    operator tahu ini sementara — bukan perlu mengganti foto.
+    """
+    if isinstance(e, MemoryError):
+        return True
+    teks = str(e).lower()
+    return "insufficient memory" in teks or "outofmemory" in teks
+
+
 _video_tmp = None
 _video_tmp_aktif = False  # True bila stream file saat ini memakai _video_tmp hasil upload
 _video_lock = threading.Lock()  # P1: jaga _video_tmp dari race upload konkuren
@@ -427,7 +448,15 @@ def create_app():
         conf = min(max(conf, CONF_MIN), CONF_MAX)
         malam = request.form.get("malam", "") in ("1", "true", "on")
         teliti = request.form.get("teliti", "") in ("1", "true", "on")
-        data = f.read(MAX_IMG_BYTES + 1)
+        try:
+            data = f.read(MAX_IMG_BYTES + 1)
+        except MemoryError:
+            # Terukur 18 Okt 2026: saat RAM mesin habis, spooled upload + decode
+            # 12 MP melempar MemoryError. Tanpa penanganan ini klien dapat halaman
+            # HTML 500 dari debugger dan tidak tahu harus menunggu/mengecilkan
+            # gambar. 503 = sementara, bukan gambar rusak.
+            app.logger.exception("memori habis saat membaca unggahan")
+            return jsonify({"error": _PESAN_MEMORI}), 503
         if len(data) > MAX_IMG_BYTES:
             return jsonify({"error": "Ukuran gambar maks 15MB. "
                                      "Kecilkan resolusi lalu coba lagi."}), 400
@@ -447,7 +476,12 @@ def create_app():
             app.logger.warning("worker inferensi mati saat detect")
             return jsonify({"error": "Layanan inferensi sedang pulih. "
                                      "Coba lagi sebentar."}), 503
-        except Exception:
+        except Exception as e:
+            if _kurang_memori(e):
+                # cv2 melempar cv2.error ("Insufficient memory") untuk OOM,
+                # bukan MemoryError, jadi keduanya perlu dikenali.
+                app.logger.warning("memori habis saat detect: %s", e)
+                return jsonify({"error": _PESAN_MEMORI}), 503
             app.logger.exception("detect gagal")
             return jsonify({"error": "Deteksi gagal. Coba gambar lain."}), 500
         return jsonify(hasil)
@@ -501,6 +535,9 @@ def create_app():
 
         Hardening pola B5: magic bytes + verifikasi PIL + re-encode JPEG.
         Titik klik dihitung di frontend (koordinat skala ke ukuran asli).
+        `lebar`/`tinggi` = ukuran **asli** foto, bukan ukuran tampil; frontend
+        memakainya untuk memetakan klik ke ruang koordinat asli, ruang yang sama
+        dengan koordinat box deteksi (`maks_sisi_proses` di web/deteksi.py).
         """
         import io
         f = request.files.get("foto")
@@ -522,9 +559,17 @@ def create_app():
                 im.verify()
             with Image.open(io.BytesIO(data)) as im:
                 rgb = im.convert("RGB")
-                if max(rgb.size) > 2000:
-                    rgb.thumbnail((2000, 2000))
+                # PENTING: ukuran yang DILAPORKAN harus ukuran ASLI, diambil
+                # SEBELUM thumbnail. Frontend memetakan klik ke ruang ini
+                # (`dimAsli.w / r.width`), dan koordinat box deteksi juga di
+                # ruang asli. Bila yang dilaporkan ukuran thumbnail (<=2000),
+                # pixels_per_cm terukur di ruang yang salah sehingga dimensi cm
+                # dan severity meleset sebesar faktor pengecilan pada foto
+                # > 2000 px (bug ini pernah ada: ukuran diambil SETELAH
+                # thumbnail, jadi px/cm tidak selaras dengan box).
                 w, h = rgb.size
+                if max(rgb.size) > 2000:
+                    rgb.thumbnail((2000, 2000))  # hanya untuk tampil & hemat muatan
                 buf = io.BytesIO()
                 rgb.save(buf, format="JPEG", quality=88)
                 b64 = base64.b64encode(buf.getvalue()).decode("ascii")

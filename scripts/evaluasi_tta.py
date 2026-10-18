@@ -5,9 +5,9 @@ aplikasi memakai TTA. Skrip ini menghitung Precision/Recall/F1 pada satu titik
 operasi (conf) dengan pencocokan IoU 0.5 per kelas, sehingga perbandingan
 antar-model / dengan-vs-tanpa-TTA menjadi adil.
 
-Pakai (dari root repo):
-    .\\.venv\\Scripts\\python scripts\\evaluasi_tta.py --model best.pt --imgsz 960 --maks 60
-    .\\.venv\\Scripts\\python scripts\\evaluasi_tta.py --model best.pt --imgsz 960 --maks 60 --augment
+Pakai (dari root repo) — `--imgsz 640` = `imgsz_gambar` aplikasi (§6d):
+    .\\.venv\\Scripts\\python scripts\\evaluasi_tta.py --model best.pt --imgsz 640 --maks 60
+    .\\.venv\\Scripts\\python scripts\\evaluasi_tta.py --model best.pt --imgsz 640 --maks 60 --augment
     .\\.venv\\Scripts\\python scripts\\evaluasi_tta.py --model best.onnx --imgsz 640 --maks 60
 """
 import argparse

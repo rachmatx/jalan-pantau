@@ -50,7 +50,7 @@ Semua respons JSON (`application/json`) kecuali yang bertanda lain.
 
 | Metode | Endpoint | Batas | Catatan |
 |---|---|---|---|
-| POST | `/api/detect` | 30/menit | multipart: `gambar`, `conf`, `malam`, `teliti` → `{rows, total, model, image_b64, gps, malam, teliti, teliti_otomatis, gelap, disaring, scene}` |
+| POST | `/api/detect` | 30/menit | multipart: `gambar`, `conf`, `malam`, `teliti` → `{rows, total, model, image_b64, gps, malam, teliti, gelap, disaring, scene}` |
 | POST | `/api/verifikasi` | — | JSON `{rows, hapus[], severity{}}` → hasil koreksi operator + total |
 | POST | `/api/laporan` | 20/menit | JSON `{rows, total, image_b64, source, model, verifikasi}` → **PDF** (`application/pdf`) |
 
@@ -58,14 +58,19 @@ Semua respons JSON (`application/json`) kecuali yang bertanda lain.
 > segmentasi; dataset latih (RDD2022) hanya beranotasi kotak. Lihat
 > `docs/Segmentasi-atau-Bounding-Box.md`.
 
-Parameter `conf` dijepit ke rentang `0.05–0.8` (default `0.25`). `malam` dan
-`teliti` bernilai `1`/`true`/`on`. Deteksi dengan `teliti=1` memakai mode tiling
-(lihat `config/inferensi.yaml` → `teliti`). `teliti_otomatis: true` berarti server
-yang menyalakan tiling sendiri karena gambar jauh lebih besar dari `imgsz_gambar`
-(lihat `perlu_teliti_otomatis()`). `gelap: true` = rata-rata kanal L < 60; UI
-memakainya untuk menyarankan opsi `malam` (CLAHE).
+Parameter `conf` dijepit ke rentang `0.05–0.8` (default `0.30`). `malam` dan
+`teliti` bernilai `1`/`true`/`on`. Jalur normal adalah **full-frame** pada
+`imgsz_gambar` (640) — server me-letterbox foto 12 MP ke 640×640, bukan
+memberi 4000 px mentah ke model. `teliti=1` menyalakan mode tiling (potong jadi
+tile 640 px); **mode ini hanya eksperimen dan bukan default** — diukur pada
+161 gambar BPID berlabel, tiling memberi F1 0,011 vs 0,431 untuk full-frame
+(`docs/Panduan-Tuning-Model.md` §6d). `gelap: true` = rata-rata kanal L < 60; UI
+memakainya untuk menyarankan opsi `malam` (CLAHE). Opsi `maks_sisi_proses` dapat
+memperkecil gambar untuk analisis, tetapi box tetap dikembalikan pada **koordinat
+gambar asli** sehingga kalibrasi px/cm tidak berubah (§6e).
 
-Kunci `disaring` merinci kandidat yang dibuang (semua bilangan bulat):
+Kunci `disaring` merinci kandidat yang dibuang (umumnya bilangan bulat;
+`gate` berupa objek, `skala_proses` berupa pecahan):
 
 | Kunci | Arti |
 |---|---|
@@ -78,6 +83,7 @@ Kunci `disaring` merinci kandidat yang dibuang (semua bilangan bulat):
 | `fragmen` | fragmen yang dilebur `gabung_fragmen` |
 | `gate` | `{aktif, disaring, ambang_lubang}` — gate jalan basah |
 | `topk` | baris dipangkas `saring.maks_temuan` |
+| `skala_proses` | faktor pengecil analisis (1,0 = resolusi asli, lihat `maks_sisi_proses`) |
 
 `rusak` **bukan** kesalahan penyaring: box-nya memang tidak sah, dan bila
 dibiarkan bisa merusak deteksi lain lewat `wbf_gabung` serta membuat JSON
@@ -89,7 +95,7 @@ mengandung `NaN` (ditolak `JSON.parse` di browser).
 |---|---|---|
 | GET | `/api/kalibrasi` | status + dampak (`box_100px_cm`, `lubang_25cm_px`) |
 | POST | `/api/kalibrasi` | 🔒 JSON `{pixels_per_cm}` atau `{panjang_px, panjang_cm}` |
-| POST | `/api/kalibrasi/foto` | 🔒 multipart `foto` → `{image_b64, lebar, tinggi}` (untuk klik 2 titik) |
+| POST | `/api/kalibrasi/foto` | 🔒 multipart `foto` → `{image_b64, lebar, tinggi}` (untuk klik 2 titik). `lebar`/`tinggi` = ukuran **asli** foto (bukan ukuran tampil), agar `pixels_per_cm` satu ruang dengan koordinat box deteksi |
 
 `pixels_per_cm` disimpan ke `config/severity.yaml` (tulis atomik, komentar
 dipertahankan) dan langsung berlaku untuk deteksi berikutnya.
@@ -117,7 +123,7 @@ yang dikembalikan `start`.
 
 | Metode | Endpoint | Catatan |
 |---|---|---|
-| POST | `/api/riwayat` | 20/menit | simpan sesi → `{id}` atau `{id, duplikat: true, ...}`; `image_b64` ≤ 12 MB |
+| POST | `/api/riwayat` | simpan sesi → `{id}` atau `{id, duplikat: true, ...}`; 20/menit; `image_b64` ≤ 12 MB |
 | GET | `/api/riwayat` | daftar (`dari`, `sampai`, `severity`, `q`); `{data, overflow, total_db}` |
 | GET | `/api/riwayat/<sid>` | detail sesi + temuan |
 | DELETE | `/api/riwayat/<sid>` | 🔒 hapus (10/jam) |

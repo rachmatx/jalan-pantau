@@ -76,7 +76,7 @@ cek("aset offline (leaflet + fonts)", all(p.is_file() for p in vendor))
 
 # 7. route (via test client)
 try:
-    import app as app_mod
+    import web.app as app_mod
     a = app_mod.create_app()
     a.config["TESTING"] = True
     c = a.test_client()

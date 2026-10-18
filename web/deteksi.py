@@ -66,25 +66,46 @@ _kalibrasi_lock = threading.Lock()  # P3: tulis severity.yaml atomik antar-threa
 _INFER_FALLBACK = {
     "model_gambar": "best.pt", "model_live": "best.pt",
     "device": "auto",
-    "imgsz_gambar": 960, "imgsz_live": 640, "iou": 0.5, "tta": True,
+    # imgsz_gambar 640 (bukan 960): diukur pada 161 gambar BPID berlabel,
+    # F1 pothole 0,630 @640 vs 0,536 @960 (precision 0,63 vs 0,54). Model
+    # dilatih imgsz 768, jadi inferensi jauh di atas skala latih justru
+    # menambah false positive. Lihat catatan di config/inferensi.yaml.
+    "imgsz_gambar": 640, "imgsz_live": 640, "iou": 0.5, "tta": True,
     # half_gambar: FP16 untuk jalur GAMBAR. Default false = FP32. Alasan: FP16
-    # + TTA @imgsz 960 menghasilkan box NaN (hilang temuan, lihat catatan di
-    # config/inferensi.yaml). Jalur live tetap FP16 lewat half_untuk().
+    # + TTA meluap secara numerik pada imgsz besar dan mengeluarkan box NaN
+    # (hilang temuan; lihat catatan di config/inferensi.yaml). Jalur live tetap
+    # FP16 lewat half_untuk().
     "half_gambar": False,
-    "teliti": {"aktif_default": False, "tile": 640, "overlap": 0.25,
-               "iou_gabung": 0.5, "metode_gabung": "wbf",
-               "buang_tepi_tile": True, "iou_agnostik": 0.6,
-               "otomatis_aktif": True, "otomatis_ambang": 2.0},
+    # maks_sisi_proses: sisi terpanjang maksimum untuk ANALISIS gambar unggahan.
+    # 0 = nonaktif (pakai resolusi asli). Model tetap letterbox ke imgsz_gambar,
+    # jadi memperkecil di sini TIDAK mengubah piksel yang "dilihat" model —
+    # yang terpangkas hanya tahap murah yang linier terhadap jumlah piksel
+    # (cek gelap, klasifikasi scene, CLAHE malam, anotasi, encode JPEG, base64).
+    # Box dikembalikan di koordinat GAMBAR ASLI (lihat skala_box di
+    # proses_detections), sehingga kalibrasi px/cm, severity, masuk_akal, dan
+    # verifikasi operator tidak berubah sama sekali.
+    # Mode teliti SELALU memakai resolusi asli (gunanya memang detail asli).
+    # Bukti pemilihan angka: docs/Panduan-Tuning-Model.md §6e.
+    "maks_sisi_proses": 0,
+    "teliti": {"aktif_default": False, "tile": 640, "imgsz": 960,
+               "overlap": 0.25, "iou_gabung": 0.5, "metode_gabung": "wbf",
+               "buang_tepi_tile": True, "iou_agnostik": 0.6},
+    # pothole 0 (bukan 0.08): lowering 0,08 membuat ambang efektif 0,17 dan
+    # precision pothole jatuh ke 0,32 (BPID, 161 gambar). Tanpa lowering, F1
+    # maksimum ada di conf ~0,30-0,35.
     "toleransi_kelas": {"longitudinal_crack": 0.13, "transverse_crack": 0.13,
                         "alligator_crack": 0.10, "other_corruption": 0.10,
-                        "pothole": 0.08},
+                        "pothole": 0.0},
     "live": {"min_frames": 2, "display_fps": 30, "infer_interval": 1,
              "frame_diff_threshold": 0.02, "jpeg_quality": 72,
              "display_width": 640, "cam_width": 640, "cam_height": 480,
              "cam_fps": 30},
     "batas_ukuran": {"diameter_maks_cm": 300, "lebar_retak_maks_cm": 100,
                      "luas_maks_m2": 100, "rasio_aspek_min_retak": 1.5},
-    "gabung_fragmen": {"aktif": True, "iou_min": 0.05, "inter_min": 0.3,
+    # gabung_fragmen 0.30/0.50 (18 Okt 2026): aturan lama 0.05/0.30 menganggap
+    # dua pothole berdampingan sebagai satu fragmen dan menelan salah satunya
+    # (F1 0,567 -> 0,597 di ambang 0,25; 0,616 di ambang 0,30).
+    "gabung_fragmen": {"aktif": True, "iou_min": 0.3, "inter_min": 0.5,
                        "lintas_kelas": True},
     "saring": {"luas_min_px": 900, "maks_temuan": 20},
     "ensemble": {"aktif": False, "model_kedua": "best.pt", "iou": 0.5,
@@ -111,6 +132,7 @@ def get_inferensi(path=None):
                 "imgsz_live": _INFER_FALLBACK["imgsz_live"],
                 "iou": _INFER_FALLBACK["iou"], "tta": _INFER_FALLBACK["tta"],
                 "half_gambar": _INFER_FALLBACK["half_gambar"],
+                "maks_sisi_proses": _INFER_FALLBACK["maks_sisi_proses"],
                 "teliti": dict(_INFER_FALLBACK["teliti"]),
                 "toleransi_kelas": dict(_INFER_FALLBACK["toleransi_kelas"]),
                 "live": dict(_INFER_FALLBACK["live"]),
@@ -129,7 +151,8 @@ def get_inferensi(path=None):
             _log.warning("config inferensi tidak terbaca (%s) - pakai default", exc)
             user = {}
         if isinstance(user, dict):
-            for k in ("imgsz_gambar", "imgsz_live", "iou", "tta", "half_gambar"):
+            for k in ("imgsz_gambar", "imgsz_live", "iou", "tta", "half_gambar",
+                      "maks_sisi_proses"):
                 if k in user:
                     data[k] = user[k]
             for k in ("model_gambar", "model_live"):
@@ -146,11 +169,15 @@ def get_inferensi(path=None):
             data["device"] = dv
             if isinstance(user.get("teliti"), dict):
                 data["teliti"].update(user["teliti"])
-        data["imgsz_gambar"] = int(_klamp(data["imgsz_gambar"], 320, 1536, 960))
+        data["imgsz_gambar"] = int(_klamp(data["imgsz_gambar"], 320, 1536, 640))
         data["imgsz_live"] = int(_klamp(data["imgsz_live"], 320, 1280, 480))
         data["iou"] = _klamp(data["iou"], 0.1, 0.95, 0.5)
         data["tta"] = bool(data["tta"])
         data["half_gambar"] = bool(data["half_gambar"])
+        # maks_sisi_proses: 0 = nonaktif, selain itu dijepit 320-4096. Nilai
+        # tak masuk akal (teks, negatif, terlalu besar) jatuh ke batas aman.
+        _m = _klamp(data.get("maks_sisi_proses"), 0, 8192, 0)
+        data["maks_sisi_proses"] = 0 if _m <= 0 else int(_klamp(_m, 320, 4096, 0))
         t = data["teliti"]
         t["tile"] = int(_klamp(t.get("tile"), 320, 1280, 640))
         t["overlap"] = _klamp(t.get("overlap"), 0.0, 0.5, 0.25)
@@ -162,9 +189,7 @@ def get_inferensi(path=None):
             t["metode_gabung"] = str(t.get("metode_gabung", "nms")).lower()
         t["buang_tepi_tile"] = bool(t.get("buang_tepi_tile", True))
         t["iou_agnostik"] = _klamp(t.get("iou_agnostik", 0.6), 0.1, 0.95, 0.6)
-        t["otomatis_aktif"] = bool(t.get("otomatis_aktif", True))
-        t["otomatis_ambang"] = _klamp(t.get("otomatis_ambang", 2.0),
-                                      1.0, 8.0, 2.0)
+        t["imgsz"] = int(_klamp(t.get("imgsz"), 320, 1536, 960))
         try:
             tk = {(k or ""): _klamp(v, 0.0, 0.9, None)
                   for k, v in dict(user.get("toleransi_kelas") or {}).items()}
@@ -293,10 +318,13 @@ def half_untuk(device):
 def half_gambar_untuk(device):
     """FP16 untuk JALUR GAMBAR — dipagari knob `half_gambar`.
 
-    Ditemukan 2026-10-17: FP16 + TTA @imgsz_gambar 960 meluap (numerik) dan
-    model mengeluarkan box NaN -> temuan asli hilang & pesan "ukuran tidak
-    masuk akal" meledak. Default knob = false (FP32). Jalur live tetap
-    memakai half_untuk() karena di imgsz 640 terbukti aman.
+    Ditemukan 17 Okt 2026: FP16 + TTA meluap (numerik) dan model mengeluarkan
+    box NaN -> temuan asli hilang & pesan "ukuran tidak masuk akal" meledak.
+    Diukur saat imgsz_gambar masih 960 (107 box, 102 NaN, vs 28 box 0 NaN di
+    FP32). Default knob tetap false (FP32) walau kini imgsz 640, karena
+    (1) tidak ada urge hemat VRAM di jalur gambar dan (2) FP32 justru lebih
+    cepat di sini (tensor NaN membuat NMS/fusion lambat). Jalur live tetap
+    memakai half_untuk() karena di imgsz 640 tanpa TTA terbukti 0 NaN.
     """
     if not get_inferensi().get("half_gambar", False):
         return False
@@ -873,7 +901,7 @@ def exif_gps(raw: bytes):
         return None, None
 
 
-def proses_detections(res, names, conf_digits=3, frame=None):
+def proses_detections(res, names, conf_digits=3, frame=None, skala_box=1.0):
     """Ubah Boxes ultralytics -> list dict siap JSON (pola app_streamlit.proses_hasil).
 
     Args:
@@ -881,12 +909,17 @@ def proses_detections(res, names, conf_digits=3, frame=None):
         names: nama kelas model
         conf_digits: jumlah digit desimal confidence
         frame: gambar asli (optional, tidak dipakai saat ini)
+        skala_box: pengali koordinat box. Dipakai bila inferensi dijalankan pada
+            gambar yang sudah diperkecil (maks_sisi_proses): box hasil model ada
+            di ruang gambar kecil, dikali 1/faktor agar kembali ke ruang gambar
+            ASLI. Dengan begitu kalibrasi px/cm & severity tetap benar tanpa
+            perubahan apa pun di hilir (masuk_akal, luas_px, verifikasi operator).
     """
     rows = []
     cfg = get_config()
     for b in res.boxes:
         cls = nama_kelas(names, int(b.cls[0]))
-        x1, y1, x2, y2 = map(float, b.xyxy[0])
+        x1, y1, x2, y2 = (float(v) * skala_box for v in b.xyxy[0])
         item = diagnose(cls, x1, y1, x2, y2, cfg)
         item["conf"] = round(float(b.conf[0]), conf_digits)
         item["box"] = [round(x1, 1), round(y1, 1), round(x2, 1), round(y2, 1)]
@@ -895,14 +928,22 @@ def proses_detections(res, names, conf_digits=3, frame=None):
     return rows
 
 
-def gabung_fragmen(rows, iou_min=0.05, inter_min=0.3, lintas_kelas=True):
+def gabung_fragmen(rows, iou_min=0.3, inter_min=0.5, lintas_kelas=True):
     """Lebur fragmen satu kerusakan -> satu box utuh (union-find).
 
     Model sering memecah kerusakan besar jadi kepingan kecil yang IoU-nya
-    rendah (lolos NMS). Kepingan yang bersentuhan/tumpang tindih digabung:
-    box = gabungan terluar, kelas/conf = anggota tertinggi, severity + skor prioritas
-    DIHITUNG ULANG dari box gabungan (sekaligus menghentikan dobel-hitung
-    skor fragmen yang bertumpuk). Mengembalikan (rows_baru, n_dilebur).
+    rendah (lolos NMS). Kepingan yang benar-benar tumpang tindih digabung:
+    box = gabungan terluar, kelas/conf = anggota tertinggi, severity + skor
+    prioritas DIHITUNG ULANG dari box gabungan (sekaligus menghentikan
+    dobel-hitung skor fragmen yang bertumpuk). Mengembalikan (rows_baru,
+    n_dilebur).
+
+    **Ambang default 0.30/0.50 dipilih dengan pengukuran, bukan tebakan** (18 Okt 2026,
+    BPID 161 gambar berlabel, IoU 0,5): aturan lama 0.05/0.30 menganggap dua
+    pothole BERDAMPINGAN sebagai satu fragmen, lalu menyatukannya — satu pothole
+    Ground-truth hilang dari hitungan. Diperketat ke 0.30/0.50, recall naik
+    (F1 0,567 -> 0,597 di ambang 0,25; 0,616 di ambang 0,30) tanpa menambah FP.
+    Kalau `inter_min` diturunkan lagi, dua kerusakan berbeda bisa tertukar lagi.
     """
     try:
         boxes = [[float(v) for v in r["box"]] for r in rows]
@@ -1011,8 +1052,14 @@ def anotasi_hasil_terpilih(img_bgr, res, semua_rows, keep_ids):
     return out
 
 
-def anotasi_dari_rows(img_bgr, rows):
-    """Anotasi untuk jalur tiling (rows membawa kunci 'box')."""
+def anotasi_dari_rows(img_bgr, rows, skala_box=1.0):
+    """Anotasi untuk jalur tiling (rows membawa kunci 'box').
+
+    `skala_box` = pengali koordinat box saat DIGAMBAR. Dipakai bila `img_bgr`
+    adalah gambar yang sudah diperkecil (maks_sisi_proses) sementara `rows`
+    memakai koordinat gambar asli: kalikan dengan faktor pengecil agar box
+    duduk pas di gambar yang digambar.
+    """
     import numpy as np
     out = img_bgr.copy()
     h, w = out.shape[:2]
@@ -1020,7 +1067,7 @@ def anotasi_dari_rows(img_bgr, rows):
     tebal = max(1, round(h / 600))
     for r in rows:
         try:
-            x1, y1, x2, y2 = (int(v) for v in r["box"])
+            x1, y1, x2, y2 = (int(float(v) * skala_box) for v in r["box"])
         except (KeyError, TypeError, ValueError):
             continue
         warna = WARNA_SEV_BGR.get(r.get("severity", ""), (0, 102, 204))
@@ -1119,14 +1166,17 @@ def nms_gabung(boxes, skor, iou_thr=0.5):
     return simpan
 
 
-def prediksi_ensemble(ma, mb, img, conf=0.25, imgsz=960, iou=0.5,
+def prediksi_ensemble(ma, mb, img, conf=0.25, imgsz=640, iou=0.5,
                       tta_a=False, tta_b=False, iou_gabung=0.5,
-                      metode="wbf", device=None, device_b=None):
+                      metode="wbf", device=None, device_b=None, skala_box=1.0):
     """Dua model -> box gabungan per kelas (jalan Gambar saja).
 
     Kedua model diprediksi di conf_run yang sama, box per kelas dilebur via
     WBF (rata-rata berbobot) atau NMS (pemenang conf tertinggi). Kembalikan
     (semua_rows, info) — hilir (saring/fragmen/topk) sama seperti jalur tunggal.
+
+    `skala_box` = pengali koordinat box (lihat proses_detections); box diskalakan
+    SEKALI di awal, jadi WBF/NMS/diagnose seluruhnya sudah di ruang gambar asli.
     """
     import numpy as np
 
@@ -1143,7 +1193,7 @@ def prediksi_ensemble(ma, mb, img, conf=0.25, imgsz=960, iou=0.5,
         for b in res.boxes:
             ci = int(b.cls[0])
             per_kelas.setdefault(ci, []).append(
-                (list(map(float, b.xyxy[0])), float(b.conf[0])))
+                ([float(v) * skala_box for v in b.xyxy[0]], float(b.conf[0])))
     cfg = get_config()
     names = ma.names
     semua, n_gabung = [], 0
@@ -1171,36 +1221,6 @@ def prediksi_ensemble(ma, mb, img, conf=0.25, imgsz=960, iou=0.5,
     return semua, {"n_mentah_a": na, "n_mentah_b": nb, "n_lebur": n_gabung}
 
 
-def perlu_teliti_otomatis(lebar, tinggi, imgsz, tcfg=None):
-    """True bila gambar terlalu besar untuk satu kali inferensi full-frame.
-
-    Full-frame memaksa turun resolusi sebesar max(w,h)/imgsz. Begitu faktor itu
-    >= `teliti.otomatis_ambang` (bawaan 2x -> sisi > 1920 px), retak tipis
-    hilang di downscale. Tiling mengembalikan skala objek yang wajar (tiap tile
-    di-crop dari resolusi asli) sehingga retak kecil ikut terdeteksi.
-
-    Diukur 17 Okt 2026, jalur FP32 (`half_gambar: false`), conf 0,25:
-      000003.jpg  4080x3060 (12,5 MP) -> 3 temuan | tiling -> 3
-      000002.jpg  3000x4000 (12,0 MP) -> 3 temuan | tiling -> 14
-      04a8f35f    4032x2268 ( 9,1 MP) -> 1 temuan | tiling -> 3 (retak)
-      000059.jpg  3000x4000 (malam)   -> 0 temuan | tiling -> 2
-    Catatan: angka "full-frame 0 temuan" yang sempat tercatat pagi 17 Okt TIDAK
-    sah — jalur FP16 saat itu mengeluarkan box NaN (lihat half_gambar_untuk).
-    Tiling tetap dipakai karena menambah recall retak, tetapi box retak itu
-    umumnya low-conf: alat recall, bukan penambah presisi.
-    Ambang 2x menjaga foto <= 2 MP tetap full-frame (tile 640 px memotong objek
-    besar dan menambah waktu tanpa manfaat sepadan).
-    """
-    t = tcfg if isinstance(tcfg, dict) else get_inferensi()["teliti"]
-    if not t.get("otomatis_aktif", True):
-        return False
-    try:
-        return max(int(lebar), int(tinggi)) > float(imgsz) * float(
-            t.get("otomatis_ambang", 2.0))
-    except (TypeError, ValueError):
-        return False
-
-
 def prediksi_teliti(model, img, conf=0.25, iou=0.5, tcfg=None, ambang=None,
                     batas=None, conf_digits=3, conf_slider=None,
                     luas_min_px=0, device=None):
@@ -1209,6 +1229,28 @@ def prediksi_teliti(model, img, conf=0.25, iou=0.5, tcfg=None, ambang=None,
     Mengembalikan (rows siap JSON, info_saring). Tiap tile dilihat model pada
     resolusi penuh tile, jadi retak kecil yang hilang saat downscale ikut
     terdeteksi. Gabung: 'nms' (buang duplikat) atau 'wbf' (lebur duplikat).
+
+    FITUR INI SEKARANG MANUAL SAJA. Pemicu otomatis untuk gambar besar pernah
+    ada (aturan sisi > imgsz x 2) dan sudah DICABUT setelah diukur di BPID
+    (161 gambar berlabel, IoU 0,5, kelas pothole, ambang 0,17):
+
+      jalur                         TP   FP   FN      P      R     F1  dtk/gbr
+      full-frame @960 + TTA (dulu)  157  347   68  0,312  0,698  0,431     0,12
+      tiling 640->960 + buang-tepi    5  705  220  0,007  0,022  0,011     2,56
+      tiling 640->960 tanpa buang-tepi 7  847  218  0,008  0,031  0,013     2,56
+      gabungan keduanya              158 1181   67  0,118  0,702  0,202     2,68
+
+    Recall pada pothole besar (>600 px): full-frame 71%, tiling 0%. Melepas
+    aturan buang-tepi hampir tidak menambah TP (5 -> 7) tapi menambah 142 FP,
+    jadi penyebab utamanya bukan aturan tepi, melainkan skala tile 640 yang
+    di-upscale ke 960: 1,5x magnifikasi membuat kerikil/daun terbaca pothole
+    dan menutupi retak tipis. Angka "tiling menambah recall" yang pernah
+    dicatat memakai foto TANPA label, di mana jumlah temuan yang tinggi
+    disalahartikan sebagai recall yang baik.
+
+    Mode ini masih berguna sebagai alat eksperimen recall retak (dicentang
+    manual), tapi TIDAK boleh diaktifkan diam-diam. Full-frame @640 kini
+    memberi F1 0,630 pada ambang 0,35 — jauh di atas tiling.
     """
     import numpy as np
 
@@ -1330,11 +1372,17 @@ def deteksi_gelap(img_bgr, ambang=GELAP_AMBANG_L):
         return False
 
 
-def analisis_gambar(raw: bytes, conf: float = 0.25, model_path=None,
+def analisis_gambar(raw: bytes, conf: float = 0.30, model_path=None,
                     malam: bool = False, teliti: bool = False,
                     imgsz=None, iou=None):
     """Upload bytes -> {rows, total, model, image_b64, gps, malam, teliti,
-    teliti_otomatis, gelap, disaring, scene}.
+    gelap, disaring, scene}.
+
+    `conf` di sini harus SAMA dengan `web/app.py CONF_DEFAULT` (0,30 sejak
+    18 Okt 2026). Nilai default yang melenceng adalah jebakan: route selalu
+    mengoper conf dari form, tapi pemanggil programatis yang relies on default
+    akan diam-diam memakai ambang berbeda. `tests/test_inferensi.py`
+    (`test_default_conf_slider_naik_030`) menjaga keduanya tetap sama.
     """
     model_file = str(model_path or resolve_model(kunci="model_gambar"))
     model = get_model(model_file)
@@ -1356,17 +1404,33 @@ def analisis_gambar(raw: bytes, conf: float = 0.25, model_path=None,
         maks_temuan = 0
     conf_run = conf_prediksi(conf, ambang)  # predict serendah kelas terendah
     img = decode_image(raw)
+    # --- Perkecil gambar untuk ANALISIS (maks_sisi_proses) -----------------
+    # Model tetap letterbox ke imgsz_gambar, jadi memperkecil di sini TIDAK
+    # mengubah piksel yang dilihat model. Yang terpangkas hanya tahap murah yang
+    # linier terhadap jumlah piksel (cek gelap, klasifikasi scene, CLAHE malam,
+    # anotasi, encode JPEG, base64). Box hasil model ada di ruang gambar kecil
+    # dan dikali `skala_box` di hilir agar kembali ke koordinat gambar ASLI —
+    # kalibrasi px/cm, severity, masuk_akal, dan verifikasi operator tak berubah.
+    # Mode teliti DILEWATI: gunanya justru detail resolusi asli.
+    h0, w0 = img.shape[:2]
+    maks_sisi = int(inf.get("maks_sisi_proses", 0) or 0)
+    perkecil = 1.0
+    if maks_sisi > 0 and not teliti and max(h0, w0) > maks_sisi:
+        perkecil = maks_sisi / float(max(h0, w0))
+        img = cv2.resize(
+            img,
+            (max(1, int(round(w0 * perkecil))),
+             max(1, int(round(h0 * perkecil)))),
+            interpolation=cv2.INTER_AREA)
+    skala_box = 1.0 / perkecil  # box (ruang kecil) -> ruang gambar asli
     # Dicek SEBELUM cerahkan_malam: yang diukur kondisi asli unggahan, karena
     # flag ini justru untuk menyarankan opsi malam ke pengguna.
     gelap = deteksi_gelap(img)
-    # Mode teliti OTOMATIS: gambar yang sisi-nya jauh lebih besar dari imgsz
-    # (downscale >= 2x) kehilangan retak tipis di jalur full-frame. Lihat
-    # perlu_teliti_otomatis() untuk angka pengukuran 17 Okt 2026.
-    teliti_otomatis = False
-    if not teliti and perlu_teliti_otomatis(img.shape[1], img.shape[0], imgsz,
-                                            inf["teliti"]):
-        teliti = True
-        teliti_otomatis = True
+    # CATATAN: dulu ada pemicu "mode teliti otomatis" untuk gambar besar (sisi >
+    # imgsz x 2). Sudah DICABUT (18 Okt 2026) setelah diukur di BPID: tiling
+    # 640->960 memberi F1 0,011 vs 0,431 untuk full-frame, dengan recall 0% pada
+    # pothole besar. Angkanya di docstring prediksi_teliti(). Mode teliti kini
+    # hanya jalan bila operator mencentangnya sendiri (alat eksperimen).
     # --- Gate kondisi jalan: klasifikasi scene SEBELUM cerahkan_malam agar
     # classifier melihat foto asli (sesuai data latih IROSCD). ---
     cfg_gate = baca_konfig_gate()
@@ -1403,7 +1467,8 @@ def analisis_gambar(raw: bytes, conf: float = 0.25, model_path=None,
                 tta_a=tta, tta_b=tta_b,
                 iou_gabung=float(ens.get("iou", 0.5)),
                 metode=str(ens.get("metode", "wbf")), device=device,
-                device_b=pilih_device(inf.get("device"), file_b))
+                device_b=pilih_device(inf.get("device"), file_b),
+                skala_box=skala_box)
             info["ensemble"] = {"model_a": Path(model_file).name,
                                 "model_b": Path(file_b).name,
                                 "metode": str(ens.get("metode", "wbf")),
@@ -1421,7 +1486,7 @@ def analisis_gambar(raw: bytes, conf: float = 0.25, model_path=None,
                                 augment=tta, device=device,
                                 half=half_gambar_untuk(device),
                                 verbose=False)[0]
-            semua = proses_detections(res, model.names)
+            semua = proses_detections(res, model.names, skala_box=skala_box)
             rows, info = saring_rows(semua, conf, ambang, batas, luas_min)
     if gf.get("aktif", True):
         rows, n_lebur = gabung_fragmen(rows,
@@ -1441,7 +1506,10 @@ def analisis_gambar(raw: bytes, conf: float = 0.25, model_path=None,
                                       if gate_aktif else None)}
     rows, n_pangkas = batas_topk(rows, maks_temuan)
     info["topk"] = n_pangkas
-    gambar = anotasi_dari_rows(img, rows)
+    # Faktor pengecil yang benar-benar dipakai (1,0 = resolusi asli). Terlihat di
+    # `disaring` supaya bisa diaudit dari balasan API, bukan cuma dari log.
+    info["skala_proses"] = round(perkecil, 4)
+    gambar = anotasi_dari_rows(img, rows, skala_box=perkecil)
     total = sum(r["skor_prioritas"] for r in rows)
     return {
         "rows": rows,
@@ -1451,7 +1519,6 @@ def analisis_gambar(raw: bytes, conf: float = 0.25, model_path=None,
         "gps": {"lat": lat, "lon": lon},
         "malam": malam,
         "teliti": bool(teliti),
-        "teliti_otomatis": teliti_otomatis,
         "gelap": bool(gelap),
         "disaring": info,
         "scene": ({"label": scene.get("label"),

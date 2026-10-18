@@ -49,7 +49,7 @@ kontur dalam box dan beri label bahwa itu kontur Inside box, bukan mask model.
 
 ### 3.1 Deteksi (`/`) — halaman utama & layar demo sidang
 - Tab **Gambar** | **Live**.
-- Panel Gambar: upload JPG/PNG + slider confidence (0,05–0,8, default 0,25) +
+- Panel Gambar: upload JPG/PNG + slider confidence (0,05–0,8, default 0,30) +
   checkbox mode malam + lokasi + lintang/bujur (auto: EXIF foto, GPS browser,
   koma desimal OK) + tombol Deteksi.
 - **Viewer zoom** (wajib, pola PCB Inspector): fit otomatis, wheel zoom, seret,

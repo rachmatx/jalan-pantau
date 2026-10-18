@@ -190,6 +190,29 @@ class TestValidasiInput(unittest.TestCase):
     def test_kalibrasi_foto_tanpa_berkas_400(self):
         self.assertEqual(self.c.post("/api/kalibrasi/foto", data={}).status_code, 400)
 
+    def test_kalibrasi_foto_lapor_ukuran_asli_bukan_tampil(self):
+        """px/cm harus diukur di ruang koordinat ASLI, sama dengan box deteksi.
+
+        Regresi: dulu `lebar`/`tinggi` diambil SETELAH `thumbnail()`, sehingga
+        pada foto > 2000 px nilai px/cm terukur di ruang yang lebih kecil
+        daripada ruang koordinat box — dimensi cm dan severity meleset sebesar
+        faktor pengecilan (foto 4032 px -> thumbnail 2000 px = salah ~2x).
+        """
+        import base64
+        from PIL import Image
+        buf = io.BytesIO()
+        Image.new("RGB", (2500, 1500), (120, 120, 120)).save(buf, format="JPEG")
+        buf.seek(0)
+        r = self.c.post("/api/kalibrasi/foto",
+                        data={"foto": (buf, "penggaris.jpg")},
+                        content_type="multipart/form-data")
+        self.assertEqual(r.status_code, 200)
+        j = r.get_json()
+        self.assertEqual((j["lebar"], j["tinggi"]), (2500, 1500))
+        # Gambar yang dikirim tetap diperkecil — hanya untuk tampil, bukan ukuran.
+        with Image.open(io.BytesIO(base64.b64decode(j["image_b64"]))) as im:
+            self.assertEqual(max(im.size), 2000)
+
     def test_video_tanpa_berkas_400(self):
         self.assertEqual(self.c.post("/api/video", data={}).status_code, 400)
 

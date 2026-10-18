@@ -11,9 +11,9 @@ Fitur:
   Precision, Recall, F1 -> dan conf terbaik (F1 maksimum).
 - Menyimpan artefak JSON ke reports/.
 
-Pakai (dari root repo):
-    .\\.venv\\Scripts\\python scripts\\evaluasi_model.py --data data/publik/bpid/test --remap 0:4 --model best.onnx --imgsz 640 --conf-list 0.15,0.25,0.35,0.45
-    .\\.venv\\Scripts\\python scripts\\evaluasi_model.py --data data/publik/bpid/test --remap 0:4 --model best.pt --imgsz 960
+Pakai (dari root repo) — pakai `--imgsz 640`, sama dengan `imgsz_gambar` di
+`config/inferensi.yaml` (diukur lebih baik daripada 960 pada data lokal, §6d):
+    .\\.venv\\Scripts\\python scripts\\evaluasi_model.py --data data/publik/bpid/test --remap 0:4 --model best.pt --imgsz 640 --conf-list 0.15,0.25,0.35,0.45
 """
 import argparse
 import json

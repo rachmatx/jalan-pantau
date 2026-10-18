@@ -30,8 +30,11 @@ def main():
                     default=str(ROOT / "data" / "lokal" / "negatif-kandidat"))
     ap.add_argument("--model", default="best.pt",
                     help="nama di app/weights/ atau path penuh")
-    ap.add_argument("--imgsz", type=int, default=960)
-    ap.add_argument("--conf", type=float, default=0.25)
+    ap.add_argument("--imgsz", type=int, default=640,
+                    help="640 = imgsz_gambar app (diukur lebih baik daripada 960 "
+                         "di data lokal; lihat Panduan-Tuning-Model.md §6d)")
+    ap.add_argument("--conf", type=float, default=0.30,
+                    help="0,30 = default slider app (18 Okt 2026)")
     args = ap.parse_args()
 
     from ultralytics import YOLO

@@ -38,6 +38,9 @@ Semua latih di Kaggle (GPU T4/P100). Template sel: `notebooks/template-kaggle-yo
 - Bandingkan mAP50 overall + mAP transverse + recall pothole antar A/B/C.
 - Vonis: B≫A di transverse = crack Roma mengotori (mapping kasar salah); C terbaik = merge selektif benar;
   A≈B≈C = merge bukan masalah, lanjut ke imgsz 960 / data lokal.
+  **CATATAN 18 Okt 2026:** "lanjut ke imgsz 960" sudah diuji untuk **inferensi** dan
+  ternyata lebih buruk pada data lokal (F1 pothole 0,536 @960 vs **0,630 @640**);
+  jalur gambar kini memakai 640. Lihat `docs/Panduan-Tuning-Model.md` §6d.
 
 ## Tahap 2d — Ablasi CBAM + YOLO26 (SELESAI 2026-09-04, notebook `notebooks/rdd-yolov11n.ipynb` Sel 12-15)
 - Data: SAMA persis dengan baseline B (train 12049 / val 2127 / test RDD full, seed 42). Resep identik: 50 epoch, patience 10, batch 16, imgsz 640.

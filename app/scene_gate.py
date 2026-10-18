@@ -11,7 +11,7 @@ Modul ini murni logika (tanpa cv2/torch) agar bisa di-unit-test.
 
 WET_LABEL = "wet_road"
 WET_MIN_BAWAAN = 0.25        # probabilitas wet_road minimum agar gate aktif
-AMBANG_LUBANG_BAWAAN = 0.45  # ambang pothole saat gate aktif (slider 0.25)
+AMBANG_LUBANG_BAWAAN = 0.45  # ambang pothole saat gate aktif (ditetapkan saat slider 0.25)
 KELAS_GATE = "pothole"
 
 

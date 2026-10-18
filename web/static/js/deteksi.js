@@ -93,12 +93,15 @@ function teksVerifikasi(info) {
   return info.total + " perubahan (" + bagian.join(", ") + ")";
 }
 
-/* Pesan "tanpa temuan" yang menjelaskan APA yang terjadi. Tanpa ini pengguna
-   hanya melihat "tidak ada kerusakan" dan tak bisa membedakan "model memang
-   tidak melihat" dari "kandidat ada tapi dibuang penyaring" — pertanyaan yang
-   berulang ("conf sudah saya turunkan ke 0,1, kok tetap kosong?").
+/* Rincian keadaan "tanpa temuan": satu baris ringkas untuk statusbar + isi
+   lengkap untuk kartu peringatan (id="tanpa-temuan"). Statusbar sengaja
+   dipendekkan — pesan panjang di sana tidak terbaca dan mengubur langkah
+   berikutnya. Tanpa penjelasan ini pengguna hanya melihat "tidak ada
+   kerusakan" dan tak bisa membedakan "model memang tidak melihat" dari
+   "kandidat ada tapi dibuang penyaring" — pertanyaan yang berulang
+   ("conf sudah saya turunkan ke 0,1, kok tetap kosong?").
    Angka diambil apa adanya dari `disaring` balasan /api/detect. */
-function pesanKosong(json) {
+function rincianKosong(json) {
   var d = json.disaring || {};
   var gugur = [];
   var rusak = Number(d.rusak || 0);
@@ -108,27 +111,52 @@ function pesanKosong(json) {
   if (d.mungil) gugur.push(d.mungil + " terlalu kecil");
   var nGate = (d.gate && d.gate.disaring) || 0;
   if (nGate) gugur.push(nGate + " lubang ditahan gate jalan-basah");
+  var totalGugur = rusak + Number(d.ambang || 0) + Number(d.ukuran || 0) +
+    Number(d.mungil || 0) + nGate;
   var sebab = gugur.length
-    ? " Kandidat model yang gugur: " + gugur.join(", ") + "."
-    : " Model tidak menghasilkan satu kandidat pun.";
+    ? "Kandidat model yang dibuang penyaring: " + gugur.join(", ") + "."
+    : "Model tidak menghasilkan kandidat sama sekali, jadi penyaring tidak " +
+      "membuang apa pun.";
   // "Rusak" = box/conf NaN (model mengeluarkan nilai cacat), BUKAN kerusakan
   // yang geometrinya aneh. Tanpa penjelasan ini pengguna menyangka penyaring
   // ukuran yang salah lalu menuntut penyaringnya dilonggarkan.
-  var totalGugur = rusak + Number(d.ambang || 0) + Number(d.ukuran || 0) +
-    Number(d.mungil || 0) + nGate;
   if (rusak > 0 && rusak >= totalGugur * 0.5) {
     sebab += " \"Keluaran rusak\" berarti model mengembalikan koordinat tak sah" +
       " (NaN) — bukan deteksi berukuran aneh yang ditolak penyaring.";
   }
-  var auto = json.teliti_otomatis
-    ? " Mode teliti otomatis sudah dicoba karena gambar besar." : "";
-  return "Tidak ada temuan pada ambang ini." + sebab + auto + " " +
-    saranLanjutan(json);
+  return {
+    status: "Tidak ada kerusakan terdeteksi." + (totalGugur
+      ? " " + totalGugur + " kandidat dibuang penyaring." : ""),
+    sebab: sebab,
+    coba: saranLanjutan(json)
+  };
 }
 
-/* Saran yang DISESUAIKAN keadaan. Menyarankan "turunkan confidence" saat
-   slider sudah di batas bawah (0,05) hanya membuat pengguna bingung, begitu
-   pula "centang mode teliti" saat mode itu sudah berjalan. */
+/* Tampilkan kartu peringatan "tanpa temuan" dan kembalikan teks statusbar.
+   Kartu ini ada karena pesan tersebut mudah disalahartikan sebagai "jalan
+   aman": ia harus mencolok, bukan satu baris kecil di status. */
+function tampilkanTanpaTemuan(json) {
+  var r = rincianKosong(json);
+  var sebab = document.getElementById("tanpa-sebab");
+  var coba = document.getElementById("tanpa-coba");
+  var kartu = document.getElementById("tanpa-temuan");
+  if (sebab) sebab.textContent = r.sebab;
+  if (coba) coba.textContent = "Coba: " + r.coba.join(", ") + ".";
+  if (kartu) kartu.hidden = false;
+  return r.status;
+}
+
+function sembunyikanTanpaTemuan() {
+  var kartu = document.getElementById("tanpa-temuan");
+  if (kartu) kartu.hidden = true;
+}
+
+/* Saran yang DISESUAIKAN keadaan (dikembalikan sebagai daftar, bukan kalimat,
+   supaya pemanggil bisa mengatur panjangnya). Menyarankan "turunkan
+   confidence" saat slider sudah di batas bawah (0,05) hanya membuat pengguna
+   bingung. Mode teliti SENGAJA tidak lagi disaran: diukur di BPID, tiling
+   memberi F1 0,011 vs 0,431 untuk full-frame, jadi bukan jalan tercepat ke
+   temuan yang benar. */
 function saranLanjutan(json) {
   var saran = [];
   var diBatasBawah = false;
@@ -138,18 +166,18 @@ function saranLanjutan(json) {
       parseFloat(conf.value) <= (isFinite(min) ? min : 0) + 1e-9;
   } catch (e) { /* slider tak ada: anggap belum di batas bawah */ }
   if (json.gelap && !json.malam) {
-    saran.push("centang \"Pencahayaan Rendah / Malam\" (foto ini gelap)");
+    saran.push("centang mode Pencahayaan Rendah / Malam");
   }
   if (!diBatasBawah) saran.push("turunkan confidence");
-  if (!json.teliti) saran.push("centang mode teliti");
-  saran.push("ambil foto dari jarak lebih dekat", "ambil foto saat siang hari");
-  return "Coba " + saran.join(", ") + ".";
+  saran.push("dekatkan kamera", "foto saat siang hari");
+  return saran;
 }
 
-/* Ukuran piksel gambar terpilih. Dipakai hanya untuk menyetel ekspektasi waktu:
-   foto besar (sisi > ~1920 px) dianalisis per bagian oleh server dan bisa
-   memakan 15-30 detik; tanpa petunjuk ini pengguna menyangka aplikasi
-   menggantung padahal masih bekerja. */
+/* Ukuran piksel gambar terpilih. Dipakai hanya untuk menyetel ekspektasi
+   waktu saat mode teliti dicentang: foto besar dipecah jadi puluhan tile
+   sehingga butuh beberapa detik; tanpa petunjuk ini pengguna menyangka
+   aplikasi menggantung. Jalur biasa selesai dalam ~1 detik, jadi petunjuk
+   ini tidak perlu ditampilkan di sana. */
 function ukuranGambar(berkas) {
   return new Promise(function (resolve) {
     try {
@@ -182,12 +210,10 @@ function refreshVerifikasiUI() {
   document.getElementById("verifikasi-hitung").textContent = label ? `· terverifikasi: ${label}` : "";
   document.getElementById("verifikasi-reset").hidden = !info.total;
   hasil.hidden = false;
+  sembunyikanTanpaTemuan();  // ada temuan: kartu peringatan harus hilang
   status.classList.remove("galat");
-  const mode = terakhir.teliti
-    ? (terakhir.teliti_otomatis
-      ? " (mode teliti otomatis — gambar besar)"
-      : " (mode teliti)")
-    : "";
+  status.classList.remove("kosong");
+  const mode = terakhir.teliti ? " (mode teliti)" : "";
   status.textContent = `${terakhir.rows.length} temuan${mode}.` +
     (label ? ` Terverifikasi operator: ${label}.` : "");
 }
@@ -342,17 +368,21 @@ form.addEventListener("submit", async (e) => {
   var tombolAsli = tombol.innerHTML;
   tombol.innerHTML = '<span style="display:inline-block;width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:jp-spin .8s linear infinite;vertical-align:middle;margin-right:8px"></span><span style="vertical-align:middle">Menganalisis…</span>';
   status.classList.remove("galat");
+  status.classList.remove("kosong");
+  sembunyikanTanpaTemuan();
   status.textContent = "Mendeteksi…";
   hasil.hidden = true;
   slot.classList.add("kosong");
   slot.innerHTML = '<div class="jp-loading"><div class="jp-loading-spinner"></div><p>Menganalisis gambar dengan YOLOv11s…</p></div>';
-  // Setel ekspektasi waktu untuk foto besar (tanpa menahan unggahan).
+  // Setel ekspektasi waktu HANYA untuk mode teliti (potong jadi puluhan tile).
   ukuranGambar(berkas).then(function (dim) {
-    if (!dim || Math.max(dim.w, dim.h) < 1920) return;
+    const teliti = document.getElementById("teliti") &&
+      document.getElementById("teliti").checked;
+    if (!dim || !teliti || Math.max(dim.w, dim.h) < 1280) return;
     const p = slot.querySelector(".jp-loading p");
     if (p) {
       p.textContent = "Gambar " + (dim.w * dim.h / 1e6).toFixed(1).replace(".", ",") +
-        " MP — analisis foto besar bisa 15–30 detik…";
+        " MP — mode teliti memotongnya jadi puluhan bagian, butuh beberapa detik…";
     }
   }).catch(function (e) {
     console.warn("petunjuk ukuran gambar gagal:", e);
@@ -394,7 +424,8 @@ form.addEventListener("submit", async (e) => {
       status.classList.remove("galat");
     }
     if (!json.rows.length) {
-      status.textContent = pesanKosong(json);
+      status.textContent = tampilkanTanpaTemuan(json);
+      status.classList.add("kosong");
       return;
     }
     barisAsli = json.rows;
@@ -408,6 +439,8 @@ form.addEventListener("submit", async (e) => {
     } catch (e) {}
   } catch (err) {
     status.textContent = err.message;
+    status.classList.remove("kosong");
+    sembunyikanTanpaTemuan();
     status.classList.add("galat");
   } finally {
     tombol.disabled = false;
@@ -591,7 +624,8 @@ function showToast(title, message, type) {
       deteksiHalaman = 1;
       renderTabelDeteksi();
       hasil.hidden = false;
-      if (status) { status.textContent = data.rows.length + " temuan (dipulihkan)."; status.classList.remove("galat"); }
+      sembunyikanTanpaTemuan();
+      if (status) { status.textContent = data.rows.length + " temuan (dipulihkan)."; status.classList.remove("galat"); status.classList.remove("kosong"); }
       barisAsli = data.rows;
       verHapus = new Set();
       verSev = {};

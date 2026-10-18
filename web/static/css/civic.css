@@ -1471,3 +1471,62 @@ label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label da
 .jp-statusbar { flex-wrap: wrap; }
 .jp-wrap > * { min-width: 0; }
 .jp-statusbar > * { min-width: 0; }
+
+/* ============================================================
+   Keadaan "tanpa temuan" (2026-10-18)
+   Tujuan UX: pengguna TIDAK menyimpulkan "jalan aman" hanya
+   karena model tidak menemukan apa pun. Karena itu tampilannya
+   adalah peringatan amber yang mencolok (token sev-sedang =
+   waspada, bukan galat merah), bukan teks abu-abu kecil.
+   Teks memakai #92400e (kontras ~7:1 di atas #FFFBEB); token
+   --jp-sev-m-tx hanya untuk ikon & garis tepi (dekoratif).
+   Ikon SVG karena emoji/dingbat dilarang guard repo.
+   ============================================================ */
+.jp-tanpa-temuan {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-top: 24px;
+  padding: 16px 18px;
+  border: 1px solid var(--jp-sev-m-bd);
+  border-left: 4px solid var(--jp-sev-m-tx);
+  border-radius: 12px;
+  background: var(--jp-sev-m-bg);
+  animation: jp-tanpa-muncul 0.28s ease-out;
+}
+.jp-tanpa-ikon {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+  color: var(--jp-sev-m-tx);
+}
+.jp-tanpa-ikon svg { width: 100%; height: 100%; }
+.jp-tanpa-isi { min-width: 0; }
+.jp-tanpa-judul { margin: 0; font-size: 15px; font-weight: 700; color: #92400e; }
+.jp-tanpa-sub {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #92400e;
+}
+.jp-tanpa-sebab {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #92400e;
+}
+.jp-tanpa-coba {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  font-weight: 600;
+  color: #92400e;
+}
+@keyframes jp-tanpa-muncul {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jp-tanpa-temuan { animation: none; }
+}

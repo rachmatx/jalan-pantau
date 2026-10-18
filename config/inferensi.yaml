@@ -1,6 +1,9 @@
 # Parameter inferensi YOLO — EDITABLE tanpa ubah kode.
-# Diagnosis 2026-09-07 (3 foto 12 MP, best.pt CPU):
-# - imgsz 960 menemukan 1,5-5x lebih banyak temuan vs 640, biaya hanya +0,2-0,4 dtk.
+# Diagnosis 2026-09-07 (3 foto 12 MP, best.pt CPU), TANPA ground truth:
+# - imgsz 960 menemukan 1,5-5x lebih banyak kotak vs 640.
+#   >>> TIDAK berarti lebih baik: banyak kotak != recall. Diukur ulang 18 Okt 2026
+#   >>> dengan 161 gambar BPID BERLABEL, F1 pothole justru 0,536 @960 vs 0,630 @640.
+#   >>> Lihat catatan panjang di bawah `imgsz_gambar` dan docs/Panduan-Tuning-Model.md §6d.
 # - conf rendah (<0,25) menambah duplikat bertumpuk -> iou 0,5 menggabungkannya.
 # Benchmark 2026-09-08 (paritas pt vs onnx dinamis: skor IDENTIK 4 desimal;
 # 1 box bisa flip di batas NMS — wajar, acak, kecil):
@@ -24,48 +27,79 @@ scene_gate:
   wet_min: 0.25
   ambang_lubang: 0.45
 device: auto
-imgsz_gambar: 960
+# --- Skala inferensi gambar (18 Okt 2026, diukur P/R/F1 di BPID) --------------
+# CATATAN: nilai 960 di sini (dan klaim "960 menemukan 1,5-5x lebih banyak
+# temuan") berasal dari pengukuran 7 Sep 2026 yang TIDAK punya ground truth.
+# Dengan 161 gambar BPID berlabel (kelas pothole, IoU 0,5, 1 lintasan TTA):
+#   imgsz  conf 0,10          conf 0,25          F1 terbaik
+#    640   P 0,366 R 0,753    P 0,546 R 0,677    0,630 (conf 0,35)
+#    768   P 0,335 R 0,768    P 0,506 R 0,650    0,571 (conf 0,30)
+#    960   P 0,240 R 0,738    P 0,409 R 0,635    0,536 (conf 0,40)
+# Kesimpulan: 960 adalah SETELAN SALAH untuk model ini. Model dilatih imgsz
+# 768 (yolov11s-rdd-only/args.rekonstruksi.yaml), dan menginferensikan jauh di
+# atas skala latih menaikkan false positive tanpa menambah recall. 640 juga
+# lebih cepat. Catatan: BPID hanya berlabel pothole — efek ke recall retak
+# belum diukur di sini, jadi jangan naikkan ke 960 tanpa bukti.
+imgsz_gambar: 640
 imgsz_live: 640  # 640 = akurasi penuh; 480/320 hanya bila mesin sangat lambat
 iou: 0.5
 tta: true  # augment=True; trial 3 foto: conf top naik konsisten (0.4x->0.8x), biaya 0.3s->0.7s. Matikan bila terlalu PD.
-# --- FP16 (half) khusus JALUR GAMBAR — diukur 2026-10-17, GTX 1650 ---
-# BUG: half=true + TTA (augment) pada imgsz_gambar 960 meluap secara numerik
-# -> model mengeluarkan box [nan,nan,nan,nan]. 000003.jpg (4080x3060) @960:
-#   TTA+FP16 = 107 box (102 NaN) | TTA+FP32 = 28 box (0 NaN) | noTTA+FP16 = 0 box
-# Box NaN lalu dilebur wbf_gabung -> hasil NaN -> ditolak masuk_akal() dan
-# dilaporkan sebagai "ukuran tidak masuk akal" (di UI terlihat seperti 913 box
-# geometri aneh, padahal rusak). Efek samping: deteksi ASLI ikut terlebur jadi
-# NaN -> hilang. Bukan hanya foto gelap: foto siang 12 MP pun kena.
-# FP32 juga LEBIH CEPAT di sini (tensor penuh NaN + NMS NaN lambat):
-#   000003 auto-tiling 47,9s -> 9,7s; temuan 2 -> 3.
+# --- FP16 (half) khusus JALUR GAMBAR — diukur 17 Okt 2026, GTX 1650 ---
+# BUG: half=true + TTA (augment) meluap secara numerik -> model mengeluarkan
+# box [nan,nan,nan,nan]. Diukur saat imgsz_gambar masih 960; 000003.jpg
+# (4080x3060) @960: TTA+FP16 = 107 box (102 NaN) | TTA+FP32 = 28 box (0 NaN)
+# | tanpa TTA + FP16 = 0 box. Box NaN lalu dilebur wbf_gabung -> hasil NaN ->
+# ditolak masuk_akal() dan dilaporkan sebagai "ukuran tidak masuk akal" (di UI
+# terlihat seperti 913 box geometri aneh, padahal rusak). Efek samping:
+# deteksi ASLI ikut terlebur jadi NaN -> hilang. Bukan hanya foto gelap: foto
+# siang 12 MP pun kena. FP32 juga LEBIH CEPAT (tensor penuh NaN + NMS NaN
+# lambat). Knob tetap false walau imgsz kini 640: tidak ada urge hemat VRAM di
+# jalur gambar, dan risiko NaN tidak sebanding dengan hematannya.
 # Jalur live (imgsz 640, tanpa TTA) terbukti aman dengan FP16 -> biarkan true
 # (hemat VRAM 4GB saat demo kamera). Lihat web/deteksi.py half_gambar_untuk().
 half_gambar: false
+# --- Batas sisi untuk ANALISIS gambar unggahan (maks_sisi_proses) -----------
+# 0 = nonaktif (analisis memakai resolusi asli). Foto 12 MP (4032x3024) dari
+# BPID memakan 0,49 s/gambar; memperkecil ke 1536 memangkasnya jadi 0,36 s dan
+# mengecilkan bukti base64 dari 2,77 MB ke 0,62 MB (jauh lebih ringan di HP).
+# Model tetap letterbox ke imgsz_gambar, jadi memperkecil TIDAK mengubah piksel
+# yang "dilihat" model — yang terpangkas hanya tahap murah yang linier terhadap
+# jumlah piksel (cek gelap, klasifikasi scene, CLAHE malam, anotasi, encode
+# JPEG, base64). Box tetap dikembalikan di koordinat GAMBAR ASLI, sehingga
+# kalibrasi px/cm dan severity tidak berubah sama sekali. Mode teliti SELALU
+# memakai resolusi asli (gunanya memang detail asli).
+# Diukur di BPID (161 gambar berlabel, IoU 0,5, pothole, conf 0,30):
+#   asli (0) F1 0,616  P 0,636  R 0,597  FP 90  0,49 s
+#   2048     F1 0,602  P 0,638  R 0,570  FP 85  0,42 s
+#   1536     F1 0,614  P 0,659  R 0,574  FP 78  0,36 s
+#   1280     F1 0,614  P 0,681  R 0,559  FP 69  0,36 s
+#   960      F1 0,617  P 0,695  R 0,555  FP 64  0,33 s
+#   640      F1 0,614  P 0,681  R 0,559  FP 69  0,32 s
+# F1 nyaris datar, tetapi recall turun (~6 temuan benar dari 263 instance).
+# Prioritas aplikasi ini adalah MENEMUKAN kerusakan nyata (lihat §6d), jadi
+# default tetap 0. Naikkan ke 1536 HANYA bila kecepatan + payload lebih penting
+# daripada ~2 poin recall. Rincian: docs/Panduan-Tuning-Model.md §6e.
+maks_sisi_proses: 0
+# Mode teliti = potong gambar jadi tile 640 px, tiap tile di-inferensikan pada
+# resolusi penuh, lalu digabung. SEKARANG MANUAL SAJA (operator mencentang).
+# Pemicu otomatis untuk gambar besar sudah DICABUT 18 Okt 2026: diukur di BPID
+# (161 gambar berlabel), tiling 640->960 memberi F1 0,011 vs 0,431 full-frame,
+# dengan recall 0% pada pothole besar (>600 px) dan 705 false positive.
+# Penyebabnya skala: tile 640 di-upscale ke 960 (1,5x magnifikasi) sehingga
+# kerikil/daun terbaca pothole, dan tiap tile kehilangan konteks. Angka "tiling
+# menambah recall" yang pernah dicatat memakai foto TANPA label, di mana
+# jumlah temuan tinggi disalahartikan sebagai recall bagus.
+# Setting di bawah dipakai hanya saat mode ini dicentang manual (eksperimen
+# recall retak). Lihat docstring prediksi_teliti() di web/deteksi.py.
 teliti:
   aktif_default: false
   tile: 640
-  imgsz: 960  # resolusi inferensi PER TILE (terpisah dari `tile`); 640 membuat
-              # model buta pada retak tipis (0 box vs 79 box @960, diag 17 Okt 2026)
+  imgsz: 960  # resolusi inferensi PER TILE (terpisah dari `tile`)
   overlap: 0.25
   iou_gabung: 0.5
   metode_gabung: wbf  # nms | wbf (wbf melebur box bertumpuk lintas tile, lebih halus dari nms)
   buang_tepi_tile: true  # buang box terpotong tepi-dalam tile (duplikat lintas tile)
   iou_agnostik: 0.6  # NMS lintas kelas: satu kerusakan = satu box kelas pemenang
-  # --- Tiling OTOMATIS untuk gambar besar (2026-10-17, diukur ulang FP32) ---
-  # Bila sisi gambar > imgsz_gambar x otomatis_ambang, jalur full-frame sudah
-  # menurunkan resolusi >= 2x -> retak tipis hilang. Tiling melihat tiap 640 px
-  # pada resolusi penuh, jadi retak kecil ikut terdeteksi.
-  # Temuan akhir, slider conf 0,25 (full-frame -> tiling):
-  #   000003 4080x3060 (12,5 MP): 3 -> 3   |  000002 3000x4000:  3 -> 14
-  #   04a8f35f 4032x2268 (9,1 MP): 1 -> 3  |  000059 malam:      0 -> 2
-  #   1280x720 & 512x512: tak terpicu (ambang 2x).
-  # Catatan: tiling menambah RECALL terutama retak, tetapi box retak umumnya
-  # low-conf (0,14-0,34) -> presisi tidak ikut naik. Bukan pengganti data lokal.
-  # BIAYA (000003.jpg 12,5 MP, GPU hangat, FP32): full-frame ~1,2 dtk ->
-  # tiling ~9 dtk (~48 tile + lebur WBF).
-  # Matikan (otomatis_aktif: false) bila ingin full-frame selalu.
-  otomatis_aktif: true
-  otomatis_ambang: 2.0
 # Ensemble 2 model (tab Gambar saja): gabung box model_gambar + model_kedua
 # via WBF/NMS per kelas. Default MATI (biaya ~2x waktu). Saat ini hanya ada
 # satu model (best.pt), jadi model_kedua == model_gambar -> jalur tunggal.
@@ -80,23 +114,45 @@ saring:
   maks_temuan: 20  # simpan N conf tertinggi; 0 = tanpa batas
 # Lebur fragmen: kepingan satu kerusakan besar digabung jadi satu box utuh
 # (severity + biaya dihitung ulang; menghentikan dobel-hitung fragmen).
+# CATATAN 18 Okt 2026 — ATURAN LAMA (iou_min 0,05 / inter_min 0,30) DILEMAHKAN.
+# Aturan itu menganggap dua pothole yang BERDAMPINGAN sebagai fragmen satu
+# kerusakan lalu menyatukannya, sehingga satu pothole GT hilang dari hitungan.
+# Diukur di BPID (161 gambar berlabel, IoU 0,5, slider 0,25):
+#   iou_min 0,05 + inter_min 0,30 : TP 148  FP 111  P 0,571  R 0,563  F1 0,567
+#   iou_min 0,30 + inter_min 0,50 : TP 158  FP 108  P 0,594  R 0,601  F1 0,597
+#   fiturnya DIMATIKAN           : TP 178  FP 149  P 0,544  R 0,677  F1 0,603
+# Yang dipilih 0,30/0,50: recall naik tanpa mengorbankan precision, dan fitur
+# penggabungan fragmen tetap dipakai (satu kerusakan = satu box di laporan).
+# Mematikannya memberi recall +5 poin tapi FP +33% dan mengorbankan pelaporan. Kalau lebih mengutamakan
+# recall, turunkan `inter_min` — jangan balikkan ke 0,30.
 gabung_fragmen:
   aktif: true
-  iou_min: 0.05
-  inter_min: 0.3
+  iou_min: 0.3
+  inter_min: 0.5
   lintas_kelas: true
 # Toleransi per kelas (relatif terhadap slider — slider tetap batas mutlak).
-# Efektif = slider - toleransi. Retak tipis boleh lolos di bawah slider,
-# tapi menaikkan slider selalu memperketat semua kelas.
-# pothole 0.08 (2026-09-30): evaluasi BPID (161 gambar, 263 instance) menunjukkan
-#   titik F1 optimal pothole ~conf 0.15-0.20; ambang efektif 0.17 (slider 0.25)
-#   menaikkan recall tanpa menurunkan mAP. Lihat docs/Panduan-Tuning-Model.md §6.
+# Efektif = slider - toleransi. Retak tipis boleh lolos sedikit di bawah
+# slider, tapi menaikkan slider selalu memperketat semua kelas.
+# CATATAN: slider di UI (default 0,30) adalah titik operasi terbaik yang
+# diukur — lihat `web/app.py CONF_DEFAULT`. Angka 0,30 dipilih karena recall
+# pothole tetap 0,60 sementara FP turun 111 -> 90 dibanding slider 0,25
+# (BPID, 161 gambar). Kombinasi 0,25 + fragmen 0,30/0,50 hanya F1 0,597; pada
+# slider 0,30 menjadi 0,616.
+# CATATAN pothole 0 (perubahan 18 Okt 2026). Nilai lama 0,08 dibuat 30 Sep 2026
+# dari pengamatan "recall naik" pada 3 foto — TANPA ground truth. Diuji ulang di
+# BPID (161 gambar, 263 instance pothole, IoU 0,5, imgsz 640 + TTA):
+#   ambang 0,17 (slider 0.25, toleransi 0,08): P 0,324  R 0,688  F1 0,440
+#   ambang 0,25 (slider 0.25, toleransi 0)   : P 0,546  R 0,677  F1 0,604
+#   ambang 0,35 (F1 optimum di imgsz 640)    : P 0,629  R 0,631  F1 0,630
+# Kerikil/daun yang terbaca pothole (keluhan operator) sebagian besar berasal
+# dari ambang pothole yang terlalu longgar ini, bukan dari penyaring.
+# Toleransi retak lain belum diukur ulang (BPID tidak berlabel retak).
 toleransi_kelas:
   longitudinal_crack: 0.13
   transverse_crack: 0.13
   alligator_crack: 0.10
   other_corruption: 0.10
-  pothole: 0.08
+  pothole: 0
 live:
   min_frames: 2  # track sah untuk snapshot bila terlihat >= N frame (redam kedip)
   display_fps: 30   # batas atas laju TAMPIL preview (terpisah dari laju inferensi)

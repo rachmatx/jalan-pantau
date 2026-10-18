@@ -20,17 +20,19 @@ class TestConfigInferensi(unittest.TestCase):
         import deteksi
         deteksi._infer = None
         inf = deteksi.get_inferensi()
-        self.assertEqual(inf["imgsz_gambar"], 960)
+        self.assertEqual(inf["imgsz_gambar"], 640)
         self.assertEqual(inf["imgsz_live"], 640)  # akurasi penuh (GPU real-time)
         self.assertEqual(inf["iou"], 0.5)
         self.assertTrue(inf["tta"])  # default true sejak trial 3 foto 2026-09-07
         self.assertEqual(inf["teliti"]["tile"], 640)
         self.assertEqual(inf["device"], "auto")
+        # 0 = analisis di resolusi asli (lihat alasan di config/inferensi.yaml).
+        self.assertEqual(inf["maks_sisi_proses"], 0)
 
     def test_fallback_bila_file_hilang(self):
         import deteksi
         inf = deteksi.get_inferensi(path=os.path.join(ROOT, "tidak-ada.yaml"))
-        self.assertEqual(inf["imgsz_gambar"], 960)
+        self.assertEqual(inf["imgsz_gambar"], 640)
         self.assertEqual(inf["iou"], 0.5)
 
     def test_nilai_ngawur_diklem(self):
@@ -68,7 +70,7 @@ class TestConfigInferensi(unittest.TestCase):
                     with os.fdopen(fd, "w", encoding="utf-8") as f:
                         f.write(isi)
                     inf = deteksi.get_inferensi(path=path)  # tidak boleh melempar
-                    self.assertEqual(inf["imgsz_gambar"], 960)
+                    self.assertEqual(inf["imgsz_gambar"], 640)
                     self.assertEqual(inf["iou"], 0.5)
                 finally:
                     os.remove(path)
@@ -82,7 +84,7 @@ class TestConfigInferensi(unittest.TestCase):
             with os.fdopen(fd, "w", encoding="utf-8") as f:
                 f.write("imgsz_gambar: 320\n  rusak: 1\n")
             inf = deteksi.get_inferensi(path=path)
-            self.assertEqual(inf["imgsz_gambar"], 960)  # default, bukan 320
+            self.assertEqual(inf["imgsz_gambar"], 640)  # default, bukan 320
         finally:
             os.remove(path)
 
@@ -377,72 +379,74 @@ class TestDedupTeliti(unittest.TestCase):
         self.assertEqual(t["iou_agnostik"], 0.6)
 
 
-class TestTelitiOtomatis(unittest.TestCase):
-    """Tiling otomatis untuk gambar besar (retak tipis hilang saat downscale).
+class TestTanpaTilingOtomatis(unittest.TestCase):
+    """Regresi: pemicu 'mode teliti otomatis' untuk gambar besar sudah DICABUT.
 
-    Full-frame @960 pada foto 12 MP = turun resolusi 4x; retak tipis hilang.
-    Diukur 17 Okt 2026 (FP32): 4080x3060 -> 3 temuan, tiling -> 3 (retak
-    bertambah); 3000x4000 -> 3 vs 14. CATATAN: angka "full-frame 0 temuan"
-    yang sempat tercatat tidak sah — jalur FP16 saat itu mengeluarkan box NaN.
+    Pemicu itu (sisi > imgsz x 2) pernah menyalakan tiling otomatis di setiap
+    foto > 1920 px. Diukur di BPID (161 gambar berlabel, IoU 0,5, pothole):
+    tiling 640->960 memberi F1 0,011 vs 0,431 untuk full-frame, dengan recall
+    0% pada pothole besar (>600 px). Full-frame kini berjalan di imgsz 640
+    (F1 0,630), jadi tidak ada lagi alasan menyalakan tiling diam-diam.
     """
 
-    def test_config_terbaca(self):
+    def test_kunci_konfigurasi_otomatis_dihilangkan(self):
         import deteksi
         deteksi._infer = None
         t = deteksi.get_inferensi()["teliti"]
-        self.assertTrue(t["otomatis_aktif"])
-        self.assertEqual(t["otomatis_ambang"], 2.0)
+        for kunci in ("otomatis_aktif", "otomatis_ambang"):
+            self.assertNotIn(kunci, t)
+        # Kunci yang masih dipakai mode teliti manual tetap ada.
+        self.assertEqual(t["tile"], 640)
+        self.assertEqual(t["imgsz"], 960)
 
-    def test_ambang_diklem(self):
+    def test_fungsi_pemicu_tidak_ada_lagi(self):
         import deteksi
-        for ditulis, harap in (("99", 8.0), ("0", 1.0), ("abc", 2.0)):
-            with self.subTest(ditulis=ditulis):
-                fd, path = tempfile.mkstemp(suffix=".yaml")
-                try:
-                    with os.fdopen(fd, "w", encoding="utf-8") as f:
-                        f.write(f"teliti:\n  otomatis_ambang: {ditulis}\n")
-                    inf = deteksi.get_inferensi(path=path)
-                    self.assertEqual(inf["teliti"]["otomatis_ambang"], harap)
-                finally:
-                    os.remove(path)
+        self.assertFalse(hasattr(deteksi, "perlu_teliti_otomatis"))
 
-    def test_gambar_kecil_tidak_di_tile(self):
-        """Downscale ringan -> tiling tak sepadan (tile 640 memotong objek besar)."""
-        from deteksi import perlu_teliti_otomatis
-        for w, h in ((512, 512), (1280, 720), (1600, 1200), (1920, 1080)):
-            with self.subTest(ukuran=(w, h)):
-                self.assertFalse(perlu_teliti_otomatis(w, h, 960))
+    def test_gambar_besar_tidak_lagi_otomatis(self):
+        """Foto 2200 px tetap jalur full-frame: teliti=False & kunci tak ada."""
+        import cv2
+        import numpy as np
+        import deteksi
+        deteksi.get_model(kunci="model_gambar")
+        ok, buf = cv2.imencode(".jpg", np.full((2200, 2200, 3), 128,
+                                                dtype=np.uint8))
+        self.assertTrue(ok)
+        deteksi._infer = None
+        out = deteksi.analisis_gambar(buf.tobytes(), conf=0.9, imgsz=160)
+        self.assertFalse(out["teliti"])
+        self.assertNotIn("teliti_otomatis", out)
+        self.assertNotIn("tepi_tile", out["disaring"])  # bukan jalur tiling
 
-    def test_gambar_besar_di_tile(self):
-        from deteksi import perlu_teliti_otomatis
-        for w, h in ((1921, 500), (3000, 4000), (4080, 3060), (4032, 2268)):
-            with self.subTest(ukuran=(w, h)):
-                self.assertTrue(perlu_teliti_otomatis(w, h, 960))
+    def test_teliti_manual_tetap_bisa(self):
+        """Mode teliti masih hidup sebagai alat eksperimen (dicentang manual)."""
+        import cv2
+        import numpy as np
+        import deteksi
+        deteksi.get_model(kunci="model_gambar")
+        ok, buf = cv2.imencode(".jpg", np.full((900, 900, 3), 128,
+                                                dtype=np.uint8))
+        self.assertTrue(ok)
+        deteksi._infer = None
+        out = deteksi.analisis_gambar(buf.tobytes(), conf=0.9, imgsz=160,
+                                       teliti=True)
+        self.assertTrue(out["teliti"])
+        self.assertIsInstance(out["rows"], list)
 
-    def test_tepi_perbandingan_pakai_sisi_terpanjang(self):
-        """Ambang pakai max(w,h): foto lebar-pendek pun ikut di-tile."""
-        from deteksi import perlu_teliti_otomatis
-        self.assertFalse(perlu_teliti_otomatis(4000, 120, 960, {
-            "otomatis_aktif": True, "otomatis_ambang": 8.0}))  # 8x960 = 7680
-        self.assertTrue(perlu_teliti_otomatis(4000, 120, 960, {
-            "otomatis_aktif": True, "otomatis_ambang": 2.0}))
+    def test_imgsz_gambar_default_640(self):
+        import deteksi
+        deteksi._infer = None
+        self.assertEqual(deteksi.get_inferensi()["imgsz_gambar"], 640)
 
-    def test_bisa_dimatikan(self):
-        from deteksi import perlu_teliti_otomatis
-        t = {"otomatis_aktif": False, "otomatis_ambang": 2.0}
-        self.assertFalse(perlu_teliti_otomatis(4000, 3000, 960, t))
-
-    def test_imgsz_besar_menaikkan_ambang(self):
-        """imgsz 1536 -> ambang 3072 px; gambar 2000 px tidak lagi di-tile."""
-        from deteksi import perlu_teliti_otomatis
-        t = {"otomatis_aktif": True, "otomatis_ambang": 2.0}
-        self.assertTrue(perlu_teliti_otomatis(2000, 2000, 960, t))
-        self.assertFalse(perlu_teliti_otomatis(2000, 2000, 1536, t))
-
-    def test_input_ngawur_tidak_melempar(self):
-        from deteksi import perlu_teliti_otomatis
-        self.assertFalse(perlu_teliti_otomatis(None, "x", 960))
-        self.assertFalse(perlu_teliti_otomatis(4000, 3000, None))
+    def test_toleransi_pothole_tidak_dilonggarkan(self):
+        """pothole 0 (18 Okt 2026): lowering 0,08 menurunkan precision ke 0,32."""
+        import deteksi
+        deteksi._infer = None
+        inf = deteksi.get_inferensi()
+        self.assertEqual(inf["toleransi_kelas"]["pothole"], 0.0)
+        self.assertAlmostEqual(
+            deteksi.ambang_efektif("pothole", 0.25,
+                                    inf["toleransi_kelas"]), 0.25)
 
 
 class TestGabungFragmen(unittest.TestCase):
@@ -456,16 +460,34 @@ class TestGabungFragmen(unittest.TestCase):
     def test_fragmen_bersentuhan_melebur_dan_dihitung_ulang(self):
         from deteksi import gabung_fragmen
         rows = [self._row("pothole", 0.8, [0, 0, 100, 100]),
-                self._row("pothole", 0.6, [50, 50, 150, 150]),
+                self._row("pothole", 0.6, [20, 20, 120, 120]),
                 self._row("pothole", 0.7, [500, 500, 600, 600])]
         baru, n = gabung_fragmen(rows)
         self.assertEqual(n, 1)
         self.assertEqual(len(baru), 2)
         g = [r for r in baru if r.get("fragmen") == 2][0]
-        self.assertEqual(g["box"], [0, 0, 150, 150])
+        self.assertEqual(g["box"], [0, 0, 120, 120])
         self.assertEqual(g["conf"], 0.8)  # pemenang
         # severity/skor dihitung ulang dari box gabungan (bukan jumlah fragmen)
         self.assertNotEqual(g["luas_m2"], 0.01)
+
+    def test_pothole_berdampingan_tidak_boleh_dilebur(self):
+        """Regresi 18 Okt 2026: ambang lama (iou_min 0,05 / inter_min 0,30)
+        menganggap dua pothole yang bersentuhan ringan sebagai SATU kerusakan lalu
+        menyatukannya, sehingga satu pothole ground-truth hilang dari hitungan
+        (BPID: recall 0,563). Dengan 0,30/0,50 keduanya tetap terpisah.
+        """
+        from deteksi import gabung_fragmen
+        rows = [self._row("pothole", 0.8, [0, 0, 100, 100]),
+                self._row("pothole", 0.7, [40, 40, 140, 140])]
+        baru, n = gabung_fragmen(rows)
+        self.assertEqual(n, 0, "dua pothole berbeda tidak boleh digabung")
+        self.assertEqual(len(baru), 2)
+        # ...tapi kepingan yang tumpang tindih jelas tetap boleh digabung.
+        rows2 = [self._row("pothole", 0.8, [0, 0, 100, 100]),
+                 self._row("pothole", 0.7, [10, 10, 110, 110])]
+        _baru2, n2 = gabung_fragmen(rows2)
+        self.assertEqual(n2, 1)
 
     def test_terpisah_tidak_melebur(self):
         from deteksi import gabung_fragmen
@@ -490,7 +512,27 @@ class TestGabungFragmen(unittest.TestCase):
         deteksi._infer = None
         gf = deteksi.get_inferensi()["gabung_fragmen"]
         self.assertTrue(gf["aktif"])
-        self.assertEqual(gf["inter_min"], 0.3)
+        # Diperketat 18 Okt 2026 (lihat regresi pothole berdampingan).
+        self.assertEqual(gf["iou_min"], 0.3)
+        self.assertEqual(gf["inter_min"], 0.5)
+
+    def test_default_conf_slider_naik_030(self):
+        """Default slider 0,30 (18 Okt 2026): recall pothole tetap, FP turun."""
+        import inspect
+        import web.app as app_mod
+        self.assertEqual(app_mod.CONF_DEFAULT, 0.30)
+        import deteksi
+        # Default di tanda tangan fungsi WAJIB sama dengan CONF_DEFAULT app;
+        # kalau melenceng, pemanggil programatis diam-diam memakai ambang lain
+        # (terbaru: analisis_gambar() masih 0,25 sementara app sudah 0,30).
+        tanda = inspect.signature(deteksi.analisis_gambar).parameters["conf"]
+        self.assertAlmostEqual(tanda.default, app_mod.CONF_DEFAULT)
+        deteksi._infer = None
+        # ambang efektif per kelas = slider - toleransi
+        tol = deteksi.get_inferensi()["toleransi_kelas"]
+        self.assertAlmostEqual(deteksi.ambang_efektif("pothole", 0.30, tol), 0.30)
+        self.assertAlmostEqual(deteksi.ambang_efektif("longitudinal_crack",
+                                                       0.30, tol), 0.17)
 
 
 class TestSaringAkhir(unittest.TestCase):
@@ -965,6 +1007,57 @@ class TestWorkerInferensi(unittest.TestCase):
         self.assertEqual(r.status_code, 503)
         self.assertIn("error", r.get_json())
 
+    # --- Regresi 18 Okt 2026: kehabisan RAM tidak boleh dilayani sebagai 500.
+    # Terukur nyata saat pengukuran BPID: RAM habis -> MemoryError saat
+    # f.read(), dan cv2.error "Insufficient memory" saat decode 12 MP. Tanpa
+    # penanganan ini klien mendapat halaman HTML 500 dari debugger dan tidak
+    # tahu itu masalah sementara, bukan gambar rusak.
+
+    def test_route_detect_memoryerror_503(self):
+        import io
+        import unittest.mock as mock
+        import web.app as app_mod
+        app = app_mod.create_app()
+        app.config["TESTING"] = True
+        c = app.test_client()
+        data = {"gambar": (io.BytesIO(b"\xff\xd8\xff" + b"0" * 64), "x.jpg")}
+        with mock.patch.object(app_mod, "analisis_gambar_terjadwal",
+                               side_effect=MemoryError()):
+            r = c.post("/api/detect", data=data,
+                       content_type="multipart/form-data")
+        self.assertEqual(r.status_code, 503)
+        self.assertIn("memori", r.get_json()["error"].lower())
+
+    def test_route_detect_opencv_oom_503(self):
+        import io
+        import unittest.mock as mock
+        import web.app as app_mod
+        app = app_mod.create_app()
+        app.config["TESTING"] = True
+        c = app.test_client()
+        data = {"gambar": (io.BytesIO(b"\xff\xd8\xff" + b"0" * 64), "x.jpg")}
+        with mock.patch.object(
+                app_mod, "analisis_gambar_terjadwal",
+                side_effect=RuntimeError(
+                    "OpenCV(5.0.0) alloc.cpp:73: (-4:Insufficient memory)")):
+            r = c.post("/api/detect", data=data,
+                       content_type="multipart/form-data")
+        self.assertEqual(r.status_code, 503)
+
+    def test_kurang_memori_mengenali_bentuknya(self):
+        import web.app as app_mod
+        self.assertTrue(app_mod._kurang_memori(MemoryError()))
+        self.assertTrue(app_mod._kurang_memori(
+            RuntimeError("(-4:Insufficient memory) Failed to allocate")))
+        self.assertTrue(app_mod._kurang_memori(
+            RuntimeError("cv::OutOfMemoryError")))
+        # Jangan salah tangkap: gambar rusak & worker mati tetap 400/503 lain.
+        self.assertFalse(app_mod._kurang_memori(
+            ValueError("Berkas bukan gambar yang valid (JPG/PNG).")))
+        self.assertFalse(app_mod._kurang_memori(
+            app_mod.WorkerInferensiMati("mati")))
+        self.assertFalse(app_mod._kurang_memori(RuntimeError("shape mismatch")))
+
 
 class TestNanGuard(unittest.TestCase):
     """Regresi bug FP16/TTA 2026-10-17: box NaN tidak boleh lolos ke pengguna.
@@ -1081,6 +1174,86 @@ class TestHalfGambarDanGelap(unittest.TestCase):
         self.assertTrue(deteksi.deteksi_gelap(hitam))
         self.assertFalse(deteksi.deteksi_gelap(putih))
         self.assertFalse(deteksi.deteksi_gelap(putih, ambang=0))
+
+
+class TestSkalaProsesGambar(unittest.TestCase):
+    """maks_sisi_proses: analisis di gambar kecil, box tetap koordinat ASLI.
+
+    Uji ini mengunci keputusan desain yang paling mudah rusak diam-diam: bila
+    box tidak dikembalikan ke ruang gambar asli, app/severity.py menghitung
+    dimensi terlalu kecil (pixels_per_cm menganggap 1 cm = 8 px pada gambar
+    asli), sehingga severity turun dan verifikasi operator salah hitung —
+    tanpa error apa pun. Bukti perilaku agregatnya ada di §6e.
+    """
+
+    def _analisis(self, maks, teliti=False, hw=(1600, 1200)):
+        import cv2
+        import numpy as np
+        import deteksi
+        deteksi.get_model(kunci="model_gambar")
+        ok, buf = cv2.imencode(".jpg", np.full((hw[0], hw[1], 3), 128,
+                                               dtype=np.uint8))
+        self.assertTrue(ok)
+        asli = deteksi.get_inferensi
+        deteksi.get_inferensi = lambda path=None: {**asli(path),
+                                                   "maks_sisi_proses": maks}
+        try:
+            return deteksi.analisis_gambar(buf.tobytes(), conf=0.9, imgsz=160,
+                                           teliti=teliti)
+        finally:
+            deteksi.get_inferensi = asli
+
+    def test_maks_sisi_proses_diklem(self):
+        import deteksi
+        for isi, harap in (("99999", 4096), ("100", 320), ("-5", 0),
+                           ("0", 0), ("abc", 0)):
+            with self.subTest(isi=isi):
+                fd, path = tempfile.mkstemp(suffix=".yaml")
+                try:
+                    with os.fdopen(fd, "w", encoding="utf-8") as f:
+                        f.write("maks_sisi_proses: %s\n" % isi)
+                    inf = deteksi.get_inferensi(path=path)
+                    self.assertEqual(inf["maks_sisi_proses"], harap)
+                finally:
+                    os.remove(path)
+
+    def test_skala_box_mengembalikan_koordinat_ke_gambar_asli(self):
+        import deteksi
+
+        class B:
+            def __init__(self, xyxy, cls, conf):
+                self.xyxy, self.cls, self.conf = [xyxy], [cls], [conf]
+
+        class R:
+            boxes = [B([100.0, 200.0, 300.0, 400.0], 4, 0.9)]
+
+        names = {4: "pothole"}
+        tanpa = deteksi.proses_detections(R, names)
+        self.assertEqual(tanpa[0]["box"], [100.0, 200.0, 300.0, 400.0])
+        dobel = deteksi.proses_detections(R, names, skala_box=2.0)
+        self.assertEqual(dobel[0]["box"], [200.0, 400.0, 600.0, 800.0])
+        # Dimensi fisik ikut membesar — buktinya kalibrasi px/cm tak mengecil.
+        self.assertAlmostEqual(dobel[0]["panjang_cm"],
+                               2 * tanpa[0]["panjang_cm"], places=1)
+
+    def test_maks_0_analisis_resolusi_asli(self):
+        out = self._analisis(0)
+        self.assertEqual(out["disaring"]["skala_proses"], 1.0)
+
+    def test_gambar_besar_diperkecil_dan_bukti_ikut_kecil(self):
+        import base64
+        import cv2
+        import numpy as np
+        out = self._analisis(800, hw=(1600, 1200))
+        self.assertAlmostEqual(out["disaring"]["skala_proses"], 0.5, places=2)
+        buf = cv2.imdecode(np.frombuffer(base64.b64decode(out["image_b64"]),
+                                         np.uint8), cv2.IMREAD_COLOR)
+        self.assertEqual(max(buf.shape[:2]), 800)
+
+    def test_teliti_selalu_resolusi_asli(self):
+        out = self._analisis(800, teliti=True, hw=(900, 1200))
+        self.assertTrue(out["teliti"])
+        self.assertEqual(out["disaring"]["skala_proses"], 1.0)
 
 
 if __name__ == "__main__":

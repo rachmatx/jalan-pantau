@@ -5,13 +5,21 @@ Dijalankan di MESIN USER:
     python scripts/diag_teliti.py foto.jpg
 
 Mencetak:
- 1. predict full-frame @imgsz 960 (jalur normal)
- 2. predict full-frame @imgsz 640 (tanpa tiling)
- 3. per-tile: jumlah box mentah @conf=0.01
-Lalu bandingkan: bila (2) ada box tapi (3) kosong -> bug di loop tiling;
-bila (2) pun kosong -> model butuh imgsz besar untuk gambar ini.
+ 1. predict full-frame @imgsz 960, conf 0.01 (tanpa augment)
+ 2. predict full-frame @imgsz 640, conf 0.01 — sama dengan jalur gambar aplikasi
+ 3. per-tile: jumlah box mentah @conf 0.01 pada imgsz = ukuran tile (640)
+Lalu bandingkan: bila (2) ada box tapi (3) kosong -> masalah di loop tiling.
 
-Memakai half=... sama seperti aplikasi agar hemat VRAM (penting di GPU 4GB).
+CATATAN PENTING (18 Okt 2026): mode teliti tidak lagi diaktifkan otomatis dan
+diukur jauh lebih BURUK daripada full-frame pada data lokal berlabel (F1 0,011
+vs 0,567 pada 161 gambar BPID; recall pothole besar 0%). Jadi skrip ini hanya
+alat eksperimen, bukan alat menilai jalur gambar. Untuk menilai jalur gambar,
+lihat docs/Panduan-Tuning-Model.md §6d (P/R/F1 terhadap ground truth).
+
+Skrip memakai half=... (FP16) demi hemat VRAM, SEDANGKAN jalur gambar aplikasi
+sekarang berjalan FP32 (`half_gambar: false`). Sebagian karena itu angka skrip ini
+tidak boleh dibandingkan langsung dengan output UI.
+
 Tiap tahap dibungkus try/except: satu OOM tidak membunuh sisanya.
 """
 import sys
