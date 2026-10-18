@@ -1,18 +1,39 @@
-# Ambang severity — EDITABLE tanpa ubah kode.
-# Acuan retak: README RDDC2024-ID (Low <10mm, Moderate 10-75mm, High >75mm).
-# Keterbatasan jujur: kamera mono tidak mengukur kedalaman; tebal = asumsi per severity.
-# Kalibrasi rutin via halaman /kalibrasi (nilai langsung / foto penggaris klik
-# 2 titik) atau edit manual; blok "kalibrasi:" di bawah ditulis otomatis UI.
+# Ambang klasifikasi dimensi temuan — EDITABLE tanpa ubah kode.
+#
+# DASAR PER KELAS (jujur, untuk pertahanan di depan dosen/reviewer):
+# - Retak longitudinal/transversal: ambang lebar <10 / 10-75 / >75 mm dari
+#   README RDDC2024-ID (bagian Class Descriptions; gaya teksnya mengadopsi
+#   ASTM D6433). Status: BERDASAR STANDAR (terverifikasi 2026-10-18).
+#   Penyederhanaan: standar aslinya juga menilai kondisi sealant & retak
+#   di sekitarnya; di sini hanya komponen lebar yang dipakai (otomatisasi).
+# - Lubang (pothole): bin diameter 100-200 / 200-450 / 450-750 mm mengikuti
+#   KOLOM Tabel X1.1 ASTM D6433 (via gambar P6 README RDDC2024-ID).
+#   Namun severity ASTM butuh KEDALAMAN yang tak terukur dari foto monokular,
+#   sehingga yang dilaporkan adalah KELAS UKURAN (kecil/sedang/besar),
+#   BUKAN severity ASTM. Status: SEBAGIAN STANDAR (bin diameter saja).
+#   (Catatan: teks bagian pothole di README salah copy-paste dari bagian
+#   retak — jangan sitasi teksnya untuk lubang, sitasi gambar P6/tabelnya.)
+# - Retak buaya & other_corruption: ambang luas 200/900 cm2 adalah HEURISTIK
+#   TIM tanpa rujukan standar (ASTM menilainya kualitatif: spalling/pumping).
+#   Yang dilaporkan adalah KELAS LUASAN. Status: HEURISTIK, dinyatakan eksplisit.
+#
+# KETERBATASAN UMUM (pseudo-measurement):
+# - Bounding box selalu melingkupi kerusakan aktual -> angka yang dilaporkan
+#   adalah BATAS ATAS (upper bound), bukan nilai eksak. Klasifikasi "Ringan"
+#   bersifat sound (nilai sebenarnya pasti lebih kecil); "Berat" indikatif.
+# - Kamera mono tidak mengukur kedalaman; tebal = asumsi per kelas.
+# - Klasifikasi ini DESKRIPTIF per temuan; instrumen prioritas adalah
+#   SDI-visual per segmen (app/sdi.py).
 pixels_per_cm: 11.4342  # WAJIB kalibrasi ulang per pemasangan
 crack_width_mm:
   ringan_max: 10
   sedang_max: 75
 pothole_diameter_cm:
-  ringan_max: 25
-  sedang_max: 50
+  ringan_max: 20   # = 200 mm, batas bin ASTM D6433 Tabel X1.1
+  sedang_max: 45   # = 450 mm, batas bin ASTM D6433 Tabel X1.1
 area_cm2:
-  ringan_max: 200
-  sedang_max: 900
+  ringan_max: 200  # heuristik tim (tanpa rujukan standar)
+  sedang_max: 900  # heuristik tim (tanpa rujukan standar)
 tebal_asumsi_cm:
   Ringan: 2
   Sedang: 5

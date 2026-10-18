@@ -23,15 +23,20 @@ Setiap start() me-reset tracker sehingga ID mulai dari 1 lagi.
 """
 import threading
 import time
+from collections import deque
 from pathlib import Path
+import logging
 
 import cv2
 
-from deteksi import (ambang_efektif, cerahkan_malam, conf_prediksi, get_config,
-                     get_inferensi, get_model, half_untuk, kelas_mayoritas,
-                     masuk_akal, nama_kelas, nama_model, pilih_device)
+from deteksi import (alasan_tolak, ambang_efektif, cerahkan_malam,
+                     conf_prediksi, get_config, get_inferensi, get_model,
+                     half_untuk, kelas_mayoritas, nama_kelas, nama_model,
+                     pilih_device)
 from severity import diagnose
 from prioritas import skor as skor_prioritas
+
+_log = logging.getLogger(__name__)
 
 WARNA = {"Ringan": (0, 180, 0), "Sedang": (0, 200, 200), "Berat": (0, 0, 220)}
 MAX_TRACKS = 500  # P1: cegah OOM sesi live berjam-jam
@@ -78,6 +83,7 @@ class StreamManager:
         self.fps_tampil = 0.0
         self.tracks = {}          # id -> {kelas, conf_max, box_best, area_best, frames}
         self.latest_jpg = None
+        self.latest_jpg_berbox = None  # frame anotasi terakhir yg memuat box
         self.finished = False
         self.anotasi_aktif = True
         # --- state decouple ---
@@ -90,6 +96,10 @@ class StreamManager:
         self._last_raw_infer = -1
         self._boxes = []
         self._boxes_lock = threading.Lock()
+        # Perataan tampilan: rata-rata bergerak jumlah box TERLIHAT agar angka
+        # live tidak kedip tiap inferensi. DISPLAY-ONLY — snapshot()/riwayat
+        # tidak memakai ini (lihat stats()["tampil"]).
+        self._tampil_riwayat = deque(maxlen=12)
         self._frame_cond = threading.Condition()
         self._latest_seq = 0
         self._t_publish = 0.0
@@ -134,9 +144,13 @@ class StreamManager:
                 "iou": float(infer.get("iou", 0.5)),
                 "frame_diff_threshold": float(live.get("frame_diff_threshold",
                                                         FRAME_DIFF_THRESHOLD)),
+                "perataan_tampil": int(live.get("perataan_tampil", 12)),
                 "device": pilih_device(infer.get("device", "auto"),
                                        nama_model(kunci="model_live")),
             }
+            # Samakan window perataan dengan config sesi ini.
+            self._tampil_riwayat = deque(
+                maxlen=max(1, self._live_cfg["perataan_tampil"]))
         self._reset_tracker()
         self._pastikan_infer()
         self._thread = threading.Thread(target=self._loop,
@@ -433,6 +447,9 @@ class StreamManager:
             self._simpan_tracks(res, model)
             with self._boxes_lock:
                 self._boxes = self._bangun_overlay(res, model)
+                # Catat jumlah box terlihat untuk perataan tampilan (murah,
+                # atomik di CPython; dibaca stats() sebagai rata-rata).
+                self._tampil_riwayat.append(len(self._boxes))
             with self._lock:
                 if dt > 1e-6:
                     fps = 1.0 / dt
@@ -446,6 +463,11 @@ class StreamManager:
         n = 0
         if bs is not None and len(bs):
             ids = bs.id
+            if ids is None:
+                # Tracker tak mengembalikan ID: semua deteksi frame ini tak bisa
+                # di-track. Jangan diam-diam — catat agar mudah didiagnosis.
+                _log.warning("live: %d box tanpa track-id (tracker tak memberi ID), "
+                             "dilewati", len(bs))
             for i, b in enumerate(bs):
                 if ids is None:
                     continue
@@ -567,8 +589,15 @@ class StreamManager:
                                        [cv2.IMWRITE_JPEG_QUALITY, q])
                 if ok:
                     now = time.time()
+                    jpg_bytes = buf.tobytes()
+                    # Simpan juga frame ber-box terakhir: dipakai snapshot() agar
+                    # foto riwayat selalu menampilkan box deteksi walau frame
+                    # terakhir saat simpan sudah tidak memuat box.
+                    ada_box = self.anotasi_aktif and bool(boxes)
                     with self._lock:
-                        self.latest_jpg = buf.tobytes()
+                        self.latest_jpg = jpg_bytes
+                        if ada_box:
+                            self.latest_jpg_berbox = jpg_bytes
                     with self._frame_cond:
                         self._latest_seq += 1
                         self._frame_cond.notify_all()
@@ -609,23 +638,37 @@ class StreamManager:
 
     def stats(self):
         with self._lock:
+            riw = list(self._tampil_riwayat)
+            tampil = round(sum(riw) / len(riw)) if riw else 0
             return {"running": self.running, "error": self.error,
                     "finished": self.finished, "source": self.source_label,
                     "fps": round(self.fps_infer or self.fps_ema, 1),
                     "fps_tampil": round(self.fps_tampil, 1),
                     "fps_infer": round(self.fps_infer, 1),
                     "frame": self.n_frame,
-                    "unik": len(self.tracks), "deteksi": self.n_deteksi}
+                    "unik": len(self.tracks), "deteksi": self.n_deteksi,
+                    # Rata-rata bergerak box terlihat (display-only, redam
+                    # kedip). BUKAN dasar snapshot/riwayat.
+                    "tampil": tampil}
 
     def snapshot(self):
         """Ringkasan sesi: rows per track-id (box terbaik) + frame anotasi terakhir.
 
         Track disaring: min_frames (redam kedip), kelas = suara mayoritas,
         lalu ambang per kelas + prior ukuran seperti jalur gambar.
+
+        Foto sesi memakai frame ber-box terakhir bila ada (agar foto riwayat
+        menampilkan box deteksi); fallback ke frame terakhir biasa.
+
+        CATATAN DESAIN: track TIDAK kedaluwarsa — snapshot adalah gabungan
+        seluruh track yang pernah terlihat selama sesi. Ini disengaja untuk
+        inventarisasi drive-through (satu sesi = satu ruas). Untuk kamera
+        statis, track lama ikut terbawa; bila itu jadi masalah, sesi harus
+        di-restart berkala.
         """
         with self._lock:
             tracks = dict(self.tracks)
-            jpg = self.latest_jpg
+            jpg = self.latest_jpg_berbox or self.latest_jpg
             conf_global = self.conf
         import base64
         cfg = get_config()
@@ -634,7 +677,7 @@ class StreamManager:
         ambang = infer.get("toleransi_kelas")
         batas = infer.get("batas_ukuran")
         rows = []
-        buang = {"ambang": 0, "ukuran": 0, "frame": 0}
+        buang = {"ambang": 0, "ukuran": 0, "aspek": 0, "frame": 0}
         for tid in sorted(tracks):
             tr = tracks[tid]
             if int(tr.get("frames", 0)) < min_frames:
@@ -647,8 +690,9 @@ class StreamManager:
             item = diagnose(kelas, *tr["box_best"], cfg)
             item["conf"] = tr["conf_max"]
             row = skor_prioritas(item)
-            if not masuk_akal(row, batas):
-                buang["ukuran"] += 1
+            alasan = alasan_tolak(row, batas)
+            if alasan is not None:
+                buang["aspek" if alasan == "aspek" else "ukuran"] += 1
                 continue
             row["track_id"] = tid
             row["frames"] = tr["frames"]

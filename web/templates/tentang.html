@@ -22,8 +22,8 @@
         <p class="jp-kpi-sub" style="font-size:13px;color:#0F172A">Citra jalan dari kamera statis maupun stream (YOLOv11s) dianalisis untuk 5 kelas kerusakan: retak memanjang, melintang, buaya, kerusakan lain, dan lubang.</p>
       </div>
       <div class="jp-kpi jp-kpi-blue">
-        <div class="jp-kpi-top"><span>02 · ESTIMASI DIMENSI &amp; SEVERITY</span></div>
-        <p class="jp-kpi-sub" style="font-size:13px;color:#0F172A">Dimensi dari bounding box terkalibrasi; severity Ringan/Sedang/Berat dari ambang dimensi fisik.</p>
+        <div class="jp-kpi-top"><span>02 · ESTIMASI DIMENSI &amp; KLASIFIKASI</span></div>
+        <p class="jp-kpi-sub" style="font-size:13px;color:#0F172A">Dimensi dari bounding box terkalibrasi. Retak: tingkat keparahan dari lebar (ambang RDDC2024-ID/ASTM D6433). Lubang: kelas ukuran dari diameter (bin ASTM D6433; kedalaman tak terukur dari foto). Retak buaya/lainnya: kelas luasan (heuristik).</p>
       </div>
       <div class="jp-kpi jp-kpi-blue">
         <div class="jp-kpi-top"><span>03 · INDEKS PRIORITAS &amp; PELAPORAN</span></div>
@@ -37,22 +37,27 @@
     <div class="jp-kpis" style="margin-top:12px">
       <div class="jp-kpi jp-kpi-blue">
         <div class="jp-kpi-top"><span>mAP VALIDASI</span><span class="jp-table-count">IoU 0,5</span></div>
-        <div class="jp-kpi-val mono">0,62</div>
-        <p class="jp-kpi-sub">YOLOv11s retrain, validasi RDD2022 (5.758 citra).</p>
+        <div class="jp-kpi-val mono">0,63</div>
+        <p class="jp-kpi-sub">YOLOv11s retrain 92 epoch (2×T4); mAP50 0,6312.</p>
       </div>
       <div class="jp-kpi jp-kpi-blue">
         <div class="jp-kpi-top"><span>mAP PENGUJIAN</span><span class="jp-table-count">Test Split</span></div>
-        <div class="jp-kpi-val mono">0,62</div>
-        <p class="jp-kpi-sub">YOLOv11s, test RDD2022 (5.758 citra), tanpa augmentasi.</p>
+        <div class="jp-kpi-val mono">0,63</div>
+        <p class="jp-kpi-sub">mAP50 0,632 (P 0,654 / R 0,600); 5.758 citra test RDD2022.</p>
       </div>
       <div class="jp-kpi jp-kpi-blue">
         <div class="jp-kpi-top"><span>mAP OOD BANDUNG</span><span class="jp-table-count">Out-of-Domain</span></div>
-        <div class="jp-kpi-val mono">0,58</div>
-        <p class="jp-kpi-sub">BPID Bandung OOD: 161 citra / 263 instance pothole.</p>
+        <div class="jp-kpi-val mono">0,54</div>
+        <p class="jp-kpi-sub">161 citra independen Bandung (0,581 pada retrain sebelumnya; n kecil — indikatif).</p>
+      </div>
+      <div class="jp-kpi jp-kpi-blue">
+        <div class="jp-kpi-top"><span>GATE JALAN BASAH</span><span class="jp-table-count">Scene Classifier</span></div>
+        <div class="jp-kpi-val mono">94,62%</div>
+        <p class="jp-kpi-sub">YOLOv11n-cls IROSCD; top-1 94,62% (seed 2), top-5 100%; 260 citra test.</p>
       </div>
       <div class="jp-kpi jp-kpi-blue">
         <div class="jp-kpi-top"><span>DATA LATIH</span><span class="jp-table-count">RDD2022</span></div>
-        <div class="jp-kpi-val mono">26.900</div>
+        <div class="jp-kpi-val mono">26.869</div>
         <p class="jp-kpi-sub">citra train · model YOLOv11s (<span class="jp-num">best.pt</span>) + <span class="jp-num">best.onnx</span> untuk live.</p>
       </div>
     </div>

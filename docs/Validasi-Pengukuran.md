@@ -104,3 +104,28 @@ Catatan metodologi: untuk seri jarak, **jangan mengubah zoom/resolusi kamera** �
 `ppc` berubah bukan karena jarak, sehingga serinya tidak sahih.
 
 
+
+---
+
+## 3. Dasar ambang klasifikasi dimensi (keputusan 2026-10-18)
+
+Reframing agar defensif di depan dosen/reviewer: hanya **retak** yang dilaporkan
+sebagai "tingkat keparahan" (ambangnya dari standar). **Lubang** dilaporkan
+sebagai **kelas ukuran** berdasar diameter, **retak buaya / other** sebagai
+**kelas luasan** — karena severity menurut standar butuh info yang tak terukur
+dari foto monokular (kedalaman lubang; spalling/pumping).
+
+| Kelas | Aturan | Dasar | Status |
+|---|---|---|---|
+| Retak long/trans | lebar <10 / 10–75 / >75 mm | README RDDC2024-ID (≈ ASTM D6433), terverifikasi | Standar |
+| Lubang | diameter bin 100–200 / 200–450 / 450–750 mm | Kolom Tabel X1.1 ASTM D6433 (via gambar P6 README RDDC2024-ID) | Sebagian standar (bin diameter saja) |
+| Alligator/other | luas <200 / 200–900 / >900 cm² | Heuristik tim | Heuristik, dinyatakan eksplisit |
+
+Catatan penting:
+- Batas atas ambang bersifat **eksklusif** (`<`), sesuai implementasi lama.
+- Teks bagian pothole di README RDDC2024-ID salah copy-paste dari bagian retak —
+  jangan sitasi teksnya untuk lubang; sitasi gambar P6 / Tabel X1.1-nya.
+- Bounding box melingkupi objek aktual → angka adalah **batas atas** (upper bound):
+  klasifikasi "Ringan" bersifat sound, "Berat" indikatif.
+- Klasifikasi ini **deskriptif** per temuan; instrumen prioritas = SDI-visual
+  per segmen (`app/sdi.py`). Ambang di `config/severity.yaml` (editable).

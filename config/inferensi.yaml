@@ -159,6 +159,8 @@ live:
   infer_interval: 1 # inferensi tiap N frame kamera (frame lain hanya ditampilkan)
   frame_diff_threshold: 0.02 # skip inferensi bila frame <2% berubah (webcam diam);
                              # 0 = mati; DIABAIKAN untuk sumber video (demo harus segar)
+  perataan_tampil: 12  # rata-rata bergerak jumlah box TAMPIL (display-only,
+                       # redam kedip angka live; TIDAK mengubah data snapshot)
   jpeg_quality: 72  # kualitas JPEG preview (turun dari 85 -> encode lebih murah)
   display_width: 640 # lebar frame proses+tampil (px); kamera di-resize ke ini
   cam_width: 640     # resolusi capture webcam

@@ -39,7 +39,7 @@ ROOT = WEB_DIR.parent
 if str(APP_DIR) not in sys.path:
     sys.path.insert(0, str(APP_DIR))
 
-from severity import diagnose, load_config  # noqa: E402
+from severity import diagnose, load_config, makna_untuk_kelas  # noqa: E402
 from prioritas import skor as skor_prioritas  # noqa: E402
 from laporan import buat_laporan  # noqa: E402
 from scene_gate import (  # noqa: E402
@@ -99,7 +99,7 @@ _INFER_FALLBACK = {
     "live": {"min_frames": 2, "display_fps": 30, "infer_interval": 1,
              "frame_diff_threshold": 0.02, "jpeg_quality": 72,
              "display_width": 640, "cam_width": 640, "cam_height": 480,
-             "cam_fps": 30},
+             "cam_fps": 30, "perataan_tampil": 12},
     "batas_ukuran": {"diameter_maks_cm": 300, "lebar_retak_maks_cm": 100,
                      "luas_maks_m2": 100, "rasio_aspek_min_retak": 1.5},
     # gabung_fragmen 0.30/0.50 (18 Okt 2026): aturan lama 0.05/0.30 menganggap
@@ -217,6 +217,9 @@ def get_inferensi(path=None):
             data["live"]["jpeg_quality"] = int(_klamp(
                 lv.get("jpeg_quality", lv_default["jpeg_quality"]), 40, 95,
                 lv_default["jpeg_quality"]))
+            data["live"]["perataan_tampil"] = int(_klamp(
+                lv.get("perataan_tampil", lv_default["perataan_tampil"]), 1, 60,
+                lv_default["perataan_tampil"]))
             data["live"]["display_width"] = int(_klamp(
                 lv.get("display_width", lv_default["display_width"]), 320, 1280,
                 lv_default["display_width"]))
@@ -510,38 +513,54 @@ def conf_prediksi(conf_global, toleransi=None):
     return max(float(conf_global) - maks_tol, 0.01)
 
 
-def masuk_akal(item, batas=None):
-    """Tolak box yang mustahil secara fisik menurut kalibrasi px/cm."""
+def alasan_tolak(item, batas=None):
+    """Alasan penolakan geometri: None (lolos) | "ukuran" | "aspek".
+
+    Dipisah dari boolean agar saring_rows() bisa menghitung "aspek"
+    tersendiri — filter rasio aspek retak belum pernah diukur dampaknya
+    (klaim "hampir pasti false positive" belum berangka), sehingga
+    jumlah yang dibuangnya harus terlihat, bukan lumpuk di "ukuran".
+    """
     b = batas or {}
     try:
         d_maks = float(b.get("diameter_maks_cm", 300))
         l_maks = float(b.get("lebar_retak_maks_cm", 100))
         luas_maks = float(b.get("luas_maks_m2", 100))
     except (TypeError, ValueError):
-        return True
+        return None
     c = str(item.get("kelas", "")).lower()
     try:
         pj = float(item.get("panjang_cm", 0))
         lb = float(item.get("lebar_cm", 0))
         luas = float(item.get("luas_m2", 0))
     except (TypeError, ValueError):
-        return True
+        return None
     if "crack" in c and "alligator" not in c:
         if not (lb <= l_maks):
-            return False
+            return "ukuran"
         # Retak longitudinal/transversal yang valid memanjang; box yang
-        # near-square (rasio aspek < ambang) hampir pasti false positive
+        # near-square (rasio aspek < ambang) diduga false positive
         # (noda, bayangan, tekstur aspal). Alligator & pothole dikecualikan.
+        # CATATAN: klaim ini BELUM diukur (lihat P2 rencana audit 2026-10-18);
+        # dihitung terpisah sebagai "aspek" agar dampaknya terpantau.
         try:
             rasio_min = float(b.get("rasio_aspek_min_retak", 1.5))
         except (TypeError, ValueError):
             rasio_min = 1.5
         if rasio_min > 1.0 and lb > 0 and pj / lb < rasio_min:
-            return False
-        return True
+            return "aspek"
+        return None
     if "pothole" in c:
-        return max(pj, lb) <= d_maks
-    return luas <= luas_maks
+        return None if max(pj, lb) <= d_maks else "ukuran"
+    return None if luas <= luas_maks else "ukuran"
+
+
+def masuk_akal(item, batas=None):
+    """Tolak box yang mustahil secara fisik menurut kalibrasi px/cm.
+
+    Kompatibilitas: boolean. Untuk alasan penolakan, pakai alasan_tolak().
+    """
+    return alasan_tolak(item, batas) is None
 
 
 def luas_px(row):
@@ -554,15 +573,18 @@ def luas_px(row):
 
 
 def saring_rows(rows, conf_global, ambang=None, batas=None, luas_min_px=0):
-    """Saring rows -> (lolos, {'ambang': n, 'ukuran': n, 'mungil': n,
-    'rusak': n}).
+    """Saring rows -> (lolos, {'ambang': n, 'ukuran': n, 'aspek': n,
+    'mungil': n, 'rusak': n}).
 
     'rusak' = box/conf NaN atau Inf (overflow FP16, lihat half_gambar_untuk).
     Dibuang lebih dulu agar lolos dari hitungan "ukuran tidak masuk akal" —
     tanpa ini NaN tersamar sebagai geometri tak wajar dan pesannya menyesatkan.
+    'aspek' = retak near-square yang dibuang filter rasio aspek (dihitung
+    terpisah karena dampaknya belum pernah diukur — lihat alasan_tolak()).
     """
     ok = []
-    buang_ambang = buang_ukuran = buang_mungil = buang_rusak = 0
+    buang_ambang = buang_ukuran = buang_aspek = 0
+    buang_mungil = buang_rusak = 0
     for r in rows:
         try:
             cf = float(r.get("conf", 0))
@@ -575,8 +597,12 @@ def saring_rows(rows, conf_global, ambang=None, batas=None, luas_min_px=0):
         if cf < ambang_efektif(r.get("kelas", ""), conf_global, ambang):
             buang_ambang += 1
             continue
-        if not masuk_akal(r, batas):
-            buang_ukuran += 1
+        alasan = alasan_tolak(r, batas)
+        if alasan is not None:
+            if alasan == "aspek":
+                buang_aspek += 1
+            else:
+                buang_ukuran += 1
             continue
         lp = luas_px(r)
         if luas_min_px > 0 and 0 <= lp < luas_min_px:
@@ -584,7 +610,8 @@ def saring_rows(rows, conf_global, ambang=None, batas=None, luas_min_px=0):
             continue
         ok.append(r)
     return ok, {"ambang": buang_ambang, "ukuran": buang_ukuran,
-                "mungil": buang_mungil, "rusak": buang_rusak}
+                "aspek": buang_aspek, "mungil": buang_mungil,
+                "rusak": buang_rusak}
 
 
 def batas_topk(rows, maks=0):
@@ -641,6 +668,7 @@ def terapkan_koreksi(rows, hapus=None, severity=None):
                         "panjang_cm": r.get("panjang_cm", 0),
                         "lebar_cm": r.get("lebar_cm", 0),
                         "luas_cm2": r.get("luas_cm2", 0),
+                        "makna": makna_untuk_kelas(r.get("kelas", "-")),
                         "dasar": r.get("dasar", "-")}
             item["severity"] = baru_sev
             item["bahan"] = cfg["bahan"][baru_sev]
@@ -1295,7 +1323,8 @@ def prediksi_teliti(model, img, conf=0.25, iou=0.5, tcfg=None, ambang=None,
             kls.append(int(b.cls[0]))
     info_awal = {"tepi_tile": n_tepi, "rusak": n_rusak}
     if not kotak:
-        info_awal.update({"ambang": 0, "ukuran": 0, "silang_kelas": 0})
+        info_awal.update({"ambang": 0, "ukuran": 0, "aspek": 0,
+                          "silang_kelas": 0})
         return [], info_awal
     boxes = np.array(kotak)
     skor = np.array(skor)
@@ -1405,12 +1434,16 @@ def analisis_gambar(raw: bytes, conf: float = 0.30, model_path=None,
     conf_run = conf_prediksi(conf, ambang)  # predict serendah kelas terendah
     img = decode_image(raw)
     # --- Perkecil gambar untuk ANALISIS (maks_sisi_proses) -----------------
-    # Model tetap letterbox ke imgsz_gambar, jadi memperkecil di sini TIDAK
-    # mengubah piksel yang dilihat model. Yang terpangkas hanya tahap murah yang
-    # linier terhadap jumlah piksel (cek gelap, klasifikasi scene, CLAHE malam,
-    # anotasi, encode JPEG, base64). Box hasil model ada di ruang gambar kecil
-    # dan dikali `skala_box` di hilir agar kembali ke koordinat gambar ASLI —
-    # kalibrasi px/cm, severity, masuk_akal, dan verifikasi operator tak berubah.
+    # CATATAN JUJUR: memperkecil di sini BUKAN tanpa biaya. Model me-letterbox
+    # ke imgsz_gambar, tetapi resampling dua tahap (pra-perkecil lalu letterbox)
+    # menghilangkan detail frekuensi tinggi dibanding sekali letterbox langsung
+    # dari resolusi asli — retak tipis bisa ikut hilang. Penghematannya hanya
+    # untuk tahap murah yang linier terhadap jumlah piksel (cek gelap,
+    # klasifikasi scene, CLAHE malam, anotasi, encode JPEG, base64). Karena itu
+    # default = 0 (nonaktif); aktifkan hanya bila yakin detail kecil tak penting.
+    # Box hasil model ada di ruang gambar kecil dan dikali `skala_box` di hilir
+    # agar kembali ke koordinat gambar ASLI — kalibrasi px/cm, severity,
+    # masuk_akal, dan verifikasi operator tak berubah.
     # Mode teliti DILEWATI: gunanya justru detail resolusi asli.
     h0, w0 = img.shape[:2]
     maks_sisi = int(inf.get("maks_sisi_proses", 0) or 0)
@@ -1642,6 +1675,35 @@ def start_worker_inferensi():
     """Mulai worker thread GPU + warmup. Dipanggil sekali saat startup server
     agar request pertama pun tidak membayar inisialisasi CUDA."""
     _pastikan_pekerja()
+
+
+def status_sistem():
+    """Ringkasan kesehatan TANPA efek samping (untuk endpoint /health).
+
+    Tidak memuat model dan tidak membangunkan worker — hanya melaporkan
+    keadaan saat ini. Dipakai monitoring/debugging, bukan bagian klaim naskah.
+    """
+    t = _thread_pekerja
+    try:
+        gate = baca_konfig_gate()
+    except Exception:
+        gate = {}
+    try:
+        imgsz = get_inferensi().get("imgsz_gambar")
+    except Exception:
+        imgsz = None
+    return {
+        "worker_inferensi": {
+            "dijadwalkan": t is not None,
+            "hidup": bool(t is not None and t.is_alive()),
+        },
+        "model_terload": sorted(str(k) for k in _models.keys()),
+        "gate_jalan_basah": {
+            "aktif": bool(gate.get("aktif")),
+            "wet_min": gate.get("wet_min"),
+        },
+        "imgsz_gambar": imgsz,
+    }
 
 
 def analisis_gambar_terjadwal(*args, **kwargs):

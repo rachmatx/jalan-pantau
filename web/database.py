@@ -409,6 +409,7 @@ def sdi_segmen(segmen_id):
     hasil = _hitung_sdi(komp)
     hasil["n_temuan_total"] = len(rows)
     hasil["n_tanpa_dimensi"] = tanpa_dimensi
+    hasil["komp"] = komp  # data pengukuran agregat (untuk penjelasan visual)
     return hasil
 
 

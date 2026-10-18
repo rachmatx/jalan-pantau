@@ -30,6 +30,13 @@
           sehingga SDI bersifat <strong>parsial</strong> — lengkapi dengan SDI manual
           hasil survei lapangan sebagai pembanding validasi.
         </p>
+        <h2 class="jp-section-title" style="margin-top:14px">Cara kerja SDI-visual</h2>
+        <div class="jp-steps">
+          <div class="jp-step"><b>1</b><p><strong>Deteksi</strong> — YOLO menemukan jenis tiap kerusakan pada foto anggota segmen.</p></div>
+          <div class="jp-step"><b>2</b><p><strong>Ukur</strong> — tiap bounding box dikonversi ke cm via kalibrasi kamera.</p></div>
+          <div class="jp-step"><b>3</b><p><strong>Agregasi</strong> — seluruh temuan se-segmen diringkas jadi 5 angka: jumlah retak, % luas retak, rerata lebar retak, jumlah lubang/km.</p></div>
+          <div class="jp-step"><b>4</b><p><strong>Skor</strong> — SDI1–SDI4 dihitung dari 5 angka itu, dijumlahkan → total &amp; kategori (Baik … Rusak Berat) untuk prioritas dinas.</p></div>
+        </div>
       </div>
     </div>
     <div>
@@ -79,6 +86,7 @@
       </table>
     </div>
   </div>
+  <div id="segmen-paginasi" style="display:none;align-items:center;justify-content:center;gap:4px;margin-top:16px;flex-wrap:wrap"></div>
 
   <dialog id="dlg-segmen" class="jp-dialog jp-dialog-auto" style="max-width:860px" aria-labelledby="dg-judul">
     <div>

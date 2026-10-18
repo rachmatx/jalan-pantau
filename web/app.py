@@ -24,7 +24,7 @@ from flask import (Flask, Response, current_app, jsonify, redirect,
 
 from deteksi import (WorkerInferensiMati, analisis_gambar,
                      analisis_gambar_terjadwal, buat_pdf, get_kalibrasi,
-                     hitung_ppc, nama_model, simpan_kalibrasi,
+                     hitung_ppc, nama_model, simpan_kalibrasi, status_sistem,
                      terapkan_koreksi)
 from streaming import MANAGER
 from database import (daftar_sesi, detail_sesi, hapus_sesi, simpan_sesi,
@@ -418,6 +418,16 @@ def create_app():
     @app.get("/tentang")
     def tentang():
         return render_template("tentang.html", active="tentang")
+
+    @app.get("/health")
+    def health():
+        """Kesehatan sistem TANPA efek samping: tidak memuat model, tidak
+        membangunkan worker. 200 bila worker inferensi hidup, 503 bila mati
+        (untuk monitoring; _pastikan_pekerja akan me-restart-nya saat ada
+        request deteksi berikutnya)."""
+        s = status_sistem()
+        kode = 200 if s["worker_inferensi"]["hidup"] else 503
+        return s, kode
 
     @app.get("/kalibrasi")
     @login_wajib

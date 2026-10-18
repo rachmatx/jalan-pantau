@@ -23,14 +23,20 @@
     return (v === null || v === undefined) ? "-" : String(v);
   }
 
+  var dataSegmen = [];
+  var halamanSegmen = 1;
+  var PER_HALAMAN_SEGMEN = 10;
+
   async function muat() {
     const res = await fetch("/api/segmen");
     if (!res.ok) return;
     const data = await res.json();
+    dataSegmen = data;
+    halamanSegmen = 1;
     document.getElementById("kpi-segmen").textContent = data.length;
     var hitung = document.getElementById("tabel-hitung");
     if (hitung) hitung.textContent = data.length ? data.length + " segmen" : "";
-    // Visual distribusi kategori.
+    // Visual distribusi kategori (seluruh data, bukan cuma halaman aktif).
     var hit = { "Baik": 0, "Sedang": 0, "Rusak Ringan": 0, "Rusak Berat": 0 };
     data.forEach(function(g) {
       var k = (g.sdi || {}).kategori;
@@ -40,43 +46,97 @@
     document.getElementById("kat-sedang").textContent = hit["Sedang"];
     document.getElementById("kat-ringan").textContent = hit["Rusak Ringan"];
     document.getElementById("kat-berat").textContent = hit["Rusak Berat"];
+    renderTabelSegmen();
+  }
+
+  function barisSegmen(g) {
+    const sdi = g.sdi || {};
+    const manual = g.sdi_manual;
+    const selisih = (manual === null || manual === undefined)
+      ? "-" : Math.abs(Number(manual) - Number(sdi.sdi_total || 0)).toFixed(0);
+    return "<tr>" +
+      '<td><button type="button" class="jp-link" data-lihat="' + g.id + '">' + esc(g.nama) + "</button></td>" +
+      "<td>" + esc(g.jalan) + "</td>" +
+      '<td class="jp-num-right">' + esc(g.panjang_m) + " m</td>" +
+      '<td class="jp-num-right">' + esc(g.n_sesi) + "</td>" +
+      '<td class="jp-num-right" style="font-weight:700">' + fmtSDI(sdi.sdi_total) + "</td>" +
+      "<td>" + badgeKat(sdi.kategori) + "</td>" +
+      '<td class="jp-num-right">' + fmtSDI(manual) + "</td>" +
+      '<td class="jp-num-right">' + esc(selisih) + "</td>" +
+      '<td><div class="jp-rowact">' +
+        '<button type="button" data-act="detail" data-lihat="' + g.id + '">Detail</button>' +
+        '<button type="button" data-act="hapus" data-hapus="' + g.id + '">Hapus</button>' +
+      "</div></td></tr>";
+  }
+
+  function renderTabelSegmen() {
+    const data = dataSegmen;
     const tb = document.getElementById("tbl-segmen");
+    var pag = document.getElementById("segmen-paginasi");
     if (!data.length) {
       tb.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--jp-muted)">'
         + "Belum ada segmen. Buat segmen 100 m lalu masukkan sesi foto ke dalamnya.</td></tr>";
+      if (pag) { pag.style.display = "none"; pag.innerHTML = ""; }
       return;
     }
-    tb.innerHTML = data.map(function(g) {
-      const sdi = g.sdi || {};
-      const manual = g.sdi_manual;
-      const selisih = (manual === null || manual === undefined)
-        ? "-" : Math.abs(Number(manual) - Number(sdi.sdi_total || 0)).toFixed(0);
-      return "<tr>" +
-        '<td><button type="button" class="jp-link" data-lihat="' + g.id + '">' + esc(g.nama) + "</button></td>" +
-        "<td>" + esc(g.jalan) + "</td>" +
-        '<td class="jp-num-right">' + esc(g.panjang_m) + " m</td>" +
-        '<td class="jp-num-right">' + esc(g.n_sesi) + "</td>" +
-        '<td class="jp-num-right" style="font-weight:700">' + fmtSDI(sdi.sdi_total) + "</td>" +
-        "<td>" + badgeKat(sdi.kategori) + "</td>" +
-        '<td class="jp-num-right">' + fmtSDI(manual) + "</td>" +
-        '<td class="jp-num-right">' + esc(selisih) + "</td>" +
-        '<td><div class="jp-rowact">' +
-          '<button type="button" data-act="detail" data-lihat="' + g.id + '">Detail</button>' +
-          '<button type="button" data-act="hapus" data-hapus="' + g.id + '">Hapus</button>' +
-        "</div></td></tr>";
-    }).join("");
+    var totalHal = Math.max(1, Math.ceil(data.length / PER_HALAMAN_SEGMEN));
+    if (halamanSegmen > totalHal) halamanSegmen = totalHal;
+    if (halamanSegmen < 1) halamanSegmen = 1;
+    var start = (halamanSegmen - 1) * PER_HALAMAN_SEGMEN;
+    var pageRows = data.slice(start, start + PER_HALAMAN_SEGMEN);
+    tb.innerHTML = pageRows.map(barisSegmen).join("");
     tb.querySelectorAll("[data-lihat]").forEach(function(b) {
       b.onclick = function() { bukaDetail(Number(b.getAttribute("data-lihat"))); };
     });
     tb.querySelectorAll("[data-hapus]").forEach(function(b) {
       b.onclick = function() { hapusSegmen(Number(b.getAttribute("data-hapus"))); };
     });
+    renderPaginasiSegmen(totalHal, start, pageRows.length);
+  }
+
+  function renderPaginasiSegmen(totalHal, start, n) {
+    var pag = document.getElementById("segmen-paginasi");
+    if (!pag) return;
+    if (dataSegmen.length <= PER_HALAMAN_SEGMEN) {
+      pag.style.display = "none";
+      pag.innerHTML = "";
+      return;
+    }
+    pag.style.display = "flex";
+    var html = '<button type="button" id="seg-pag-prev"' + (halamanSegmen <= 1 ? " disabled" : "") + ">\u2039 Sebelumnya</button>";
+    for (var i = 1; i <= totalHal; i++) {
+      html += '<button type="button" class="pag-num' + (i === halamanSegmen ? " aktif" : "") + '" data-seghal="' + i + '">' + i + "</button>";
+    }
+    html += '<button type="button" id="seg-pag-next"' + (halamanSegmen >= totalHal ? " disabled" : "") + ">Berikutnya \u203a</button>";
+    html += '<span class="jp-hint" style="margin-left:8px">Menampilkan ' + (start + 1) + "\u2013" + (start + n) + " dari " + dataSegmen.length + " segmen (terbaru dulu)</span>";
+    pag.innerHTML = html;
+    document.getElementById("seg-pag-prev").onclick = function() {
+      if (halamanSegmen > 1) { halamanSegmen--; renderTabelSegmen(); }
+    };
+    document.getElementById("seg-pag-next").onclick = function() {
+      if (halamanSegmen < totalHal) { halamanSegmen++; renderTabelSegmen(); }
+    };
+    var nums = pag.querySelectorAll("[data-seghal]");
+    for (var j = 0; j < nums.length; j++) {
+      (function(idx) {
+        nums[idx].onclick = function() { halamanSegmen = idx + 1; renderTabelSegmen(); };
+      })(j);
+    }
   }
 
   function barisSDI(label, nilai, ket) {
     return "<tr><td>" + esc(label) + "</td>" +
       '<td class="jp-num-right" style="font-weight:700">' + fmtSDI(nilai) + "</td>" +
       "<td>" + esc(ket || "-") + "</td></tr>";
+  }
+
+  function barisUkur(label, nilai) {
+    return "<tr><td>" + esc(label) + "</td>" +
+      '<td class="jp-num-right" style="font-weight:700">' + esc(nilai) + "</td></tr>";
+  }
+
+  function fmtUkur(v, satuan) {
+    return (v === null || v === undefined) ? "-" : (v + (satuan || ""));
   }
 
   /* Bilah skala SDI 0-200 dengan penanda nilai visual & manual. */
@@ -109,6 +169,7 @@
     if (!res.ok) return;
     const g = await res.json();
     const sdi = g.sdi || {};
+    const komp = sdi.komp || {};
     const manual = g.sdi_manual;
     const selisih = (manual === null || manual === undefined) ? "-"
       : "Selisih vs manual: <b>" + Math.abs(Number(manual) - Number(sdi.sdi_total || 0)).toFixed(0) + "</b>";
@@ -166,6 +227,15 @@
           "</div>" +
         "</div>" +
       "</div>" +
+      "<h3>Data pengukuran agregat (bahan baku SDI)</h3>" +
+      '<div class="jp-table-scroll"><table class="jp-table" style="width:100%"><tbody>' +
+        barisUkur("Retak linier", fmtUkur(komp.n_retak_linier, " temuan")) +
+        barisUkur("Retak buaya", fmtUkur(komp.n_retak_buaya, " temuan")) +
+        barisUkur("Lubang", fmtUkur(komp.n_lubang, " temuan") + " → " + fmtUkur(komp.lubang_per_km, "/km")) +
+        barisUkur("Luas retak", fmtUkur(komp.luas_retak_m2, " m²") + " (" + fmtUkur(komp.luas_retak_pct, "%") + " dari luas segmen)") +
+        barisUkur("Rata-rata lebar retak", fmtUkur(komp.lebar_retak_mm, " mm")) +
+      "</tbody></table></div>" +
+      '<p style="font-size:12px;color:var(--jp-muted)">Lima angka inilah yang dimasukkan ke rumus SDI1–SDI4 pada tabel Komponen SDI di atas — mis. 26 lubang pada segmen 800 m → 32,5/km → SDI3 +75.</p>' +
       "<h3>Posisi pada skala Bina Marga</h3>" +
       skalaSDI(sdi.sdi_total, manual) +
       "<h3>Sesi anggota (" + (g.anggota || []).length + ")</h3>" +

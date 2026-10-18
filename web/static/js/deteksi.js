@@ -34,11 +34,11 @@ function renderTabelDeteksi() {
       `<button type="button" data-hapus="${ia}" aria-label="Hapus baris ${mulai + i + 1}" style="height:32px;padding:0 10px;border:1px solid var(--jp-line);border-radius:8px;background:var(--jp-surface);font-size:12px;cursor:pointer">Hapus</button>`;
     return `<tr><td class="jp-num">${String(mulai + i + 1).padStart(2, "0")}</td>` +
       `<td><span class="jp-cell-main">${esc(namaKelas(r.kelas))}</span><span class="jp-cell-sub">class: ${esc(r.kelas)}</span></td>` +
-      `<td class="jp-num">${esc(r.dasar)}</td><td>${badge(r.severity)}</td>` +
+      `<td class="jp-num">${esc(r.dasar)}</td><td>${badge(r.severity)}${r.makna ? `<span class="jp-cell-sub"> · ${esc(r.makna)}</span>` : ""}</td>` +
       `<td class="jp-num">${esc(confStr(r.conf))}</td>` +
       `<td>${sumber}</td><td style="white-space:nowrap">${aksi}</td></tr>`;
   }).join("");
-  var thead = `<tr><th>#</th><th>JENIS KERUSAKAN</th><th>AREA / DIMENSI ESTIMASI</th><th>TINGKAT KEPARAHAN</th><th>CONFIDENCE</th><th>SUMBER</th><th>VERIFIKASI</th></tr>`;
+  var thead = `<tr><th>#</th><th>JENIS KERUSAKAN</th><th>AREA / DIMENSI ESTIMASI</th><th>TINGKAT / KELAS</th><th>CONFIDENCE</th><th>SUMBER</th><th>VERIFIKASI</th></tr>`;
   document.getElementById("tabel").innerHTML = `<table class="jp-table"><thead>${thead}</thead><tbody>${tbody}</tbody></table>`;
   // Pagination
   var pagEl = document.getElementById("deteksi-paginasi");
@@ -108,11 +108,12 @@ function rincianKosong(json) {
   if (rusak) gugur.push(rusak + " keluaran rusak dari model (diabaikan)");
   if (d.ambang) gugur.push(d.ambang + " di bawah ambang kepercayaan");
   if (d.ukuran) gugur.push(d.ukuran + " ukuran tidak masuk akal");
+  if (d.aspek) gugur.push(d.aspek + " retak near-square (filter rasio aspek)");
   if (d.mungil) gugur.push(d.mungil + " terlalu kecil");
   var nGate = (d.gate && d.gate.disaring) || 0;
   if (nGate) gugur.push(nGate + " lubang ditahan gate jalan-basah");
   var totalGugur = rusak + Number(d.ambang || 0) + Number(d.ukuran || 0) +
-    Number(d.mungil || 0) + nGate;
+    Number(d.aspek || 0) + Number(d.mungil || 0) + nGate;
   var sebab = gugur.length
     ? "Kandidat model yang dibuang penyaring: " + gugur.join(", ") + "."
     : "Model tidak menghasilkan kandidat sama sekali, jadi penyaring tidak " +
