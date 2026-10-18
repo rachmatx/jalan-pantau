@@ -404,10 +404,12 @@ Baris dapat bergeser seiring perubahan; nama fungsi/route adalah acuan utama.
 
 Aplikasi ini **sengaja** menyatakan batasan berikut (dari README & DESIGN):
 
-1. **Bukan segmentasi.** Deteksi *bounding box*; luas diestimasi dari kontur
-   di dalam box (*pseudo-segmentation*), bukan mask model.
-2. **Akurasi belum mencapai target.** YOLOv11s: mAP50 val 0,616, test 0,617
-   (target ≥ 0,65 belum tercapai). Dataset latih RDD2022 (India/Jepang).
+1. **Bukan segmentasi.** Deteksi *bounding box*; luas diestimasi dari
+   dimensi box terkalibrasi, bukan mask model. (Pseudo-segmentation sudah
+   dihapus dari kode.)
+2. **Akurasi belum mencapai target.** YOLOv11s (retrain 18 Okt 2026): mAP50
+   val 0,631, test 0,632 (target ≥ 0,65 belum tercapai). Dataset latih
+   RDD2022 (India/Jepang).
 3. **Kamera mono tidak mengukur kedalaman.** Tebal = asumsi per severity.
 4. **Skor prioritas = indeks relatif** (Ringan 33 / Sedang 67 / Berat 100),
    bukan RAB/biaya resmi. Tidak ada komponen harga.

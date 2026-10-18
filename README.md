@@ -45,12 +45,12 @@ Model tunggal **YOLOv11s** (dipakai untuk foto statis maupun live), epoch terbai
 
 | Split | mAP50 | mAP50-95 | Presisi | Recall | F1 |
 |---|---|---|---|---|---|
-| Validasi | 0,616 | 0,339 | 0,655 | 0,574 | 0,612 |
-| Test RDD2022 (5.758 citra / 9.675 instance) | 0,617 | 0,337 | 0,645 | 0,587 | 0,615 |
-| Bandung OOD — BPID (161 citra / 263 instance) | 0,581 | 0,313 | 0,572 | 0,567 | 0,569 |
+| Validasi | 0,631 | 0,349 | 0,661 | 0,587 | 0,622 |
+| Test RDD2022 (5.758 citra / 9.675 instance) | 0,632 | 0,345 | 0,654 | 0,600 | 0,626 |
+| Bandung OOD — BPID (161 citra / 263 instance) | 0,540 | 0,294 | 0,558 | 0,534 | 0,546 |
 
-Per kelas (AP50, test RDD2022): `other_corruption` 0,748 · `alligator_crack`
-0,676 · `longitudinal_crack` 0,582 · `transverse_crack` 0,568 · `pothole` 0,513.
+Per kelas (AP50, test RDD2022): `other_corruption` 0,756 · `alligator_crack`
+0,690 · `longitudinal_crack` 0,595 · `transverse_crack` 0,587 · `pothole` 0,531.
 
 Uji fungsional pada 17 foto jalan: **48 temuan**, kelima kelas
 (`longitudinal_crack`, `transverse_crack`, `alligator_crack`,

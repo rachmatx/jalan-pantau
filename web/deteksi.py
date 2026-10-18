@@ -93,8 +93,8 @@ _INFER_FALLBACK = {
     # pothole 0 (bukan 0.08): lowering 0,08 membuat ambang efektif 0,17 dan
     # precision pothole jatuh ke 0,32 (BPID, 161 gambar). Tanpa lowering, F1
     # maksimum ada di conf ~0,30-0,35.
-    "toleransi_kelas": {"longitudinal_crack": 0.13, "transverse_crack": 0.13,
-                        "alligator_crack": 0.10, "other_corruption": 0.10,
+    "toleransi_kelas": {"longitudinal_crack": 0.0, "transverse_crack": 0.05,
+                        "alligator_crack": 0.05, "other_corruption": 0.10,
                         "pothole": 0.0},
     "live": {"min_frames": 2, "display_fps": 30, "infer_interval": 1,
              "frame_diff_threshold": 0.02, "jpeg_quality": 72,
