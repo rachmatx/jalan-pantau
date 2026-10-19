@@ -123,7 +123,7 @@ function tampilkanPeringatanGPSInline() {
   div.setAttribute("role", "alert");
   div.style.cssText = "display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border-radius:8px;background:#FEF2F2;border:1px solid #FECACA;color:#991B1B;font-size:12px;line-height:1.45";
   div.innerHTML = '<span style="flex:1"><b>GPS tidak diizinkan.</b> Aktifkan izin lokasi di browser untuk live tracking. Lokasi default: ' + esc(namaDef) + '.</span>' +
-    '<button type="button" aria-label="Tutup peringatan" style="border:none;background:none;color:#991B1B;font-size:15px;line-height:1;cursor:pointer;padding:0 2px">×</button>';
+    '<button type="button" aria-label="Tutup peringatan" style="border:none;background:none;color:#991B1B;font-size:15px;line-height:1;cursor:pointer;padding:6px 8px;min-width:28px;min-height:28px">×</button>';
   div.querySelector("button").addEventListener("click", function () { div.remove(); });
   var top = card.querySelector(".jp-mapfilter-top");
   if (top && top.nextSibling) card.insertBefore(div, top.nextSibling);

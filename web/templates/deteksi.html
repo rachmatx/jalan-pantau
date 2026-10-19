@@ -12,7 +12,7 @@
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
     <span style="flex:1;min-width:200px">Hasil dimensi memakai <strong>kalibrasi bawaan</strong> — kalibrasi kamera untuk hasil akurat.</span>
     <a href="/kalibrasi" style="font-weight:600;color:#92400E;text-decoration:underline">Kalibrasi sekarang</a>
-    <button type="button" id="banner-kalibrasi-tutup" aria-label="Tutup pengingat" style="background:none;border:none;color:#92400E;cursor:pointer;font-size:16px;line-height:1;padding:4px">×</button>
+    <button type="button" id="banner-kalibrasi-tutup" aria-label="Tutup pengingat" style="background:none;border:none;color:#92400E;cursor:pointer;font-size:16px;line-height:1;padding:6px 8px;min-width:28px;min-height:28px">×</button>
   </div>
   <!-- Workbar: tab + status -->
   <div class="jp-workbar">
@@ -178,7 +178,7 @@
       </div>
       <div style="margin-top:16px">
         <div class="jp-table-title"><h3>Rincian Klasifikasi Objek Kerusakan</h3><span class="jp-table-count" id="tabel-hitung"></span><span class="jp-table-count" id="verifikasi-hitung"></span><button type="button" id="verifikasi-reset" class="jp-gps-btn" hidden style="margin-left:auto">Kembalikan ke hasil AI</button></div>
-        <div class="jp-table-scroll" id="tabel" style="margin-top:8px"></div>
+        <div class="jp-table-scroll" id="tabel" style="margin-top:8px" tabindex="0" role="region" aria-label="Tabel rincian klasifikasi objek kerusakan"></div>
         <div id="deteksi-paginasi" style="display:none;align-items:center;justify-content:center;gap:4px;margin-top:12px;flex-wrap:wrap"></div>
         <p class="jp-note">Prioritas penanganan dihitung per segmen 100 m via SDI-visual (menu Segmen), dari dimensi dan jumlah temuan di atas.</p>
       </div>
@@ -405,7 +405,7 @@
                 </button>
               </header>
               <div class="jp-dialog-body">
-                <div id="tabel-live" class="jp-table-scroll"></div>
+                <div id="tabel-live" class="jp-table-scroll" tabindex="0" role="region" aria-label="Tabel hasil live streaming"></div>
               </div>
               <footer class="jp-dialog-foot">
                 <span class="jp-dialog-foot-note">Snapshot sesi live terakhir.</span>

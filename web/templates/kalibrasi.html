@@ -41,7 +41,8 @@
         <h2 style="font-size:16px;margin:0 0 4px">Metode B — Foto penggaris, klik 2 titik</h2>
         <p style="font-size:12px;color:var(--jp-muted);margin:0 0 12px">1) Unggah foto penggaris/mistar di atas aspal dari ketinggian kamera sebenarnya. 2) Klik dua titik pada garis skala yang panjangnya Anda ketahui. 3) Isi panjangnya (cm), hitung, simpan.</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
-          <input type="file" id="foto-penggaris" accept="image/jpeg,image/png">
+          <label for="foto-penggaris" style="font-size:13px;font-weight:600">Foto penggaris</label>
+          <input type="file" id="foto-penggaris" accept="image/jpeg,image/png" aria-label="Foto penggaris untuk kalibrasi">
           <label for="ref-cm" style="font-size:13px;font-weight:600">Panjang referensi (cm)</label>
           <input type="number" id="ref-cm" value="10" min="0.1" max="1000" step="0.1" class="jp-input jp-mono-input" style="height:36px;width:110px">
           <button id="btn-hitung" type="button" class="jp-btn-demo" style="height:36px" disabled>Hitung dari 2 titik</button>
@@ -62,7 +63,7 @@
         <h2 style="font-size:16px;margin:0 0 8px">Bukti & keterbatasan</h2>
         <ul style="font-size:13px;color:var(--jp-tx2);margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px">
           <li>Nilai + metode + waktu tersimpan di <span class="jp-num">config/severity.yaml</span> dan langsung berlaku untuk deteksi berikutnya.</li>
-          <li>Unduh <button id="btn-unduh-status" type="button" class="jp-btn-demo" style="padding:2px 10px">status JSON</button> sebagai bukti kalibrasi.</li>
+          <li>Unduh <button id="btn-unduh-status" type="button" class="jp-btn-demo" style="padding:6px 10px">status JSON</button> sebagai bukti kalibrasi.</li>
           <li>Tidak mengukur kedalaman lubang (tebal = asumsi per severity). Tidak menggantikan survei resmi dinas.</li>
         </ul>
       </div>

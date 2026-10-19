@@ -697,7 +697,7 @@ th.jp-num-right { font-weight: 600; }
 }
 @media (min-width: 640px) { .jp-footer-in { flex-direction: row; } }
 .jp-footer-links { display: flex; gap: 12px; }
-.jp-footer-links a { color: var(--jp-muted); text-decoration: none; font-size: 12px; }
+.jp-footer-links a { color: var(--jp-muted); text-decoration: none; font-size: 12px; padding: 4px 2px; }
 .jp-footer-links a:hover { color: var(--jp-ink); }
 .jp-footer-mono { font-family: var(--jp-mono); font-size: 12px; }
 
@@ -1567,8 +1567,11 @@ label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label da
    AUDIT UI 19 OKT 2026 - aksesibilitas & target sentuh
    ============================================================ */
 /* Link attribusi Leaflet: biru #0078a8 di atas abu #333 hanya 2,55:1
-   -> axe "link-in-text-block". Garis bawah = pembeda TANPA warna. */
-.leaflet-control-attribution a { text-decoration: underline; }
+   -> axe "link-in-text-block". Garis bawah = pembeda TANPA warna.
+   Verifikasi 19 Okt 2026: selektor lama (.leaflet-control-attribution a)
+   kalah spesifisitas dari CSS bawaan Leaflet (.leaflet-container ...),
+   sehingga underline tidak kepakai di desktop -> naikkan spesifisitas. */
+.leaflet-container .leaflet-control-attribution a { text-decoration: underline; }
 /* Kontrol zoom Leaflet bawaan 26x26 dinaikkan ke 32px. */
 .leaflet-control-zoom a { width: 32px !important; height: 32px !important;
   line-height: 32px !important; }
@@ -1578,6 +1581,12 @@ label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label da
 .jp-tab { min-height: 36px; }
 .zoom-bar button { min-width: 32px !important; height: 32px !important; }
 .jp-rowact button { min-height: 32px; display: inline-flex; align-items: center; }
+/* Sisa temuan verifikasi independen 19 Okt 2026 (axe lolos, tap target
+   masih <24px = gagal WCAG 2.5.8). Semua di bawah ini min. 24px. */
+.jp-nav a { min-height: 28px; }
+.jp-gps-btn { padding: 6px 4px; }
+.jp-sevchip { padding: 4px 10px; }
+#chip-tutup { min-width: 28px; min-height: 28px; }
 .jp-pageactions a, .jp-pageactions button { min-height: 36px;
   display: inline-flex; align-items: center; }
 /* Tautan inline: padding vertikal memperbesar AREA KLIK tanpa menggeser
