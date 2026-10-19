@@ -737,7 +737,9 @@ def create_app():
         skip = min(max(skip, FRAME_SKIP_MIN), FRAME_SKIP_MAX)
         malam = data.get("malam", False) in (True, 1, "1", "true", "on")
         performa = str(data.get("performa", "") or "").strip().lower() or None
-        if performa not in (None, "halus", "seimbang", "akurat"):
+        # Preset "akurat" dihapus 19 Okt 2026 (duplikat "seimbang"); nilai tak
+        # dikenal diabaikan -> pakai imgsz_live dari config.
+        if performa not in (None, "halus", "seimbang"):
             performa = None
         if MANAGER.running and not _token_dimiliki(data):
             return jsonify({
@@ -815,7 +817,9 @@ def create_app():
         skip = min(max(skip, FRAME_SKIP_MIN), FRAME_SKIP_MAX)
         malam = data.get("malam", False) in (True, 1, "1", "true", "on")
         performa = str(data.get("performa", "") or "").strip().lower() or None
-        if performa not in (None, "halus", "seimbang", "akurat"):
+        # Preset "akurat" dihapus 19 Okt 2026 (duplikat "seimbang"); nilai tak
+        # dikenal diabaikan -> pakai imgsz_live dari config.
+        if performa not in (None, "halus", "seimbang"):
             performa = None
         if MANAGER.running and not _token_dimiliki(data):
             return jsonify({

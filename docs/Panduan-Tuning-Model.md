@@ -409,6 +409,42 @@ berbeda untuk kerusakan yang sama), jadi hitungannya sebagian dobel. Yang
 tepat: **640 (seimbang) = skala latih dan biaya paling masuk akal; 320 untuk
 FPS; 960 jangan dipakai di live.**
 
+**Perbaikan 19 Okt 2026 — `imgsz` live dijepit; preset "akurat" dihapus:**
+
+`jepit_imgsz()` di `web/streaming.py` membatasi `imgsz_live` ke lebar frame yang
+benar-benar diterima model, dibulatkan ke bawah ke kelipatan 32. Preset 960 pada
+`display_width: 640` kini otomatis berjalan di 640 — bukan lagi upscale 1,5x.
+
+Diukur dengan `StreamManager` yang SEBENARNYA (bukan harness ringan), video demo
+375 frame @25 fps, dua putaran, `conf 0.30`:
+
+| Preset | imgsz efektif | frame diperiksa | id unik | deteksi/inferensi |
+|---|---|---|---|---|
+| akurat (riwayat) | 960 -> **640** | 38% -> **86%** | 32 | 2,14 |
+| seimbang | 640 | **86%** | 31 | 2,09 |
+| halus | 320 | **99%** | 43 | 2,09 |
+
+Tiga hal yang perlu dicatat:
+
+1. **Preset "akurat" (960) DIHAPUS** dari UI dan `PERFORMA`, karena setelah
+   dijepit ia selalu sama dengan "seimbang" (640). Opsi "naikkan `display_width`
+   sekalian" ditolak atas dasar bukti: pada BPID — gambar 12 MP pada resolusi
+   asli, jadi bukan upscale — 960 justru lebih buruk (F1 0,536/P 0,409 vs
+   0,630/0,546), sementara biayanya ~109 ms (~9 inferensi/detik -> cakupan ~36%)
+   vs 86% di 640. Untuk webcam, 960 "sungguhan" bahkan butuh `cam_width` ikut
+   dinaikkan, sebab `jepit_imgsz` menjepit ke lebar frame NYATA. Nilai `performa`
+   tak dikenal tetap diabaikan (fallback config), jadi klien lama tidak pecah.
+2. **Cakupan 640 ternyata 86%, bukan 100%.** Angka 100% pada tabel di atas
+   berasal dari harness ringan yang hanya mengukur jalur inferensi; angka 86% di
+   sini diukur dengan manager sesungguhnya, yang juga menjalankan thread compose
+   dan encode JPEG (bersaing di CPU i5-3470). GTX 1650 memberi ~22,4 inferensi
+   per detik pada 640, sedangkan sumber 25 frame per detik — jadi 640 memang
+   **sedikit di bawah real-time** untuk 720p@25. Angka 100% sebelumnya terlalu
+   optimistis dan dikoreksi di sini.
+3. **Metrik adil membenarkan alasan (c):** deteksi per inferensi nyaris sama di
+   kedua preset (2,09 vs 2,14). Perbedaan `deteksi` kumulatif (776 vs 675) hampir
+   seluruhnya berasal dari cakupan frame, bukan dari mutu deteksi.
+
 #### Backend otomatis live: `.pt` di GPU, `.onnx` di CPU (19 Okt 2026)
 
 `config/inferensi.yaml` punya knob `mode_backend: auto | pt | onnx`. Tidak ada

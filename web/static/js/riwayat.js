@@ -244,7 +244,7 @@ async function bukaDetail(id) {
     // Load gambar setelah 50ms agar modal sempat render dulu
     setTimeout(function() { img.src = "/api/riwayat/" + id + "/gambar"; }, 50);
   } else {
-    fotoEl.innerHTML = '<div style="aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;color:#64748B;font-family:var(--jp-mono);font-size:11px">Foto bukti tidak tersedia</div>';
+    fotoEl.innerHTML = '<div style="aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;color:#475569;font-family:var(--jp-mono);font-size:12px">Foto bukti tidak tersedia</div>';
   }
   // Reset halaman temuan ke 1 saat buka detail
   halamanTemuan = 1;
@@ -253,9 +253,9 @@ async function bukaDetail(id) {
   if (dTotal) dTotal.textContent = s.segmen_nama ? ("Segmen: " + s.segmen_nama) : "Belum masuk segmen";
   var dTtd = document.getElementById("d-ttd");
   if (dTtd) dTtd.innerHTML =
-    `<div style="display:flex;flex-direction:column;align-items:center;gap:8px"><div style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-muted)">PETUGAS SURVEYOR</div><div style="height:40px"></div><div style="font-size:13px;font-weight:700;color:var(--jp-ink)">( ……… )</div></div>` +
-    `<div style="display:flex;flex-direction:column;align-items:center;gap:8px"><div style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-muted)">PEJABAT PEMBUAT KOMITMEN</div><div style="height:40px"></div><div style="font-size:13px;font-weight:700;color:var(--jp-ink)">( ……… )</div></div>` +
-    `<div style="display:flex;flex-direction:column;align-items:center;gap:8px"><div style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-muted)">MENGETAHUI</div><div style="height:40px"></div><div style="font-size:13px;font-weight:700;color:var(--jp-ink)">( ……… )</div></div>`;
+    `<div style="display:flex;flex-direction:column;align-items:center;gap:8px"><div style="font-size:12px;font-weight:600;letter-spacing:.05em;color:var(--jp-muted)">PETUGAS SURVEYOR</div><div style="height:40px"></div><div style="font-size:13px;font-weight:700;color:var(--jp-ink)">( ……… )</div></div>` +
+    `<div style="display:flex;flex-direction:column;align-items:center;gap:8px"><div style="font-size:12px;font-weight:600;letter-spacing:.05em;color:var(--jp-muted)">PEJABAT PEMBUAT KOMITMEN</div><div style="height:40px"></div><div style="font-size:13px;font-weight:700;color:var(--jp-ink)">( ……… )</div></div>` +
+    `<div style="display:flex;flex-direction:column;align-items:center;gap:8px"><div style="font-size:12px;font-weight:600;letter-spacing:.05em;color:var(--jp-muted)">MENGETAHUI</div><div style="height:40px"></div><div style="font-size:13px;font-weight:700;color:var(--jp-ink)">( ……… )</div></div>`;
   const st = document.getElementById("d-status");
   if (st) st.hidden = false;
   await muatPilihanSegmen(s);

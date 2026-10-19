@@ -62,7 +62,12 @@ device: auto
 # menulis imgsz latih = 768. BPID hanya berlabel pothole — efek ke recall retak
 # belum diukur di sini, jadi jangan naikkan ke 960 tanpa bukti.
 imgsz_gambar: 640
-imgsz_live: 640  # 640 = skala latih (akurasi penuh); 320 hanya bila mesin lambat. 960 = upscale, jangan.
+imgsz_live: 640  # 640 = skala latih (akurasi penuh); 320 hanya bila mesin lambat.
+                 # Preset live (halus 320 / seimbang 640) mengoverride ini, tapi
+                 # nilainya DIJEPIT ke lebar frame oleh jepit_imgsz()
+                 # (web/streaming.py) supaya tidak pernah upscale. Preset "akurat"
+                 # (960) dihapus 19 Okt 2026: selalu dijepit ke 640 sehingga
+                 # duplikat "seimbang". Lihat docs §"dijepit".
 iou: 0.5
 tta: true  # augment=True; trial 3 foto: conf top naik konsisten (0.4x->0.8x), biaya 0.3s->0.7s. Matikan bila terlalu PD.
 # --- FP16 (half) khusus JALUR GAMBAR — diukur 17 Okt 2026, GTX 1650 ---

@@ -238,6 +238,30 @@ class TestValidasiInput(unittest.TestCase):
                         json={"source": "webcam", "target": "bukan-angka"})
         self.assertEqual(r.status_code, 400)
 
+    def test_stream_start_performa_tak_dikenal_diabaikan(self):
+        """Preset "akurat" dihapus 19 Okt 2026 (duplikat "seimbang").
+
+        Nilai tak dikenal tidak ditolak, tetapi diabaikan -> None (fallback
+        imgsz_live config), supaya klien lama tidak pecah.
+        """
+        import web.app as app_mod
+        terlihat = {}
+        asli = app_mod.MANAGER.start
+        app_mod.MANAGER.start = lambda *a, **k: terlihat.update(k)
+        try:
+            r = self.c.post("/api/stream/start",
+                            json={"source": "webcam", "target": "0",
+                                  "performa": "akurat"})
+            self.assertEqual(r.status_code, 200)
+            self.assertIsNone(terlihat.get("performa"))
+            r = self.c.post("/api/stream/start",
+                            json={"source": "webcam", "target": "0",
+                                  "performa": "seimbang"})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(terlihat.get("performa"), "seimbang")
+        finally:
+            app_mod.MANAGER.start = asli
+
     def test_riwayat_koordinat_luar_rentang_400(self):
         r = self.c.post("/api/riwayat", json={"rows": ROWS, "total": 1, "lat": 999, "lon": 0})
         self.assertEqual(r.status_code, 400)

@@ -3,6 +3,10 @@
 
 {% block konten %}
 <div class="jp-wrap">
+  <!-- Judul halaman untuk pembaca layar: halaman ini tidak punya judul visual
+       (langsung workbar), jadi <h1> disembunyikan agar tata letak tidak
+       bergeser. Audit UI 19 Okt 2026 (axe: page-has-heading-one). -->
+  <h1 class="jp-sr-only">Deteksi Kerusakan Jalan — JalanPantau</h1>
   <!-- Pengingat kalibrasi: tampil bila masih memakai kalibrasi bawaan -->
   <div id="banner-kalibrasi" hidden style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#FFFBEB;border:1px solid #FDE68A;color:#92400E;border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:12px">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -79,7 +83,7 @@
                 <span class="jp-drop-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 16V6m0 0l-4 4m4-4l4 4M4 20h16"/></svg></span>
                 <span class="jp-drop-name" id="drop-foto">Pilih atau seret foto jalan ke sini…</span>
                 <p class="jp-drop-sub" id="drop-sub">EXIF GPS terbaca otomatis bila ada</p>
-                <span class="jp-drop-btn">Ganti Foto</span>
+                <span class="jp-drop-btn" id="drop-btn">Pilih Foto</span>
               </div>
             </div>
             <div class="jp-box">
@@ -97,7 +101,7 @@
             </label>
             <div class="jp-box">
               <div style="display:flex;align-items:center;justify-content:space-between">
-                <span class="jp-label" style="font-size:11px;letter-spacing:.05em;color:#475569">LOKASI &amp; GEOTAG</span>
+                <span class="jp-label" style="font-size:12px;letter-spacing:.05em;color:#475569">LOKASI &amp; GEOTAG</span>
                 <button type="button" class="jp-gps-btn" id="gps-sekarang">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>
                   <span>Ambil GPS Saat Ini</span>
@@ -186,11 +190,11 @@
     <!-- 5 KPI Cards (live streaming), satu baris -->
     <div class="jp-card" id="stat-cards-wrap" hidden style="margin-bottom:10px;padding:6px">
       <div id="stat-cards">
-        <div class="jp-stat-mini"><span>FPS TAMPIL</span><span id="fps-stat" style="color:var(--jp-sev-h-tx)">0</span><span>Preview halus</span></div>
-        <div class="jp-stat-mini"><span>FPS INFERENSI</span><span id="fps-infer-stat" style="color:var(--jp-primary)">0</span><span>Model YOLO</span></div>
-        <div class="jp-stat-mini"><span>TITIK UNIK</span><span id="unik-stat" style="color:var(--jp-ink)">0</span><span>Terpetakan</span></div>
-        <div class="jp-stat-mini"><span>DETEKSI AKTIF</span><span id="deteksi-stat" style="color:var(--jp-primary)">0</span><span>Objek/frame</span></div>
-        <div class="jp-stat-mini"><span>PERANGKAT</span><span id="perangkat-stat" style="color:var(--jp-ink)">-</span><span id="perangkat-ket">Backend live</span></div>
+        <div class="jp-stat-mini" title="Kehalusan preview (bukan mutu deteksi). Preset + resolusi yang benar-benar dipakai model ada di sini."><span>FPS TAMPIL</span><span id="fps-stat" style="color:var(--jp-sev-h-tx)">0</span><span id="fps-tampil-ket">Preview</span></div>
+        <div class="jp-stat-mini" title="Persentase frame sumber yang BENAR-BENAR diperiksa model. Mode yang lebih mahal melihat lebih sedikit frame, jadi kerusakan yang hanya terlihat sesaat lebih mudah terlewat."><span>FPS INFERENSI</span><span id="fps-infer-stat" style="color:var(--jp-primary)">0</span><span id="fps-infer-ket">Model YOLO</span></div>
+        <div class="jp-stat-mini" title="Jumlah ID track yang dibuat sepanjang sesi. Bisa lebih tinggi dari jumlah kerusakan sebenarnya: satu kerusakan kadang terpecah menjadi beberapa ID, terutama pada resolusi rendah."><span>TITIK UNIK</span><span id="unik-stat" style="color:var(--jp-ink)">0</span><span>ID track sesi</span></div>
+        <div class="jp-stat-mini" title="Total deteksi sepanjang sesi (kumulatif), BUKAN per frame. Mode yang lebih cepat selalu terlihat lebih besar karena memeriksa lebih banyak frame — bandingkan memakai angka per inferensi di bawah."><span>DETEKSI AKTIF</span><span id="deteksi-stat" style="color:var(--jp-primary)">0</span><span id="deteksi-ket">0 / inferensi</span></div>
+        <div class="jp-stat-mini" title="Perangkat dan berkas model yang benar-benar dipakai jalur live."><span>PERANGKAT</span><span id="perangkat-stat" style="color:var(--jp-ink)">-</span><span id="perangkat-ket">Backend live</span></div>
       </div>
     </div>
     <!-- Tips Performa (collapsible) -->
@@ -200,15 +204,15 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--jp-primary)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
           <span style="font-size:12px;font-weight:600;color:var(--jp-primary)">TIPS: FPS rendah atau tidak ada deteksi?</span>
         </div>
-        <button type="button" id="btn-toggle-tips" style="background:none;border:none;color:var(--jp-muted);cursor:pointer;font-size:11px">Tampilkan</button>
+        <button type="button" id="btn-toggle-tips" style="background:none;border:none;color:var(--jp-muted);cursor:pointer;font-size:12px">Tampilkan</button>
       </div>
       <div id="tips-content" style="margin-top:8px;display:none;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px">
-        <div style="font-size:11px;color:var(--jp-tx2)"><b>1. Mode Performa</b><br>Pilih "Halus" untuk FPS tampil maksimal (inferensi lebih jarang)</div>
-        <div style="font-size:11px;color:var(--jp-tx2)"><b>2. Turunkan Confidence</b><br>0.15-0.20 lebih sensitif untuk webcam</div>
-        <div style="font-size:11px;color:var(--jp-tx2)"><b>3. Pencahayaan baik</b><br>Model dilatih siang hari, hindari bayangan</div>
-        <div style="font-size:11px;color:var(--jp-tx2)"><b>4. Jarak optimal</b><br>Foto jalan dari jarak 2-5 meter</div>
-        <div style="font-size:11px;color:var(--jp-tx2)"><b>5. Mode Malam</b><br>Centang untuk gelap/remang (lebih lambat)</div>
-        <div style="font-size:11px;color:var(--jp-tx2)"><b>6. Video Contoh</b><br>Gunakan fallback sidang jika webcam bermasalah</div>
+        <div style="font-size:12px;color:var(--jp-tx2)"><b>1. Mode Performa</b><br>Pilih "Halus" untuk FPS tampil maksimal (inferensi lebih jarang)</div>
+        <div style="font-size:12px;color:var(--jp-tx2)"><b>2. Turunkan Confidence</b><br>0.15-0.20 lebih sensitif untuk webcam</div>
+        <div style="font-size:12px;color:var(--jp-tx2)"><b>3. Pencahayaan baik</b><br>Model dilatih siang hari, hindari bayangan</div>
+        <div style="font-size:12px;color:var(--jp-tx2)"><b>4. Jarak optimal</b><br>Foto jalan dari jarak 2-5 meter</div>
+        <div style="font-size:12px;color:var(--jp-tx2)"><b>5. Mode Malam</b><br>Centang untuk gelap/remang (lebih lambat)</div>
+        <div style="font-size:12px;color:var(--jp-tx2)"><b>6. Video Contoh</b><br>Gunakan fallback sidang jika webcam bermasalah</div>
       </div>
     </div>
     <div class="jp-grid">
@@ -262,27 +266,27 @@
               </div>
               <div style="flex:1">
                 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-                  <span style="font-size:11px;font-weight:600;letter-spacing:0.05em;color:var(--jp-sev-r-tx)">GALAT PERANGKAT KAMERA</span>
+                  <span style="font-size:12px;font-weight:600;letter-spacing:0.05em;color:var(--jp-sev-r-tx)">GALAT PERANGKAT KAMERA</span>
                 </div>
-                <h3 id="camera-error-judul" style="font-size:18px;font-weight:600;color:var(--jp-ink);margin:4px 0">Koneksi Kamera Inspeksi Terputus</h3>
-                <p style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-muted)">Kamera tidak merespons • aliran frame terhenti</p>
+                <h2 id="camera-error-judul" style="font-size:18px;font-weight:600;color:var(--jp-ink);margin:4px 0">Koneksi Kamera Inspeksi Terputus</h2>
+                <p style="font-family:var(--jp-mono);font-size:12px;color:var(--jp-muted)">Kamera tidak merespons • aliran frame terhenti</p>
               </div>
             </div>
             <div style="padding:12px;border-radius:8px;background:var(--jp-container-low);font-size:12px;color:var(--jp-tx2)">
               <strong style="color:var(--jp-ink)">Diagnosa:</strong> <span id="camera-error-diagnosa">Sensor kamera tidak merespons frame buffer. Aliran inferensi dijeda otomatis untuk mencegah anomali data.</span>
             </div>
             <div style="display:flex;flex-direction:column;gap:8px">
-              <span style="font-size:11px;font-weight:600;letter-spacing:0.05em;color:var(--jp-muted)">3 Langkah Troubleshooting Cepat</span>
+              <span style="font-size:12px;font-weight:600;letter-spacing:0.05em;color:var(--jp-muted)">3 Langkah Troubleshooting Cepat</span>
               <div style="display:flex;align-items:flex-start;gap:8px;padding:8px;border-radius:8px;background:var(--jp-surface)">
-                <span style="width:20px;height:20px;border-radius:50%;background:var(--jp-container);font-family:var(--jp-mono);font-size:11px;color:var(--jp-ink);display:flex;align-items:center;justify-content:center;flex-shrink:0">1</span>
+                <span style="width:20px;height:20px;border-radius:50%;background:var(--jp-container);font-family:var(--jp-mono);font-size:12px;color:var(--jp-ink);display:flex;align-items:center;justify-content:center;flex-shrink:0">1</span>
                 <p style="font-size:12px;color:var(--jp-tx2);margin:0">Periksa sambungan kabel <strong style="color:var(--jp-ink)">USB 3.0 Type-C</strong> atau port bus USB host.</p>
               </div>
               <div style="display:flex;align-items:flex-start;gap:8px;padding:8px;border-radius:8px;background:var(--jp-surface)">
-                <span style="width:20px;height:20px;border-radius:50%;background:var(--jp-container);font-family:var(--jp-mono);font-size:11px;color:var(--jp-ink);display:flex;align-items:center;justify-content:center;flex-shrink:0">2</span>
+                <span style="width:20px;height:20px;border-radius:50%;background:var(--jp-container);font-family:var(--jp-mono);font-size:12px;color:var(--jp-ink);display:flex;align-items:center;justify-content:center;flex-shrink:0">2</span>
                 <p style="font-size:12px;color:var(--jp-tx2);margin:0">Restart daemon penangkap frame dengan klik <strong style="color:var(--jp-primary)">Coba Hubungkan Ulang</strong>.</p>
               </div>
               <div style="display:flex;align-items:flex-start;gap:8px;padding:8px;border-radius:8px;background:var(--jp-surface)">
-                <span style="width:20px;height:20px;border-radius:50%;background:var(--jp-container);font-family:var(--jp-mono);font-size:11px;color:var(--jp-ink);display:flex;align-items:center;justify-content:center;flex-shrink:0">3</span>
+                <span style="width:20px;height:20px;border-radius:50%;background:var(--jp-container);font-family:var(--jp-mono);font-size:12px;color:var(--jp-ink);display:flex;align-items:center;justify-content:center;flex-shrink:0">3</span>
                 <p style="font-size:12px;color:var(--jp-tx2);margin:0">Beralih sementara ke mode <strong style="color:var(--jp-ink)">Berkas MP4</strong> atau <strong style="color:var(--jp-ink)">Kamera Cadangan (IP-Cam RTSP)</strong>.</p>
               </div>
             </div>
@@ -326,9 +330,8 @@
             <select id="performa" class="jp-select">
               <option value="halus">Halus (FPS tinggi)</option>
               <option value="seimbang" selected>Seimbang (disarankan)</option>
-              <option value="akurat">Resolusi tinggi (FPS rendah)</option>
             </select>
-            <p class="jp-hint">Terukur di BPID: F1 0,63 @640 vs 0,54 @960 — 640 adalah titik terbaik model ini.</p>
+            <p class="jp-hint">Terukur di BPID: F1 0,63 @640 vs 0,54 @960 — 640 adalah titik terbaik model ini. Preset resolusi tinggi dihapus karena frame live sudah dibatasi 640 px.</p>
           </div>
           <div class="jp-box">
             <label for="conf-live"><span>Ambang Batas Conf</span><output class="jp-conf-out" id="conf-live-out" for="conf-live">0,25</output></label>

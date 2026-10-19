@@ -46,11 +46,45 @@ FRAME_DIFF_THRESHOLD = 0.02  # fallback; nilai nyata dari config live.frame_diff
 # Preset "Mode Performa" (dikirim UI lewat /api/stream/start).
 # Nilai disetel untuk GPU (GTX 1650): inferensi ~15-30 ms, jadi interval 1
 # (tanpa skip) masih real-time. Di CPU, pakai "halus" + interval lebih besar.
+#
+# Hanya DUA titik operasi yang berguna: model dilatih di 640, dan frame sudah
+# dibatasi `live.display_width` (640), sehingga imgsz > 640 hanya meng-upscale
+# dan dijepit balik oleh jepit_imgsz(). Preset "akurat" (960) dihapus 19 Okt 2026
+# karena jadi duplikat "seimbang" sekaligus menyesatkan (lihat docs/Panduan-
+# Tuning-Model.md).
 PERFORMA = {
     "halus": {"imgsz_live": 320, "infer_interval": 1, "display_fps": 30},
     "seimbang": {"imgsz_live": 640, "infer_interval": 1, "display_fps": 30},
-    "akurat": {"imgsz_live": 960, "infer_interval": 1, "display_fps": 25},
 }
+
+
+def jepit_imgsz(imgsz, lebar_frame):
+    """imgsz efektif untuk live: TIDAK PERNAH melebihi lebar frame (cegah upscale).
+
+    Kenapa perlu: `live.display_width` (default 640) sudah memotong frame di
+    capture worker, jadi meminta imgsz 960 pada frame 640 hanya membuat
+    ultralytics MENG-UPSCALE 640 -> 960 — nol detail baru, ~2,3x lebih mahal, dan
+    keluar dari skala latih model (640) sehingga menambah false positive. Ini
+    jaring pengaman untuk preset/`imgsz_live` yang disetel di atas lebar frame.
+    Terukur di CPU: 133 ms @640 vs 285 ms @960 deteksi per frame hampir sama
+    (2,20 vs 2,42).
+
+    Cap dibulatkan ke BAWAH ke kelipatan 32 (stride YOLO) supaya tidak ada
+    padding sia-sia; batas bawah 32. Lebar frame tak masuk akal -> nilai asli
+    dikembalikan apa adanya (jangan sampai mengubah perilaku karena data aneh).
+    """
+    try:
+        asli = max(32, int(imgsz))
+    except (TypeError, ValueError):
+        return 640
+    try:
+        lebar = int(lebar_frame)
+    except (TypeError, ValueError):
+        return asli
+    if lebar <= 0:
+        return asli
+    pas = max((lebar // 32) * 32, 32)
+    return max(32, min(asli, pas))
 
 
 class StreamManager:
@@ -79,6 +113,10 @@ class StreamManager:
         self.n_frame = 0
         self.n_deteksi = 0
         self.n_inferensi = 0  # jumlah pemanggilan model.track() (penyebut metrik adil)
+        # imgsz yang BENAR-BENAR dipakai inferensi terakhir (setelah dijepit
+        # agar tak melebihi lebar frame - lihat jepit_imgsz). None = belum ada
+        # inferensi. Dipakai stats() supaya UI bisa jujur soal resolusi nyata.
+        self.imgsz_live_efektif = None
         self.fps_ema = 0.0        # FPS inferensi (kompat UI lama)
         self.fps_infer = 0.0
         self.fps_tampil = 0.0
@@ -111,8 +149,8 @@ class StreamManager:
               malam=False, performa=None):
         """source_type: webcam | ipcam | file. target: index/url/path.
 
-        performa: 'halus' | 'seimbang' | 'akurat' (opsional, override imgsz +
-        interval inferensi + batas FPS tampil).
+        performa: 'halus' | 'seimbang' (opsional, override imgsz + interval
+        inferensi + batas FPS tampil). Nilai lain diabaikan (pakai config).
         """
         self.stop()
         with self._lock:
@@ -435,9 +473,12 @@ class StreamManager:
                     pass
             t0 = time.time()
             umpan = cerahkan_malam(raw) if self.malam else raw
+            # Jepit ke lebar frame NYATA yang diterima model (lihat jepit_imgsz):
+            # preset 960 pada frame 640 hanya meng-upscale, bukan menambah detail.
+            imgsz_efektif = jepit_imgsz(imgsz, raw.shape[1])
             try:
                 res = model.track(umpan, persist=True, conf=conf_run,
-                                  imgsz=imgsz, iou=iou, device=device,
+                                  imgsz=imgsz_efektif, iou=iou, device=device,
                                   half=half_untuk(device),
                                   tracker="bytetrack.yaml", verbose=False)[0]
             except Exception as e:
@@ -450,6 +491,7 @@ class StreamManager:
                 # Hitung inferensi sukses (penyebut "rata-rata deteksi per
                 # inferensi" — metrik adil antar mode performa).
                 self.n_inferensi += 1
+                self.imgsz_live_efektif = imgsz_efektif
             self._simpan_tracks(res, model)
             with self._boxes_lock:
                 self._boxes = self._bangun_overlay(res, model)
@@ -659,6 +701,12 @@ class StreamManager:
                     "frame": self.n_frame,
                     "unik": len(self.tracks), "deteksi": self.n_deteksi,
                     "n_inferensi": self.n_inferensi, "rata_deteksi": rata,
+                    # Mode performa aktif + imgsz yang BENAR-BENAR dipakai
+                    # (sudah dijepit). `imgsz_live` di sini = efektif, bukan
+                    # nilai preset mentah; UI memakainya untuk jujur soal
+                    # resolusi nyata (lihat jepit_imgsz).
+                    "performa": self._performa,
+                    "imgsz_live": self.imgsz_live_efektif,
                     # Rata-rata bergerak box terlihat (display-only, redam
                     # kedip). BUKAN dasar snapshot/riwayat.
                     "tampil": tampil}

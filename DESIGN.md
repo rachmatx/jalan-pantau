@@ -89,12 +89,13 @@ kontraktor sudah **dihapus** dari kode (Okt 2026). Aplikasi kini satu peran
 
 ## 4. Kontrak ID (JS hook — jangan rename/hapus)
 
-- Deteksi gambar: `form-deteksi gambar conf conf-out malam teliti lokasi-gambar
-  lat-gambar lon-gambar tombol status slot-gambar viewer-gambar hasil
-  temuan-nilai berat-nilai total-nilai tabel unduh simpan`
+- Deteksi gambar: `form-deteksi gambar drop-btn conf conf-out malam teliti
+  lokasi-gambar lat-gambar lon-gambar tombol status slot-gambar viewer-gambar
+  hasil temuan-nilai berat-nilai total-nilai tabel unduh simpan`
 - Tab: `tab-gambar tab-live panel-gambar panel-live`
 - Live: `slot-live viewer-live stat-cards fps-stat fps-infer-stat unik-stat
-  deteksi-stat perangkat-stat perangkat-ket sumber in-webcam webcam-idx
+  deteksi-stat perangkat-stat perangkat-ket fps-tampil-ket fps-infer-ket
+  deteksi-ket sumber in-webcam webcam-idx
   in-ipcam ipcam-url in-file video
   conf-live conf-live-out skip malam-live lokasi lat-live lon-live mulai
   berhenti demo status-live hasil-live total-live-nilai tabel-live unduh-live

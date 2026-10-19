@@ -294,11 +294,20 @@ function confStr(c) {
   return `${String(v.toFixed(2)).replace(".", ",")} (${Math.round(v * 100)}%)`;
 }
 
+// Label tombol unggah: "Pilih Foto" selama belum ada berkas, "Ganti Foto"
+// setelah berkas dipilih. Audit UI 19 Okt 2026: sebelumnya label statis
+// "Ganti Foto" padahal belum ada foto yang bisa diganti.
+function setTombolUnggah(adaBerkas) {
+  const btn = document.getElementById("drop-btn");
+  if (btn) btn.textContent = adaBerkas ? "Ganti Foto" : "Pilih Foto";
+}
+
 document.getElementById("gambar").addEventListener("change", (e) => {
   const f = e.target.files[0];
   if (f) {
     if (f.size > 15 * 1048576) {
       e.target.value = "";
+      setTombolUnggah(false);
       status.textContent = "Ukuran gambar maks 15 MB. Kecilkan resolusi lalu coba lagi.";
       status.classList.add("galat");
       return;
@@ -309,6 +318,7 @@ document.getElementById("gambar").addEventListener("change", (e) => {
     const sub = document.getElementById("drop-sub");
     if (drop) drop.textContent = f.name;
     if (sub) sub.textContent = `${(f.size / 1048576).toFixed(1)} MB · tersimpan siap deteksi`;
+    setTombolUnggah(true);
     // Pratinjau langsung: tampilkan gambar di viewer begitu dipilih (tanpa menunggu deteksi)
     try {
       if (window.__jpPratinjauUrl) URL.revokeObjectURL(window.__jpPratinjauUrl);
@@ -588,7 +598,7 @@ function showToast(title, message, type) {
   };
   var colors = { info: "#006194", success: "#059669", warning: "#D97706", galat: "#ba1a1a" };
   toast.style.cssText = "background:#fff;border-left:4px solid " + (colors[type] || colors.info) + ";border-radius:8px;padding:12px 16px;box-shadow:0 4px 16px rgba(0,0,0,.15);display:flex;align-items:flex-start;gap:12px;animation:slideIn .3s ease;min-width:280px;max-width:360px";
-  toast.innerHTML = '<span style="font-size:18px;color:' + (colors[type] || colors.info) + '">' + (icons[type] || icons.info) + '</span><div style="flex:1"><div style="font-size:13px;font-weight:600;color:#0F172A">' + esc(title) + '</div><div style="font-size:12px;color:#64748B;margin-top:2px">' + esc(message) + '</div></div>';
+  toast.innerHTML = '<span style="font-size:18px;color:' + (colors[type] || colors.info) + '">' + (icons[type] || icons.info) + '</span><div style="flex:1"><div style="font-size:13px;font-weight:600;color:#0F172A">' + esc(title) + '</div><div style="font-size:12px;color:#475569;margin-top:2px">' + esc(message) + '</div></div>';
   container.appendChild(toast);
   setTimeout(function () { toast.style.opacity = "0"; toast.style.transform = "translateX(100%)"; setTimeout(function () { toast.remove(); }, 300); }, 4000);
 }

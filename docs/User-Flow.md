@@ -208,7 +208,7 @@ flowchart TD
 
 - Inferensi live ONNX @480 ≈ **326 ms/frame** (~3 FPS infer).
 - FPS **tampil** preview tetap **15+** karena arsitektur *decouple* 3-thread.
-- Preset performa: `halus` (320/3/30) · `seimbang` (480/2/25) · `akurat` (640/1/15).
+- Preset performa: `halus` (320/1/30) · `seimbang` (640/1/30).
 
 ---
 

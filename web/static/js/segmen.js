@@ -13,7 +13,7 @@
       "Baik": "#15803d", "Sedang": "#a16207",
       "Rusak Ringan": "#c2410c", "Rusak Berat": "#b91c1c"
     };
-    var c = warna[kat] || "#64748b";
+    var c = warna[kat] || "#475569";
     return '<span style="display:inline-block;padding:3px 10px;border-radius:999px;'
       + 'font-size:12px;font-weight:700;color:#fff;background:' + c + '">'
       + esc(kat || "-") + "</span>";

@@ -77,7 +77,7 @@ sumber.addEventListener("change", () => {
 
 // Mode Performa: selaraskan interval inferensi dengan preset saat dipilih.
 const performa = document.getElementById("performa");
-const PRESET_SKIP = { halus: "1", seimbang: "1", akurat: "1" };
+const PRESET_SKIP = { halus: "1", seimbang: "1" };
 if (performa) performa.addEventListener("change", () => {
   const s = document.getElementById("skip");
   if (s && PRESET_SKIP[performa.value]) s.value = PRESET_SKIP[performa.value];
@@ -112,6 +112,15 @@ function resetKartuLive() {
     const el = document.getElementById(id);
     if (el) el.textContent = "0";
   });
+  // Keterangan dinamis juga dikembalikan ke netral, supaya angka sesi lama
+  // tidak tertinggal di baris kecil.
+  const set = (id, teks) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = teks;
+  };
+  set("fps-tampil-ket", "Preview");
+  set("fps-infer-ket", "Model YOLO");
+  set("deteksi-ket", "0 / inferensi");
 }
 
 // Tampilkan perangkat + backend live yang benar-benar dipakai, supaya alasan
@@ -129,6 +138,31 @@ function isiPerangkat(p) {
   if (ket) ket.textContent = `Live: ${p.backend_live || "-"}`;
   nilai.title = rinci;
   if (ket) ket.title = rinci;
+}
+
+// Keterangan kecil di kartu KPI. Tujuannya mencegah salah tafsir: "titik unik"
+// dan "deteksi aktif" adalah angka KUMULATIF sepanjang sesi, sehingga mode yang
+// lebih cepat selalu terlihat lebih besar hanya karena memeriksa lebih banyak
+// frame — bukan karena lebih banyak menemukan per frame.
+//
+// Yang adil dibandingkan adalah:
+//   - deteksi per inferensi (rata_deteksi), dan
+//   - persentase frame yang benar-benar diperiksa model.
+// Keduanya ditampilkan di sini, berdampingan dengan angka kumulatifnya.
+function isiMetrik(s) {
+  const set = (id, teks) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = teks;
+  };
+  const rata = Number(s.rata_deteksi || 0).toFixed(2).replace(".", ",");
+  set("deteksi-ket", `${rata} / inferensi`);
+  const persen = s.frame
+    ? Math.min(100, Math.round((s.n_inferensi / s.frame) * 100)) : 0;
+  set("fps-infer-ket", `diperiksa ${persen}% frame`);
+  // Resolusi yang ditampilkan adalah imgsz EFEKTIF (sudah dijepit di backend
+  // agar tidak pernah melebihi lebar frame), bukan nilai preset mentah.
+  const preset = s.performa || "manual";
+  set("fps-tampil-ket", s.imgsz_live ? `${preset} · ${s.imgsz_live}px` : preset);
 }
 
 async function refreshStats() {
@@ -157,6 +191,7 @@ async function refreshStats() {
       if (document.getElementById("unik-stat")) document.getElementById("unik-stat").textContent = s.unik;
       if (document.getElementById("deteksi-stat")) document.getElementById("deteksi-stat").textContent = s.deteksi;
       isiPerangkat(s.perangkat);
+      isiMetrik(s);
       cards.hidden = false;
     }
   } catch {
@@ -500,9 +535,15 @@ document.getElementById("unduh-live").addEventListener("click", async () => {
           "fps     : " + s.fps,
           "perangkat: " + (s.perangkat ? (s.perangkat.cuda ? s.perangkat.gpu : "CPU") : "-") +
             " (backend live: " + (s.perangkat ? s.perangkat.backend_live : "-") + ")",
+          "performa: " + (s.performa || "-") + " (imgsz efektif " +
+            (s.imgsz_live || "-") + " px)",
           "frame   : " + s.frame,
+          "diperiksa: " + (s.frame
+            ? Math.min(100, Math.round((s.n_inferensi / s.frame) * 100)) : 0) +
+            "% frame (" + s.n_inferensi + " inferensi)",
           "unik    : " + s.unik,
           "deteksi : " + s.deteksi,
+          "rata    : " + (s.rata_deteksi ?? 0) + " deteksi/inferensi",
         ].join("\n");
         var a = document.createElement("a");
         a.href = URL.createObjectURL(new Blob([baris], { type: "text/plain" }));

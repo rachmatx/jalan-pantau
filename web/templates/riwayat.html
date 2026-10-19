@@ -3,7 +3,7 @@
 
 {% block konten %}
 <div class="jp-wrap">
-  <div class="jp-crumb"><span>LOG AUDIT INFRASTRUKTUR</span><span>›</span><span class="jp-crumb-aktif">ARSIP RIWAYAT PEMINDAIAN</span></div>
+  <div class="jp-crumb"><span>SISTEM INSPEKSI JALAN</span><span>›</span><span class="jp-crumb-aktif">ARSIP RIWAYAT PEMINDAIAN</span></div>
   <div class="jp-pagehead">
     <div>
       <h1>Riwayat Inspeksi Permukaan Jalan <span class="jp-countchip">Total: <b id="kpi-sesi">0</b> sesi</span></h1>
@@ -68,19 +68,19 @@
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <div style="display:flex;align-items:center;gap:6px;padding:2px 10px;border-radius:9999px;background:var(--jp-sev-h-bg)">
             <span style="width:8px;height:8px;border-radius:50%;background:var(--jp-sev-h-tx);animation:jp-pulse 1.6s infinite"></span>
-            <span style="font-size:11px;font-weight:600;letter-spacing:.05em;color:#047857;text-transform:uppercase">Arsip Tersimpan</span>
+            <span style="font-size:12px;font-weight:600;letter-spacing:.05em;color:#047857;text-transform:uppercase">Arsip Tersimpan</span>
           </div>
-          <span style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-tx2);font-weight:600" id="d-nomor">-</span>
+          <span style="font-family:var(--jp-mono);font-size:12px;color:var(--jp-tx2);font-weight:600" id="d-nomor">-</span>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-primary);text-transform:uppercase;background:rgba(0,97,148,.1);padding:2px 8px;border-radius:6px">Dokumen Sistem</span>
+          <span style="font-size:12px;font-weight:600;letter-spacing:.05em;color:var(--jp-primary);text-transform:uppercase;background:rgba(0,97,148,.1);padding:2px 8px;border-radius:6px">Dokumen Sistem</span>
         </div>
       </div>
       <!-- Title Section -->
       <div style="padding:16px 24px;background:var(--jp-surface);display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-muted)">BERITA ACARA AUDIT VISUAL KERUSAKAN JALAN</span>
+            <span style="font-size:12px;font-weight:600;letter-spacing:.05em;color:var(--jp-muted)">BERITA ACARA AUDIT VISUAL KERUSAKAN JALAN</span>
           </div>
           <h2 id="d-judul" style="font-size:24px;font-weight:700;letter-spacing:-0.02em;color:var(--jp-ink);margin:4px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Detail Berita Acara Inspeksi</h2>
           <p id="d-subjudul" style="font-size:12px;color:var(--jp-tx2);margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -98,7 +98,7 @@
         <!-- Metadata Grid -->
         <div class="jp-meta4" id="d-meta" style="margin-bottom:16px"></div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-          <span style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-tx2)">SEGMEN:</span>
+          <span style="font-size:12px;font-weight:600;letter-spacing:.05em;color:var(--jp-tx2)">SEGMEN:</span>
           <select id="d-segmen" class="jp-select" style="min-width:220px"></select>
           <button type="button" id="d-segmen-simpan" class="jp-btn-light">Tetapkan</button>
           <span id="d-segmen-info" style="font-size:12px;color:var(--jp-muted)"></span>
@@ -106,26 +106,26 @@
         <!-- Foto Bukti -->
         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
           <div style="display:flex;align-items:center;justify-content:space-between">
-            <span style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-tx2);display:flex;align-items:center;gap:6px">
+            <span style="font-size:12px;font-weight:600;letter-spacing:.05em;color:var(--jp-tx2);display:flex;align-items:center;gap:6px">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--jp-primary)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
               Bukti Tangkapan Citra Teranotasi AI
             </span>
             <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-muted)" id="d-frame">-</span>
+              <span style="font-family:var(--jp-mono);font-size:12px;color:var(--jp-muted)" id="d-frame">-</span>
             </div>
           </div>
           <div id="d-foto" style="position:relative;width:100%;border-radius:12px;overflow:hidden;background:#020617;box-shadow:0 4px 12px rgba(0,0,0,.15)">
-            <div style="aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;color:#64748B;font-family:var(--jp-mono);font-size:11px">Foto bukti tidak tersedia</div>
+            <div style="aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;color:#475569;font-family:var(--jp-mono);font-size:12px">Foto bukti tidak tersedia</div>
           </div>
         </div>
         <!-- Tabel inventarisasi temuan -->
         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
           <div style="display:flex;align-items:center;justify-content:space-between">
-            <span style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-tx2);display:flex;align-items:center;gap:6px">
+            <span style="font-size:12px;font-weight:600;letter-spacing:.05em;color:var(--jp-tx2);display:flex;align-items:center;gap:6px">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--jp-primary)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
               Inventarisasi Temuan
             </span>
-            <span style="font-family:var(--jp-mono);font-size:11px;color:var(--jp-muted)">Dimensi terkalibrasi</span>
+            <span style="font-family:var(--jp-mono);font-size:12px;color:var(--jp-muted)">Dimensi terkalibrasi</span>
           </div>
           <div class="jp-table-scroll" id="d-tabel"></div>
           <!-- Paginasi temuan -->
@@ -136,7 +136,7 @@
         <div style="padding:12px;background:var(--jp-container-low);border-radius:12px;display:flex;align-items:flex-start;gap:12px;margin-bottom:16px">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--jp-muted)" stroke-width="2" style="flex-shrink:0;margin-top:2px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
           <div style="display:flex;flex-direction:column;gap:4px">
-            <span style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--jp-tx2)">CATATAN LEGALISASI & AUDIT TRAIL</span>
+            <span style="font-size:12px;font-weight:600;letter-spacing:.05em;color:var(--jp-tx2)">CATATAN LEGALISASI & AUDIT TRAIL</span>
             <p style="font-size:12px;color:var(--jp-muted);margin:0;line-height:1.5">Catatan ini dihasilkan otomatis oleh sistem dari hasil deteksi yang tersimpan. Prioritas penanganan ditentukan per segmen via SDI-visual (menu Segmen).</p>
           </div>
         </div>

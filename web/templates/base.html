@@ -38,7 +38,6 @@
         {% endif %}
       </nav>
       <div class="jp-meta">
-        <span class="jp-avatar" aria-hidden="true">JP</span>
         <button type="button" class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="nav-tray" aria-label="Buka menu navigasi">
           <span></span><span></span><span></span>
         </button>
@@ -99,7 +98,7 @@
       var toast = document.createElement("div");
       toast.style.cssText = "pointer-events:auto;padding:12px 16px;border-radius:8px;background:#fff;box-shadow:0 4px 16px rgba(0,0,0,.15);border-left:4px solid " + (colors[type] || colors.info) + ";display:flex;align-items:center;gap:12px;font-size:13px;min-width:280px;max-width:400px;animation:jp-toast-in .3s ease";
       toast.innerHTML = '<span style="font-size:18px;font-weight:700;color:' + (colors[type] || colors.info) + '">' + (icons[type] || icons.info) + '</span>' +
-        '<div style="display:flex;flex-direction:column;flex:1"><span style="font-weight:600;color:#0F172A">' + (title || '') + '</span>' + (message ? '<span style="font-size:11px;color:#64748B;margin-top:2px">' + message + '</span>' : '') + '</div>';
+        '<div style="display:flex;flex-direction:column;flex:1"><span style="font-weight:600;color:#0F172A">' + (title || '') + '</span>' + (message ? '<span style="font-size:12px;color:#475569;margin-top:2px">' + message + '</span>' : '') + '</div>';
       container.appendChild(toast);
       setTimeout(function() {
         toast.style.opacity = "0";
@@ -134,14 +133,14 @@
         modal.style.cssText = "background:#fff;border-radius:12px;padding:24px;max-width:360px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2);animation:jp-modal-in .2s ease;";
         modal.innerHTML =
           '<div style="font-size:16px;font-weight:600;color:#0F172A;margin-bottom:4px">Masuk Diperlukan</div>' +
-          '<div style="font-size:13px;color:#64748B;margin-bottom:16px">Aksi ini memerlukan sesi admin yang aktif.</div>' +
+          '<div style="font-size:13px;color:#475569;margin-bottom:16px">Aksi ini memerlukan sesi admin yang aktif.</div>' +
           '<label style="display:block;font-size:12px;font-weight:600;color:#0F172A;margin-bottom:4px">Username</label>' +
           '<input id="jp-login-user" type="text" autocomplete="username" style="width:100%;padding:10px 12px;border:1px solid #E2E8F0;border-radius:8px;font-size:14px;margin-bottom:12px;box-sizing:border-box">' +
           '<label style="display:block;font-size:12px;font-weight:600;color:#0F172A;margin-bottom:4px">Password</label>' +
           '<input id="jp-login-pass" type="password" autocomplete="current-password" style="width:100%;padding:10px 12px;border:1px solid #E2E8F0;border-radius:8px;font-size:14px;margin-bottom:4px;box-sizing:border-box">' +
           '<div id="jp-login-err" style="display:none;font-size:12px;color:#DC2626;margin:8px 0"></div>' +
           '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">' +
-          '<button type="button" id="jp-login-cancel" style="padding:8px 16px;border:1px solid #E2E8F0;border-radius:8px;background:#fff;color:#64748B;font-size:13px;font-weight:500;cursor:pointer">Batal</button>' +
+          '<button type="button" id="jp-login-cancel" style="padding:8px 16px;border:1px solid #E2E8F0;border-radius:8px;background:#fff;color:#475569;font-size:13px;font-weight:500;cursor:pointer">Batal</button>' +
           '<button type="button" id="jp-login-ok" style="padding:8px 16px;border:none;border-radius:8px;background:#006194;color:#fff;font-size:13px;font-weight:500;cursor:pointer">Masuk</button>' +
           '</div>';
         overlay.appendChild(modal);
@@ -251,10 +250,10 @@
           '<div style="width:40px;height:40px;border-radius:50%;background:' + iconColor + ';color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">' + icon + '</div>' +
           '<div style="flex:1">' +
           '<div style="font-size:16px;font-weight:600;color:#0F172A;margin-bottom:4px">' + (title || 'Konfirmasi') + '</div>' +
-          '<div style="font-size:13px;color:#64748B">' + (message + '') + '</div>' +
+          '<div style="font-size:13px;color:#475569">' + (message + '') + '</div>' +
           '</div></div>' +
           '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px">' +
-          '<button type="button" id="jp-confirm-cancel" style="padding:8px 16px;border:1px solid #E2E8F0;border-radius:8px;background:#fff;color:#64748B;font-size:13px;font-weight:500;cursor:pointer">' + (opts.cancelText || 'Batal') + '</button>' +
+          '<button type="button" id="jp-confirm-cancel" style="padding:8px 16px;border:1px solid #E2E8F0;border-radius:8px;background:#fff;color:#475569;font-size:13px;font-weight:500;cursor:pointer">' + (opts.cancelText || 'Batal') + '</button>' +
           '<button type="button" id="jp-confirm-ok" style="padding:8px 16px;border:none;border-radius:8px;background:' + iconColor + ';color:#fff;font-size:13px;font-weight:500;cursor:pointer">' + (opts.okText || 'Ya, Hapus') + '</button>' +
           '</div>';
 

@@ -3,12 +3,15 @@
 
 {% block konten %}
 <div class="jp-wrap">
+  <!-- Judul halaman untuk pembaca layar (judul visual memakai span di bawah).
+       Audit UI 19 Okt 2026: axe page-has-heading-one. -->
+  <h1 class="jp-sr-only">Kalibrasi Pengukuran Dimensi</h1>
   <div class="jp-card" style="padding:16px">
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
       <div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span style="font-size:18px;font-weight:600;color:var(--jp-ink)">Kalibrasi Pengukuran</span>
-          <span id="kal-status" style="padding:2px 8px;border-radius:6px;background:var(--jp-container);font-family:var(--jp-mono);font-size:11px;color:var(--jp-tx2)">memuat…</span>
+          <span id="kal-status" style="padding:2px 8px;border-radius:6px;background:var(--jp-container);font-family:var(--jp-mono);font-size:12px;color:var(--jp-tx2)">memuat…</span>
         </div>
         <p style="font-size:12px;color:var(--jp-tx2);margin:4px 0 0">Satu angka mengendalikan semua dimensi aplikasi: <span class="jp-num">pixels_per_cm</span> di <span class="jp-num">config/severity.yaml</span>. Kamera mono tidak mengukur jarak absolut — nilai ini adalah aproksimasi pada bidang jalan dan <strong>wajib</strong> diukur ulang per pemasangan kamera/ketinggian.</p>
       </div>
@@ -189,7 +192,7 @@
     // Label nomor titik
     var label = document.createElement('span');
     label.textContent = titik.length;
-    label.style.cssText = 'position:absolute;left:14px;top:-8px;font-size:11px;font-weight:700;color:#006194;background:#fff;padding:1px 4px;border-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.2);white-space:nowrap;';
+    label.style.cssText = 'position:absolute;left:14px;top:-8px;font-size:12px;font-weight:700;color:#006194;background:#fff;padding:1px 4px;border-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.2);white-space:nowrap;';
     dot.appendChild(label);
     img.parentElement.style.position = 'relative';
     img.parentElement.appendChild(dot);

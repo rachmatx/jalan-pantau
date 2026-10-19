@@ -46,6 +46,7 @@ function buatMarkerGPS(ll) {
   gpsMarker = L.marker(ll, { icon: L.divIcon({ className: "", html: html, iconSize: [24, 24], iconAnchor: [12, 12] }), zIndexOffset: 1000 });
   gpsMarker.bindPopup("<b>Lokasi Anda</b><br>Lat: " + ll[0].toFixed(6) + "<br>Lon: " + ll[1].toFixed(6));
   gpsMarker.addTo(lapis);
+  beriNamaMarker(gpsMarker, "Lokasi GPS Anda saat ini");
   
   // Akurasi circle
   gpsCircle = L.circle(ll, { radius: 50, color: '#006194', fillColor: '#006194', fillOpacity: 0.15, weight: 1, opacity: 0.5 });
@@ -140,6 +141,22 @@ function ikon(worst) {
     iconAnchor: [9, 9],
   });
 }
+
+// Audit UI 19 Okt 2026: marker Leaflet berupa <div tabindex="0" role="button">
+// TANPA nama, sehingga axe melaporkan "aria-command-name" (9 node di /peta).
+// Menambah aria-label saja sudah menghilangkan temuan itu (diuji di browser).
+// Dipanggil SETELAH addTo(): elemen DOM baru ada saat marker masuk peta.
+function beriNamaMarker(marker, teks) {
+  try {
+    var el = marker.getElement && marker.getElement();
+    if (el) el.setAttribute("aria-label", teks);
+  } catch (e) { /* aksesibilitas tidak boleh sampai merusak peta */ }
+}
+
+function namaSeverity(w) {
+  const m = { ringan: "Ringan", sedang: "Sedang", berat: "Berat" };
+  return m[String(w).toLowerCase()] || String(w || "tidak diketahui");
+}
 // P3: escape sebelum innerHTML/bindPopup (t.lokasi dari server bisa berisi HTML).
 function esc(v) {
   return String(v ?? "").replace(/[&<>"'`=]/g, (c) => ({
@@ -220,6 +237,9 @@ function gambar(aturPandangan) {
   for (const t of tampil) {
     const m = L.marker([t.lat, t.lon], { icon: ikon(t.worst) }).addTo(lapis);
     markerPerId[t.id] = m;
+    beriNamaMarker(m, "Titik kerusakan " + namaSeverity(t.worst) +
+      (t.lokasi ? " di " + t.lokasi : "") +
+      " — " + (Number(t.n_temuan) || 0) + " temuan");
     const foto = t.ada_gambar
       ? `<br><button type="button" class="jp-linkbtn" data-foto="${t.id}">Lihat foto bukti</button>` : "";
     m.bindPopup(
@@ -260,7 +280,9 @@ document.getElementById("map-lokasi").addEventListener("click", () => {
       var ll = [pos.coords.latitude, pos.coords.longitude];
       map.setView(ll, 15);
       // Tandai lokasi user
-      L.marker(ll, { icon: L.divIcon({ className: "", html: '<div style="width:16px;height:16px;border-radius:50%;background:#006194;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3)" />', iconSize: [16, 16], iconAnchor: [8, 8] }) }).addTo(lapis).bindPopup("Lokasi Anda").openPopup();
+      var mUser = L.marker(ll, { icon: L.divIcon({ className: "", html: '<div style="width:16px;height:16px;border-radius:50%;background:#006194;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3)" />', iconSize: [16, 16], iconAnchor: [8, 8] }) }).addTo(lapis);
+      mUser.bindPopup("Lokasi Anda").openPopup();
+      beriNamaMarker(mUser, "Lokasi Anda");
       // Cari titik terdekat
       cariTerdekat(ll);
     },
@@ -285,7 +307,7 @@ function cariTerdekat(userLl) {
   titikTerdekat = terdekat;
   if (terdekat) {
     var jarak = (Math.sqrt(minDist) * 111).toFixed(2); // perkiraan km
-    info.innerHTML = '<strong>' + esc(terdekat.lokasi || "-") + '</strong><br>' + (Number(terdekat.n_temuan) || 0) + ' temuan • ' + badgeHtml(terdekat.worst) + '<br><span style="font-family:var(--jp-mono);font-size:11px">±' + esc(jarak) + ' km dari lokasi Anda</span>';
+    info.innerHTML = '<strong>' + esc(terdekat.lokasi || "-") + '</strong><br>' + (Number(terdekat.n_temuan) || 0) + ' temuan • ' + badgeHtml(terdekat.worst) + '<br><span style="font-family:var(--jp-mono);font-size:12px">±' + esc(jarak) + ' km dari lokasi Anda</span>';
     box.hidden = false;
   } else {
     box.hidden = true;

@@ -107,14 +107,15 @@ dipertahankan) dan langsung berlaku untuk deteksi berikutnya.
 | GET | `/api/stream` | **MJPEG** (`multipart/x-mixed-replace`) |
 | POST | `/api/stream/start` | JSON `{source, target, conf, frame_skip, malam, performa}` → `{ok, token}` |
 | POST | `/api/stream/stop` | hentikan sesi (butuh `token` bila stream berjalan) |
-| GET | `/api/stream/stats` | FPS tampil/infer, jumlah track, deteksi, + `perangkat` |
+| GET | `/api/stream/stats` | FPS tampil/infer, jumlah track, deteksi, `perangkat`, metrik adil |
 | POST | `/api/stream/anotasi` | toggle anotasi box |
 | POST | `/api/stream/snapshot` | snapshot track → `{rows, total, ...}` |
 | POST | `/api/demo` | putar video contoh bawaan |
 | POST | `/api/video` | multipart `video` → putar berkas |
 
 `source` = `webcam` (target = index 0-10) · `ipcam` (target = URL http/https) ·
-`file` (dari `/api/video`). `performa` opsional: `halus` | `seimbang` | `akurat`.
+`file` (dari `/api/video`). `performa` opsional: `halus` | `seimbang`; nilai lain
+diabaikan (jatuh ke `imgsz_live` config).
 Satu stream aktif dalam satu waktu; saat stream berjalan, `start`/`stop`/`anotasi`/
 `snapshot` dari tab lain ditolak (`409`/`403`) kecuali menyertakan `token` pemilik
 yang dikembalikan `start`.
@@ -126,6 +127,18 @@ benar-benar dipakai jalur live. Rule `mode_backend` (`config/inferensi.yaml`):
 memaksa salah satu. Jalur **gambar** tidak pernah dialihkan ke ONNX karena
 ultralytics membuang TTA untuk backend non-PyTorch. Field yang sama tersedia di
 `/health` pada kunci `perangkat`.
+
+Metrik live — bedakan yang **kumulatif** dari yang **adil**:
+
+| Field | Arti |
+|---|---|
+| `deteksi`, `unik` | **Kumulatif sesi.** Mode yang lebih cepat selalu lebih besar hanya karena memeriksa lebih banyak frame. Jangan dipakai membandingkan mode. |
+| `n_inferensi` | Jumlah pemanggilan `model.track()` (penyebut `rata_deteksi`). |
+| `rata_deteksi` | `deteksi / n_inferensi` — **metrik adil** antar mode. |
+| `frame` | Frame sumber yang terbaca capture; `n_inferensi / frame` = persentase frame yang benar-benar diperiksa. |
+| `tampil` | Rata-rata bergerak box terlihat (display-only, redam kedip). Bukan dasar snapshot. |
+| `performa` | Preset aktif (`halus`/`seimbang`) atau `null`. `akurat` dihapus 19 Okt 2026 (duplikat `seimbang`). |
+| `imgsz_live` | imgsz **efektif** yang benar-benar dipakai inferensi terakhir (sudah dijepit agar tidak melebihi lebar frame), bukan nilai preset mentah. |
 
 | Metode | Endpoint | Catatan |
 |---|---|---|

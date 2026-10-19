@@ -80,11 +80,13 @@ class FakeModel:
         self.delay = delay
         self.calls = 0
         self.track_threads = []     # nama thread tiap panggilan track (termasuk warmup)
+        self.imgsz_seen = []        # imgsz tiap panggilan track (uji penjepitan (a))
 
     def track(self, img, **k):
         import threading
         self.calls += 1
         self.track_threads.append(threading.current_thread().name)
+        self.imgsz_seen.append(k.get("imgsz"))
         time.sleep(self.delay)  # model lambat -> FPS inferensi rendah
         return [FakeRes()]
 
@@ -176,6 +178,56 @@ class TestDecouple(_StreamCase):
         finally:
             self._lepas(m)
 
+    def test_stats_punya_metrik_adil_dan_imgsz(self):
+        """UI (c) butuh n_inferensi/rata_deteksi/imgsz_live/performa/tampil."""
+        self._pasang(model_delay=0.02)
+        m = self.m
+        try:
+            m.start("webcam", 0)
+            time.sleep(0.35)
+            st = m.stats()
+            for k in ("n_inferensi", "rata_deteksi", "imgsz_live",
+                      "performa", "tampil"):
+                self.assertIn(k, st)
+            self.assertGreater(st["n_inferensi"], 0, "tak ada inferensi tercatat")
+            # imgsz efektif wajib terisi setelah ada inferensi.
+            self.assertIsNotNone(st["imgsz_live"])
+        finally:
+            self._lepas(m)
+
+    def test_imgsz_dijepit_ke_lebar_frame(self):
+        """(a) imgsz 960 pada frame 640 -> model menerima 640, bukan 960."""
+        self._pasang(model_delay=0.02)
+        inf = dict(INFER, imgsz_live=960)
+        self.streaming.get_inferensi = lambda *a, **k: inf
+        self.model.imgsz_seen = []
+        m = self.m
+        try:
+            m.start("webcam", 0, frame_skip=1)
+            time.sleep(0.4)
+            self.assertTrue(self.model.imgsz_seen, "inferensi tidak jalan")
+            self.assertEqual(set(self.model.imgsz_seen), {640},
+                             f"masih upscale: {self.model.imgsz_seen}")
+            self.assertEqual(m.stats()["imgsz_live"], 640)
+        finally:
+            self._lepas(m)
+
+    def test_preset_kecil_tidak_dinaikkan(self):
+        """(a) preset 320 pada frame 640 harus tetap 320 (bukan dinaikkan)."""
+        self._pasang(model_delay=0.02)
+        inf = dict(INFER, imgsz_live=320)
+        self.streaming.get_inferensi = lambda *a, **k: inf
+        self.model.imgsz_seen = []
+        m = self.m
+        try:
+            m.start("webcam", 0, frame_skip=1)
+            time.sleep(0.35)
+            self.assertTrue(self.model.imgsz_seen, "inferensi tidak jalan")
+            self.assertEqual(set(self.model.imgsz_seen), {320},
+                             f"preset kecil berubah: {self.model.imgsz_seen}")
+        finally:
+            self._lepas(m)
+
     def test_restart_sesi_baru_tetap_mengalir(self):
         self._pasang(model_delay=0.05)
         m = self.m
@@ -224,10 +276,48 @@ class TestPresetPerforma(unittest.TestCase):
     def test_preset_mengoverride_knobs(self):
         import streaming
         self.assertIn("halus", streaming.PERFORMA)
+        self.assertIn("seimbang", streaming.PERFORMA)
         self.assertLess(streaming.PERFORMA["halus"]["imgsz_live"],
-                        streaming.PERFORMA["akurat"]["imgsz_live"])
+                        streaming.PERFORMA["seimbang"]["imgsz_live"])
         self.assertGreaterEqual(streaming.PERFORMA["halus"]["display_fps"],
-                                streaming.PERFORMA["akurat"]["display_fps"])
+                                streaming.PERFORMA["seimbang"]["display_fps"])
+
+    def test_preset_akurat_sudah_dihapus(self):
+        """Preset "akurat" dihapus 19 Okt 2026: duplikat "seimbang" karena
+        imgsz-nya selalu dijepit ke lebar frame (jepit_imgsz)."""
+        import streaming
+        self.assertNotIn("akurat", streaming.PERFORMA)
+        # Setiap preset wajib punya kunci yang dipakai _live_cfg.
+        for nama, pre in streaming.PERFORMA.items():
+            for k in ("imgsz_live", "infer_interval", "display_fps"):
+                self.assertIn(k, pre, f"{nama} kehilangan {k}")
+
+
+class TestJepitImgsz(unittest.TestCase):
+    """(a) imgsz live tidak boleh melebihi lebar frame (cegah upscale)."""
+
+    def test_tidak_pernah_melebihi_lebar_frame(self):
+        import streaming
+        self.assertEqual(streaming.jepit_imgsz(960, 640), 640)
+        self.assertEqual(streaming.jepit_imgsz(640, 640), 640)
+        # preset lebih kecil dibiarkan apa adanya (tidak dinaikkan)
+        self.assertEqual(streaming.jepit_imgsz(320, 640), 320)
+        # frame lebih besar dari preset -> preset utuh (tidak dipotong)
+        self.assertEqual(streaming.jepit_imgsz(960, 1280), 960)
+
+    def test_dibulatkan_bawah_ke_kelipatan_32(self):
+        import streaming
+        self.assertEqual(streaming.jepit_imgsz(960, 700), 672)  # 700//32*32
+        self.assertEqual(streaming.jepit_imgsz(960, 100), 96)
+        self.assertEqual(streaming.jepit_imgsz(960, 33), 32)
+
+    def test_input_aneh_tidak_melempar(self):
+        import streaming
+        self.assertEqual(streaming.jepit_imgsz(960, 0), 960)
+        self.assertEqual(streaming.jepit_imgsz(960, None), 960)
+        self.assertEqual(streaming.jepit_imgsz(960, "x"), 960)
+        self.assertEqual(streaming.jepit_imgsz("x", 640), 640)
+        self.assertGreaterEqual(streaming.jepit_imgsz(1, 640), 32)
 
 
 class TestClampLiveConfig(unittest.TestCase):
