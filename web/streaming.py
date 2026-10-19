@@ -30,9 +30,9 @@ import logging
 import cv2
 
 from deteksi import (alasan_tolak, ambang_efektif, cerahkan_malam,
-                     conf_prediksi, get_config, get_inferensi, get_model,
-                     half_untuk, kelas_mayoritas, nama_kelas, nama_model,
-                     pilih_device)
+                     conf_prediksi, get_config, get_inferensi,
+                     half_untuk, kelas_mayoritas, model_live_aktif,
+                     nama_kelas, nama_model_live, pilih_device)
 from severity import diagnose
 from prioritas import skor as skor_prioritas
 
@@ -147,7 +147,7 @@ class StreamManager:
                                                         FRAME_DIFF_THRESHOLD)),
                 "perataan_tampil": int(live.get("perataan_tampil", 12)),
                 "device": pilih_device(infer.get("device", "auto"),
-                                       nama_model(kunci="model_live")),
+                                       nama_model_live()),
             }
             # Samakan window perataan dengan config sesi ini.
             self._tampil_riwayat = deque(
@@ -215,7 +215,7 @@ class StreamManager:
         dibersihkan agar ID sesi mulai dari 1.
         """
         try:
-            model = get_model(kunci="model_live")
+            model = model_live_aktif()
             infer = get_inferensi()
         except Exception:
             return
@@ -225,7 +225,7 @@ class StreamManager:
         except (TypeError, ValueError):
             pass
         device = pilih_device(infer.get("device", "auto"),
-                              nama_model(kunci="model_live"))
+                              nama_model_live())
         iou = float(infer.get("iou", 0.5))
         umpan = self._gambar_warmup()
         for k in sorted(ukuran):
@@ -309,7 +309,7 @@ class StreamManager:
     def _reset_tracker(self):
         """Buang tracker lama agar ID sesi baru mulai dari 1 lagi."""
         try:
-            model = get_model(kunci="model_live")
+            model = model_live_aktif()
             pred = getattr(model, "predictor", None)
             if pred is not None and hasattr(pred, "trackers"):
                 for tr in pred.trackers:
@@ -382,7 +382,7 @@ class StreamManager:
     def _infer_worker(self, source_type, stop):
         """Jalankan tracking tiap `infer_interval` frame; simpan overlay siap-gambar."""
         try:
-            model = get_model(kunci="model_live")
+            model = model_live_aktif()
         except Exception as e:
             with self._lock:
                 self.error = f"Model live gagal dimuat: {e}"
@@ -392,7 +392,8 @@ class StreamManager:
         infer = get_inferensi()
         imgsz = int(cfg.get("imgsz_live", infer.get("imgsz_live", 640)))
         iou = float(cfg.get("iou", infer.get("iou", 0.5)))
-        device = cfg.get("device", pilih_device(infer.get("device", "auto")))
+        device = cfg.get("device", pilih_device(infer.get("device", "auto"),
+                                                nama_model_live()))
         ambang = infer.get("toleransi_kelas")
         conf_run = conf_prediksi(self.conf, ambang)
         interval = max(int(cfg.get("infer_interval", 1)), 1)

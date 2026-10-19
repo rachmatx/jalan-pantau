@@ -53,6 +53,9 @@ WEIGHTS_DIR = APP_DIR / "weights"
 CFG_DEFAULT = ROOT / "config" / "severity.yaml"
 INFER_DEFAULT = ROOT / "config" / "inferensi.yaml"
 
+# Nilai sah untuk knob `mode_backend` (lihat backend_live()).
+BACKEND_MODE = ("auto", "pt", "onnx")
+
 _models = {}  # path str -> YOLO (gambar pt + live onnx bisa hidup berdampingan)
 _cfg = None
 _infer = None
@@ -66,10 +69,15 @@ _kalibrasi_lock = threading.Lock()  # P3: tulis severity.yaml atomik antar-threa
 _INFER_FALLBACK = {
     "model_gambar": "best.pt", "model_live": "best.pt",
     "device": "auto",
+    # mode_backend: auto = .pt bila ada CUDA, .onnx bila hanya CPU. Berlaku
+    # HANYA untuk jalur LIVE (lihat backend_live): jalur gambar tetap .pt
+    # karena ONNX mengabaikan TTA dan TTA itu yang menjaga recall.
+    "mode_backend": "auto",
     # imgsz_gambar 640 (bukan 960): diukur pada 161 gambar BPID berlabel,
     # F1 pothole 0,630 @640 vs 0,536 @960 (precision 0,63 vs 0,54). Model
-    # dilatih imgsz 768, jadi inferensi jauh di atas skala latih justru
-    # menambah false positive. Lihat catatan di config/inferensi.yaml.
+    # dilatih imgsz 640 (notebooks/kaggle-retrain-yolo11s-rdd2022.py), jadi
+    # 960 = 1,5x skala latih: menambah false positive, bukan recall.
+    # Lihat catatan di config/inferensi.yaml.
     "imgsz_gambar": 640, "imgsz_live": 640, "iou": 0.5, "tta": True,
     # half_gambar: FP16 untuk jalur GAMBAR. Default false = FP32. Alasan: FP16
     # + TTA meluap secara numerik pada imgsz besar dan mengeluarkan box NaN
@@ -128,6 +136,7 @@ def get_inferensi(path=None):
         data = {"model_gambar": _INFER_FALLBACK["model_gambar"],
                 "model_live": _INFER_FALLBACK["model_live"],
                 "device": _INFER_FALLBACK["device"],
+                "mode_backend": _INFER_FALLBACK["mode_backend"],
                 "imgsz_gambar": _INFER_FALLBACK["imgsz_gambar"],
                 "imgsz_live": _INFER_FALLBACK["imgsz_live"],
                 "iou": _INFER_FALLBACK["iou"], "tta": _INFER_FALLBACK["tta"],
@@ -167,6 +176,15 @@ def get_inferensi(path=None):
                     dv and all(c.isdigit() or c == "," for c in dv)):
                 dv = _INFER_FALLBACK["device"]
             data["device"] = dv
+            # mode_backend hanya auto|pt|onnx; nilai lain -> auto (lihat
+            # backend_live). Sengaja terpisah dari validasi `device` di atas
+            # karena aturannya berbeda.
+            mb = user.get("mode_backend", _INFER_FALLBACK["mode_backend"])
+            mb = (_INFER_FALLBACK["mode_backend"] if mb is None
+                  else str(mb).strip().lower())
+            if mb not in BACKEND_MODE:
+                mb = _INFER_FALLBACK["mode_backend"]
+            data["mode_backend"] = mb
             if isinstance(user.get("teliti"), dict):
                 data["teliti"].update(user["teliti"])
         data["imgsz_gambar"] = int(_klamp(data["imgsz_gambar"], 320, 1536, 640))
@@ -306,6 +324,86 @@ def pilih_device(nilai="auto", model_file=None):
     if d == "gpu":
         return 0
     return d
+
+
+# --- Deteksi perangkat & pemilihan backend otomatis ------------------------
+# Kenapa ada: di mesin tanpa GPU (mis. laptop dosen di defense), torch hanya
+# bisa jalan di CPU dan .pt jauh lebih lambat. onnxruntime CPU lebih cepat
+# (diukur i5-3470, imgsz 640: .pt 266 ms vs .onnx 133 ms per inferensi).
+# Syaratnya ONNX HANYA dipakai untuk jalur LIVE, karena:
+#   (1) live memang tidak memakai TTA (pakai model.track, tanpa augment), jadi
+#       tidak ada recall yang hilang;
+#   (2) ultralytics MEMBUANG augment untuk backend non-PyTorch (onnx) —
+#       lihat warning "['augment'] not supported by this model (format='onnx')" —
+#       sedangkan jalur gambar bergantung pada TTA (docs §6b: recall 0,48 -> 0,69).
+# Jalur gambar karena itu TIDAK pernah dialihkan ke ONNX.
+_cuda_tersedia = None
+
+
+def cuda_tersedia():
+    """True bila torch melaporkan CUDA. Di-cache; Exception -> False.
+
+    Dipisah dari pilih_device agar bisa dipatch saat test (hasil nyata
+    tergantung mesin) tanpa memuat model.
+    """
+    global _cuda_tersedia
+    if _cuda_tersedia is None:
+        try:
+            import torch
+            _cuda_tersedia = bool(torch.cuda.is_available())
+        except Exception:
+            _cuda_tersedia = False
+    return _cuda_tersedia
+
+
+def nama_gpu():
+    """Nama GPU pertama, atau '-' bila tak ada CUDA/torch tak terpasang."""
+    if not cuda_tersedia():
+        return "-"
+    try:
+        import torch
+        return str(torch.cuda.get_device_name(0))
+    except Exception:
+        return "-"
+
+
+def backend_live(mode=None, ada_cuda=None):
+    """Nama bobot jalur live setelah mode_backend + status CUDA.
+
+    mode:
+      'pt'   -> selalu .pt (paksa, meski tanpa GPU)
+      'onnx' -> selalu .onnx (paksa; fallback .pt bila berkas tak ada)
+      'auto' -> .onnx bila TANPA CUDA, .pt bila ada CUDA (default)
+
+    Mode auto tidak pernah membuat hasil KALAH: bila kembar .onnx tidak ada di
+    weights/, tetap dipakai .pt (bukan error). `resolve_model` sengaja TIDAK
+    disentuh supaya config `model_live` tetap apa adanya — aturan auto hanya
+    berlaku di jalur live, bukan di config global.
+    """
+    inf = get_inferensi()
+    m = str(mode if mode is not None else inf.get("mode_backend") or "auto")
+    m = m.strip().lower()
+    if m not in BACKEND_MODE:
+        m = _INFER_FALLBACK["mode_backend"]
+    dasar = resolve_model(kunci="model_live").name
+    if m == "pt":
+        return dasar
+    if ada_cuda is None:
+        ada_cuda = cuda_tersedia()
+    pakai_onnx = (m == "onnx") or (m == "auto" and not ada_cuda)
+    if not pakai_onnx:
+        return dasar
+    kembar = WEIGHTS_DIR / (str(dasar).rsplit(".", 1)[0] + ".onnx")
+    return kembar.name if kembar.is_file() else dasar
+
+
+def ringkasan_perangkat():
+    """Info perangkat ringkas untuk /health dan KPI live."""
+    cuda = cuda_tersedia()
+    return {"cuda": cuda,
+            "gpu": nama_gpu() if cuda else "-",
+            "mode_backend": str(get_inferensi().get("mode_backend") or "auto"),
+            "backend_live": backend_live()}
 
 
 def half_untuk(device):
@@ -804,6 +902,28 @@ def get_model(path=None, kunci="model_gambar"):
 def nama_model(kunci="model_gambar"):
     """Nama file backend aktif (untuk label UI)."""
     return resolve_model(kunci=kunci).name
+
+
+def resolve_model_live():
+    """Path bobot live SETELAH aturan mode_backend (lihat backend_live).
+
+    Dipakai seluruh jalur live; `resolve_model(kunci="model_live")` tetap
+    tersedia untuk membaca nilai config apa adanya.
+    """
+    p = WEIGHTS_DIR / backend_live()
+    if p.is_file():
+        return p
+    return resolve_model(kunci="model_live")
+
+
+def model_live_aktif():
+    """Objek model live yang benar-benar dipakai (sudah lewat cache)."""
+    return get_model(resolve_model_live())
+
+
+def nama_model_live():
+    """Nama berkas model live aktif, mis. 'best.pt' atau 'best.onnx'."""
+    return resolve_model_live().name
 
 
 def resolve_scene_model():
@@ -1692,6 +1812,10 @@ def status_sistem():
         imgsz = get_inferensi().get("imgsz_gambar")
     except Exception:
         imgsz = None
+    try:
+        perangkat = ringkasan_perangkat()
+    except Exception:
+        perangkat = {}
     return {
         "worker_inferensi": {
             "dijadwalkan": t is not None,
@@ -1703,6 +1827,7 @@ def status_sistem():
             "wet_min": gate.get("wet_min"),
         },
         "imgsz_gambar": imgsz,
+        "perangkat": perangkat,
     }
 
 

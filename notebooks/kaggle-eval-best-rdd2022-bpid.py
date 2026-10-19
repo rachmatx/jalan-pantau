@@ -187,7 +187,7 @@ if not best_work.exists():
     print(f"disalin: {BEST} -> {best_work}")
 
 m2 = YOLO(str(best_work))
-m2.export(format="onnx", imgsz=640, simplify=True)
+m2.export(format="onnx", imgsz=640, dynamic=True, simplify=True)
 onnx_path = best_work.with_suffix(".onnx")
 print("ONNX:", onnx_path, "ada:", onnx_path.exists())
 

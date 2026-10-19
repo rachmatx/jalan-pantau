@@ -107,7 +107,7 @@ dipertahankan) dan langsung berlaku untuk deteksi berikutnya.
 | GET | `/api/stream` | **MJPEG** (`multipart/x-mixed-replace`) |
 | POST | `/api/stream/start` | JSON `{source, target, conf, frame_skip, malam, performa}` → `{ok, token}` |
 | POST | `/api/stream/stop` | hentikan sesi (butuh `token` bila stream berjalan) |
-| GET | `/api/stream/stats` | FPS tampil/infer, jumlah track, deteksi |
+| GET | `/api/stream/stats` | FPS tampil/infer, jumlah track, deteksi, + `perangkat` |
 | POST | `/api/stream/anotasi` | toggle anotasi box |
 | POST | `/api/stream/snapshot` | snapshot track → `{rows, total, ...}` |
 | POST | `/api/demo` | putar video contoh bawaan |
@@ -119,7 +119,13 @@ Satu stream aktif dalam satu waktu; saat stream berjalan, `start`/`stop`/`anotas
 `snapshot` dari tab lain ditolak (`409`/`403`) kecuali menyertakan `token` pemilik
 yang dikembalikan `start`.
 
-## Riwayat & peta
+`stats.perangkat` = `{cuda, gpu, mode_backend, backend_live}`. `cuda` = bool
+CUDA terdeteksi; `gpu` = nama GPU atau `-`; `backend_live` = berkas yang
+benar-benar dipakai jalur live. Rule `mode_backend` (`config/inferensi.yaml`):
+`auto` memakai `best.pt` bila ada CUDA, `best.onnx` bila hanya CPU; `pt`/`onnx`
+memaksa salah satu. Jalur **gambar** tidak pernah dialihkan ke ONNX karena
+ultralytics membuang TTA untuk backend non-PyTorch. Field yang sama tersedia di
+`/health` pada kunci `perangkat`.
 
 | Metode | Endpoint | Catatan |
 |---|---|---|

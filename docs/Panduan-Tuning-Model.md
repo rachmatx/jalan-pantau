@@ -258,17 +258,28 @@ bukti bahwa angka besar itu berasal dari NaN, bukan geometri.
 
 #### Penyebab kedua: skala inferensi — 960 terlalu besar (diperbaiki 18 Okt 2026)
 
-Model dilatih pada **imgsz 768** (`yolov11s-rdd-only/args.rekonstruksi.yaml`, baris
-`imgsz: 768`; kolom `imgsz` di `results.rekonstruksi.csv` juga 768). Jalur gambar
-sementara memakai 960 — 192 px di atas skala latih. Yang terjadi: kerikil, daun, dan
-bayangan makin mudah terbaca pothole, tanpa recall yang bertambah.
+Model dilatih pada **imgsz 640** (`notebooks/kaggle-retrain-yolo11s-rdd2022.py`, sel 6:
+`imgsz=640`;recipe yang sama tercatat di `docs/Strategi-Training.md` "resep identik:
+50 epoch, patience 10, batch 16, imgsz 640"). Jalur gambar sementara memakai 960 —
+1,5x di atas skala latih. Yang terjadi: kerikil, daun, dan bayangan makin mudah
+terbaca pothole, tanpa recall yang bertambah.
+
+> **Koreksi 19 Okt 2026 - asal angka "768" ini salah.** Versi lama dokumen ini
+> mengutip `yolov11s-rdd-only/args.rekonstruksi.yaml` (`imgsz: 768`) dan
+> `results.rekonstruksi.csv`. Keduanya artefak **rekonstruksi** dari run lama,
+> bukan `args.yaml` yang benar-benar ditulis ultralytics: isinya juga berbeda di
+> `epochs` (200 vs 150/berbatas waktu) dan `optimizer` (`auto` vs `SGD`). Folder
+> tersebut sudah dihapus karena berisi bobot training bulan sebelumnya yang
+> sudah digantikan model terbaru. Angka BPID di bawah TIDAK berubah - hanya
+> penjelasan sebabnya yang dikoreksi: 960 bukan "192 px di atas skala latih",
+> tapi **1,5x** di atas skala latih (640).
 
 Diukur di BPID (161 gambar berlabel, 263 GT pothole, IoU 0,5, +TTA, FP32):
 
 | `imgsz_gambar` | P @0,25 | R @0,25 | F1 terbaik | recall GT besar | recall GT kecil |
 |---|---|---|---|---|---|
 | **640** | **0,546** | **0,677** | **0,630** (conf 0,35) | **79%** | 47% |
-| 768 (= skala latih) | 0,506 | 0,650 | 0,571 (conf 0,30) | 75% | 47% |
+| 768 | 0,506 | 0,650 | 0,571 (conf 0,30) | 75% | 47% |
 | 960 (setelan lama) | 0,409 | 0,635 | 0,536 (conf 0,40) | 66% | **58%** |
 | 960 tanpa TTA | 0,410 | 0,502 | 0,462 (conf 0,40) | 39% | 67% |
 
@@ -364,6 +375,66 @@ Tindakan (18 Okt 2026):
 - Preset 960 **dipertahankan** (bukan dihapus): recall objek sangat kecil 58%
   vs 47% di 640 — berguna untuk kasus retak tipis, hanya bukan default dan
   bukan "akurat".
+
+**Koreksi sebab, 19 Okt 2026 (diukur ulang, akar masalahnya lebih spesifik):**
+
+Simulasi real-time di atas video demo (375 frame, 25 fps, GTX 1650, warmup, 40
+frame pertama untuk uji kualitas per frame):
+
+| Konfigurasi | inferensi yang jalan | % frame yang **dilihat** | id unik | id ≥ 2 frame | ms/inferensi |
+|---|---|---|---|---|---|
+| halus 320 | 345/375 | 92% | 42 | 31 | 27 |
+| seimbang 640 | 374/375 | 100% | 32 | 29 | 46 |
+| "resolusi tinggi" 960 | 143/375 | **38%** | 15 | 15 | 109 |
+
+Dua koreksi terhadap penjelasan di atas:
+
+1. **960 bukan lebih buruk per frame.** Pada 40 frame yang sama (semua diproses),
+   deteksi per inferensi: 640 → 2,20, **960 → 2,42**, 1280 px → 960 → 2,90,
+   1280 px → 1280 → 3,23. Yang kolaps di 960 adalah **jumlah frame yang sempat
+   diperiksa**: `_capture_worker` hanya menyimpan frame terbaru
+   (`BUFFERSIZE=1`), jadi ketika inferensi butuh 109 ms dan sumber mengirim
+   frame tiap 40 ms, **62% frame tidak pernah sampai ke model**. Kerusakan yang
+   hanya terlihat sesaat langsung terlewat. Ini sebab utama, bukan mutu citra.
+2. **Preset 960 tidak menambah detail sama sekali.** `live.display_width: 640`
+   memotong sumber jadi ≤640 px lebar sebelum inferensi (video 1280×720 → 640×360),
+   lalu model me-letterbox ke 960 — jadi itu **upscale 1,5×**, bukan resolusi baru.
+   Buktinya: sumber 1280 px di-imgsz 960 memberi 2,90 deteksi/inferensi vs 2,42
+   untuk sumber 640 px. Kalau benar-benar mau resolusi lebih tinggi, `display_width` harus ikut
+   dinaikkan — dan itu menambah biaya capture/encode.
+
+Catatan tambahan: angka "titik unik" yang lebih TINGGI di 320 (42 vs 32) bukan
+bukti 320 lebih akurat — 320 menghasilkan lebih banyak pecahan track (ID
+berbeda untuk kerusakan yang sama), jadi hitungannya sebagian dobel. Yang
+tepat: **640 (seimbang) = skala latih dan biaya paling masuk akal; 320 untuk
+FPS; 960 jangan dipakai di live.**
+
+#### Backend otomatis live: `.pt` di GPU, `.onnx` di CPU (19 Okt 2026)
+
+`config/inferensi.yaml` punya knob `mode_backend: auto | pt | onnx`. Tidak ada
+deteksi CPU/iGPU terpisah: ultralytics hanya mengenal CUDA, dan iGPU (Intel/
+AMD) tidak punya execution provider di `onnxruntime` yang terpasang — paket
+`onnxruntime-gpu`/`directml`/`openvino` sengaja tidak dipasang (kebijakan
+anti-unduh saat demo). Jadi yang terdeteksi hanya **CUDA atau tidak**.
+
+Aturan `auto`: `.pt` bila ada CUDA, `.onnx` bila tidak. Berlaku **hanya jalur
+live**; `model_gambar` tidak pernah dialihkan karena ultralytics membuang
+`augment` untuk backend non-PyTorch (warning `['augment'] not supported by this
+model (format='onnx')`), sedangkan TTA là yang menjaga recall jalur gambar.
+
+Bukti (19 Okt 2026):
+- Kecepatan CPU (i5-3470, frame nyata demo, conf 0,20): `.pt` 92/266/538 ms vs
+  `.onnx` 40/133/285 ms pada imgsz 320/640/960 — ONNX ~2× lebih cepat.
+- **Paritas hasil**: jumlah kotak dan nilai conf `.onnx` **identik** dengan `.pt`
+  di ketiga ukuran (mis. imgsz 640: 4 kotak, conf 0,205/0,236/0,248).
+- RAM hampir sama (`.onnx` 794 MB vs `.pt` 776 MB puncak) — ONNX tidak
+  menghemat memori, hanya waktu CPU.
+- `best.onnx` sekarang diekspor `dynamic=True`. Ekspor STATIS lama membuat
+  ultralytics **mengabaikan `imgsz`** diam-diam (preset 320/960 jatuh ke 640
+  tanpa error), jadi preset performa tidak pernah benar-benar berubah.
+- `nama_model_live()` dipakai seluruh jalur live (`web/streaming.py`,
+  preload & snapshot `web/app.py`); `resolve_model()` sengaja tidak disentuh
+  agar nilai config `model_live` tetap apa adanya.
 
 #### Ambang pothole: lowering 0,08 justru merusak
 
@@ -651,6 +722,6 @@ kecuali buktinya memenuhi syarat) ada di
 
 1. `scripts/pra_label.py --mode dataset` → pre-label, lalu koreksi manual.
 2. Split train/val; **jangan pernah** latih dari BPID test (itu satu-satunya uji OOD).
-3. Latih dari `best.pt` di Kaggle (imgsz 768, lr0 0,001, campur data lokal).
+3. Latih dari `best.pt` di Kaggle (imgsz 640, lr0 0,001, campur data lokal).
 4. Uji dengan protokol §6d **plus** audit 137 gambar negatif; terima model baru
    hanya kalau recall tidak turun lebih dari 2 poin atau F1 naik minimal 0,03.

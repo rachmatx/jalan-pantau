@@ -10,10 +10,14 @@ sesuai `docs/Panduan-Tuning-Model.md`. Jalankan sel berurutan.
 >    gambar negatif lokal: 14 di antaranya ditandainya model (conf sampai 0,80)
 >    dan mayoritas memang berisi genangan air → itu **kerusakan nyata**, bukan
 >    negatif. Label kosong otomatis melatih model membutakan diri sendiri.
-> 2. **Skala latih 768, skala inferensi 640.** Training tetap 768 (sama seperti
->    `args.rekonstruksi.yaml`) supaya perbandingannya bersih; inferensi dan
->    evaluasi memakai **640** karena di 640 F1 pothole 0,630 vs 0,536 pada 960
->    (161 gambar BPID berlabel, `Panduan-Tuning-Model.md` §6d).
+> 2. **Skala latih 640 = skala inferensi 640.** Model asal dilatih pada
+>    `imgsz=640` (`kaggle-retrain-yolo11s-rdd2022.py`, sel 6), jadi fine-tune
+>    memakai **640** supaya selisihnya murni dari data tambahan, bukan dari
+>    perubahan skala. Koreksi 19 Okt 2026: versi template ini menulis 768 dengan
+>    mengutip `args.rekonstruksi.yaml` — artefak rekonstruksi yang keliru
+>    (folder sudah dihapus). Inferensi dan evaluasi juga 640; di 640 F1 pothole
+>    0,630 vs 0,536 pada 960 (161 gambar BPID berlabel,
+>    `Panduan-Tuning-Model.md` §6d).
 
 Asumsi: Anda sudah punya dataset RDD-subset ter-*merge* dari template lama
 (atau sesuaikan path). Kelas standar repo:
@@ -82,13 +86,13 @@ print(yaml_txt)
 
 ```python
 # Sel 5: FINE-TUNE dari bobot terbaik (bukan yolo11n.pt) dengan hyperparameter rekomendasi
-# imgsz=768 SAMA dengan run asal (args.rekonstruksi.yaml) supaya selisihnya murni
-# dari data tambahan, bukan dari perubahan skala latih. Inferensi/evaluasi tetap 640.
+# imgsz=640 SAMA dengan run asal (kaggle-retrain-yolo11s-rdd2022.py, sel 6) supaya
+# selisihnya murni dari data tambahan, bukan dari perubahan skala latih.
 from ultralytics import YOLO
 model = YOLO("/kaggle/input/jalanpantau-weights/best.pt")  # SESUAIKAN
 model.train(
     data=str(WORK/"data.yaml"),
-    epochs=120, imgsz=768, batch=8, patience=25,
+    epochs=120, imgsz=640, batch=8, patience=25,
     optimizer="AdamW", lr0=0.001, cos_lr=True, warmup_epochs=3,
     scale=0.5,      # objek lokal lebih dekat dari mobil -> rentang skala lebar
     hsv_v=0.4,      # tahan variasi cahaya lokal (termasuk foto malam)

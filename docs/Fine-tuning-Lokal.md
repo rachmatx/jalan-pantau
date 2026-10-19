@@ -121,7 +121,7 @@ diterapkan ke sana, jadi jangan memakai versi template yang lama:
 | Sel | Koreksi | Alasan |
 |---|---|---|
 | 3 (hard-negative) | tidak lagi menulis `.txt` kosong otomatis | audit 137 gambar: 14 yang ditandai model justru berisi genangan air → itu kerusakan nyata, bukan negatif |
-| 5 (fine-tune) | `imgsz` 960 → **768** | skala latih asal (`args.rekonstruksi.yaml`) supaya selisihnya murni dari data tambahan, bukan perubahan skala |
+| 5 (fine-tune) | `imgsz` 960 → **640** | harus sama dengan skala latih model asal **dan** `imgsz_gambar` aplikasi, supaya selisihnya murni dari data tambahan, bukan perubahan skala. (Dokumen versi lama menulis 768 karena mengutip artefak args rekonstruksi yang keliru — sudah dihapus; koreksi 19 Okt 2026.) |
 | 5 | tambah `scale=0.5`, `hsv_v=0.4` | objek lokal lebih dekat dari mobil; variasi cahaya lokal termasuk malam |
 | 7 (evaluasi) | `imgsz` 960 → **640** | harus sama dengan `imgsz_gambar` aplikasi, kalau tidak angkanya tidak sebanding dengan yang pengguna alami |
 | 7b (baru) | **gerbang terima** | jangan unduh bobot sebelum a/b/c lolos (§6) |

@@ -183,13 +183,14 @@
 
   <!-- PANEL LIVE -->
   <div id="panel-live" hidden>
-    <!-- 4 KPI Cards (live streaming) -->
-    <div class="jp-card" id="stat-cards-wrap" hidden style="margin-bottom:16px;padding:12px">
+    <!-- 5 KPI Cards (live streaming), satu baris -->
+    <div class="jp-card" id="stat-cards-wrap" hidden style="margin-bottom:10px;padding:6px">
       <div id="stat-cards">
-        <div class="jp-stat-mini"><span>FPS TAMPIL</span><span id="fps-stat" style="font-family:var(--jp-mono);font-size:13px;font-weight:700;color:var(--jp-sev-h-tx)">0</span><span style="font-family:var(--jp-mono);font-size:10px;color:var(--jp-muted);display:block;margin-top:4px">Preview halus</span></div>
-        <div class="jp-stat-mini"><span>FPS INFERENSI</span><span id="fps-infer-stat" style="font-family:var(--jp-mono);font-size:13px;font-weight:700;color:var(--jp-primary)">0</span><span style="font-family:var(--jp-mono);font-size:10px;color:var(--jp-muted);display:block;margin-top:4px">Model YOLO</span></div>
-        <div class="jp-stat-mini"><span>TITIK UNIK</span><span id="unik-stat" style="font-family:var(--jp-mono);font-size:13px;font-weight:700;color:var(--jp-ink)">0</span><span style="font-family:var(--jp-mono);font-size:10px;color:var(--jp-muted);display:block;margin-top:4px">Terpetakan</span></div>
-        <div class="jp-stat-mini"><span>DETEKSI AKTIF</span><span id="deteksi-stat" style="font-family:var(--jp-mono);font-size:13px;font-weight:700;color:var(--jp-primary)">0</span><span style="font-family:var(--jp-mono);font-size:10px;color:var(--jp-muted);display:block;margin-top:4px">Objek/frame</span></div>
+        <div class="jp-stat-mini"><span>FPS TAMPIL</span><span id="fps-stat" style="color:var(--jp-sev-h-tx)">0</span><span>Preview halus</span></div>
+        <div class="jp-stat-mini"><span>FPS INFERENSI</span><span id="fps-infer-stat" style="color:var(--jp-primary)">0</span><span>Model YOLO</span></div>
+        <div class="jp-stat-mini"><span>TITIK UNIK</span><span id="unik-stat" style="color:var(--jp-ink)">0</span><span>Terpetakan</span></div>
+        <div class="jp-stat-mini"><span>DETEKSI AKTIF</span><span id="deteksi-stat" style="color:var(--jp-primary)">0</span><span>Objek/frame</span></div>
+        <div class="jp-stat-mini"><span>PERANGKAT</span><span id="perangkat-stat" style="color:var(--jp-ink)">-</span><span id="perangkat-ket">Backend live</span></div>
       </div>
     </div>
     <!-- Tips Performa (collapsible) -->

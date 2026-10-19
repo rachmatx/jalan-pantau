@@ -94,7 +94,8 @@ kontraktor sudah **dihapus** dari kode (Okt 2026). Aplikasi kini satu peran
   temuan-nilai berat-nilai total-nilai tabel unduh simpan`
 - Tab: `tab-gambar tab-live panel-gambar panel-live`
 - Live: `slot-live viewer-live stat-cards fps-stat fps-infer-stat unik-stat
-  deteksi-stat sumber in-webcam webcam-idx in-ipcam ipcam-url in-file video
+  deteksi-stat perangkat-stat perangkat-ket sumber in-webcam webcam-idx
+  in-ipcam ipcam-url in-file video
   conf-live conf-live-out skip malam-live lokasi lat-live lon-live mulai
   berhenti demo status-live hasil-live total-live-nilai tabel-live unduh-live
   simpan-live`

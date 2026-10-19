@@ -114,6 +114,23 @@ function resetKartuLive() {
   });
 }
 
+// Tampilkan perangkat + backend live yang benar-benar dipakai, supaya alasan
+// perbedaan kecepatan antar mesin terlihat tanpa menebak dari log server.
+// Live memakai .pt di GPU dan .onnx di CPU (config `mode_backend`). Nilai di
+// kartu sengaja PENDEK ("GPU"/"CPU") karena kartunya kecil; nama GPU lengkap
+// ditaruh di tooltip (title) supaya tidak terpotong elipsis.
+function isiPerangkat(p) {
+  const nilai = document.getElementById("perangkat-stat");
+  const ket = document.getElementById("perangkat-ket");
+  if (!nilai || !p) return;
+  const rinci = `${p.cuda ? (p.gpu || "CUDA") : "tanpa CUDA"} · backend live: ` +
+    `${p.backend_live || "-"} · mode: ${p.mode_backend || "auto"}`;
+  nilai.textContent = p.cuda ? "GPU" : "CPU";
+  if (ket) ket.textContent = `Live: ${p.backend_live || "-"}`;
+  nilai.title = rinci;
+  if (ket) ket.title = rinci;
+}
+
 async function refreshStats() {
   try {
     const res = await fetch("/api/stream/stats");
@@ -139,6 +156,7 @@ async function refreshStats() {
       if (document.getElementById("fps-infer-stat")) document.getElementById("fps-infer-stat").textContent = s.fps_infer;
       if (document.getElementById("unik-stat")) document.getElementById("unik-stat").textContent = s.unik;
       if (document.getElementById("deteksi-stat")) document.getElementById("deteksi-stat").textContent = s.deteksi;
+      isiPerangkat(s.perangkat);
       cards.hidden = false;
     }
   } catch {
@@ -480,6 +498,8 @@ document.getElementById("unduh-live").addEventListener("click", async () => {
           "finished: " + s.finished,
           "error   : " + (s.error || "-"),
           "fps     : " + s.fps,
+          "perangkat: " + (s.perangkat ? (s.perangkat.cuda ? s.perangkat.gpu : "CPU") : "-") +
+            " (backend live: " + (s.perangkat ? s.perangkat.backend_live : "-") + ")",
           "frame   : " + s.frame,
           "unik    : " + s.unik,
           "deteksi : " + s.deteksi,

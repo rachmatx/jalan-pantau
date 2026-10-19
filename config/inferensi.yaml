@@ -17,6 +17,23 @@
 # Berlaku mulai start/deteksi berikutnya (live baca ulang tiap start).
 model_gambar: best.pt
 model_live: best.pt
+# --- Pilihan backend otomatis (19 Okt 2026) --------------------------------
+# auto = pakai .pt bila ada GPU CUDA, .onnx bila mesin hanya CPU. Berlaku
+# HANYA untuk jalur LIVE, karena live memang tidak memakai TTA (pakai
+# model.track tanpa augment). Jalur GAMBAR sengaja tidak pernah dialihkan:
+# ultralytics membuang `augment` untuk backend non-PyTorch (warning "['augment']
+# not supported by this model (format='onnx')"), sedangkan TTA adalah yang
+# menjaga recall di jalur gambar (docs §6b: R 0,48 -> 0,69).
+# Bukti (i5-3470, jalur CPU dipaksa, imgsz 640, latensi per inferensi):
+#   best.pt tanpa TTA 266 ms | best.pt + TTA 773 ms | best.onnx 133 ms
+# Ekspor onnxruntime-gpu tidak dipasang (kebijakan anti-unduh saat demo), jadi
+# .onnx selalu jalan di CPU; di GPU, torch CUDA jauh lebih cepat.
+# Nilai: auto | pt (paksa .pt) | onnx (paksa .onnx). Bila kembar .onnx hilang,
+# otomatis kembali ke .pt (tidak error).
+# CATATAN: ekspor .onnx STATIS hanya bisa jalan di 640. Sudah diekspor ulang
+# dengan dynamic=True (19 Okt 2026) supaya preset live 320/640/960 benar-benar
+# berpengaruh; pada ekspor statis lama, imgsz diabaikan diam-diam.
+mode_backend: auto
 # Scene classifier (gate jalan basah): YOLOv11n-cls latih IROSCD (~5MB).
 # Gate aktif bila probabilitas wet_road >= wet_min (bukan top-1), agar foto
 # ambigu — jalan basah yang rusak, terklasifikasi "damaged" — tetap memicu
@@ -35,13 +52,17 @@ device: auto
 #    640   P 0,366 R 0,753    P 0,546 R 0,677    0,630 (conf 0,35)
 #    768   P 0,335 R 0,768    P 0,506 R 0,650    0,571 (conf 0,30)
 #    960   P 0,240 R 0,738    P 0,409 R 0,635    0,536 (conf 0,40)
-# Kesimpulan: 960 adalah SETELAN SALAH untuk model ini. Model dilatih imgsz
-# 768 (yolov11s-rdd-only/args.rekonstruksi.yaml), dan menginferensikan jauh di
-# atas skala latih menaikkan false positive tanpa menambah recall. 640 juga
-# lebih cepat. Catatan: BPID hanya berlabel pothole — efek ke recall retak
+# Kesimpulan: 960 adalah SETELAN SALAH untuk model ini. Model dilatih pada
+# imgsz 640 (notebooks/kaggle-retrain-yolo11s-rdd2022.py, sel 6: imgsz=640;
+# juga docs/Strategi-Training.md "resep identik ... imgsz 640"), jadi
+# menginferensikan 960 = 1,5x skala latih: menambah false positive tanpa
+# menambah recall, dan 640 justru lebih cepat. Catatan: angka "960 menemukan
+# 1,5-5x lebih banyak kotak" berasal dari pengukuran 7 Sep 2026 yang memakai
+# artefak args rekonstruksi (folder yolov11s-rdd-only, sudah dihapus) yang salah
+# menulis imgsz latih = 768. BPID hanya berlabel pothole — efek ke recall retak
 # belum diukur di sini, jadi jangan naikkan ke 960 tanpa bukti.
 imgsz_gambar: 640
-imgsz_live: 640  # 640 = akurasi penuh; 480/320 hanya bila mesin sangat lambat
+imgsz_live: 640  # 640 = skala latih (akurasi penuh); 320 hanya bila mesin lambat. 960 = upscale, jangan.
 iou: 0.5
 tta: true  # augment=True; trial 3 foto: conf top naik konsisten (0.4x->0.8x), biaya 0.3s->0.7s. Matikan bila terlalu PD.
 # --- FP16 (half) khusus JALUR GAMBAR — diukur 17 Okt 2026, GTX 1650 ---

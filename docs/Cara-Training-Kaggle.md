@@ -5,7 +5,11 @@ Alur: **siapkan data → buat notebook (GPU) → jalankan sel → unduh hasil �
 
 Template sel: `notebooks/template-kaggle-yolo11-detect.md` (baseline) dan
 `notebooks/template-kaggle-hard-negative-finetune.md` (lanjutan: hard-negative + fine-tune + pseudo-label).
-Notebook run sebelumnya (contoh nyata): `yolov11s-rdd-only/Kaggle_Notebook_-_RDD2022_YOLOv11s_Final_Run1.md`.
+Notebook yang dipakai untuk model aktif: `notebooks/kaggle-retrain-yolo11s-rdd2022.py`
+(imgsz 640, SGD, 150 epoch) — ini sumber kebenaran skala latih model.
+(Koreksi 19 Okt 2026: versi dokumen ini menunjuk
+`yolov11s-rdd-only/Kaggle_Notebook_-_RDD2022_YOLOv11s_Final_Run1.md`; folder itu
+artefak run lama yang sudah dihapus.)
 
 ---
 

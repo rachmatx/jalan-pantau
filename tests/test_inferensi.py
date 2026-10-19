@@ -5,9 +5,11 @@ Jalankan dari root repo:
 """
 import math
 import os
+import shutil
 import sys
 import tempfile
 import unittest
+from pathlib import Path
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 for p in (ROOT, os.path.join(ROOT, "web"), os.path.join(ROOT, "app")):
@@ -131,6 +133,102 @@ class TestPilihDevice(unittest.TestCase):
         self.assertEqual(deteksi.pilih_device("auto", "best.onnx"), "cpu")
         self.assertEqual(deteksi.pilih_device("gpu", "best.onnx"), "cpu")
         self.assertIn(deteksi.pilih_device("auto", "best.pt"), (0, "cpu"))
+
+
+class TestModeBackend(unittest.TestCase):
+    """Knob `mode_backend`: .pt di GPU, .onnx di CPU — HANYA jalur live.
+
+    Yang dikunci di sini:
+    - config `model_live` TIDAK ikut berubah (resolve_model tidak disentuh),
+    - auto tidak pernah jadi error walau kembar .onnx hilang,
+    - jalur gambar tidak pernah terpengaruh (pakai model_gambar apa adanya).
+    """
+
+    def setUp(self):
+        import deteksi
+        self.d = deteksi
+        self.simpan = deteksi._cuda_tersedia
+
+    def tearDown(self):
+        self.d._cuda_tersedia = self.simpan
+
+    def test_default_auto_dan_disaring(self):
+        import deteksi
+        deteksi._infer = None
+        self.assertEqual(deteksi.get_inferensi()["mode_backend"], "auto")
+        for salah in ("ganteng", "", "PyTorch", None, 7):
+            fd, path = tempfile.mkstemp(suffix=".yaml")
+            os.close(fd)
+            try:
+                with open(path, "w", encoding="utf-8") as f:
+                    f.write(f"model_live: best.pt\nmode_backend: {salah}\n")
+                inf = deteksi.get_inferensi(path=path)
+                self.assertEqual(inf["mode_backend"], "auto", salah)
+            finally:
+                os.remove(path)
+
+    def test_auto_gpu_memakai_pt(self):
+        self.d._cuda_tersedia = True
+        self.assertTrue(self.d.backend_live("auto", ada_cuda=True).endswith(".pt"))
+
+    def test_auto_cpu_memakai_onnx(self):
+        self.d._cuda_tersedia = False
+        nama = self.d.backend_live("auto", ada_cuda=False)
+        self.assertTrue(nama.endswith(".onnx"), nama)
+        # kembar .onnx harus benar-benar ada di disk (bukan nama karangan)
+        self.assertTrue((self.d.WEIGHTS_DIR / nama).is_file(), nama)
+
+    def test_paksa_pt_dan_onnx(self):
+        """pt/onnx mengabaikan status CUDA; nilai tak sah -> auto."""
+        self.d._cuda_tersedia = True
+        self.assertTrue(self.d.backend_live("pt", ada_cuda=True).endswith(".pt"))
+        self.assertTrue(self.d.backend_live("pt", ada_cuda=False).endswith(".pt"))
+        self.assertTrue(self.d.backend_live("onnx", ada_cuda=True).endswith(".onnx"))
+        # tak sah -> auto -> ikut CUDA (True di sini)
+        self.assertTrue(self.d.backend_live("ngawur", ada_cuda=True).endswith(".pt"))
+
+    def test_config_model_live_tidak_ikut_berubah(self):
+        """Auto-hanya-live tidak boleh menyentuh nilai config / resolve_model."""
+        import deteksi
+        deteksi._infer = None
+        self.d._cuda_tersedia = False  # CPU: jalur live -> onnx
+        self.assertEqual(deteksi.get_inferensi()["model_live"], "best.pt")
+        self.assertEqual(deteksi.resolve_model(kunci="model_live").name, "best.pt")
+        self.assertEqual(deteksi.resolve_model(kunci="model_gambar").name, "best.pt")
+        self.assertTrue(deteksi.nama_model_live().endswith(".onnx"))
+
+    def test_hilang_tetap_pt_bukan_error(self):
+        """Kembar .onnx tidak ada -> balik ke .pt (jangan sampai request 500).
+
+        Diuji lewat WEIGHTS_DIR sementara yang hanya berisi best.pt, supaya
+        bobot asli tidak disentuh.
+        """
+        import deteksi
+        deteksi._infer = None
+        bobot = tempfile.mkdtemp(prefix="jp-bobot-")
+        shutil.copyfile(str(self.d.WEIGHTS_DIR / "best.pt"),
+                        os.path.join(bobot, "best.pt"))
+        asli_dir = self.d.WEIGHTS_DIR
+        try:
+            self.d.WEIGHTS_DIR = Path(bobot)
+            for mode, cuda in (("auto", False), ("onnx", False),
+                               ("onnx", True)):
+                nama = self.d.backend_live(mode, ada_cuda=cuda)
+                self.assertTrue(nama.endswith(".pt"), (mode, cuda, nama))
+        finally:
+            self.d.WEIGHTS_DIR = asli_dir
+            shutil.rmtree(bobot, ignore_errors=True)
+
+    def test_ringkasan_perangkat_ada_kunci(self):
+        p = self.d.ringkasan_perangkat()
+        for k in ("cuda", "gpu", "mode_backend", "backend_live"):
+            self.assertIn(k, p)
+        self.assertIn(p["mode_backend"], ("auto", "pt", "onnx"))
+
+    def test_status_sistem_bawa_perangkat(self):
+        s = self.d.status_sistem()
+        self.assertIn("perangkat", s)
+        self.assertIn("backend_live", s["perangkat"])
 
     def test_fallback_selaras_dengan_yaml(self):
         """Fallback harus mencerminkan config/inferensi.yaml.

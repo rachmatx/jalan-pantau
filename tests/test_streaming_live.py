@@ -102,10 +102,10 @@ class _StreamCase(unittest.TestCase):
         import streaming
         self.streaming = streaming
         self.model = FakeModel(model_delay)
-        self._get_model = streaming.get_model
+        self._get_model = streaming.model_live_aktif
         self._get_inf = streaming.get_inferensi
         self._vcap = streaming.cv2.VideoCapture
-        streaming.get_model = lambda *a, **k: self.model
+        streaming.model_live_aktif = lambda *a, **k: self.model
         streaming.get_inferensi = lambda *a, **k: INFER
         streaming.cv2.VideoCapture = FakeCap
         self.m = streaming.StreamManager()
@@ -119,7 +119,7 @@ class _StreamCase(unittest.TestCase):
             m.stop()
         except Exception:
             pass
-        self.streaming.get_model = self._get_model
+        self.streaming.model_live_aktif = self._get_model
         self.streaming.get_inferensi = self._get_inf
         self.streaming.cv2.VideoCapture = self._vcap
 

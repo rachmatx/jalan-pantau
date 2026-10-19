@@ -47,8 +47,12 @@ Sebagai pembanding, format YOLO untuk segmentasi memakai 7 kolom atau lebih:
 satu kolom class, lalu titik-titik polygon. Yang dipakai proyek ini jelas
 bukan format itu.
 
-Bukti tambahan: berkas argumen training mencatat `retina_masks: false`.
-Lihat `yolov11s-rdd-only/args.rekonstruksi.yaml`.
+Bukti tambahan: recipe training di `notebooks/kaggle-retrain-yolo11s-rdd2022.py`
+memakai `YOLO("yolo11s.pt")` lalu `model.train(...)` tanpa `retina_masks` —
+yaitu model deteksi bawaan, bukan segmentasi.
+(Koreksi 19 Okt 2026: versi dokumen ini mengutip
+`yolov11s-rdd-only/args.rekonstruksi.yaml`; folder itu artefak rekonstruksi run
+lama yang sudah dihapus, dan isinya tidak cocok dengan recipe sebenarnya.)
 
 ## 4. Kenapa tidak dilatih dengan segmentasi
 
@@ -132,5 +136,5 @@ manapun adalah klaim yang belum didukung bukti.
 | `config/severity.yaml` | Ambang luas dan volume ke Ringan/Sedang/Berat |
 | `app/severity.py` | Pemetaan dimensi ke severity |
 | `docs/RDD2022-catatan.md` | Catatan asal dataset, termasuk keputusan awal Seg ke Detect |
-| `yolov11s-rdd-only/args.rekonstruksi.yaml` | Bukti training, retina_masks false |
+| `notebooks/kaggle-retrain-yolo11s-rdd2022.py` | Recipe training (deteksi, tanpa retina_masks) |
 | `reports/keputusan-ablasi-cbam-yolo26.md` | Decision log ablasi model |

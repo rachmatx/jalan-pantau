@@ -149,7 +149,7 @@ bpid_test = m.val(data="/kaggle/working/bpid.yaml")
 # ============================================================
 # Sel 8 — export ONNX (untuk aplikasi Flask)
 # ============================================================
-m.export(format="onnx", imgsz=640, simplify=True)
+m.export(format="onnx", imgsz=640, dynamic=True, simplify=True)
 print("Export ONNX selesai.")
 
 # ============================================================

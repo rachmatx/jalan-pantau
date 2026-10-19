@@ -24,7 +24,8 @@ from flask import (Flask, Response, current_app, jsonify, redirect,
 
 from deteksi import (WorkerInferensiMati, analisis_gambar,
                      analisis_gambar_terjadwal, buat_pdf, get_kalibrasi,
-                     hitung_ppc, nama_model, simpan_kalibrasi, status_sistem,
+                     hitung_ppc, nama_model, nama_model_live,
+                     ringkasan_perangkat, simpan_kalibrasi, status_sistem,
                      terapkan_koreksi)
 from streaming import MANAGER
 from database import (daftar_sesi, detail_sesi, hapus_sesi, simpan_sesi,
@@ -764,7 +765,14 @@ def create_app():
     @app.get("/api/stream/stats")
     @_exempt
     def api_stream_stats():
-        return jsonify(MANAGER.stats())
+        s = MANAGER.stats()
+        # Perangkat + backend live aktif, supaya UI bisa jujur soal mode yang
+        # benar-benar jalan (GPU+.pt atau CPU+.onnx) tanpa menebak.
+        try:
+            s["perangkat"] = ringkasan_perangkat()
+        except Exception:
+            pass
+        return jsonify(s)
 
     @app.post("/api/stream/anotasi")
     def api_stream_anotasi():
@@ -787,7 +795,7 @@ def create_app():
         if not snap["rows"]:
             return jsonify({"error": "Belum ada track terekam. Tunggu deteksi muncul."}), 400
         snap["source"] = f"Live ({MANAGER.stats()['source']})"
-        snap["model"] = nama_model(kunci="model_live")
+        snap["model"] = nama_model_live()
         return jsonify(snap)
 
     @app.post("/api/demo")
@@ -1100,13 +1108,18 @@ def _preload_model_di_background():
     import threading
     def _load():
         try:
-            from deteksi import get_model, nama_model, get_scene_model, resolve_scene_model
+            from deteksi import (get_model, get_scene_model, model_live_aktif,
+                                 nama_model, nama_model_live,
+                                 resolve_scene_model, ringkasan_perangkat)
             print("[preload] Memuat model gambar...")
             get_model(kunci="model_gambar")
             print(f"[preload] Model gambar siap: {nama_model(kunci='model_gambar')}")
+            p = ringkasan_perangkat()
             print("[preload] Memuat model live...")
-            ml = get_model(kunci="model_live")
-            print(f"[preload] Model live siap: {nama_model(kunci='model_live')}")
+            ml = model_live_aktif()
+            print(f"[preload] Model live siap: {nama_model_live()} "
+                  f"(perangkat: {'GPU ' + p['gpu'] if p['cuda'] else 'CPU'}, "
+                  f"mode_backend={p['mode_backend']})")
             # Scene classifier (gate jalan basah, ~5MB): preload + warmup dummy
             # agar klasifikasi foto pertama tidak menunggu.
             try:
