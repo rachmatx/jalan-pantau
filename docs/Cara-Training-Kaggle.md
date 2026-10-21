@@ -20,7 +20,6 @@ artefak run lama yang sudah dihapus.)
 
 **Data yang TIDAK perlu diunduh** (pakai "+ Add Input"):
 - `aliabdelmenam/rdd-2022` — dataset RDD2022 (11 GB, tetap di server Kaggle).
-- Roma / dataset lain bila dipakai (`docs/Dataset-Roma-manhole-prototipe.md`).
 
 **Data yang HARUS kamu unggah sebagai Kaggle Dataset (private)** — hanya terlihat olehmu:
 - `data/publik/bpid/` → dataset `bpid-bandung` (evaluasi OOD Bandung, test saja).

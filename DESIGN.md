@@ -107,6 +107,6 @@ kontraktor sudah **dihapus** dari kode (Okt 2026). Aplikasi kini satu peran
 
 ## 5. Alur kerja Stitch → Flask
 
-1. Generate desain per halaman di Stitch (lihat `PROMPT_STITCH.md`).
+1. Generate desain per halaman di Stitch.
 2. Export HTML/CSS (Tailwind CDN boleh saat desain, akan saya ganti CSS murni).
 3. Saya yang port ke `web/templates/` + `web/static/css/` dengan kontrak ID di atas.
