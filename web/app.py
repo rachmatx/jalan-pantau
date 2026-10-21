@@ -1120,7 +1120,7 @@ def _preload_model_di_background():
             print(f"[preload] Model gambar siap: {nama_model(kunci='model_gambar')}")
             p = ringkasan_perangkat()
             print("[preload] Memuat model live...")
-            ml = model_live_aktif()
+            model_live_aktif()
             print(f"[preload] Model live siap: {nama_model_live()} "
                   f"(perangkat: {'GPU ' + p['gpu'] if p['cuda'] else 'CPU'}, "
                   f"mode_backend={p['mode_backend']})")
@@ -1137,14 +1137,8 @@ def _preload_model_di_background():
                     print("[preload] Scene classifier tidak ada -> gate nonaktif.")
             except Exception as e:
                 print(f"[preload] Scene classifier dilewati: {e}")
-            # Warmup: satu inferensi dummy agar sesi ONNX/CUDA + kernel siap,
-            # sehingga deteksi pertama saat stream dimulai tidak menunggu.
-            try:
-                import numpy as np
-                ml.predict(np.zeros((480, 640, 3), dtype=np.uint8), verbose=False)
-                print("[preload] Warmup model live selesai.")
-            except Exception as e:
-                print(f"[preload] Warmup dilewati: {e}")
+            # Warmup live dilakukan MANAGER.panaskan() di thread inferensi;
+            # ml.predict() di sini menulis state predictor jalur yang salah.
             # Worker inferensi GPU khusus: start + warmup di thread-nya sendiri
             # (anti pajak ~10 dtk inisialisasi CUDA per request Flask).
             try:

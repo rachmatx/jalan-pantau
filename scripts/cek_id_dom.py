@@ -22,6 +22,10 @@ DINAMIS = {
     "pag-prev", "pag-next",  # riwayat.js renderPaginasi() via innerHTML
     "d-pag-prev", "d-pag-next",  # riwayat.js renderTabelTemuan() via innerHTML
     "gps-notif",  # peta.js buatMarkerGPS()/notif dibuat via createElement
+    "gps-inline-warn",  # peta.js buatMarkerGPS() via createElement
+    "seg-pag-prev", "seg-pag-next",  # segmen.js renderPaginasi() via innerHTML
+    "e-nama", "e-jalan", "e-panjang", "e-lebar", "e-manual", "e-catatan",
+    # ^ form edit segmen: segmen.js menyuntik modal via innerHTML
 }
 # ID opsional: JS meng-guard dengan if(getElementById(...)) sehingga boleh
 # tidak ada di sebagian halaman (mis. sidebar-toggle hanya di dashboard).

@@ -34,6 +34,9 @@ class TestB1StreamMalam(unittest.TestCase):
         m = StreamManager()
         m._loop = lambda *a, **k: None
         m._reset_tracker = lambda: None
+        # Thread asli tak dijalankan di test ini; simulasikan warmup selesai
+        # agar start() tidak menunggu _infer_siap sampai timeout.
+        m._pastikan_infer = lambda: m._infer_siap.set()
         asli = threading.Thread
         threading.Thread = lambda *a, **k: _fake_thread()
         try:

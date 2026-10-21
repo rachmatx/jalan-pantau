@@ -58,7 +58,9 @@ menggunakan Jinja2, dan vanilla JavaScript di sisi klien.
 └────────────────────────────┘
 ```
 
-**Model Machine Learning** (satu model: YOLOv11s untuk gambar **dan** live):
+**Model Machine Learning** (YOLOv11s untuk gambar **dan** live; file bobot
+boleh sama, tetapi tiap jalur memakai *instance* model terpisah agar state
+`predictor`/`trackers` tidak saling menimpa):
 
 | Peran | Model | Format | Config |
 |-------|-------|--------|--------|
@@ -378,25 +380,25 @@ Baris dapat bergeser seiring perubahan; nama fungsi/route adalah acuan utama.
 
 ### Fungsi Inti
 
-| Fungsi | File | Baris |
-|--------|------|-------|
-| `analisis_gambar` | `web/deteksi.py` | 1014 |
-| `prediksi_teliti` | `web/deteksi.py` | 920 |
-| `proses_detections` | `web/deteksi.py` | 625 |
-| `gabung_fragmen` | `web/deteksi.py` | 647 |
-| `saring_rows` | `web/deteksi.py` | 384 |
-| `terapkan_koreksi` | `web/deteksi.py` | 419 |
-| `get_model` (singleton) | `web/deteksi.py` | 567 |
-| `kanonik_kelas` / `nama_kelas` | `web/deteksi.py` | 539 / 558 |
-| `diagnose` (severity) | `app/severity.py` | 53 |
-| `skor` (indeks prioritas) | `app/prioritas.py` | 31 |
-| `total_prioritas` | `app/prioritas.py` | 56 |
-| `buat_laporan` (PDF) | `app/laporan.py` | 35 |
-| `simpan_sesi` | `web/database.py` | 248 |
-| `daftar_sesi` | `web/database.py` | 344 |
-| `detail_sesi` | `web/database.py` | 360 |
-| `titik_peta` | `web/database.py` | 388 |
-| `StreamManager` | `web/streaming.py` | 42 |
+| Fungsi | File |
+|--------|------|
+| `analisis_gambar` | `web/deteksi.py` |
+| `prediksi_teliti` | `web/deteksi.py` |
+| `proses_detections` | `web/deteksi.py` |
+| `gabung_fragmen` | `web/deteksi.py` |
+| `saring_rows` | `web/deteksi.py` |
+| `terapkan_koreksi` | `web/deteksi.py` |
+| `get_model` (cache per ruang+path) | `web/deteksi.py` |
+| `kanonik_kelas` / `nama_kelas` | `web/deteksi.py` |
+| `diagnose` (severity) | `app/severity.py` |
+| `skor` (indeks prioritas) | `app/prioritas.py` |
+| `total_prioritas` | `app/prioritas.py` |
+| `buat_laporan` (PDF) | `app/laporan.py` |
+| `simpan_sesi` | `web/database.py` |
+| `daftar_sesi` | `web/database.py` |
+| `detail_sesi` | `web/database.py` |
+| `titik_peta` | `web/database.py` |
+| `StreamManager` | `web/streaming.py` |
 
 ---
 

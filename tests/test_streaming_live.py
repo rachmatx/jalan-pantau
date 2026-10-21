@@ -8,6 +8,7 @@ Tanpa kamera/model nyata: cv2.VideoCapture & model live di-monkeypatch.
 import os
 import sys
 import tempfile
+import threading
 import time
 import unittest
 
@@ -400,6 +401,37 @@ class TestInferPersisten(_StreamCase):
             self.assertFalse(m._infer_sesi.is_set())
         finally:
             self._lepas(m)
+
+
+class TestStartMenungguWarmup(unittest.TestCase):
+    """start() tak boleh mereset tracker selagi warmup masih memakai model."""
+
+    def test_reset_tracker_baru_setelah_warmup_selesai(self):
+        import streaming
+        m = streaming.StreamManager()
+        tercatat = []
+        asli = (streaming.get_inferensi, streaming.nama_model_live,
+                streaming.pilih_device)
+        streaming.get_inferensi = lambda *a, **k: INFER
+        streaming.nama_model_live = lambda *a, **k: "best.onnx"
+        streaming.pilih_device = lambda *a, **k: "cpu"
+
+        # Warmup "berjalan" di thread lain dan baru selesai setelah 0,1 dtk.
+        m._pastikan_infer = lambda: threading.Timer(
+            0.1, m._infer_siap.set).start()
+        m._reset_tracker = lambda: tercatat.append(m._infer_siap.is_set())
+        m._loop = lambda *a, **k: None
+        try:
+            m.start("webcam", 0)
+            self.assertEqual(
+                tercatat, [True],
+                "_reset_tracker() jalan sebelum warmup selesai; reset bisa "
+                "balapan dengan model.track() warmup di thread inferensi")
+        finally:
+            m._tutup.set()
+            m.stop()
+            (streaming.get_inferensi, streaming.nama_model_live,
+             streaming.pilih_device) = asli
 
 
 class TestSnapshotBerbox(_StreamCase):

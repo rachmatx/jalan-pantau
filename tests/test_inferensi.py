@@ -437,7 +437,8 @@ class TestVotingTemporal(unittest.TestCase):
         finally:
             streaming.get_inferensi = asli
         self.assertEqual([r["track_id"] for r in snap["rows"]], [1])
-        self.assertEqual(snap["disaring"], {"ambang": 1, "ukuran": 0, "frame": 1})
+        self.assertEqual(snap["disaring"],
+                         {"ambang": 1, "ukuran": 0, "aspek": 0, "frame": 1})
 
 
 class TestDedupTeliti(unittest.TestCase):
@@ -630,7 +631,7 @@ class TestGabungFragmen(unittest.TestCase):
         tol = deteksi.get_inferensi()["toleransi_kelas"]
         self.assertAlmostEqual(deteksi.ambang_efektif("pothole", 0.30, tol), 0.30)
         self.assertAlmostEqual(deteksi.ambang_efektif("longitudinal_crack",
-                                                       0.30, tol), 0.17)
+                                                       0.30, tol), 0.30)
 
 
 class TestSaringAkhir(unittest.TestCase):

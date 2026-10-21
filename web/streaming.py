@@ -190,8 +190,12 @@ class StreamManager:
             # Samakan window perataan dengan config sesi ini.
             self._tampil_riwayat = deque(
                 maxlen=max(1, self._live_cfg["perataan_tampil"]))
-        self._reset_tracker()
         self._pastikan_infer()
+        # Warmup berjalan di thread inferensi dan menulis predictor/trackers di
+        # model live; jangan reset di tengah-tengah. Event ini selalu diset
+        # setelah warmup (sukses maupun gagal), jadi tak bisa menggantung.
+        self._infer_siap.wait(timeout=120)
+        self._reset_tracker()
         self._thread = threading.Thread(target=self._loop,
                                         args=(source_type, target), daemon=True)
         self._thread.start()

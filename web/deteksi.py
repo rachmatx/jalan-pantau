@@ -56,7 +56,7 @@ INFER_DEFAULT = ROOT / "config" / "inferensi.yaml"
 # Nilai sah untuk knob `mode_backend` (lihat backend_live()).
 BACKEND_MODE = ("auto", "pt", "onnx")
 
-_models = {}  # path str -> YOLO (gambar pt + live onnx bisa hidup berdampingan)
+_models = {}  # key "<ruang>::<path>" (atau path) -> YOLO; lihat get_model()
 _cfg = None
 _infer = None
 _model_lock = threading.Lock()  # jaga load singleton dari Flask thread + worker stream
@@ -883,19 +883,25 @@ def nama_kelas(names, idx):
     return kanonik_kelas(names[idx])
 
 
-def get_model(path=None, kunci="model_gambar"):
-    """Cache per path: backend gambar (pt) + live (onnx) bisa berdampingan.
+def get_model(path=None, kunci="model_gambar", ruang=None):
+    """Cache per (ruang, path): tiap jalur inferensi punya instance sendiri.
+
+    `ruang` memisahkan instance meski file bobotnya sama. Ini wajib untuk
+    live ("live") vs gambar (default): ultralytics menyimpan `predictor` dan
+    `trackers` ByteTrack di instance, jadi berbagi satu objek membuat
+    `predict()` menimpa state tracking live (dan sebaliknya).
 
     Lock hanya membungkus blok load (double-checked) — predict/track tetap
     tanpa lock agar FPS live tidak terdampak.
     """
     from ultralytics import YOLO
 
-    key = str(path or resolve_model(kunci=kunci))
+    lokasi = str(path or resolve_model(kunci=kunci))
+    key = f"{ruang}::{lokasi}" if ruang else lokasi
     if key not in _models:
         with _model_lock:
             if key not in _models:
-                _models[key] = YOLO(key)
+                _models[key] = YOLO(lokasi)
     return _models[key]
 
 
@@ -917,8 +923,12 @@ def resolve_model_live():
 
 
 def model_live_aktif():
-    """Objek model live yang benar-benar dipakai (sudah lewat cache)."""
-    return get_model(resolve_model_live())
+    """Objek model live yang benar-benar dipakai (sudah lewat cache).
+
+    Ruang "live" memisahkan instance dari jalur gambar walau bobotnya sama,
+    agar predictor/trackers ByteTrack tidak saling ditimpa.
+    """
+    return get_model(resolve_model_live(), ruang="live")
 
 
 def nama_model_live():
