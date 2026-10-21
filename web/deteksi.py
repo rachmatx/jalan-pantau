@@ -329,7 +329,7 @@ def pilih_device(nilai="auto", model_file=None):
 # --- Deteksi perangkat & pemilihan backend otomatis ------------------------
 # Kenapa ada: di mesin tanpa GPU (mis. laptop dosen di defense), torch hanya
 # bisa jalan di CPU dan .pt jauh lebih lambat. onnxruntime CPU lebih cepat
-# (diukur i5-3470, imgsz 640: .pt 266 ms vs .onnx 133 ms per inferensi).
+# (i5-3470, imgsz 640, `model.track`: .pt 343 ms vs .onnx 157 ms).
 # Syaratnya ONNX HANYA dipakai untuk jalur LIVE, karena:
 #   (1) live memang tidak memakai TTA (pakai model.track, tanpa augment), jadi
 #       tidak ada recall yang hilang;

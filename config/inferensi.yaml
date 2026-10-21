@@ -24,8 +24,9 @@ model_live: best.pt
 # ultralytics membuang `augment` untuk backend non-PyTorch (warning "['augment']
 # not supported by this model (format='onnx')"), sedangkan TTA adalah yang
 # menjaga recall di jalur gambar (docs §6b: R 0,48 -> 0,69).
-# Bukti (i5-3470, jalur CPU dipaksa, imgsz 640, latensi per inferensi):
-#   best.pt tanpa TTA 266 ms | best.pt + TTA 773 ms | best.onnx 133 ms
+# Bukti (i5-3470, CPU, `model.track` @640, median 20 inferensi termasuk
+# NMS+ByteTrack): best.onnx 157 ms (~6 fps) vs best.pt 343 ms (~3 fps).
+# Di dalam app FPS lebih rendah karena capture/encode/streaming berbagi CPU.
 # Ekspor onnxruntime-gpu tidak dipasang (kebijakan anti-unduh saat demo), jadi
 # .onnx selalu jalan di CPU; di GPU, torch CUDA jauh lebih cepat.
 # Nilai: auto | pt (paksa .pt) | onnx (paksa .onnx). Bila kembar .onnx hilang,

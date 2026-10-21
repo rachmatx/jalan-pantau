@@ -294,6 +294,66 @@ class TestPresetPerforma(unittest.TestCase):
                 self.assertIn(k, pre, f"{nama} kehilangan {k}")
 
 
+class TestPresetOtomatisPerangkat(unittest.TestCase):
+    """Tanpa pilihan eksplisit, preset mengikuti perangkat inferensi.
+
+    CPU-only tidak sanggup 640 secara mulus; default ke "halus" (320) supaya
+    demo di laptop tanpa GPU tetap bergerak. Konfigurasi imgsz non-default
+    dan pilihan eksplisit pengguna tidak boleh ditimpa.
+    """
+
+    def _mulai(self, imgsz_cfg=640, device="cpu", performa=None, frame_skip=1):
+        import streaming
+        self.streaming = streaming
+        self._asli = (streaming.get_inferensi, streaming.nama_model_live,
+                      streaming.pilih_device)
+        inf = dict(INFER, imgsz_live=imgsz_cfg)
+        streaming.get_inferensi = lambda *a, **k: inf
+        streaming.nama_model_live = lambda *a, **k: "best.onnx"
+        streaming.pilih_device = lambda *a, **k: device
+        m = streaming.StreamManager()
+        m._pastikan_infer = lambda: m._infer_siap.set()
+        m._reset_tracker = lambda: None
+        m._loop = lambda *a, **k: None
+        self.m = m
+        m.start("webcam", 0, frame_skip=frame_skip, performa=performa)
+        return m
+
+    def tearDown(self):
+        try:
+            self.m.stop()
+        except Exception:
+            pass
+        (self.streaming.get_inferensi, self.streaming.nama_model_live,
+         self.streaming.pilih_device) = self._asli
+
+    def test_cpu_tanpa_preset_memilih_halus(self):
+        m = self._mulai(imgsz_cfg=640, device="cpu")
+        self.assertEqual(m._performa, "halus")
+        self.assertEqual(m._live_cfg["imgsz_live"], 320)
+
+    def test_gpu_tanpa_preset_memilih_seimbang(self):
+        m = self._mulai(imgsz_cfg=640, device="0")
+        self.assertEqual(m._performa, "seimbang")
+        self.assertEqual(m._live_cfg["imgsz_live"], 640)
+
+    def test_imgsz_config_non_default_tidak_ditimpa(self):
+        m = self._mulai(imgsz_cfg=960, device="cpu")
+        self.assertIsNone(m._performa)
+        self.assertEqual(m._live_cfg["imgsz_live"], 960)
+
+    def test_preset_eksplisit_dihormati(self):
+        m = self._mulai(imgsz_cfg=640, device="cpu", performa="seimbang")
+        self.assertEqual(m._performa, "seimbang")
+        self.assertEqual(m._live_cfg["imgsz_live"], 640)
+
+    def test_frame_skip_eksplisit_tidak_ditimpa(self):
+        m = self._mulai(imgsz_cfg=640, device="cpu", frame_skip=2)
+        self.assertIsNone(m._performa)
+        self.assertEqual(m._live_cfg["infer_interval"], 2)
+        self.assertEqual(m._live_cfg["imgsz_live"], 640)
+
+
 class TestJepitImgsz(unittest.TestCase):
     """(a) imgsz live tidak boleh melebihi lebar frame (cegah upscale)."""
 

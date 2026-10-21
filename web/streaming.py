@@ -66,8 +66,8 @@ def jepit_imgsz(imgsz, lebar_frame):
     ultralytics MENG-UPSCALE 640 -> 960 — nol detail baru, ~2,3x lebih mahal, dan
     keluar dari skala latih model (640) sehingga menambah false positive. Ini
     jaring pengaman untuk preset/`imgsz_live` yang disetel di atas lebar frame.
-    Terukur di CPU: 133 ms @640 vs 285 ms @960 deteksi per frame hampir sama
-    (2,20 vs 2,42).
+    Terukur di CPU (i5-3470, `model.track`): 157 ms @640 vs 358 ms @960 —
+    ~2,3x lebih mahal untuk detail yang tidak bertambah.
 
     Cap dibulatkan ke BAWAH ke kelipatan 32 (stride YOLO) supaya tidak ada
     padding sia-sia; batas bawah 32. Lebar frame tak masuk akal -> nilai asli
@@ -167,6 +167,14 @@ class StreamManager:
                 "file": Path(str(target)).name}.get(source_type, "-")
             infer = get_inferensi()
             live = dict(infer.get("live") or {})
+            device = pilih_device(infer.get("device", "auto"),
+                                  nama_model_live())
+            # Tanpa pilihan eksplisit: CPU default ke "halus" agar laptop tanpa
+            # GPU tetap bergerak. imgsz config non-default dan preset eksplisit
+            # tidak ditimpa.
+            if (self._performa is None and self.frame_skip == 1
+                    and int(infer.get("imgsz_live", 640)) == 640):
+                self._performa = "halus" if str(device) == "cpu" else "seimbang"
             pre = PERFORMA.get(self._performa) if self._performa else None
             self._live_cfg = {
                 "imgsz_live": int(pre["imgsz_live"]) if pre
@@ -184,8 +192,7 @@ class StreamManager:
                 "frame_diff_threshold": float(live.get("frame_diff_threshold",
                                                         FRAME_DIFF_THRESHOLD)),
                 "perataan_tampil": int(live.get("perataan_tampil", 12)),
-                "device": pilih_device(infer.get("device", "auto"),
-                                       nama_model_live()),
+                "device": device,
             }
             # Samakan window perataan dengan config sesi ini.
             self._tampil_riwayat = deque(

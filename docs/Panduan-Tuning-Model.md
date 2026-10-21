@@ -458,9 +458,12 @@ live**; `model_gambar` tidak pernah dialihkan karena ultralytics membuang
 `augment` untuk backend non-PyTorch (warning `['augment'] not supported by this
 model (format='onnx')`), sedangkan TTA là yang menjaga recall jalur gambar.
 
-Bukti (19 Okt 2026):
-- Kecepatan CPU (i5-3470, frame nyata demo, conf 0,20): `.pt` 92/266/538 ms vs
-  `.onnx` 40/133/285 ms pada imgsz 320/640/960 — ONNX ~2× lebih cepat.
+Bukti (22 Okt 2026, i5-3470, `model.track` termasuk NMS+ByteTrack, frame demo
+640x480, conf 0,20, median 20 inferensi setelah warmup):
+- `.onnx` 43/93/157/358 ms pada imgsz 320/480/640/960 (~23/11/6,4/2,8 fps).
+- `.pt` 343 ms @640 (~2,9 fps); ONNX ~2,2x lebih cepat.
+- Di dalam app, FPS inferensi lebih rendah karena thread capture/compose/JPEG
+  berbagi CPU; ukur dengan metrik `fps_infer` pada sesi nyata.
 - **Paritas hasil**: jumlah kotak dan nilai conf `.onnx` **identik** dengan `.pt`
   di ketiga ukuran (mis. imgsz 640: 4 kotak, conf 0,205/0,236/0,248).
 - RAM hampir sama (`.onnx` 794 MB vs `.pt` 776 MB puncak) — ONNX tidak

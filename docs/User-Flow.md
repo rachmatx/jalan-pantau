@@ -208,9 +208,12 @@ flowchart TD
 
 ### Catatan Kinerja
 
-- Inferensi live ONNX @480 ≈ **326 ms/frame** (~3 FPS infer).
+- Inferensi live ONNX @480 ≈ **326 ms/frame** (~3 FPS infer) **di dalam app**;
+  benchmark model terisolasi @480 ≈ **93 ms** (~11 FPS). Selisih berasal dari
+  capture/compose/JPEG yang berbagi CPU.
 - FPS **tampil** preview tetap **15+** karena arsitektur *decouple* 3-thread.
-- Preset performa: `halus` (320/1/30) · `seimbang` (640/1/30).
+- Preset performa: `halus` (320/1/30) · `seimbang` (640/1/30) · otomatis
+  (CPU → halus, GPU → seimbang).
 
 ---
 
