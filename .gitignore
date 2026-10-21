@@ -54,6 +54,8 @@ web/instance/hasil/
 !web/static/demo/*.png
 !web/static/demo/*.jpg
 !web/static/demo/*.mp4
+# Tangkapan layar untuk README
+!screenshot aplikasi/*.png
 
 # ============================================================
 # Folder dataset & hasil training

@@ -21,10 +21,10 @@ penanganan.
 > - **Kalibrasi wajib.** Kamera mono tidak mengukur jarak absolut; parameter
 >   `pixels_per_cm` harus dikalibrasi per pemasangan kamera (halaman
 >   Kalibrasi). Tanpa kalibrasi, dimensi hanya estimasi kasar.
-> - **Inferensi: CPU ±1–3 FPS, GPU ±40 FPS.** Di CPU (mis. i5 tanpa AVX2)
->   YOLOv11s hanya ±1,6 FPS sehingga kotak tampak telat. Bila tersedia GPU CUDA
->   (mis. GTX 1650) `device: auto` memakainya: ±40 FPS (real-time), **akurasi
->   identik** — device tidak mengubah bobot.
+> - **Inferensi terukur: CPU ONNX ±6 FPS @640, ±23 FPS @320; GPU CUDA ±21 FPS.**
+>   Di dalam app angka lebih rendah karena capture/encode berbagi CPU. Di CPU
+>   preset otomatis memilih `halus` (320); di GPU `seimbang` (640). Pemilihan
+>   manual tetap dihormati, dan **akurasi identik** — device tidak mengubah bobot.
 > - **Preview kamera ±25–30 FPS** lewat arsitektur *decouple* (capture/inferensi/
 >   tampil di thread terpisah) — metrik yang berbeda dari FPS inferensi.
 
@@ -72,34 +72,94 @@ Uji fungsional pada 17 foto jalan: **48 temuan**, kelima kelas
 6. **Riwayat** — arsip sesi inspeksi + filter tanggal/severity/pencarian.
 7. **Laporan PDF** — generate otomatis per sesi (foto + tabel temuan + skor).
 8. **Live streaming (demo)** — pratinjau kamera terpisah dari inferensi.
+9. **Segmen jalan + SDI-visual** — agregasi temuan per ruas 100 m menjadi
+   SDI1–SDI4, total SDI, kategori, dan prioritas penanganan.
+
+---
+
+## Tangkapan Layar
+
+### Deteksi gambar
+![Hasil deteksi gambar dengan bounding box, severity, dan skor prioritas](<screenshot aplikasi/deteksi-hasil.png>)
+
+### Segmen jalan + SDI-visual
+![Detail segmen dengan agregasi temuan, SDI-visual, SDI manual, dan kategori](<screenshot aplikasi/segmen-detail.png>)
+
+### Live stream
+![Live stream dengan bounding box dan metrik FPS](<screenshot aplikasi/live-stream.png>)
+
+### Peta GIS
+![Peta temuan dengan filter severity dan popup detail](<screenshot aplikasi/peta.png>)
+
+### Riwayat inspeksi
+![Tabel riwayat sesi dengan filter tanggal dan severity](<screenshot aplikasi/riwayat.png>)
+
+### Kalibrasi pengukuran
+![Halaman kalibrasi pixels_per_cm](<screenshot aplikasi/kalibrasi.png>)
+
+### Laporan PDF
+![Halaman pertama laporan PDF berisi foto dan tabel temuan](<screenshot aplikasi/pdf.png>)
 
 ---
 
 ## Cara menjalankan
 
+Butuh **Python 3.10 atau 3.11** (venv proyek ini memakai 3.11). Langkahnya sama
+untuk semua terminal — yang beda cuma cara mengaktifkan venv. Pilih salah satu:
+**CMD**, **PowerShell**, **Git Bash**, atau **Linux/macOS**.
+
+### 1) Buat virtual environment (wajib — jangan install ke Python global)
+
 ```bash
-# 1) Buat virtual environment (wajib — jangan install ke Python global)
 python -m venv .venv
+```
 
-# 2) Aktifkan venv
-# Windows (PowerShell):
-.venv\Scripts\Activate.ps1
-# Windows (Git Bash):
-source .venv/Scripts/activate
-# Linux/Mac:
-source .venv/bin/activate
+> Windows: kalau `python` tidak dikenali, pakai `py -3 -m venv .venv`.
+> Linux/macOS: pakai `python3 -m venv .venv`.
 
-# 3) Install dependensi
+### 2) Aktifkan venv — sesuai terminal yang dipakai
+
+| Terminal | Perintah aktivasi |
+|---|---|
+| Windows CMD | `.venv\Scripts\activate.bat` |
+| Windows PowerShell | `.venv\Scripts\Activate.ps1` |
+| Windows Git Bash | `source .venv/Scripts/activate` |
+| Linux / macOS | `source .venv/bin/activate` |
+
+Prompt akan diawali `(.venv)` kalau berhasil. Bila PowerShell menolak dengan
+*"running scripts is disabled on this system"*, izinkan sekali untuk sesi itu:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
+
+Tidak mau repot aktivasi? Panggil Python venv-nya langsung — Windows:
+`.venv\Scripts\python.exe web\app.py`, Linux/macOS:
+`.venv/bin/python web/app.py` (dependensi tetap harus sudah ter-install).
+
+### 3) Install dependensi
+
+```bash
 pip install -r requirements.txt
+```
 
-# 3b) OPSIONAL — agar real-time, pasang torch dengan CUDA:
+### 3b) OPSIONAL — agar inferensi lebih cepat, pasang torch dengan CUDA
+
+```bash
 pip install --upgrade torch torchvision --index-url https://download.pytorch.org/whl/cu126
-#    Tanpa ini aplikasi tetap jalan, tapi inferensi di CPU (±1-3 FPS).
+```
 
-# 4) Pastikan bobot model ada di app/weights/
-#    best.pt (gambar + live) · best.onnx (cadangan CPU) · SHA256SUMS.txt
+Tanpa langkah ini aplikasi tetap jalan di CPU (ONNX ±6 FPS @640, ±23 FPS @320
+dengan preset `halus`). Perintah di atas menggantikan torch CPU yang ikut
+terpasang lewat `ultralytics` dengan build CUDA; dengan GPU ±21 FPS.
 
-# 5) Jalankan server
+### 4) Pastikan bobot model ada di `app/weights/`
+
+`best.pt` (gambar + live) · `best.onnx` (cadangan CPU) · `SHA256SUMS.txt`
+
+### 5) Jalankan server
+
+```bash
 python web/app.py
 # -> http://127.0.0.1:5000
 ```

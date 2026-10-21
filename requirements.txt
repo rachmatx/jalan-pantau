@@ -1,10 +1,12 @@
-# Aplikasi web jalan-pantau — CPU only.
+# Aplikasi web jalan-pantau — dependensi inti; default berjalan di CPU.
 # Python 3.10/3.11. Pasang di virtual environment (lihat README).
 #
-# PENTING (Windows): pasang torch varian CPU DULU agar ringan (~200MB),
-# baru ultralytics — kalau tidak, pip menarik torch CUDA ~2,5GB:
+# torch tidak dipin di sini: ikut terpasang lewat ultralytics.
+# OPSIONAL (Windows, hemat unduhan): pasang torch CPU lebih dulu, baru
+# requirements — urutan ini mencegah pip menarik wheel yang jauh lebih besar:
 #   pip install torch --index-url https://download.pytorch.org/whl/cpu
 #   pip install -r requirements.txt
+# Mau inferensi GPU? Ganti torch dengan build CUDA (README langkah 3b).
 ultralytics>=8.2  # dipakai: deteksi foto via best.pt (YOLO)
 opencv-python>=4.9
 flask>=3.0
