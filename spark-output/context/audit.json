@@ -1,0 +1,299 @@
+{
+  "skill": "audit",
+  "generated_at": "2026-10-26T09:34:29+07:00",
+  "project_name": "JalanPantau",
+  "target": {
+    "type": "code",
+    "reference": "C:\\Users\\R\\Documents\\@Semester 5\\Proyek akhir matkul AI ML PIK\\jalan-pantau",
+    "pages_audited": [
+      "/",
+      "/peta",
+      "/riwayat",
+      "/segmen",
+      "/kalibrasi",
+      "/tentang",
+      "/login",
+      "/laporan/preview/<sid>"
+    ]
+  },
+  "audit_framework": [
+    "Nielsen-10",
+    "responsive",
+    "performance"
+  ],
+  "findings": [
+    {
+      "id": "audit-1",
+      "heuristic": "visibility",
+      "severity": "major",
+      "description": "Hasil deteksi muncul jauh di bawah tanpa auto-scroll atau toast; status hanya ada di bar atas.",
+      "evidence": "web/templates/deteksi.html:33 (status), :144 (#hasil); web/static/js/deteksi.js tidak memanggil scrollIntoView/toast saat sukses; saat diuji #hasil di ~812px pada viewport 900px.",
+      "suggestion": "Auto-scroll dan highlight #hasil saat selesai, tampilkan toast ringkasan temuan, dan letakkan status hasil dekat tombol aksi.",
+      "effort": "medium"
+    },
+    {
+      "id": "audit-2",
+      "heuristic": "visibility",
+      "severity": "major",
+      "description": "Selesai memutar live hanya menampilkan 'Video selesai diputar'; panel hasil dan tombol Simpan Sesi muncul tanpa pemberitahuan di bawah fold.",
+      "evidence": "web/static/js/live.js:180 (status selesai), :263-294 (snapshot diam-diam); web/templates/deteksi.html:379-394 (#hasil-live, Simpan Sesi).",
+      "suggestion": "Saat selesai tampilkan 'N titik siap disimpan', buka dialog tabel temuan atau arahkan fokus ke tombol Simpan Sesi.",
+      "effort": "medium"
+    },
+    {
+      "id": "audit-3",
+      "heuristic": "visibility",
+      "severity": "minor",
+      "description": "Umpan balik PDF hanya ditulis ke status bar atas; unduhan PDF live tidak memberi konfirmasi sukses sama sekali.",
+      "evidence": "web/static/js/deteksi.js:560-585; web/static/js/live.js:420-441.",
+      "suggestion": "Tambahkan toast sukses untuk PDF gambar dan live, plus status proses saat laporan dibuat.",
+      "effort": "quick-win"
+    },
+    {
+      "id": "audit-4",
+      "heuristic": "real-world-match",
+      "severity": "major",
+      "description": "KPI 'TINGKAT TERPARAH' menampilkan jumlah temuan Berat ('Berat (0)'), bukan tingkat terparah; saat semua temuan Sedang kartu tetap menulis Berat (0).",
+      "evidence": "web/static/js/deteksi.js:211 dan :648; web/templates/deteksi.html KPI TINGKAT TERPARAH.",
+      "suggestion": "Tampilkan badge severity terburuk yang sebenarnya; jumlah temuan Berat menjadi subteks opsional.",
+      "effort": "quick-win"
+    },
+    {
+      "id": "audit-5",
+      "heuristic": "real-world-match",
+      "severity": "major",
+      "description": "Tombol 'Unduh Log' pada live mengunduh PDF laporan, bukan log.",
+      "evidence": "web/templates/deteksi.html:386; web/static/js/live.js:420-441 memanggil /api/laporan dan mengunduh laporan_jalan_live.pdf.",
+      "suggestion": "Ganti label menjadi 'Unduh Laporan PDF', atau sediakan ekspor log yang benar-benar terpisah.",
+      "effort": "quick-win"
+    },
+    {
+      "id": "audit-6",
+      "heuristic": "real-world-match",
+      "severity": "minor",
+      "description": "Kolom severity menampilkan jargon internal '· kelas ukuran' untuk temuan pothole.",
+      "evidence": "web/static/js/deteksi.js:41; app/severity.py:34 dan :110.",
+      "suggestion": "Sembunyikan makna internal dari tabel; jelaskan lewat tooltip atau halaman bantuan bila perlu.",
+      "effort": "quick-win"
+    },
+    {
+      "id": "audit-7",
+      "heuristic": "real-world-match",
+      "severity": "minor",
+      "description": "Header daftar prioritas peta berbunyi 'URUT TERTINGGI', tetapi sel kanan setiap baris berisi nama segmen atau '-' bukan peringkat/skor.",
+      "evidence": "web/templates/peta.html:93; web/static/js/peta.js:213.",
+      "suggestion": "Tampilkan peringkat/skor di sel kanan dan nama segmen di subteks, atau ubah header agar sesuai isi.",
+      "effort": "quick-win"
+    },
+    {
+      "id": "audit-8",
+      "heuristic": "real-world-match",
+      "severity": "minor",
+      "description": "Placeholder koordinat '-6,9' dan '107,6' mudah disangka sebagai nilai yang sudah terisi.",
+      "evidence": "web/templates/deteksi.html:113-114 dan :357-358.",
+      "suggestion": "Pakai placeholder contoh yang jelas dan tampilkan status 'belum ada titik peta'.",
+      "effort": "quick-win"
+    },
+    {
+      "id": "audit-9",
+      "heuristic": "user-control",
+      "severity": "major",
+      "description": "Hasil deteksi dihapus setelah 10 detik; pindah ke Peta/Riwayat lalu kembali menghilangkan hasil dan koreksi yang belum disimpan.",
+      "evidence": "web/static/js/deteksi.js:619-632 (TTL 10.000 ms); :655-670 mereset verHapus/verSev saat restore.",
+      "suggestion": "Gunakan sessionStorage atau TTL 24 jam karena payload kini hanya token; tampilkan waktu hasil terakhir.",
+      "effort": "medium"
+    },
+    {
+      "id": "audit-10",
+      "heuristic": "user-control",
+      "severity": "minor",
+      "description": "Inferensi gambar tidak bisa dibatalkan; tombol dinonaktifkan sampai fetch selesai tanpa AbortController.",
+      "evidence": "web/static/js/deteksi.js:382-413.",
+      "suggestion": "Sediakan tombol Batalkan dengan AbortController, atau izinkan berpindah tab sambil proses berjalan.",
+      "effort": "medium"
+    },
+    {
+      "id": "audit-11",
+      "heuristic": "user-control",
+      "severity": "minor",
+      "description": "Menu mobile hanya bisa ditutup dengan menekan hamburger lagi; tidak ada Esc/tap luar dan ikon tidak berubah menjadi X.",
+      "evidence": "web/templates/base.html:76-85; class 'terbuka' tidak punya aturan CSS di web/static/css/civic.css:1212-1236.",
+      "suggestion": "Tutup saat Esc atau tap di luar, ubah ikon menjadi X, dan kembalikan fokus ke tombol.",
+      "effort": "quick-win"
+    },
+    {
+      "id": "audit-12",
+      "heuristic": "consistency",
+      "severity": "minor",
+      "description": "Satu konsep memakai beberapa label: Simpan ke Riwayat vs Simpan Sesi, Unduh Laporan PDF vs Unduh PDF vs Unduh Log, Login vs Masuk.",
+      "evidence": "web/templates/deteksi.html:154, :158, :386, :394; web/templates/segmen.html:105; web/templates/login.html:64 dan :80.",
+      "suggestion": "Tetapkan glossary aksi dan gunakan satu istilah untuk satu konsep.",
+      "effort": "quick-win"
+    },
+    {
+      "id": "audit-13",
+      "heuristic": "consistency",
+      "severity": "minor",
+      "description": "Upload di halaman Kalibrasi memakai input file native berteks Inggris, sedangkan Deteksi memakai dropzone kustom.",
+      "evidence": "web/templates/kalibrasi.html:45; web/static/css/civic.css:383.",
+      "suggestion": "Pakai komponen dropzone yang sama di kedua halaman.",
+      "effort": "quick-win"
+    },
+    {
+      "id": "audit-14",
+      "heuristic": "error-prevention",
+      "severity": "major",
+      "description": "GPS diminta otomatis saat halaman dibuka; bila ditolak, simpan tetap membuat riwayat tanpa titik peta dan peringatan baru muncul setelah record tersimpan.",
+      "evidence": "web/static/js/gps.js:22-42; web/static/js/deteksi.js:545-557; web/static/js/live.js:405-415.",
+      "suggestion": "Minta konfirmasi 'Simpan tanpa titik peta?' sebelum POST dan tawarkan Ambil GPS di dialog yang sama.",
+      "effort": "medium"
+    },
+    {
+      "id": "audit-15",
+      "heuristic": "error-prevention",
+      "severity": "minor",
+      "description": "Koordinat parsial (hanya lintang atau hanya bujur) diterima; record tersimpan tetapi tidak muncul di peta.",
+      "evidence": "web/static/js/deteksi.js:474-483; web/app.py:920-932.",
+      "suggestion": "Validasi pasangan lat/lon; jika salah satu kosong, kosongkan keduanya atau minta lengkapi.",
+      "effort": "quick-win"
+    },
+    {
+      "id": "audit-16",
+      "heuristic": "recognition",
+      "severity": "major",
+      "description": "Syarat login untuk menyimpan baru terlihat di akhir alur; UI publik menampilkan tombol Simpan tanpa penanda admin, dan dokumentasi masih menyebut simpan riwayat publik.",
+      "evidence": "web/app.py:935-936 (@login_wajib pada POST /api/riwayat); tests/test_auth_deferred.py:41-45; docs/User-Flow.md:85.",
+      "suggestion": "Tampilkan sejak awal bahwa simpan butuh admin (badge/tautan Masuk), atau buka simpan untuk publik; selaraskan dokumentasi.",
+      "effort": "medium"
+    },
+    {
+      "id": "audit-17",
+      "heuristic": "flexibility",
+      "severity": "minor",
+      "description": "Pengaturan live (sumber, conf, interval, performa, mode malam, nama ruas) tidak diingat dan kembali ke default setiap reload.",
+      "evidence": "web/static/js/live.js tidak memakai localStorage/sessionStorage.",
+      "suggestion": "Simpan setelan terakhir di localStorage dengan tombol reset ke bawaan.",
+      "effort": "quick-win"
+    },
+    {
+      "id": "audit-18",
+      "heuristic": "aesthetic",
+      "severity": "major",
+      "description": "Panel live dipenuhi tips troubleshooting, benchmark F1, dan dua metrik FPS sebelum tombol Mulai; aksi utama tenggelam.",
+      "evidence": "web/templates/deteksi.html:205-220, :330-335, :193-194; tombol Mulai di :361.",
+      "suggestion": "Pindahkan informasi teknis ke disclosure 'Bantuan performa' atau Tentang; sisakan satu kalimat ringkas.",
+      "effort": "medium"
+    },
+    {
+      "id": "audit-19",
+      "heuristic": "error-recovery",
+      "severity": "major",
+      "description": "Deteksi gagal meninggalkan overlay 'Menganalisis…' di viewer; error hanya muncul di status atas tanpa toast atau tombol coba lagi.",
+      "evidence": "web/static/js/deteksi.js:391 (overlay), :455-460 (catch tidak mereset slot), :462-464 (finally hanya mengembalikan tombol).",
+      "suggestion": "Di catch, hentikan overlay, kembalikan placeholder, tampilkan error inline dan tombol Coba lagi, plus toast.",
+      "effort": "medium"
+    },
+    {
+      "id": "audit-20",
+      "heuristic": "help-docs",
+      "severity": "minor",
+      "description": "Definisi severity dan indeks prioritas tidak tersedia di konteks hasil; penjelasan hanya ada di Tentang tanpa tautan.",
+      "evidence": "web/static/js/deteksi.js badge(); web/templates/tentang.html:26.",
+      "suggestion": "Tambahkan info-tooltip singkat di dekat tabel hasil dan tautan 'Pelajari penilaian'.",
+      "effort": "quick-win"
+    },
+    {
+      "id": "audit-21",
+      "heuristic": "responsive",
+      "severity": "major",
+      "description": "Tabel Riwayat dan Segmen tidak terpakai di 390px; kolom aksi berada di luar layar tanpa petunjuk geser dan tombol aksi hanya ~26px.",
+      "evidence": "web/templates/riwayat.html:58; web/templates/segmen.html:67-86; web/static/css/civic.css:574, :1340-1351; terukur clientWidth 366px vs scrollWidth 783px.",
+      "suggestion": "Ubah ke kartu di layar sempit atau kunci kolom aksi; tambahkan petunjuk geser dan target sentuh minimal 44px.",
+      "effort": "major-rework"
+    },
+    {
+      "id": "audit-22",
+      "heuristic": "responsive",
+      "severity": "major",
+      "description": "Kartu filter peta memakai lebar penuh dan menutupi sekitar sepertiga atas peta di mobile tanpa cara menciutkan.",
+      "evidence": "web/static/css/civic.css:1369-1374; web/static/js/peta.js:110-124 (peringatan GPS di kartu yang sama).",
+      "suggestion": "Ringkas filter menjadi chip 'Filter (n)' yang membuka sheet, atau buat kartu dapat diciutkan.",
+      "effort": "medium"
+    },
+    {
+      "id": "audit-23",
+      "heuristic": "responsive",
+      "severity": "major",
+      "description": "Tombol Mulai Stream Live, Hentikan, Demo, dan panel Simpan Sesi berada di bawah fold pada viewport 720px dan mobile.",
+      "evidence": "web/templates/deteksi.html:361-394; diuji pada viewport 720px dan 390px.",
+      "suggestion": "Buat action bar lengket (Mulai/Demo/Simpan) atau ringkas parameter ke accordion.",
+      "effort": "medium"
+    }
+  ],
+  "opportunities": [
+    {
+      "title": "Hasil deteksi & live langsung terlihat, dan tidak hilang",
+      "addresses_findings": ["audit-1", "audit-2", "audit-3", "audit-9", "audit-19"],
+      "priority": "high",
+      "rationale": "Lima temuan menyentuh titik putus alur utama: hasil tidak terlihat, kegagalan terlihat seperti masih memproses, dan hasil hilang setelah 10 detik. Perbaikan ini langsung membuat alur deteksi dapat diselesaikan tanpa kebingungan."
+    },
+    {
+      "title": "Tabel dan aksi bisa dipakai di layar sempit",
+      "addresses_findings": ["audit-21", "audit-23"],
+      "priority": "high",
+      "rationale": "Aksi Detail/PDF/Hapus tidak terjangkau di 390px dan tombol live utama di bawah fold; ini menghalangi penyelesaian tugas, bukan sekadar kosmetik."
+    },
+    {
+      "title": "Lokasi & simpan tanpa kejutan",
+      "addresses_findings": ["audit-8", "audit-14", "audit-15", "audit-16"],
+      "priority": "high",
+      "rationale": "Empat temuan berkaitan dengan kejelasan titik peta, konfirmasi simpan tanpa koordinat, validasi pasangan koordinat, dan gerbang login yang baru muncul di akhir. Semuanya memengaruhi integritas data riwayat/peta."
+    },
+    {
+      "title": "Istilah & KPI yang tidak menyesatkan",
+      "addresses_findings": ["audit-4", "audit-5", "audit-6", "audit-12", "audit-20"],
+      "priority": "high",
+      "rationale": "Lima temuan quick-win: label KPI salah arti, tombol Unduh Log yang mengunduh PDF, jargon internal, dan label tidak seragam. Biaya kecil, dampak kepercayaan besar."
+    },
+    {
+      "title": "Peta mobile: filter tidak menutupi peta",
+      "addresses_findings": ["audit-7", "audit-22"],
+      "priority": "medium",
+      "rationale": "Kartu filter selebar layar mengurangi area peta dan header prioritas tidak sesuai isi baris. Penting untuk penggunaan lapangan, tetapi tidak memblokir alur desktop."
+    },
+    {
+      "title": "Panel Live lebih ringkas & mengingat pengaturan",
+      "addresses_findings": ["audit-17", "audit-18"],
+      "priority": "medium",
+      "rationale": "Informasi teknis memenuhi alur utama dan setelan hilang setiap reload. Mengurangi friksi berulang setelah perbaikan alur inti selesai."
+    }
+  ],
+  "summary": {
+    "total_findings": 23,
+    "by_severity": {
+      "blocker": 0,
+      "major": 12,
+      "minor": 11
+    },
+    "by_heuristic": {
+      "visibility": 3,
+      "real-world-match": 5,
+      "user-control": 3,
+      "consistency": 2,
+      "error-prevention": 2,
+      "recognition": 1,
+      "flexibility": 1,
+      "aesthetic": 1,
+      "error-recovery": 1,
+      "help-docs": 1,
+      "responsive": 3,
+      "performance": 0
+    },
+    "top_opportunities": [
+      "Hasil deteksi & live langsung terlihat, dan tidak hilang",
+      "Tabel dan aksi bisa dipakai di layar sempit",
+      "Lokasi & simpan tanpa kejutan",
+      "Istilah & KPI yang tidak menyesatkan"
+    ]
+  }
+}
