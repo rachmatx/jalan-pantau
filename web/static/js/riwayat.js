@@ -242,7 +242,7 @@ async function bukaDetail(id) {
       fotoEl.innerHTML = '<div style="padding:40px;text-align:center;color:var(--jp-muted)">Gagal memuat gambar.</div>';
     };
     // Load gambar setelah 50ms agar modal sempat render dulu
-    setTimeout(function() { img.src = "/api/riwayat/" + id + "/gambar"; }, 50);
+    setTimeout(function() { img.src = "/api/riwayat/" + id + "/gambar?layar=1"; }, 50);
   } else {
     fotoEl.innerHTML = '<div style="aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;color:#475569;font-family:var(--jp-mono);font-size:12px">Foto bukti tidak tersedia</div>';
   }
@@ -306,23 +306,13 @@ async function unduhPdfId(id) {
 
 async function unduhPdf(data) {
   const s = data.sesi;
-  let image_b64 = null;
-  if (data.ada_gambar) {
-    const g = await fetch(`/api/riwayat/${s.id}/gambar`);
-    if (g.ok) {
-      const blob = await g.blob();
-      image_b64 = await new Promise((resolve) => {
-        const fr = new FileReader();
-        fr.onload = () => resolve(String(fr.result).split(",")[1]);
-        fr.readAsDataURL(blob);
-      });
-    }
-  }
+  // Gambar bukti dibaca server dari sesi tersimpan (sesi_id), bukan diunduh
+  // lalu di-upload ulang sebagai base64.
   const res = await fetch("/api/laporan", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      rows: data.temuan, image_b64,
+      rows: data.temuan, sesi_id: s.id,
       source: `${s.sumber} (${s.lokasi})`, model: s.model,
     }),
   });

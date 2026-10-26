@@ -358,7 +358,7 @@ document.getElementById("simpan-live").addEventListener("click", async () => {
         lokasi: document.getElementById("lokasi").value.trim(),
         lat, lon, model: snapshot.model,
         rows: snapshot.rows, total: snapshot.total,
-        image_b64: snapshot.image_b64,
+        gambar_token: snapshot.gambar_token,
         client_ref: refSimpan, izinkan_duplikat: !!izinkan,
       }),
     });
@@ -426,7 +426,7 @@ document.getElementById("unduh-live").addEventListener("click", async () => {
     body: JSON.stringify({
       rows: snapshot.rows,
       total: snapshot.total,
-      image_b64: snapshot.image_b64,
+      gambar_token: snapshot.gambar_token,
       source: snapshot.namaBerkas,
       model: snapshot.model,
     }),

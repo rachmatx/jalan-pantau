@@ -23,7 +23,7 @@ Pakai (dari root repo):
 
 TTA ON (mengikuti jalur gambar aplikasi) membuat ~161 gambar memakan beberapa
 menit di GPU kelas GTX 1650 (±0,5 s/gambar pada foto 12 MP). Skrip ini TIDAK
-mengukur ukuran muatan `image_b64` (encode sengaja dilewati demi kecepatan);
+mengukur ukuran muatan `gambar_jpg` (encode sengaja dilewati demi kecepatan);
 ukur muatan lewat UI atau pemanggilan `analisis_gambar` langsung.
 """
 from __future__ import annotations

@@ -498,18 +498,17 @@ class TestSnapshotBerbox(_StreamCase):
     """Foto riwayat live memakai frame ber-box terakhir bila ada."""
 
     def test_snapshot_pilih_frame_berbox(self):
-        import base64
         self._pasang()
         m = self.m
         try:
             m.latest_jpg = b"frame-biasa"
             m.latest_jpg_berbox = b"frame-berbox"
             snap = m.snapshot()
-            self.assertEqual(base64.b64decode(snap["image_b64"]), b"frame-berbox")
+            self.assertEqual(snap["gambar_jpg"], b"frame-berbox")
             # Fallback: tanpa berbox -> frame biasa.
             m.latest_jpg_berbox = None
             snap = m.snapshot()
-            self.assertEqual(base64.b64decode(snap["image_b64"]), b"frame-biasa")
+            self.assertEqual(snap["gambar_jpg"], b"frame-biasa")
         finally:
             self._lepas(m)
 

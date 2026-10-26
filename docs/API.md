@@ -50,9 +50,10 @@ Semua respons JSON (`application/json`) kecuali yang bertanda lain.
 
 | Metode | Endpoint | Batas | Catatan |
 |---|---|---|---|
-| POST | `/api/detect` | 30/menit | multipart: `gambar`, `conf`, `malam`, `teliti` → `{rows, total, model, image_b64, gps, malam, teliti, gelap, disaring, scene}` |
+| POST | `/api/detect` | 30/menit | multipart: `gambar`, `conf`, `malam`, `teliti` → `{rows, total, model, gambar_token, gps, malam, teliti, gelap, disaring, scene}` |
+| GET | `/api/gambar/<token>` | — | JPEG anotasi dari `gambar_token`; tanpa login (token = kapabilitas acak), cache 6 jam |
 | POST | `/api/verifikasi` | — | JSON `{rows, hapus[], severity{}}` → hasil koreksi operator + total |
-| POST | `/api/laporan` | 20/menit | JSON `{rows, total, image_b64, source, model, verifikasi}` → **PDF** (`application/pdf`) |
+| POST | `/api/laporan` | 20/menit | JSON `{rows, total, gambar_token atau sesi_id, source, model, verifikasi}` → **PDF** (`application/pdf`) |
 
 > Model yang dipakai adalah YOLO dalam mode **deteksi bounding box**, bukan
 > segmentasi; dataset latih (RDD2022) hanya beranotasi kotak. Lihat
@@ -68,6 +69,13 @@ tile 640 px); **mode ini hanya eksperimen dan bukan default** — diukur pada
 memakainya untuk menyarankan opsi `malam` (CLAHE). Opsi `maks_sisi_proses` dapat
 memperkecil gambar untuk analisis, tetapi box tetap dikembalikan pada **koordinat
 gambar asli** sehingga kalibrasi px/cm tidak berubah (§6e).
+
+`gambar_token` menggantikan `image_b64` (26 Okt 2026): server menulis gambar
+anotasi sekali ke folder sementara, klien hanya memegang token 24 karakter.
+Token dipakai untuk `<img src="/api/gambar/<token>">`, `POST /api/riwayat`, dan
+`POST /api/laporan`; file kedaluwarsa 6 jam atau saat berkas baru melebihi 200.
+Untuk PDF sesi yang sudah tersimpan, kirim `sesi_id` — server membaca
+`hasil/<sid>.jpg` langsung tanpa upload gambar.
 
 Kunci `disaring` merinci kandidat yang dibuang (umumnya bilangan bulat;
 `gate` berupa objek, `skala_proses` berupa pecahan):
@@ -142,11 +150,11 @@ Metrik live — bedakan yang **kumulatif** dari yang **adil**:
 
 | Metode | Endpoint | Catatan |
 |---|---|---|
-| POST | `/api/riwayat` | simpan sesi → `{id}` atau `{id, duplikat: true, ...}`; 20/menit; `image_b64` ≤ 12 MB |
+| POST | `/api/riwayat` | simpan sesi → `{id}` atau `{id, duplikat: true, ...}`; 20/menit; `gambar_token` dari deteksi/snapshot (opsional) |
 | GET | `/api/riwayat` | daftar (`dari`, `sampai`, `severity`, `q`); `{data, overflow, total_db}` |
 | GET | `/api/riwayat/<sid>` | detail sesi + temuan |
 | DELETE | `/api/riwayat/<sid>` | 🔒 hapus (10/jam) |
-| GET | `/api/riwayat/<sid>/gambar` | JPEG bukti (`?thumb=1` untuk thumbnail) |
+| GET | `/api/riwayat/<sid>/gambar` | JPEG bukti (`?layar=1` untuk tampil 1280 px, `?thumb=1` untuk thumbnail) |
 | GET | `/api/peta` | titik GPS untuk peta (maks 500 terbaru) |
 
 Simpan sesi idempoten: menyertakan `client_ref` yang sama tidak membuat baris

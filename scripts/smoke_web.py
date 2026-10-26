@@ -80,11 +80,18 @@ try:
     with _opener.open(req) as resp:
         data = json.loads(resp.read())
     print("detect: rows =", len(data["rows"]), "| total =", data["total"], "| model =", data.get("model"))
-    assert "rows" in data and "total" in data and "image_b64" in data, "shape detect berubah"
+    assert "rows" in data and "total" in data and "gambar_token" in data, "shape detect berubah"
+
+    # 1b. gambar hasil deteksi (token, bukan base64)
+    with _opener.open(BASE + "/api/gambar/" + data["gambar_token"]) as resp:
+        print("gambar:", resp.status, resp.headers["Content-Type"],
+              len(resp.read()), "byte")
+        assert resp.headers["Content-Type"] == "image/jpeg"
 
     # 2. laporan -> PDF
     with post_json("/api/laporan", {
-        "rows": data["rows"], "total": data["total"], "image_b64": data["image_b64"],
+        "rows": data["rows"], "total": data["total"],
+        "gambar_token": data["gambar_token"],
         "source": "smoke.jpg", "model": data.get("model")}) as resp:
         pdf = resp.read()
         print("laporan:", resp.status, resp.headers["Content-Type"], "magic:", pdf[:5])
@@ -95,7 +102,8 @@ try:
     with post_json("/api/riwayat", {
         "sumber": "Gambar (smoke.jpg)", "lokasi": "Smoke Test Jl.",
         "lat": -6.9, "lon": 107.6, "model": data.get("model"),
-        "rows": data["rows"], "total": data["total"], "image_b64": data["image_b64"],
+        "rows": data["rows"], "total": data["total"],
+        "gambar_token": data["gambar_token"],
         "izinkan_duplikat": True}) as resp:
         sid = json.loads(resp.read())["id"]
     print("riwayat simpan: id", sid)

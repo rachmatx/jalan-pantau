@@ -15,6 +15,10 @@ var verHapus = new Set();
 var verSev = {};
 var SEV_OPSI = ["Ringan", "Sedang", "Berat"];
 
+function urlGambar(token) {
+  return "/api/gambar/" + encodeURIComponent(token);
+}
+
 function renderTabelDeteksi() {
   var totalHal = Math.ceil(deteksiRows.length / deteksiPerHal);
   if (deteksiHalaman > totalHal) deteksiHalaman = totalHal;
@@ -429,7 +433,7 @@ form.addEventListener("submit", async (e) => {
       }
     }
     slot.classList.remove("kosong");
-    slot.innerHTML = `<img src="data:image/jpeg;base64,${json.image_b64}" alt="Hasil deteksi ${esc(berkas.name)}">`;
+    slot.innerHTML = `<img src="${urlGambar(json.gambar_token)}" alt="Hasil deteksi ${esc(berkas.name)}">`;
     if (json.gps && json.gps.lat != null && isiKoordinat("lat-gambar", "lon-gambar", json.gps.lat, json.gps.lon)) {
       status.textContent = "Koordinat terisi otomatis dari foto. ";
       status.classList.remove("galat");
@@ -443,11 +447,10 @@ form.addEventListener("submit", async (e) => {
     verHapus = new Set();
     verSev = {};
     await syncVerifikasi();
-    // Simpan ke localStorage dengan timestamp untuk restore saat navigasi/refresh
-    try {
-      localStorage.setItem("jp_deteksi_terakhir", JSON.stringify({ ...json, namaBerkas: berkas.name }));
-      localStorage.setItem("jp_deteksi_time", Date.now().toString());
-    } catch (e) {}
+    // Simpan ringkasan untuk restore saat navigasi/refresh. Base64 penuh
+    // (2-5 MB) membuat localStorage cepat penuh dan JSON.stringify memblokir
+    // main thread; 1536 px (batas analisis) sudah cukup untuk pratinjau.
+    simpanDeteksiRingkas(json, berkas.name);
   } catch (err) {
     status.textContent = err.message;
     status.classList.remove("kosong");
@@ -496,7 +499,7 @@ document.getElementById("simpan").addEventListener("click", async () => {
         lokasi: document.getElementById("lokasi-gambar").value.trim(),
         lat, lon, model: terakhir.model,
         rows: terakhir.rows, total: terakhir.total,
-        image_b64: terakhir.image_b64,
+        gambar_token: terakhir.gambar_token,
         client_ref: refSimpan, izinkan_duplikat: !!izinkan,
       }),
     });
@@ -563,7 +566,7 @@ document.getElementById("unduh").addEventListener("click", async () => {
     body: JSON.stringify({
       rows: terakhir.rows,
       total: terakhir.total,
-      image_b64: terakhir.image_b64,
+      gambar_token: terakhir.gambar_token,
       source: terakhir.namaBerkas,
       model: terakhir.model,
       verifikasi: teksVerifikasi(terakhir.info),
@@ -603,6 +606,16 @@ function showToast(title, message, type) {
   setTimeout(function () { toast.style.opacity = "0"; toast.style.transform = "translateX(100%)"; setTimeout(function () { toast.remove(); }, 300); }, 4000);
 }
 
+// Simpan hasil ke localStorage. Respons kini hanya berisi token gambar
+// (bukan base64 2-5 MB), jadi seluruh objek aman ditulis apa adanya.
+function simpanDeteksiRingkas(json, namaBerkas) {
+  try {
+    localStorage.setItem("jp_deteksi_terakhir",
+      JSON.stringify(Object.assign({}, json, { namaBerkas: namaBerkas })));
+    localStorage.setItem("jp_deteksi_time", Date.now().toString());
+  } catch (e) { /* kuota penuh: restore dilewati, deteksi tetap jalan */ }
+}
+
 // Restore hasil deteksi dari localStorage dengan TTL 10 detik
 // Normal refresh/navigasi dalam 10 detik = data tersimpan
 // Hard refresh setelah idle = data hilang
@@ -623,9 +636,9 @@ function showToast(title, message, type) {
     var slot = document.getElementById("slot-gambar");
     var hasil = document.getElementById("hasil");
     var status = document.getElementById("status");
-    if (data.image_b64) {
+    if (data.gambar_token) {
       slot.classList.remove("kosong");
-      slot.innerHTML = '<img src="data:image/jpeg;base64,' + data.image_b64 + '" alt="Hasil deteksi ' + esc(data.namaBerkas) + '">';
+      slot.innerHTML = '<img src="' + urlGambar(data.gambar_token) + '" alt="Hasil deteksi ' + esc(data.namaBerkas) + '">';
     }
     if (data.rows && data.rows.length) {
       document.getElementById("lubang-nilai").textContent = String(

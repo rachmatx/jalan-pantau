@@ -28,8 +28,9 @@ class TestConfigInferensi(unittest.TestCase):
         self.assertTrue(inf["tta"])  # default true sejak trial 3 foto 2026-09-07
         self.assertEqual(inf["teliti"]["tile"], 640)
         self.assertEqual(inf["device"], "auto")
-        # 0 = analisis di resolusi asli (lihat alasan di config/inferensi.yaml).
-        self.assertEqual(inf["maks_sisi_proses"], 0)
+        # 1536 = batas analisis sejak 26 Okt 2026 (lihat config/inferensi.yaml);
+        # 0 = resolusi asli.
+        self.assertEqual(inf["maks_sisi_proses"], 1536)
 
     def test_fallback_bila_file_hilang(self):
         import deteksi
@@ -1340,13 +1341,12 @@ class TestSkalaProsesGambar(unittest.TestCase):
         self.assertEqual(out["disaring"]["skala_proses"], 1.0)
 
     def test_gambar_besar_diperkecil_dan_bukti_ikut_kecil(self):
-        import base64
         import cv2
         import numpy as np
         out = self._analisis(800, hw=(1600, 1200))
         self.assertAlmostEqual(out["disaring"]["skala_proses"], 0.5, places=2)
-        buf = cv2.imdecode(np.frombuffer(base64.b64decode(out["image_b64"]),
-                                         np.uint8), cv2.IMREAD_COLOR)
+        buf = cv2.imdecode(np.frombuffer(out["gambar_jpg"], np.uint8),
+                           cv2.IMREAD_COLOR)
         self.assertEqual(max(buf.shape[:2]), 800)
 
     def test_teliti_selalu_resolusi_asli(self):

@@ -224,7 +224,7 @@ dikoreksi operator:
 
 ```mermaid
 flowchart TD
-    HASIL(["rows + total + image_b64"]) --> PILIH{"Pilih aksi"}
+    HASIL(["rows + total + gambar_token"]) --> PILIH{"Pilih aksi"}
 
     PILIH --> SIMPAN["POST /api/riwayat"]
     PILIH --> PDF["POST /api/laporan → PDF"]
@@ -294,7 +294,7 @@ flowchart TD
         H7 --> H8["anotasi + encode JPEG"]
     end
 
-    HASIL --> OUT(["Kirim ke klien:<br/>rows[] · total · image_b64 · gps"])
+    HASIL --> OUT(["Kirim ke klien:<br/>rows[] · total · gambar_token · gps"])
 ```
 
 ### Jalur Saringan (3 Lapis)

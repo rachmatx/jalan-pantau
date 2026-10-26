@@ -3,7 +3,6 @@
 Modul terverifikasi dipakai ulang TANPA diubah: app/severity.py,
 app/prioritas.py, app/laporan.py. File ini hanya adaptor (I/O web) di atasnya.
 """
-import base64
 import logging
 import math
 import os
@@ -65,7 +64,7 @@ _kalibrasi_lock = threading.Lock()  # P3: tulis severity.yaml atomik antar-threa
 # Fallback bila config/inferensi.yaml hilang/rusak. NILAI HARUS MIRIP config/inferensi.yaml.
 # Kalau berbeda, mode degradasi diam-diam mengubah perilaku: tta False menurunkan
 # recall (0,69 -> 0,48 pada trial TTA) dan imgsz_live 960 memperlambat live ~2x.
-# config/inferensi.yaml: tta=true, imgsz_live=480 (komentar di sana: "480 untuk webcam").
+# config/inferensi.yaml: tta=true, imgsz_live=640 (skala latih).
 _INFER_FALLBACK = {
     "model_gambar": "best.pt", "model_live": "best.pt",
     "device": "auto",
@@ -85,16 +84,16 @@ _INFER_FALLBACK = {
     # FP16 lewat half_untuk().
     "half_gambar": False,
     # maks_sisi_proses: sisi terpanjang maksimum untuk ANALISIS gambar unggahan.
-    # 0 = nonaktif (pakai resolusi asli). Model tetap letterbox ke imgsz_gambar,
-    # jadi memperkecil di sini TIDAK mengubah piksel yang "dilihat" model —
-    # yang terpangkas hanya tahap murah yang linier terhadap jumlah piksel
-    # (cek gelap, klasifikasi scene, CLAHE malam, anotasi, encode JPEG, base64).
-    # Box dikembalikan di koordinat GAMBAR ASLI (lihat skala_box di
-    # proses_detections), sehingga kalibrasi px/cm, severity, masuk_akal, dan
-    # verifikasi operator tidak berubah sama sekali.
+    # 1536 = pilihan sejak 26 Okt 2026; 0 = nonaktif (resolusi asli). Model
+    # tetap letterbox ke imgsz_gambar, jadi memperkecil di sini TIDAK mengubah
+    # piksel yang "dilihat" model — yang terpangkas hanya tahap murah yang
+    # linier terhadap jumlah piksel (cek gelap, klasifikasi scene, CLAHE malam,
+    # anotasi, encode JPEG, base64). Box dikembalikan di koordinat GAMBAR ASLI
+    # (lihat skala_box di proses_detections), sehingga kalibrasi px/cm,
+    # severity, masuk_akal, dan verifikasi operator tidak berubah sama sekali.
     # Mode teliti SELALU memakai resolusi asli (gunanya memang detail asli).
     # Bukti pemilihan angka: docs/Panduan-Tuning-Model.md §6e.
-    "maks_sisi_proses": 0,
+    "maks_sisi_proses": 1536,
     "teliti": {"aktif_default": False, "tile": 640, "imgsz": 960,
                "overlap": 0.25, "iou_gabung": 0.5, "metode_gabung": "wbf",
                "buang_tepi_tile": True, "iou_agnostik": 0.6},
@@ -1494,11 +1493,11 @@ def prediksi_teliti(model, img, conf=0.25, iou=0.5, tcfg=None, ambang=None,
     return lolos, info_saring
 
 
-def encode_jpg(img_bgr) -> str:
+def encode_jpg(img_bgr) -> bytes:
     ok, buf = cv2.imencode(".jpg", img_bgr, [cv2.IMWRITE_JPEG_QUALITY, 90])
     if not ok:
         raise RuntimeError("Gagal encode JPEG anotasi.")
-    return base64.b64encode(buf.tobytes()).decode("ascii")
+    return buf.tobytes()
 
 
 def cerahkan_malam(img_bgr):
@@ -1534,8 +1533,11 @@ def deteksi_gelap(img_bgr, ambang=GELAP_AMBANG_L):
 def analisis_gambar(raw: bytes, conf: float = 0.30, model_path=None,
                     malam: bool = False, teliti: bool = False,
                     imgsz=None, iou=None):
-    """Upload bytes -> {rows, total, model, image_b64, gps, malam, teliti,
+    """Upload bytes -> {rows, total, model, gambar_jpg, gps, malam, teliti,
     gelap, disaring, scene}.
+
+    `gambar_jpg` = byte JPEG anotasi; pemanggil yang menyimpannya (route web
+    memakai gambar_sementara bertoken), jadi jalur ini bebas base64.
 
     `conf` di sini harus SAMA dengan `web/app.py CONF_DEFAULT` (0,30 sejak
     18 Okt 2026). Nilai default yang melenceng adalah jebakan: route selalu
@@ -1678,7 +1680,7 @@ def analisis_gambar(raw: bytes, conf: float = 0.30, model_path=None,
         "rows": rows,
         "total": total,
         "model": model_label,
-        "image_b64": encode_jpg(gambar),
+        "gambar_jpg": encode_jpg(gambar),
         "gps": {"lat": lat, "lon": lon},
         "malam": malam,
         "teliti": bool(teliti),
@@ -1694,36 +1696,27 @@ def analisis_gambar(raw: bytes, conf: float = 0.30, model_path=None,
     }
 
 
-def buat_pdf(rows, total, image_b64=None, source="-", model_name="-",
+def buat_pdf(rows, total, img_path=None, source="-", model_name="-",
              verifikasi=""):
     """rows + total -> path PDF sementara (pemanggil menghapus setelah dikirim).
 
-    P1: b64 tidak valid -> ValueError(400); kegagalan di tengah -> temp
-    yang sudah dibuat dibersihkan agar tidak bocor di /tmp.
+    `img_path` = gambar bukti yang SUDAH ada di disk (gambar sementara bertoken
+    atau gambar sesi tersimpan). Fungsi ini tidak memilikinya dan tidak
+    menghapusnya. Gambar tidak valid ditangani buat_laporan seperti sebelumnya.
     """
-    ann_path, pdf_path = None, None
+    pdf_path = None
     try:
-        if image_b64:
-            try:
-                raw = base64.b64decode(image_b64, validate=True)
-            except Exception:
-                raise ValueError("Gambar anotasi rusak (base64 tidak valid).")
-            with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
-                f.write(raw)
-                ann_path = f.name
         meta = {"Sumber": source, "Model": model_name}
         if verifikasi:
             meta["Verifikasi operator"] = verifikasi
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
             pdf_path = tmp.name
-        buat_laporan(pdf_path, rows, total, img_path=ann_path, meta=meta)
-        return pdf_path, ann_path
+        buat_laporan(pdf_path, rows, total, img_path=img_path, meta=meta)
+        return pdf_path
     except Exception:
-        import os as _os
-        for p in (pdf_path, ann_path):
+        if pdf_path:
             try:
-                if p:
-                    _os.remove(p)
+                os.remove(pdf_path)
             except OSError:
                 pass
         raise

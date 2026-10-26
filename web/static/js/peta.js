@@ -354,7 +354,7 @@ function bukaModalFoto(id) {
   document.getElementById("foto-tabel-kerusakan").innerHTML =
     '<p class="jp-hint">Memuat rincian temuan…</p>';
   img.removeAttribute("src");
-  img.src = `/api/riwayat/${id}/gambar`;
+  img.src = `/api/riwayat/${id}/gambar?layar=1`;
   if (!dlg.open) dlg.showModal();
   fetch(`/api/riwayat/${id}`)
     .then((r) => { if (!r.ok) throw new Error("detail.bundle"); return r.json(); })
@@ -449,11 +449,11 @@ document.getElementById("foto-img").addEventListener("load", function() {
   if (el && this.naturalWidth) el.textContent = `RES: ${this.naturalWidth}×${this.naturalHeight}`;
 });
 document.getElementById("foto-download-jpg").addEventListener("click", async () => {
-  const src = document.getElementById("foto-img").src;
-  if (!src) return;
-  const id = (fotoDetail && fotoDetail.sesi && fotoDetail.sesi.id) || "bukti";
+  const id = (fotoDetail && fotoDetail.sesi && fotoDetail.sesi.id);
+  if (!id) return;
   try {
-    const r = await fetch(src);
+    // Unduhan memakai gambar penuh, bukan varian 1280 yang tampil di modal.
+    const r = await fetch(`/api/riwayat/${id}/gambar`);
     if (!r.ok) throw new Error("unduh");
     const blob = await r.blob();
     const a = document.createElement("a");
@@ -466,23 +466,12 @@ document.getElementById("foto-download-jpg").addEventListener("click", async () 
 document.getElementById("foto-download-pdf").addEventListener("click", async () => {
   if (!fotoDetail) return;
   const s = fotoDetail.sesi || {};
-  let image_b64 = null;
-  try {
-    const g = await fetch(`/api/riwayat/${s.id}/gambar`);
-    if (g.ok) {
-      const blob = await g.blob();
-      image_b64 = await new Promise((resolve) => {
-        const fr = new FileReader();
-        fr.onload = () => resolve(String(fr.result).split(",")[1]);
-        fr.readAsDataURL(blob);
-      });
-    }
-  } catch { /* PDF tetap dibuat tanpa gambar */ }
+  // Server membaca gambar bukti langsung dari sesi tersimpan (sesi_id).
   const res = await fetch("/api/laporan", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      rows: fotoDetail.temuan || [], image_b64,
+      rows: fotoDetail.temuan || [], sesi_id: s.id,
       source: `${s.sumber || "-"} (${s.lokasi || "-"})`, model: s.model || "-",
     }),
   });

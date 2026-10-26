@@ -28,6 +28,7 @@ from deteksi import (WorkerInferensiMati, analisis_gambar,
                      ringkasan_perangkat, simpan_kalibrasi, status_sistem,
                      terapkan_koreksi)
 from streaming import MANAGER
+import gambar_sementara
 from database import (daftar_sesi, detail_sesi, hapus_sesi, simpan_sesi,
                        titik_peta, tutup_db,
                        migrasi_admin_v2, migrasi_sesi_v2, sesi_by_client_ref,
@@ -130,6 +131,35 @@ def _buang_video_tmp():
 
 
 atexit.register(_buang_video_tmp)
+
+
+def _pasang_token_gambar(hasil):
+    """Ganti bytes JPEG di respons deteksi/snapshot dengan token file sementara."""
+    jpg = hasil.pop("gambar_jpg", None)
+    if jpg:
+        hasil["gambar_token"] = gambar_sementara.simpan(jpg)
+    return hasil
+
+
+def _gambar_untuk_laporan(data):
+    """Path gambar bukti PDF: token sementara atau gambar sesi tersimpan."""
+    token = data.get("gambar_token")
+    if token:
+        p = gambar_sementara.path(token)
+        if p is None:
+            raise ValueError("Gambar sementara kedaluwarsa. "
+                             "Jalankan deteksi ulang.")
+        return str(p)
+    sid = data.get("sesi_id")
+    if sid not in (None, ""):
+        try:
+            sid = int(sid)
+        except (TypeError, ValueError):
+            return None
+        p = Path(current_app.config["DB_PATH"]).parent / "hasil" / f"{sid}.jpg"
+        if p.is_file():
+            return str(p)
+    return None
 
 
 def _muat_env_file():
@@ -495,7 +525,7 @@ def create_app():
                 return jsonify({"error": _PESAN_MEMORI}), 503
             app.logger.exception("detect gagal")
             return jsonify({"error": "Deteksi gagal. Coba gambar lain."}), 500
-        return jsonify(hasil)
+        return jsonify(_pasang_token_gambar(hasil))
 
     def _dampak_kalibrasi(ppc):
         return {"box_100px_cm": round(100.0 / ppc, 1),
@@ -615,8 +645,8 @@ def create_app():
         if not rows:
             return jsonify({"error": "Tidak ada hasil untuk dilaporkan."}), 400
         try:
-            pdf_path, ann_path = buat_pdf(
-                rows, total, image_b64=data.get("image_b64"),
+            pdf_path = buat_pdf(
+                rows, total, img_path=_gambar_untuk_laporan(data),
                 source=data.get("source", "-"), model_name=data.get("model", "-"),
                 verifikasi=data.get("verifikasi", ""))
         except ValueError as e:
@@ -628,12 +658,10 @@ def create_app():
             with open(pdf_path, "rb") as f:
                 isi_pdf = f.read()
         finally:
-            for p in (pdf_path, ann_path):
-                try:
-                    if p:
-                        os.remove(p)
-                except OSError:
-                    pass
+            try:
+                os.remove(pdf_path)
+            except OSError:
+                pass
         return send_file(BytesIO(isi_pdf), as_attachment=True,
                          download_name="laporan_jalan.pdf",
                          mimetype="application/pdf")
@@ -793,12 +821,28 @@ def create_app():
         if MANAGER.running and not _token_dimiliki(
                 request.get_json(force=True, silent=True) or {}):
             return jsonify({"error": "Stream ini milik sesi lain."}), 403
-        snap = MANAGER.snapshot()
+        snap = _pasang_token_gambar(MANAGER.snapshot())
         if not snap["rows"]:
             return jsonify({"error": "Belum ada track terekam. Tunggu deteksi muncul."}), 400
         snap["source"] = f"Live ({MANAGER.stats()['source']})"
         snap["model"] = nama_model_live()
         return jsonify(snap)
+
+    @app.get("/api/gambar/<token>")
+    def api_gambar_sementara(token):
+        """Sajikan gambar hasil deteksi/snapshot dari token acak.
+
+        Token = kapabilitas (tanpa login), sama seperti /api/laporan. Isi per
+        token tidak pernah berubah, jadi boleh di-cache browser selama TTL.
+        """
+        p = gambar_sementara.path(token)
+        if p is None:
+            return jsonify({"error": "Gambar sementara tidak ada atau "
+                                     "kedaluwarsa."}), 404
+        resp = send_file(p, mimetype="image/jpeg")
+        resp.headers["Cache-Control"] = (
+            f"private, max-age={gambar_sementara.TTL_DETIK}")
+        return resp
 
     @app.post("/api/demo")
     @(limiter.limit("10 per minute; 100 per hour") if limiter else (lambda f: f))
@@ -896,9 +940,14 @@ def create_app():
         rows = data.get("rows", [])
         if not rows:
             return jsonify({"error": "Tidak ada hasil untuk disimpan."}), 400
-        img = data.get("image_b64")
-        if img and len(str(img)) > 12 * 1024 * 1024:
-            return jsonify({"error": "Gambar terlalu besar untuk disimpan."}), 413
+        img_bytes = None
+        token = data.get("gambar_token")
+        if token:
+            p = gambar_sementara.path(token)
+            if p is None:
+                return jsonify({"error": "Gambar sementara kedaluwarsa. "
+                                         "Jalankan deteksi ulang."}), 400
+            img_bytes = p.read_bytes()
         client_ref = str(data.get("client_ref") or "").strip()[:128] or None
         # Idempotensi: simpan ulang dengan client_ref sama -> kembalikan yang lama
         # (mencegah baris ganda dari klik dobel / retry jaringan).
@@ -924,7 +973,7 @@ def create_app():
                 sid = simpan_sesi(
                     sumber=data.get("sumber", "-"), lokasi=data.get("lokasi", "-"),
                     model=data.get("model", "-"), rows=rows, total=total,
-                    lat=lat, lon=lon, image_b64=data.get("image_b64"),
+                    lat=lat, lon=lon, image_bytes=img_bytes,
                     client_ref=client_ref)
             except IntegrityError:
                 # Balapan: request lain menyimpan client_ref sama lebih dulu.
@@ -987,16 +1036,22 @@ def create_app():
 
     @app.get("/api/riwayat/<int:sid>/gambar")
     def api_riwayat_gambar(sid):
-        # ?thumb=1 untuk thumbnail kecil (tabel), default = gambar penuh (detail)
+        # ?thumb=1 = 300 px (daftar), ?layar=1 = 1280 px (modal/peta),
+        # default = gambar penuh (unduhan/arsip).
         thumb = request.args.get("thumb", "") in ("1", "true", "yes")
-        nama = f"{sid}_thumb.jpg" if thumb else f"{sid}.jpg"
+        layar = request.args.get("layar", "") in ("1", "true", "yes")
+        varian = "thumb" if thumb else ("layar" if layar else "")
+        nama = f"{sid}_{varian}.jpg" if varian else f"{sid}.jpg"
         p = Path(app.config["DB_PATH"]).parent / "hasil" / nama
-        if not p.exists() and thumb:
-            # Fallback ke gambar penuh kalau thumbnail belum ada (data lama)
+        if not p.exists() and varian:
+            # Fallback ke gambar penuh kalau turunan belum ada (data lama)
             p = Path(app.config["DB_PATH"]).parent / "hasil" / f"{sid}.jpg"
         if not p.exists():
             return jsonify({"error": "Gambar tidak ada."}), 404
-        return send_file(p, mimetype="image/jpeg")
+        resp = send_file(p, mimetype="image/jpeg")
+        # Isi per sesi tidak berubah; menang atas no-store global (setdefault).
+        resp.headers["Cache-Control"] = "public, max-age=86400"
+        return resp
 
     @app.get("/api/peta")
     def api_peta():

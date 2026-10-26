@@ -103,10 +103,11 @@ half_gambar: false
 #   960      F1 0,617  P 0,695  R 0,555  FP 64  0,33 s
 #   640      F1 0,614  P 0,681  R 0,559  FP 69  0,32 s
 # F1 nyaris datar, tetapi recall turun (~6 temuan benar dari 263 instance).
-# Prioritas aplikasi ini adalah MENEMUKAN kerusakan nyata (lihat §6d), jadi
-# default tetap 0. Naikkan ke 1536 HANYA bila kecepatan + payload lebih penting
-# daripada ~2 poin recall. Rincian: docs/Panduan-Tuning-Model.md §6e.
-maks_sisi_proses: 0
+# Sejak 26 Okt 2026 dipakai 1536 demi UX: bukti base64 2,77 MB -> 0,62 MB dan
+# waktu 0,49 -> 0,36 s, dengan F1 nyaris sama (0,616 -> 0,614). Harganya recall
+# -2,3 poin (0,597 -> 0,574). Kembalikan ke 0 bila recall harus dimaksimalkan.
+# Rincian: docs/Panduan-Tuning-Model.md §6e.
+maks_sisi_proses: 1536
 # Mode teliti = potong gambar jadi tile 640 px, tiap tile di-inferensikan pada
 # resolusi penuh, lalu digabung. SEKARANG MANUAL SAJA (operator mencentang).
 # Pemicu otomatis untuk gambar besar sudah DICABUT 18 Okt 2026: diukur di BPID

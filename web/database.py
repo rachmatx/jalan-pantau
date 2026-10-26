@@ -3,7 +3,6 @@
 DB: web/instance/riwayat.db (boleh dioverride via app.config["DB_PATH"], mis. untuk tes).
 Thumbnail: <instance>/hasil/<id>.jpg. PDF tidak disimpan — selalu generate ulang.
 """
-import base64
 import os
 import sqlite3
 import sys
@@ -459,7 +458,7 @@ def _angka(nilai, batas, bawaan=0.0):
     return max(0.0, min(x, float(batas)))
 
 
-def simpan_sesi(sumber, lokasi, model, rows, total, lat=None, lon=None, image_b64=None,
+def simpan_sesi(sumber, lokasi, model, rows, total, lat=None, lon=None, image_bytes=None,
                 client_ref=None, segmen_id=None):
     """rows = list dict dari /api/detect atau snapshot. Kembalikan id sesi.
 
@@ -531,22 +530,24 @@ def simpan_sesi(sumber, lokasi, model, rows, total, lat=None, lon=None, image_b6
             (sid, i, t["track_id"], t["kelas"], t["dasar"], t["severity"], t["bahan"],
              t["luas_m2"], t["volume_m3"], t["skor_prioritas"], t["total_str"], t["conf"],
              t["panjang_cm"], t["lebar_cm"]))
-    if image_b64:
+    if image_bytes:
         try:
             import io
             from PIL import Image
             _, hasil = _paths()
-            img_bytes = base64.b64decode(image_b64)
-            # Simpan gambar penuh untuk detail
-            (hasil / f"{sid}.jpg").write_bytes(img_bytes)
-            # Buat thumbnail kecil (300px) untuk tabel
-            with Image.open(io.BytesIO(img_bytes)) as im:
-                im.thumbnail((300, 300))
-                buf = io.BytesIO()
-                im.save(buf, format="JPEG", quality=75)
-                (hasil / f"{sid}_thumb.jpg").write_bytes(buf.getvalue())
+            # Simpan gambar penuh untuk unduhan/arsip
+            (hasil / f"{sid}.jpg").write_bytes(image_bytes)
+            # Turunan tampil: 1280 untuk modal/peta, 300 untuk daftar.
+            with Image.open(io.BytesIO(image_bytes)) as im:
+                for suffix, sisi, kualitas in (("_layar", 1280, 82),
+                                                ("_thumb", 300, 75)):
+                    kecil = im.copy()
+                    kecil.thumbnail((sisi, sisi))
+                    buf = io.BytesIO()
+                    kecil.save(buf, format="JPEG", quality=kualitas)
+                    (hasil / f"{sid}{suffix}.jpg").write_bytes(buf.getvalue())
         except Exception:
-            current_app.logger.exception("gagal simpan thumbnail")
+            current_app.logger.exception("gagal simpan gambar/thumbnail")
     db.commit()
     return sid
 
@@ -608,16 +609,16 @@ def hapus_sesi(sid):
     cur = db.execute("DELETE FROM sesi WHERE id = ?", (sid,))
     db.commit()
     hasil = _paths()[1]
-    # Hapus gambar PENUH dan THUMBNAIL. Sebelumnya hanya gambar penuh yang
-    # dihapus sehingga thumbnail yatim menumpuk di disk (terverifikasi:
+    # Hapus gambar PENUH dan semua turunannya. Sebelumnya hanya gambar penuh
+    # yang dihapus sehingga thumbnail yatim menumpuk di disk (terverifikasi:
     # id 40-44 punya _thumb.jpg tapi tidak ada di tabel sesi).
-    for suffix in (".jpg", "_thumb.jpg"):
+    for suffix, label in ((".jpg", "gambar"), ("_layar.jpg", "gambar layar"),
+                          ("_thumb.jpg", "thumbnail")):
         try:
             (hasil / f"{sid}{suffix}").unlink(missing_ok=True)
         except OSError as e:
             current_app.logger.warning("gagal hapus %s sesi %s: %s",
-                                       "thumbnail" if suffix.startswith("_") else "gambar",
-                                       sid, e)
+                                       label, sid, e)
     return cur.rowcount > 0
 
 

@@ -741,7 +741,6 @@ class StreamManager:
             tracks = dict(self.tracks)
             jpg = self.latest_jpg_berbox or self.latest_jpg
             conf_global = self.conf
-        import base64
         cfg = get_config()
         infer = get_inferensi()
         min_frames = int(infer.get("live", {}).get("min_frames", 1))
@@ -770,7 +769,7 @@ class StreamManager:
             rows.append(row)
         total = sum(r["skor_prioritas"] for r in rows)
         return {"rows": rows, "total": total, "disaring": buang,
-                "image_b64": base64.b64encode(jpg).decode("ascii") if jpg else None}
+                "gambar_jpg": jpg}
 
 
 MANAGER = StreamManager()

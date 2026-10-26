@@ -727,9 +727,10 @@ terkait"); skrip menjalankan `analisis_gambar()` apa adanya, jadi TTA, saring,
 .\.venv\Scripts\python scripts\evaluasi_pipa_app.py --maks 0 1536 960
 ```
 
-**Keputusan:** default tetap **0** (tidak mengubah perilaku/angka §6d). Naikkan
-ke **1536** hanya bila kecepatan + payload dinilai lebih penting daripada ~2 poin
-recall; satu baris config, bisa dibalik tanpa kode.
+**Keputusan (26 Okt 2026):** default diubah ke **1536** demi UX — bukti base64
+2,77 MB → 0,62 MB dan waktu 0,49 → 0,36 s, dengan F1 nyaris sama (0,616 → 0,614)
+tetapi recall turun 2,3 poin. Kembalikan ke **0** bila prioritasnya recall
+maksimal; satu baris config, bisa dibalik tanpa kode.
 
 **Catatan jujur (batas bukti):**
 
