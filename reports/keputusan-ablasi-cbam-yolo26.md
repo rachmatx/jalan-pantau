@@ -68,3 +68,9 @@ Gap OOD (±6–7 poin) LEBIH BESAR dari gap val/test (±2 poin) → baseline gen
 (`best_yolo11s.pt`, val 0,6483 / test 0,5262 / OOD 0,4516) untuk foto statis.
 YOLOv11n tetap dipakai untuk live (`best.onnx`). Vonis ablasi CBAM/YOLO26 di atas
 tetap berlaku sebagai perbandingan arsitektur pada baseline v11n, bukan pada v11s.
+
+## Supersede lanjutan (2026-10-18)
+Retrain 18 Okt 2026 menggantikan keadaan di atas: model kini **tunggal
+YOLOv11s** (`best.pt`) untuk gambar **dan** live (`best.onnx` hanya cadangan
+live untuk mesin tanpa GPU), dengan angka val 0,631 / test 0,632 / BPID
+0,540. Seluruh angka September di dokumen ini berstatus historis.

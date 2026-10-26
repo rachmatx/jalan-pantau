@@ -44,7 +44,8 @@ kerusakan yang menjadi dasar prioritas penanganan.
 
 ### Akurasi terukur
 
-Model tunggal **YOLOv11s** (dipakai untuk foto statis maupun live), epoch terbaik:
+Model tunggal **YOLOv11s** (dipakai untuk foto statis maupun live; retrain
+18 Okt 2026, bobot terbaik dari epoch terakhir — 92 epoch):
 
 | Split | mAP50 | mAP50-95 | Presisi | Recall | F1 |
 |---|---|---|---|---|---|

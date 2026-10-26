@@ -15,8 +15,9 @@ numpy>=1.26
 Pillow>=10.0
 fpdf2>=2.7
 pyyaml>=6.0
-python-multipart>=0.0.9  # WAJIB: parsing multipart/form-data untuk upload foto & video
 onnxruntime>=1.17  # dipakai: inferensi best.onnx (live) via CPUExecutionProvider
+# python-multipart TIDAK diperlukan: upload multipart di-parse Werkzeug
+# (request.files); tidak ada `import multipart` di kode (dihapus 27 Okt 2026).
 
 # Legacy — hanya dipakai prototipe deprecated app/app_streamlit.py:
 # streamlit>=1.33
