@@ -38,19 +38,25 @@
       </div>
 
       <div class="jp-card" style="padding:16px">
-        <h2 style="font-size:16px;margin:0 0 4px">Metode B — Foto penggaris, klik 2 titik</h2>
-        <p style="font-size:12px;color:var(--jp-muted);margin:0 0 12px">1) Unggah foto penggaris/mistar di atas aspal dari ketinggian kamera sebenarnya. 2) Klik dua titik pada garis skala yang panjangnya Anda ketahui. 3) Isi panjangnya (cm), hitung, simpan.</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+        <h2 style="font-size:16px;margin:0 0 4px">Metode B — Foto penggaris, ukur 2 titik</h2>
+        <p style="font-size:12px;color:var(--jp-muted);margin:0 0 12px">1) Unggah foto penggaris/mistar di atas aspal dari ketinggian kamera sebenarnya. 2) Tandai dua ujung skala yang Anda ketahui: klik gambar, lalu geser titik agar tepat (panah = 1 px, Shift+panah = 10 px). 3) Isi panjang referensi — px/cm dihitung otomatis.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <label for="foto-penggaris" style="font-size:13px;font-weight:600">Foto penggaris</label>
           <input type="file" id="foto-penggaris" accept="image/jpeg,image/png" aria-label="Foto penggaris untuk kalibrasi">
-          <label for="ref-cm" style="font-size:13px;font-weight:600">Panjang referensi (cm)</label>
-          <input type="number" id="ref-cm" value="10" min="0.1" max="1000" step="0.1" class="jp-input jp-mono-input" style="height:36px;width:110px">
-          <button id="btn-hitung" type="button" class="jp-btn-demo" style="height:36px" disabled>Hitung dari 2 titik</button>
-          <button id="btn-simpan-penggaris" type="button" class="jp-btn-primary" style="height:36px" disabled>Simpan hasil ini</button>
-          <button id="btn-ulang-titik" type="button" class="jp-btn-demo" style="height:36px">Ulangi titik</button>
         </div>
-        <div id="slot-penggaris" class="jp-viewer kosong" style="min-height:120px"><span>Belum ada foto. Pilih berkas JPG/PNG (maks 5 MB).</span></div>
-        <p id="hasil-klik" style="font-family:var(--jp-mono);font-size:13px" role="status"></p>
+        <div id="slot-penggaris" class="jp-viewer kosong" style="min-height:120px;margin-top:12px"><span>Belum ada foto. Pilih berkas JPG/PNG (maks 5 MB).</span></div>
+        <div class="kalibrasi-bar">
+          <div class="kalibrasi-field">
+            <label for="ref-cm">Panjang referensi (cm)</label>
+            <input type="number" id="ref-cm" value="10" min="0.1" max="1000" step="0.1" class="jp-input jp-mono-input" style="height:36px;width:110px">
+          </div>
+          <div class="kalibrasi-actions">
+            <button id="btn-hapus-titik" type="button" class="jp-btn-demo" style="height:36px" disabled>Hapus titik terakhir</button>
+            <button id="btn-ulang-titik" type="button" class="jp-btn-demo" style="height:36px" disabled>Ulangi</button>
+            <button id="btn-simpan-penggaris" type="button" class="jp-btn-primary" style="height:36px" disabled>Simpan hasil</button>
+          </div>
+        </div>
+        <p id="hasil-klik" class="kalibrasi-status" role="status" aria-live="polite">Unggah foto untuk mulai mengukur.</p>
       </div>
     </div>
 
@@ -148,83 +154,314 @@
     setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
   });
 
-  /* Metode B: foto + klik 2 titik (koordinat diskala ke ukuran asli) */
-  var titik = [], dimAsli = null, hasilPpc = null;
+  /* Metode B: foto + 2 titik.
+     Seluruh overlay (titik, garis, crosshair, loupe) berada di dalam stage
+     yang mengepak <img>, dan posisinya PERSEN dari ukuran asli foto. Dulu dot
+     ditempel ke .jp-viewer yang ber-padding 16px + flex centering, sehingga
+     meleset dari kursor; piksel tampilan juga membuatnya bergeser saat resize. */
+  var titik = [], handles = [], dimAsli = null, hasilPpc = null;
   var slot = document.getElementById('slot-penggaris');
   var hasilEl = document.getElementById('hasil-klik');
-  var btnHitung = document.getElementById('btn-hitung');
+  var refEl = document.getElementById('ref-cm');
   var btnSimpanP = document.getElementById('btn-simpan-penggaris');
+  var btnHapus = document.getElementById('btn-hapus-titik');
+  var btnUlang = document.getElementById('btn-ulang-titik');
+  var stage = null, imgEl = null, lineEl = null, crosshairEl = null;
+  var loupeEl = null, loupeCtx = null, drag = null, muatToken = 0;
+  var SISI_LOUPE = 132;    // px CSS
+  var SUMBER_LOUPE = 100;  // px asli foto yang ditampilkan di loupe
+
+  function pctX(x){ return (x / dimAsli.w * 100) + '%'; }
+  function pctY(y){ return (y / dimAsli.h * 100) + '%'; }
+
+  function koordinatDariEvent(e){
+    var r = imgEl.getBoundingClientRect();
+    var x = (e.clientX - r.left) * dimAsli.w / r.width;
+    var y = (e.clientY - r.top) * dimAsli.h / r.height;
+    return [Math.max(0, Math.min(dimAsli.w, x)),
+            Math.max(0, Math.min(dimAsli.h, y))];
+  }
+
+  function hitungPx(){
+    if(titik.length < 2) return null;
+    return Math.hypot(titik[0][0] - titik[1][0], titik[0][1] - titik[1][1]);
+  }
+
+  function perbaruiHasil(){
+    var px = hitungPx();
+    if(px === null){
+      hasilPpc = null;
+      btnSimpanP.disabled = true;
+      hasilEl.textContent = !dimAsli ? 'Unggah foto untuk mulai mengukur.'
+        : (titik.length === 0
+          ? 'Langkah 1: klik ujung pertama skala pada foto.'
+          : 'Langkah 2: klik ujung lainnya, atau geser titik pertama agar lebih tepat.');
+      return;
+    }
+    var cm = parseFloat(refEl.value);
+    if(!(cm > 0)){
+      hasilPpc = null;
+      btnSimpanP.disabled = true;
+      hasilEl.textContent = 'Jarak ' + px.toFixed(1) + ' px — isi panjang referensi (cm) lebih dari 0.';
+      return;
+    }
+    var ppc = px / cm;
+    var wajar = ppc >= 0.05 && ppc <= 500;
+    hasilPpc = wajar ? ppc : null;
+    btnSimpanP.disabled = !wajar;
+    hasilEl.textContent = 'Jarak ' + px.toFixed(1) + ' px ÷ ' + cm + ' cm = ' +
+      ppc.toFixed(2) + ' px/cm' +
+      (wajar ? ' — geser titik bila perlu, lalu simpan.'
+             : ' — di luar rentang wajar 0,05–500; cek titik/satuan.');
+  }
+
+  function posisikanHandle(i){
+    var h = handles[i], t = titik[i];
+    h.style.left = pctX(t[0]);
+    h.style.top = pctY(t[1]);
+    h.setAttribute('aria-label', 'Titik ' + (i + 1) + ': x ' + Math.round(t[0]) +
+      ', y ' + Math.round(t[1]) + '. Geser dengan panah (1 px) atau Shift+panah (10 px).');
+  }
+
+  function perbaruiVisual(){
+    for(var i = 0; i < titik.length; i++) posisikanHandle(i);
+    if(titik.length === 2){
+      lineEl.style.display = '';
+      lineEl.setAttribute('x1', titik[0][0]);
+      lineEl.setAttribute('y1', titik[0][1]);
+      lineEl.setAttribute('x2', titik[1][0]);
+      lineEl.setAttribute('y2', titik[1][1]);
+    }else{
+      lineEl.style.display = 'none';
+    }
+    btnHapus.disabled = titik.length === 0;
+    perbaruiHasil();
+  }
+
+  function setTitik(i, x, y){
+    if(!dimAsli) return;
+    titik[i] = [Math.max(0, Math.min(dimAsli.w, x)),
+                Math.max(0, Math.min(dimAsli.h, y))];
+    perbaruiVisual();
+  }
+
+  function buatHandle(i){
+    var h = document.createElement('button');
+    h.type = 'button';
+    h.className = 'kalibrasi-handle';
+    h.dataset.label = String(i + 1);
+    handles[i] = h;
+
+    h.addEventListener('pointerdown', function(e){
+      if(e.button !== undefined && e.button !== 0) return;
+      e.preventDefault();
+      e.stopPropagation();
+      drag = {idx: i, id: e.pointerId, x0: e.clientX, y0: e.clientY,
+              t0: [titik[i][0], titik[i][1]]};
+      try{ h.setPointerCapture(e.pointerId); }catch(_e){}
+      stage.classList.add('menggeser');
+    });
+
+    h.addEventListener('pointermove', function(e){
+      if(!drag || drag.id !== e.pointerId || drag.idx !== i) return;
+      var r = imgEl.getBoundingClientRect();
+      var dx = (e.clientX - drag.x0) * dimAsli.w / r.width;
+      var dy = (e.clientY - drag.y0) * dimAsli.h / r.height;
+      setTitik(i, drag.t0[0] + dx, drag.t0[1] + dy);
+    });
+
+    function selesaiGeser(e){
+      if(!drag || drag.id !== e.pointerId) return;
+      drag = null;
+      stage.classList.remove('menggeser');
+      try{ h.releasePointerCapture(e.pointerId); }catch(_e){}
+      if(e.pointerType === 'touch') sembunyikanAlatBantu();
+    }
+    h.addEventListener('pointerup', selesaiGeser);
+    h.addEventListener('pointercancel', selesaiGeser);
+
+    h.addEventListener('keydown', function(e){
+      var langkah = e.shiftKey ? 10 : 1, dx = 0, dy = 0;
+      if(e.key === 'ArrowLeft') dx = -langkah;
+      else if(e.key === 'ArrowRight') dx = langkah;
+      else if(e.key === 'ArrowUp') dy = -langkah;
+      else if(e.key === 'ArrowDown') dy = langkah;
+      else return;
+      e.preventDefault();
+      setTitik(i, titik[i][0] + dx, titik[i][1] + dy);
+    });
+
+    stage.appendChild(h);
+    posisikanHandle(i);
+  }
+
+  function tambahTitik(x, y){
+    if(titik.length >= 2) return;
+    titik.push([x, y]);
+    buatHandle(titik.length - 1);
+    perbaruiVisual();
+  }
+
+  function sembunyikanAlatBantu(){
+    if(crosshairEl) crosshairEl.classList.remove('aktif');
+    if(loupeEl) loupeEl.classList.remove('aktif');
+  }
+
+  function pasangAlatBantu(){
+    crosshairEl = document.createElement('div');
+    crosshairEl.className = 'kalibrasi-crosshair';
+    crosshairEl.setAttribute('aria-hidden', 'true');
+
+    loupeEl = document.createElement('div');
+    loupeEl.className = 'kalibrasi-loupe';
+    loupeEl.setAttribute('aria-hidden', 'true');
+    var cv = document.createElement('canvas');
+    var dpr = window.devicePixelRatio || 1;
+    cv.width = Math.round(SISI_LOUPE * dpr);
+    cv.height = cv.width;
+    loupeEl.appendChild(cv);
+    loupeCtx = cv.getContext('2d');
+
+    stage.appendChild(crosshairEl);
+    stage.appendChild(loupeEl);
+  }
+
+  function gambarLoupe(x, y, e){
+    if(!loupeCtx || !imgEl || !imgEl.complete) return;
+    var dpr = window.devicePixelRatio || 1;
+    var w = loupeCtx.canvas.width;
+    // Server boleh mengecilkan foto > 2000 px untuk tampilan, tetapi koordinat
+    // ukur tetap di ruang ASLI. drawImage butuh piksel natural gambar tampil.
+    var skalaX = imgEl.naturalWidth / dimAsli.w;
+    var skalaY = imgEl.naturalHeight / dimAsli.h;
+    var src = Math.min(SUMBER_LOUPE, dimAsli.w, dimAsli.h);
+    var sx = Math.max(0, Math.min(dimAsli.w - src, x - src / 2));
+    var sy = Math.max(0, Math.min(dimAsli.h - src, y - src / 2));
+    loupeCtx.clearRect(0, 0, w, w);
+    loupeCtx.drawImage(imgEl, sx * skalaX, sy * skalaY,
+                       src * skalaX, src * skalaY, 0, 0, w, w);
+
+    var cx = (x - sx) / src * w;
+    var cy = (y - sy) / src * w;
+    loupeCtx.strokeStyle = 'rgba(255,255,255,.95)';
+    loupeCtx.lineWidth = Math.max(1, dpr);
+    loupeCtx.beginPath();
+    loupeCtx.moveTo(cx, 0); loupeCtx.lineTo(cx, w);
+    loupeCtx.moveTo(0, cy); loupeCtx.lineTo(w, cy);
+    loupeCtx.stroke();
+
+    var sr = stage.getBoundingClientRect();
+    var sisi = loupeEl.offsetWidth || SISI_LOUPE;
+    var px = e.clientX - sr.left, py = e.clientY - sr.top;
+    var kiri = e.pointerType === 'touch' ? px - sisi / 2 : px + 24;
+    var atas = e.pointerType === 'touch' ? py - sisi - 42 : py + 24;
+    kiri = Math.max(4, Math.min(Math.max(4, sr.width - sisi - 4), kiri));
+    atas = Math.max(4, Math.min(Math.max(4, sr.height - sisi - 4), atas));
+    loupeEl.style.left = kiri + 'px';
+    loupeEl.style.top = atas + 'px';
+    loupeEl.classList.add('aktif');
+  }
+
+  function pasangInteraksi(){
+    stage.addEventListener('click', function(e){
+      if(e.target.closest('.kalibrasi-handle')) return;
+      if(!dimAsli || titik.length >= 2) return;
+      var k = koordinatDariEvent(e);
+      tambahTitik(k[0], k[1]);
+    });
+
+    stage.addEventListener('pointermove', function(e){
+      if(!dimAsli) return;
+      var k = koordinatDariEvent(e);
+      crosshairEl.style.setProperty('--x', pctX(k[0]));
+      crosshairEl.style.setProperty('--y', pctY(k[1]));
+      crosshairEl.classList.add('aktif');
+      gambarLoupe(k[0], k[1], e);
+    });
+
+    stage.addEventListener('pointerleave', sembunyikanAlatBantu);
+    stage.addEventListener('pointerup', function(e){
+      if(e.pointerType === 'touch') sembunyikanAlatBantu();
+    });
+  }
 
   document.getElementById('foto-penggaris').addEventListener('change', async function(e){
     var f = e.target.files[0];
     if(!f) return;
+    hasilEl.textContent = 'Mengunggah foto…';
     var data = new FormData();
     data.append('foto', f);
     try{
       var res = await fetch('/api/kalibrasi/foto', {method:'POST', body:data});
       var j = await res.json();
       if(!res.ok) throw new Error(j.error || 'gagal');
+      var token = ++muatToken;
       dimAsli = {w:j.lebar, h:j.tinggi};
-      titik = []; hasilPpc = null;
-      btnHitung.disabled = true; btnSimpanP.disabled = true;
-      hasilEl.textContent = 'Klik 2 titik pada garis skala yang diketahui.';
+      titik = []; handles = []; hasilPpc = null; drag = null;
+
       slot.classList.remove('kosong');
-      // Hapus dot sebelumnya jika ada
-      var oldDots = document.querySelectorAll('.kalibrasi-dot');
-      oldDots.forEach(function(d){ d.remove(); });
-      slot.innerHTML = '<img id="img-penggaris" src="data:image/jpeg;base64,' + j.image_b64 + '" alt="Foto penggaris" style="max-width:100%;cursor:crosshair">';
-      document.getElementById('img-penggaris').addEventListener('click', klikTitik);
-    }catch(err){ toast('Gagal: ' + err.message, false); }
+      slot.innerHTML = '';
+      stage = document.createElement('div');
+      stage.id = 'stage-penggaris';
+      stage.className = 'kalibrasi-stage';
+      imgEl = document.createElement('img');
+      imgEl.id = 'img-penggaris';
+      imgEl.alt = 'Foto penggaris untuk diukur';
+      imgEl.src = 'data:image/jpeg;base64,' + j.image_b64;
+
+      var NS = 'http://www.w3.org/2000/svg';
+      var svg = document.createElementNS(NS, 'svg');
+      svg.setAttribute('class', 'kalibrasi-line');
+      svg.setAttribute('viewBox', '0 0 ' + j.lebar + ' ' + j.tinggi);
+      svg.setAttribute('preserveAspectRatio', 'none');
+      svg.setAttribute('aria-hidden', 'true');
+      lineEl = document.createElementNS(NS, 'line');
+      svg.appendChild(lineEl);
+
+      stage.appendChild(imgEl);
+      stage.appendChild(svg);
+      slot.appendChild(stage);
+
+      var tunggu = imgEl.decode ? imgEl.decode().catch(function(){}) : Promise.resolve();
+      tunggu.then(function(){
+        if(token !== muatToken) return;
+        pasangAlatBantu();
+        pasangInteraksi();
+        perbaruiVisual();
+      });
+
+      btnUlang.disabled = false;
+      btnHapus.disabled = true;
+      btnSimpanP.disabled = true;
+      hasilEl.textContent = 'Langkah 1: klik ujung pertama skala pada foto.';
+    }catch(err){
+      toast('Gagal: ' + err.message, false);
+      hasilEl.textContent = 'Foto gagal dimuat. Coba berkas lain.';
+    }
   });
 
-  function klikTitik(e){
-    if(titik.length >= 2) return;
-    var img = e.currentTarget, r = img.getBoundingClientRect();
-    var x = (e.clientX - r.left) * dimAsli.w / r.width;
-    var y = (e.clientY - r.top) * dimAsli.h / r.height;
-    titik.push([x, y]);
+  btnHapus.addEventListener('click', function(){
+    if(!titik.length) return;
+    titik.pop();
+    var h = handles.pop();
+    if(h) h.remove();
+    perbaruiVisual();
+  });
 
-    // Tambah visual dot di titik yang diklik
-    var dot = document.createElement('div');
-    dot.className = 'kalibrasi-dot';
-    dot.style.cssText = 'position:absolute;width:12px;height:12px;border-radius:50%;background:#006194;border:2px solid #fff;box-shadow:0 0 4px rgba(0,0,0,.5);transform:translate(-50%,-50%);pointer-events:none;z-index:10;';
-    dot.style.left = (e.clientX - r.left) + 'px';
-    dot.style.top = (e.clientY - r.top) + 'px';
-    // Label nomor titik
-    var label = document.createElement('span');
-    label.textContent = titik.length;
-    label.style.cssText = 'position:absolute;left:14px;top:-8px;font-size:12px;font-weight:700;color:#006194;background:#fff;padding:1px 4px;border-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.2);white-space:nowrap;';
-    dot.appendChild(label);
-    img.parentElement.style.position = 'relative';
-    img.parentElement.appendChild(dot);
-
-    hasilEl.textContent = 'Titik ' + titik.length + '/2' + (titik.length === 2 ? ' — tekan Hitung.' : ' — klik titik kedua.');
-    btnHitung.disabled = titik.length !== 2;
-  }
-
-  document.getElementById('btn-ulang-titik').addEventListener('click', function(){
+  btnUlang.addEventListener('click', function(){
     titik = []; hasilPpc = null;
-    btnHitung.disabled = true; btnSimpanP.disabled = true;
-    hasilEl.textContent = dimAsli ? 'Klik 2 titik pada garis skala yang diketahui.' : '';
-    // Hapus semua visual dot
-    var dots = document.querySelectorAll('.kalibrasi-dot');
-    dots.forEach(function(d){ d.remove(); });
+    handles.forEach(function(h){ h.remove(); });
+    handles = [];
+    perbaruiVisual();
   });
 
-  btnHitung.addEventListener('click', function(){
-    var cm = parseFloat(document.getElementById('ref-cm').value);
-    if(!(cm > 0)){ toast('Panjang referensi harus > 0.', false); return; }
-    var dx = titik[0][0] - titik[1][0], dy = titik[0][1] - titik[1][1];
-    var px = Math.hypot(dx, dy);
-    hasilPpc = px / cm;
-    hasilEl.textContent = 'Jarak ' + px.toFixed(1) + ' px / ' + cm + ' cm = ' + hasilPpc.toFixed(2) + ' px/cm.';
-    btnSimpanP.disabled = false;
-  });
+  refEl.addEventListener('input', perbaruiHasil);
 
   btnSimpanP.addEventListener('click', function(){
-    if(hasilPpc === null) return;
-    simpan({panjang_px: (function(){ var dx=titik[0][0]-titik[1][0], dy=titik[0][1]-titik[1][1]; return Math.hypot(dx,dy); })(),
-            panjang_cm: parseFloat(document.getElementById('ref-cm').value),
+    var px = hitungPx();
+    var cm = parseFloat(refEl.value);
+    if(px === null || hasilPpc === null || !(cm > 0)) return;
+    simpan({panjang_px: px, panjang_cm: cm,
             catatan: 'foto penggaris via UI'});
   });
 

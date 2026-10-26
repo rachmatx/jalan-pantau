@@ -351,6 +351,169 @@ main { padding: 0; flex: 1 0 auto; }
 }
 .jp-viewer img { max-width: 100%; height: auto; border-radius: 8px; display: block; }
 
+/* ---- Kalibrasi: pengukuran 2 titik ----
+   Stage mengepak gambar supaya overlay memakai ruang koordinat yang sama
+   persis dengan <img>. Sebelumnya titik ditempel ke .jp-viewer yang ber-padding
+   16px + flex centering sehingga dot meleset dari kursor. */
+.kalibrasi-stage {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+  max-width: 100%;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.kalibrasi-stage img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 64vh;
+  border-radius: 8px;
+  cursor: crosshair;
+}
+.kalibrasi-line {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 2;
+}
+.kalibrasi-line line {
+  stroke: var(--jp-primary);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+  vector-effect: non-scaling-stroke;
+}
+.kalibrasi-crosshair {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 3;
+}
+.kalibrasi-crosshair.aktif { opacity: 1; }
+.kalibrasi-crosshair::before,
+.kalibrasi-crosshair::after {
+  content: "";
+  position: absolute;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+}
+.kalibrasi-crosshair::before {
+  left: var(--x, 50%);
+  top: 0;
+  width: 1px;
+  height: 100%;
+}
+.kalibrasi-crosshair::after {
+  top: var(--y, 50%);
+  left: 0;
+  height: 1px;
+  width: 100%;
+}
+.kalibrasi-handle {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  transform: translate(-50%, -50%);
+  cursor: grab;
+  touch-action: none;
+  z-index: 4;
+}
+.kalibrasi-handle::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--jp-primary);
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+.kalibrasi-handle::after {
+  content: attr(data-label);
+  position: absolute;
+  left: 50%;
+  top: -10px;
+  transform: translate(-50%, -100%);
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #fff;
+  color: var(--jp-primary);
+  font: 700 12px/1.3 var(--jp-mono);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+.kalibrasi-handle:focus-visible {
+  outline: 2px solid var(--jp-primary);
+  outline-offset: 2px;
+}
+.kalibrasi-stage.menggeser,
+.kalibrasi-stage.menggeser .kalibrasi-handle { cursor: grabbing; }
+.kalibrasi-loupe {
+  position: absolute;
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #fff;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+  background: #000;
+  pointer-events: none;
+  display: none;
+  z-index: 6;
+}
+.kalibrasi-loupe.aktif { display: block; }
+.kalibrasi-loupe canvas { display: block; width: 100%; height: 100%; }
+.kalibrasi-bar {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+.kalibrasi-field label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--jp-ink);
+}
+.kalibrasi-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+.kalibrasi-actions .jp-btn-primary {
+  width: auto;
+  padding: 8px 18px;
+}
+.kalibrasi-status {
+  margin: 10px 0 0;
+  font-family: var(--jp-mono);
+  font-size: 13px;
+  color: var(--jp-ink);
+}
+@media (max-width: 640px) {
+  .kalibrasi-stage img { max-height: 52vh; }
+  .kalibrasi-loupe { width: 108px; height: 108px; }
+  .kalibrasi-actions { margin-left: 0; width: 100%; }
+  .kalibrasi-actions button { flex: 1 1 auto; min-height: 40px; }
+}
+
 /* ---- Panel parameter ---- */
 .jp-params { padding: 20px; gap: 16px; }
 .jp-params-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; }
