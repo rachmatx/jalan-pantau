@@ -73,13 +73,27 @@ function renderPaginasi(total) {
 function renderTabel() {
   var rows = barisTerakhir;
   if (!rows.length) {
-    daftar.innerHTML = '<div class="jp-empty">' +
-      '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--jp-muted)" stroke-width="1.5" style="margin-bottom:8px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>' +
-      '<strong>Belum ada riwayat inspeksi</strong>' +
-      '<p>Mulai deteksi kerusakan jalan, lalu simpan hasilnya ke riwayat.</p>' +
-      '<a href="/" class="jp-btn-primary-sm" style="margin-top:8px">Mulai Deteksi</a>' +
-    '</div>';
-    document.getElementById("f-info").textContent = "Tidak ada catatan inspeksi.";
+    // total_db ikut terfilter, jadi kosongnya tabel tidak bisa dipakai
+    // membedakan "DB kosong" dari "filter tidak cocok".
+    if (adaFilterAktif()) {
+      daftar.innerHTML = '<div class="jp-empty">' +
+        '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--jp-muted)" stroke-width="1.5" style="margin-bottom:8px"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>' +
+        '<strong>Tidak ada riwayat yang cocok</strong>' +
+        '<p>Filter aktif tidak menemukan catatan. Longgarkan atau reset filter untuk melihat semua riwayat.</p>' +
+        '<button type="button" class="jp-btn-light" data-reset-filter style="margin-top:8px">Reset Filter</button>' +
+      '</div>';
+      document.getElementById("f-info").textContent = "Tidak ada hasil untuk filter aktif.";
+      var reset = daftar.querySelector("[data-reset-filter]");
+      if (reset) reset.onclick = resetFilter;
+    } else {
+      daftar.innerHTML = '<div class="jp-empty">' +
+        '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--jp-muted)" stroke-width="1.5" style="margin-bottom:8px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>' +
+        '<strong>Belum ada riwayat inspeksi</strong>' +
+        '<p>Mulai deteksi kerusakan jalan, lalu simpan hasilnya ke riwayat.</p>' +
+        '<a href="/" class="jp-btn-primary-sm" style="margin-top:8px">Mulai Deteksi</a>' +
+      '</div>';
+      document.getElementById("f-info").textContent = "Tidak ada catatan inspeksi.";
+    }
     renderPaginasi(0);
     return;
   }
@@ -369,18 +383,27 @@ function eksporCsv() {
   URL.revokeObjectURL(a.href);
 }
 
-document.getElementById("filter").addEventListener("submit", (e) => {
-  e.preventDefault();
-  if (detail.open) detail.close();
-  muat();
-});
-document.getElementById("f-reset").addEventListener("click", () => {
+function adaFilterAktif() {
+  return ["f-dari", "f-sampai", "f-sev", "f-q"].some(function (id) {
+    var el = document.getElementById(id);
+    return el && el.value.trim() !== "";
+  });
+}
+
+function resetFilter() {
   document.getElementById("f-dari").value = "";
   document.getElementById("f-sampai").value = "";
   document.getElementById("f-sev").value = "";
   document.getElementById("f-q").value = "";
   muat();
+}
+
+document.getElementById("filter").addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (detail.open) detail.close();
+  muat();
 });
+document.getElementById("f-reset").addEventListener("click", resetFilter);
 document.getElementById("btn-export-csv").addEventListener("click", eksporCsv);
 document.getElementById("btn-cetak").addEventListener("click", () => window.print());
 document.getElementById("d-pdf").addEventListener("click", async () => {

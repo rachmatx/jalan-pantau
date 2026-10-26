@@ -686,6 +686,15 @@ main { padding: 0; flex: 1 0 auto; }
   padding: 3px 12px; margin: 8px 0 0; }
 .jp-scene.gate { background: #e8f4fd; border-color: #7cc0ee; color: #0b5d8f; }
 .jp-result-actions { display: flex; align-items: center; gap: 8px; }
+/* Hasil deteksi/live disorot singkat setelah selesai supaya mata pengguna
+   langsung menemukan hasilnya. scroll-margin mencegah tertutup header. */
+#hasil, #tanpa-temuan, #hasil-live { scroll-margin-top: 84px; }
+.jp-hasil-sorot { animation: jp-sorot-hasil 1.6s ease; }
+@keyframes jp-sorot-hasil {
+  0% { outline: 0 solid rgba(0, 97, 148, 0); outline-offset: 0; }
+  20% { outline: 4px solid rgba(0, 97, 148, 0.28); outline-offset: 3px; }
+  100% { outline: 0 solid rgba(0, 97, 148, 0); outline-offset: 0; }
+}
 .jp-btn-light, .jp-btn-save {
   display: inline-flex;
   align-items: center;

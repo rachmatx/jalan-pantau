@@ -14,6 +14,8 @@ var barisAsli = null;
 var verHapus = new Set();
 var verSev = {};
 var SEV_OPSI = ["Ringan", "Sedang", "Berat"];
+// Hasil disimpan 24 jam: payload sudah berupa token gambar, bukan base64.
+var TTL_HASIL_MS = 24 * 60 * 60 * 1000;
 
 var galatDeteksi = document.getElementById("galat-deteksi");
 var galatDeteksiPesan = document.getElementById("galat-deteksi-pesan");
@@ -26,6 +28,22 @@ function tampilkanGalatDeteksi(pesan) {
 
 function sembunyikanGalatDeteksi() {
   if (galatDeteksi) galatDeteksi.hidden = true;
+}
+
+// Bawa hasil ke area pandang + sorot sebentar. Tanpa ini hasil deteksi
+// selesai di luar layar dan pengguna mengira prosesnya belum kelar.
+function sorotBagian(el) {
+  if (!el) return;
+  var kurangiGerak = window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  el.scrollIntoView({ behavior: kurangiGerak ? "auto" : "smooth", block: "start" });
+  el.classList.remove("jp-hasil-sorot");
+  void el.offsetWidth;
+  el.classList.add("jp-hasil-sorot");
+  clearTimeout(el.__jpSorotTimer);
+  el.__jpSorotTimer = setTimeout(function () {
+    el.classList.remove("jp-hasil-sorot");
+  }, 1600);
 }
 
 function urlGambar(token) {
@@ -100,6 +118,8 @@ async function syncVerifikasi() {
     terakhir.info = json.info;
   }
   refreshVerifikasiUI();
+  // Simpan juga koreksi operator, supaya tidak hilang saat pindah halaman.
+  if (terakhir) simpanDeteksiRingkas(terakhir, terakhir.namaBerkas);
 }
 
 function teksVerifikasi(info) {
@@ -471,16 +491,19 @@ form.addEventListener("submit", async (e) => {
     if (!json.rows.length) {
       status.textContent = tampilkanTanpaTemuan(json);
       status.classList.add("kosong");
+      sorotBagian(document.getElementById("tanpa-temuan"));
+      showToast("Tidak Ada Temuan",
+        "Model tidak menemukan kerusakan. Baca saran di kartu peringatan.", "warning");
       return;
     }
     barisAsli = json.rows;
     verHapus = new Set();
     verSev = {};
     await syncVerifikasi();
-    // Simpan ringkasan untuk restore saat navigasi/refresh. Base64 penuh
-    // (2-5 MB) membuat localStorage cepat penuh dan JSON.stringify memblokir
-    // main thread; 1536 px (batas analisis) sudah cukup untuk pratinjau.
-    simpanDeteksiRingkas(json, berkas.name);
+    sorotBagian(hasil);
+    showToast("Deteksi Selesai",
+      `${json.rows.length} temuan · tingkat terparah ${tingkatTerparah(json.rows)}.`,
+      "success");
   } catch (err) {
     status.textContent = err.message;
     status.classList.remove("kosong");
@@ -600,32 +623,43 @@ document.getElementById("simpan").addEventListener("click", async () => {
 
 document.getElementById("unduh").addEventListener("click", async () => {
   if (!terakhir) return;
-  status.textContent = "Membuat PDF…";
-  const res = await fetch("/api/laporan", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      rows: terakhir.rows,
-      total: terakhir.total,
-      gambar_token: terakhir.gambar_token,
-      source: terakhir.namaBerkas,
-      model: terakhir.model,
-      verifikasi: teksVerifikasi(terakhir.info),
-    }),
-  });
-  if (!res.ok) {
-    const json = await res.json().catch(() => ({}));
-    status.textContent = json.error || "Gagal membuat PDF.";
+  const btn = document.getElementById("unduh");
+  if (btn.disabled) return;
+  btn.disabled = true;
+  status.textContent = "Membuat laporan PDF…";
+  status.classList.remove("galat");
+  try {
+    const res = await fetch("/api/laporan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        rows: terakhir.rows,
+        total: terakhir.total,
+        gambar_token: terakhir.gambar_token,
+        source: terakhir.namaBerkas,
+        model: terakhir.model,
+        verifikasi: teksVerifikasi(terakhir.info),
+      }),
+    });
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      throw new Error(json.error || "Gagal membuat PDF.");
+    }
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "laporan_jalan.pdf";
+    a.click();
+    URL.revokeObjectURL(a.href);
+    status.textContent = "Laporan PDF terunduh.";
+    showToast("PDF Terunduh", "Laporan hasil deteksi berhasil diunduh.", "success");
+  } catch (err) {
+    status.textContent = err.message;
     status.classList.add("galat");
-    return;
+    showToast("Gagal Membuat PDF", err.message, "galat");
+  } finally {
+    btn.disabled = false;
   }
-  const blob = await res.blob();
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "laporan_jalan.pdf";
-  a.click();
-  URL.revokeObjectURL(a.href);
-  status.textContent = "PDF terunduh.";
 });
 
 /* === Notifikasi Toast === */
@@ -657,16 +691,14 @@ function simpanDeteksiRingkas(json, namaBerkas) {
   } catch (e) { /* kuota penuh: restore dilewati, deteksi tetap jalan */ }
 }
 
-// Restore hasil deteksi dari localStorage dengan TTL 10 detik
-// Normal refresh/navigasi dalam 10 detik = data tersimpan
-// Hard refresh setelah idle = data hilang
+// Restore hasil deteksi dari localStorage (TTL 24 jam). Koreksi operator
+// ikut tersimpan agar tidak hilang saat pindah halaman lalu kembali.
 (function restoreDeteksi() {
   try {
     var saved = localStorage.getItem("jp_deteksi_terakhir");
     var savedTime = localStorage.getItem("jp_deteksi_time");
     if (!saved) return;
-    // Cek TTL: hapus jika lebih dari 10 detik
-    if (savedTime && (Date.now() - parseInt(savedTime)) > 10000) {
+    if (savedTime && (Date.now() - parseInt(savedTime)) > TTL_HASIL_MS) {
       localStorage.removeItem("jp_deteksi_terakhir");
       localStorage.removeItem("jp_deteksi_time");
       return;
@@ -688,31 +720,27 @@ function simpanDeteksiRingkas(json, namaBerkas) {
       renderTabelDeteksi();
       hasil.hidden = false;
       sembunyikanTanpaTemuan();
-      if (status) { status.textContent = data.rows.length + " temuan (dipulihkan)."; status.classList.remove("galat"); status.classList.remove("kosong"); }
+      var info = data.info || { total: 0 };
+      var label = teksVerifikasi(info);
+      document.getElementById("verifikasi-hitung").textContent =
+        label ? "· terverifikasi: " + label : "";
+      document.getElementById("verifikasi-reset").hidden = !info.total;
+      var jam = savedTime
+        ? new Date(parseInt(savedTime)).toLocaleTimeString("id-ID",
+            { hour: "2-digit", minute: "2-digit" })
+        : "";
+      if (status) {
+        status.textContent = data.rows.length + " temuan (dipulihkan" +
+          (jam ? " · " + jam : "") + ").";
+        status.classList.remove("galat");
+        status.classList.remove("kosong");
+      }
       barisAsli = data.rows;
       verHapus = new Set();
       verSev = {};
-      // Gagal sinkronkan verifikasi diam-diam akan menyesatkan: tabel
-      // verifikasi di bawah sudah menampilkan hasil deteksi yang BARU,
-      // padahal daftar CHECK-nya masih yang lama. User bisa salah menilai
-      // tanpa pernah tahu ada yang gagal.
-      syncVerifikasi().catch(function(e) {
-        console.error("[JalanPantau] sinkronisasi verifikasi setelah deteksi", e);
-        if (status) {
-          status.textContent = "Temuan diperbarui, tetapi daftar verifikasi gagal disinkronkan. Muat ulang halaman.";
-          status.classList.add("galat");
-        }
-      });
     }
   } catch (e) { /* abaikan */ }
 })();
-
-// Update timestamp setiap 3 detik saat page aktif (keep-alive)
-setInterval(function() {
-  if (localStorage.getItem("jp_deteksi_terakhir")) {
-    localStorage.setItem("jp_deteksi_time", Date.now().toString());
-  }
-}, 3000);
 
 /* === GPS & Reverse Geocoding === */
 // Ambil GPS saat ini

@@ -87,8 +87,18 @@
     const tb = document.getElementById("tbl-segmen");
     var pag = document.getElementById("segmen-paginasi");
     if (!data.length) {
-      tb.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--jp-muted)">'
-        + "Belum ada segmen. Buat segmen 100 m lalu masukkan sesi foto ke dalamnya.</td></tr>";
+      tb.innerHTML = '<tr><td colspan="9">' +
+        '<div class="jp-empty">' +
+        '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--jp-muted)" stroke-width="1.5" style="margin-bottom:8px"><path d="M4 20V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14"/><path d="M2 20h20"/><path d="M8 9l4 3 4-3"/></svg>' +
+        '<strong>Belum ada segmen</strong>' +
+        '<p>Buat segmen 100 m, lalu masukkan sesi foto ke dalamnya untuk menghitung SDI-visual.</p>' +
+        '<button type="button" class="jp-btn-primary-sm" data-buat style="margin-top:8px">Buat Segmen</button>' +
+        '</div></td></tr>';
+      var buat = tb.querySelector("[data-buat]");
+      if (buat) buat.onclick = function() {
+        var btn = document.getElementById("btn-buat");
+        if (btn) btn.click();
+      };
       if (pag) { pag.style.display = "none"; pag.innerHTML = ""; }
       return;
     }

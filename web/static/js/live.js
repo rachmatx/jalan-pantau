@@ -123,6 +123,24 @@ function resetKartuLive() {
   set("deteksi-ket", "0 / inferensi");
 }
 
+// Sesi selesai: bawa panel hasil ke layar dan fokuskan tombol simpan, supaya
+// temuan tidak hilang hanya karena pengguna tidak menyadari panelnya ada.
+function sorotHasilLive() {
+  if (!hasilLive || hasilLive.hidden) return;
+  var kurangiGerak = window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  hasilLive.scrollIntoView({ behavior: kurangiGerak ? "auto" : "smooth", block: "center" });
+  hasilLive.classList.remove("jp-hasil-sorot");
+  void hasilLive.offsetWidth;
+  hasilLive.classList.add("jp-hasil-sorot");
+  clearTimeout(hasilLive.__jpSorotTimer);
+  hasilLive.__jpSorotTimer = setTimeout(function () {
+    hasilLive.classList.remove("jp-hasil-sorot");
+  }, 1600);
+  var simpan = document.getElementById("simpan-live");
+  if (simpan) simpan.focus({ preventScroll: true });
+}
+
 // Tampilkan perangkat + backend live yang benar-benar dipakai, supaya alasan
 // perbedaan kecepatan antar mesin terlihat tanpa menebak dari log server.
 // Live memakai .pt di GPU dan .onnx di CPU (config `mode_backend`). Nilai di
@@ -173,12 +191,12 @@ async function refreshStats() {
       statusLive.textContent = `Galat: ${s.error}`;
       statusLive.classList.add("galat");
       if (window.showCameraError) window.showCameraError(`Galat stream: ${s.error}`);
-      return hentikan(false);
+      return hentikan(false, "error");
     }
     if (window.hideCameraError) window.hideCameraError();
     if (s.finished) {
       statusLive.textContent = "Video selesai diputar.";
-      return hentikan(false);
+      return hentikan(false, "selesai");
     }
     statusLive.classList.remove("galat");
     statusLive.textContent =
@@ -260,7 +278,7 @@ async function mulai() {
   }
 }
 
-async function hentikan(manual = true) {
+async function hentikan(manual = true, alasan = "manual") {
   if (polling) { clearInterval(polling); polling = null; }
   if (manual) {
     await fetch("/api/stream/stop", { method: "POST", ...jsonBody() }).catch(() => {});
@@ -270,7 +288,19 @@ async function hentikan(manual = true) {
   btnBerhenti.disabled = true;
   // Kartu KPI live sengaja TIDAK disembunyikan di sini: angka sesi terakhir
   // tetap terbaca setelah video selesai. Direset saat sesi baru dimulai.
-  await ambilSnapshot();
+  const snap = await ambilSnapshot();
+  if (!snap || alasan === "error") return;
+  const n = (snap.rows || []).length;
+  if (n) {
+    statusLive.textContent = (alasan === "selesai" ? "Video selesai — " : "Sesi dihentikan — ") +
+      n + " titik siap disimpan.";
+    statusLive.classList.remove("galat");
+    showToast("Sesi Live Siap", n + " titik temuan siap disimpan ke riwayat.", "success");
+    sorotHasilLive();
+  } else {
+    statusLive.textContent = (alasan === "selesai" ? "Video selesai" : "Sesi dihentikan") +
+      " — tidak ada titik temuan terekam.";
+  }
 }
 
 async function ambilSnapshot() {
@@ -278,9 +308,9 @@ async function ambilSnapshot() {
     const res = await fetch("/api/stream/snapshot", { method: "POST", ...jsonBody() });
     const json = await res.json();
     if (!res.ok) {
-      if (!hasilLive.hidden) return;
+      if (!hasilLive.hidden) return null;
       statusLive.textContent = json.error || statusLive.textContent;
-      return;
+      return null;
     }
     const lokasi = document.getElementById("lokasi").value.trim();
     snapshot = { ...json, namaBerkas: `Live (${lokasi || "tanpa lokasi"})` };
@@ -292,7 +322,8 @@ async function ambilSnapshot() {
         `<tr><td class="jp-num">${esc(r.track_id)}</td><td><span class="jp-cell-main">${esc(r.kelas)}</span></td><td class="jp-num">${esc(r.dasar)}</td><td>${badge(r.severity)}</td><td class="jp-num">${esc(confStr(r.conf_max != null ? r.conf_max : r.conf))}</td></tr>`
       ).join("") + `</tbody></table>`;
     hasilLive.hidden = false;
-  } catch { /* abaikan bila server mati */ }
+    return snapshot;
+  } catch { return null; }
 }
 
 btnMulai.addEventListener("click", mulai);
@@ -420,28 +451,42 @@ document.getElementById("simpan-live").addEventListener("click", async () => {
 
 document.getElementById("unduh-live").addEventListener("click", async () => {
   if (!snapshot) return;
-  const res = await fetch("/api/laporan", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      rows: snapshot.rows,
-      total: snapshot.total,
-      gambar_token: snapshot.gambar_token,
-      source: snapshot.namaBerkas,
-      model: snapshot.model,
-    }),
-  });
-  if (!res.ok) {
-    statusLive.textContent = "Gagal membuat PDF.";
+  const btn = document.getElementById("unduh-live");
+  if (btn.disabled) return;
+  btn.disabled = true;
+  statusLive.textContent = "Membuat laporan PDF…";
+  statusLive.classList.remove("galat");
+  try {
+    const res = await fetch("/api/laporan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        rows: snapshot.rows,
+        total: snapshot.total,
+        gambar_token: snapshot.gambar_token,
+        source: snapshot.namaBerkas,
+        model: snapshot.model,
+      }),
+    });
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      throw new Error(json.error || "Gagal membuat PDF.");
+    }
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "laporan_jalan_live.pdf";
+    a.click();
+    URL.revokeObjectURL(a.href);
+    statusLive.textContent = "Laporan PDF terunduh.";
+    showToast("PDF Terunduh", "Laporan sesi live berhasil diunduh.", "success");
+  } catch (err) {
+    statusLive.textContent = err.message;
     statusLive.classList.add("galat");
-    return;
+    showToast("Gagal Membuat PDF", err.message, "galat");
+  } finally {
+    btn.disabled = false;
   }
-  const blob = await res.blob();
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "laporan_jalan_live.pdf";
-  a.click();
-  URL.revokeObjectURL(a.href);
 });
 
 /* === Toolbar & Camera Error State === */
