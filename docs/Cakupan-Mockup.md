@@ -6,7 +6,8 @@ Status: ✅ sesuai · ⚠️ sebagian/disederhanakan · ❌ belum/dihapus.
 > **Catatan scope (Okt 2026):** aplikasi dipangkas ke satu peran (**admin**).
 > Layar disposisi/SPK/kontraktor/portal dinas dan mode mobile sudah **dihapus**
 > dari kode; entri di bawah ditandai ❌ agar tidak jadi klaim palsu. Scope aktif:
-> deteksi → severity → indeks prioritas → peta GIS → riwayat → PDF.
+> deteksi → severity (deskriptif) → peta GIS → riwayat → segmen +
+> SDI-visual → PDF.
 
 | Layar Stitch | Implementasi | Status |
 |---|---|---|
@@ -28,7 +29,7 @@ Status: ✅ sesuai · ⚠️ sebagian/disederhanakan · ❌ belum/dihapus.
 | `dashboard_eksekutif_verifikasi_kedinasan_...` (SPK) | — | ❌ dihapus (di luar scope) |
 | `dashboard_eksekutif_dialog_penerbitan_spk_...` | — | ❌ dihapus (di luar scope) |
 | `dashboard_eksekutif_analitik_heatmap_indeks_kemantapan_jalan_ikj` | — | ❌ dihapus (IKJ tidak dihitung) |
-| `dashboard_eksekutif_manajemen_armada_trc_monitoring_lapangan` | — | ❌ belum |
+| `dashboard_eksekutif_manajemen_armada_trc_monitoring_lapangan` | — | ❌ dihapus (di luar scope) |
 
 ## Catatan penyimpangan yang disengaja
 - **Tanpa data fiktif.** Tidak ada nomor tiket/angka contoh dari mockup
@@ -36,5 +37,7 @@ Status: ✅ sesuai · ⚠️ sebagian/disederhanakan · ❌ belum/dihapus.
 - **Tanpa IKJ.** Sistem ini tidak menghitung Indeks Kemantapan Jalan (IKJ) →
   sengaja tidak ditampilkan (jangan diklaim).
 - **Tanpa telemetri palsu.** Latensi/SHA-256/webhook dari mockup tidak dipakai.
-- **Tanpa biaya rupiah.** Estimasi biaya diganti indeks prioritas 0–100
-  (lihat `app/prioritas.py`); ini jawaban atas kritik double-counting.
+- **Tanpa biaya rupiah.** Estimasi biaya diganti SDI-visual per segmen
+  (`app/sdi.py`) sebagai instrumen prioritas. (Skor severity 0–100 per
+  temuan di `app/prioritas.py` sempat menjadi pengganti sementara; kini
+  statusnya *legacy* dan tidak ditampilkan.)

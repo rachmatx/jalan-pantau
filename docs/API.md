@@ -19,11 +19,15 @@ Semua respons JSON (`application/json`) kecuali yang bertanda lain.
   Nonaktif saat `app.config["TESTING"]=True` atau env `JP_CSRF=0`.
 - **Auth**: endpoint bertanda 🔒 butuh login (peran tunggal: admin). Bila belum
   login, API membalas `401` JSON; halaman HTML diarahkan ke `/login`.
+  Modelnya *deferred-login*: tidak ada halaman/endpoint register (akun
+  hanya seed admin di database); UI menampilkan modal login saat aksi
+  tulis menerima `401`, lalu mengulangi aksi itu otomatis. Sesi tetap
+  8 jam sejak login pertama (bukan sliding).
 - **Rate limit**: `flask-limiter`, default `600 per hour`. Batas lebih ketat:
   login `5/menit; 20/jam` · `POST /api/detect` `30/menit; 300/jam` ·
   `POST /api/laporan` & `POST /api/riwayat` `20/menit; 200/jam` ·
   `POST /api/video` `10/menit; 100/jam` · `POST /api/demo` &
-  `POST /api/stream/start` `10/menit; 60/jam` · `POST /api/kalibrasi/foto`
+  `POST /api/stream/start` `10/menit; 100/jam` · `POST /api/kalibrasi/foto`
   `10/menit; 60/jam` · `DELETE /api/riwayat/<sid>` `10/jam`.
   `/api/stream` dan `/api/stream/stats` dikecualikan (MJPEG long-lived + polling).
 - **Error**: `{"error": "<pesan berbahasa Indonesia>"}` dengan status yang sesuai.
@@ -41,10 +45,23 @@ Semua respons JSON (`application/json`) kecuali yang bertanda lain.
 | `/` | Deteksi (tab Gambar & Live) |
 | `/peta` | Peta sebaran GPS (Leaflet) |
 | `/riwayat` | Riwayat inspeksi |
+| `/segmen` | Segmen jalan + SDI-visual |
 | `/tentang` | Tentang & metrik model |
 | `/kalibrasi` | 🔒 Kalibrasi `pixels_per_cm` |
 | `/laporan/preview/<sid>` | Pratinjau berita acara |
 | `/login`, `/logout` | Autentikasi admin |
+
+## Autentikasi & kesehatan
+
+| Metode | Endpoint | Catatan |
+|---|---|---|
+| POST | `/login` | form halaman → sesi admin |
+| POST | `/api/login` | JSON `{username, password}` → `{ok, username}`; dipakai modal deferred-login; 401 bila gagal; 5/menit; 20/jam |
+| GET | `/logout` | akhiri sesi |
+| GET | `/health` | status sistem + `perangkat`; 200 bila worker inferensi hidup, 503 bila mati |
+
+Tidak ada endpoint register: akun hanya dibuat sebagai seed admin di
+`web/database.py`.
 
 ## Deteksi & laporan
 
@@ -101,7 +118,7 @@ mengandung `NaN` (ditolak `JSON.parse` di browser).
 
 | Metode | Endpoint | Catatan |
 |---|---|---|
-| GET | `/api/kalibrasi` | status + dampak (`box_100px_cm`, `lubang_25cm_px`) |
+| GET | `/api/kalibrasi` | status kalibrasi: px/cm aktif, `metode`, `diperbarui`, `catatan`, dan objek `dampak` (`box_100px_cm`, `lubang_25cm_px`) |
 | POST | `/api/kalibrasi` | 🔒 JSON `{pixels_per_cm}` atau `{panjang_px, panjang_cm}` |
 | POST | `/api/kalibrasi/foto` | 🔒 multipart `foto` → `{image_b64, lebar, tinggi}` (untuk klik 2 titik). `lebar`/`tinggi` = ukuran **asli** foto (bukan ukuran tampil), agar `pixels_per_cm` satu ruang dengan koordinat box deteksi |
 
@@ -121,9 +138,11 @@ dipertahankan) dan langsung berlaku untuk deteksi berikutnya.
 | POST | `/api/demo` | putar video contoh bawaan |
 | POST | `/api/video` | multipart `video` → putar berkas |
 
-`source` = `webcam` (target = index 0-10) · `ipcam` (target = URL http/https) ·
-`file` (dari `/api/video`). `performa` opsional: `halus` | `seimbang`; nilai lain
-diabaikan (jatuh ke `imgsz_live` config).
+`source` = `webcam` (target = index 0-10) · `ipcam` (target = URL http/https);
+nilai lain ditolak `400` — berkas video masuk lewat `/api/video` atau
+`/api/demo`, bukan lewat `source=file`. `performa` opsional: `halus` |
+`seimbang`; tanpa preset eksplisit berlaku preset otomatis per perangkat
+(CPU → `halus`, GPU → `seimbang`).
 Satu stream aktif dalam satu waktu; saat stream berjalan, `start`/`stop`/`anotasi`/
 `snapshot` dari tab lain ditolak (`409`/`403`) kecuali menyertakan `token` pemilik
 yang dikembalikan `start`.
@@ -150,19 +169,39 @@ Metrik live — bedakan yang **kumulatif** dari yang **adil**:
 
 | Metode | Endpoint | Catatan |
 |---|---|---|
-| POST | `/api/riwayat` | simpan sesi → `{id}` atau `{id, duplikat: true, ...}`; 20/menit; `gambar_token` dari deteksi/snapshot (opsional) |
+| POST | `/api/riwayat` | 🔒 simpan sesi → `{id}` atau `{id, duplikat: true, ...}`; 20/menit; 200/jam; `gambar_token` dari deteksi/snapshot (opsional) |
 | GET | `/api/riwayat` | daftar (`dari`, `sampai`, `severity`, `q`); `{data, overflow, total_db}` |
 | GET | `/api/riwayat/<sid>` | detail sesi + temuan |
 | DELETE | `/api/riwayat/<sid>` | 🔒 hapus (10/jam) |
+| PUT | `/api/riwayat/<sid>/segmen` | 🔒 tetapkan/lepas segmen sesi — JSON `{segmen_id}` (atau `null` untuk melepas) |
 | GET | `/api/riwayat/<sid>/gambar` | JPEG bukti (`?layar=1` untuk tampil 1280 px, `?thumb=1` untuk thumbnail) |
 | GET | `/api/peta` | titik GPS untuk peta (maks 500 terbaru) |
 
 Simpan sesi idempoten: menyertakan `client_ref` yang sama tidak membuat baris
 baru. Ada juga heuristik anti-duplikat koordinat (±11 m, 10 menit terakhir) yang
-bisa dilewati dengan `izinkan_duplikat: true`. Nilai yang dihitung server dan
-**tidak** dipercaya dari klien: `total` sesi = jumlah skor temuan, dan **skor
-tiap temuan** diturunkan dari `severity` (Ringan 33 / Sedang 67 / Berat 100,
-rumus `app/prioritas.py`).
+bisa dilewati dengan `izinkan_duplikat: true`. Nilai dihitung server dan
+**tidak** dipercaya dari klien. Catatan *legacy*: kolom `skor_prioritas`
+sesi/temuan masih diisi server dari `severity` (Ringan 33 / Sedang 67 /
+Berat 100, rumus `app/prioritas.py`) demi kompatibilitas data lama, tetapi
+**tidak ditampilkan dan bukan instrumen prioritas** — prioritas resmi
+adalah SDI-visual per segmen (lihat bagian Segmen & SDI-visual).
+
+## Segmen & SDI-visual
+
+Segmen adalah ruas jalan (default 100 m) tempat sesi-sesi inspeksi
+diagregasi menjadi **SDI-visual** (`app/sdi.py`) — instrumen prioritas
+resmi aplikasi ini. Baca (daftar/detail/PDF) publik; semua tulis 🔒.
+
+| Metode | Endpoint | Catatan |
+|---|---|---|
+| POST | `/api/segmen` | 🔒 buat segmen — JSON `{nama, jalan, panjang_m, lebar_m, sdi_manual, catatan}` → `{id}`; `nama` wajib |
+| GET | `/api/segmen` | daftar segmen |
+| GET | `/api/segmen/<sid>` | detail segmen: data ruas + agregat SDI-visual + `tanpa_segmen` (sesi yang belum ditetapkan) |
+| PUT | `/api/segmen/<sid>` | 🔒 ubah segmen (field sama seperti buat; `sdi_manual` = SDI hasil survei manual untuk pembanding) |
+| DELETE | `/api/segmen/<sid>` | 🔒 hapus segmen |
+| POST | `/api/segmen/<sid>/anggota` | 🔒 tetapkan sesi ke segmen — JSON `{sesi_id}` |
+| DELETE | `/api/segmen/<sid>/anggota/<sesi_id>` | 🔒 lepas sesi dari segmen |
+| GET | `/api/segmen/<sid>/pdf` | PDF laporan SDI segmen (`application/pdf`, unduhan `sdi-segmen-<sid>.pdf`) |
 
 ## Contoh
 

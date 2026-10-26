@@ -65,7 +65,7 @@ boleh sama, tetapi tiap jalur memakai *instance* model terpisah agar state
 | Peran | Model | Format | Config |
 |-------|-------|--------|--------|
 | Deteksi gambar (statis) | YOLOv11s | `.pt` (PyTorch) | `model_gambar` |
-| Live stream (webcam/IP-cam/video) | YOLOv11s | `.onnx` (ONNX Runtime) | `model_live` |
+| Live stream (webcam/IP-cam/video) | YOLOv11s | `.pt` (PyTorch); `.onnx` cadangan CPU via `mode_backend: auto` | `model_live` |
 | Cadangan (ensemble, nonaktif) | — | `.pt` | `ensemble` |
 
 Kelas yang dideteksi: `longitudinal_crack`, `transverse_crack`,
@@ -82,14 +82,21 @@ halaman publik tanpa login (aplikasi sengaja berjalan lokal untuk satu operator)
 
 | Persona | Login | Halaman | Kemampuan |
 |---------|-------|---------|-----------|
-| **Operator** (publik) | tidak | `/`, `/peta`, `/riwayat`, `/tentang` | Deteksi gambar/live, koreksi hasil, simpan riwayat, unduh PDF, lihat peta |
-| **Admin** | ya (session) | `+ /kalibrasi` | Semua di atas **plus** ubah kalibrasi `px/cm` dan hapus riwayat |
+| **Operator** (publik) | tidak | `/`, `/peta`, `/riwayat`, `/segmen`, `/tentang` | Deteksi gambar/live, koreksi hasil, unduh PDF, lihat peta & segmen |
+| **Admin** | ya (session) | `+ /kalibrasi` | Semua di atas **plus** simpan/hapus riwayat, ubah kalibrasi `px/cm`, dan kelola segmen (buat/ubah/hapus + tetapkan anggota) |
 
 ### Aturan Otorisasi (ditegakkan di server)
 
-- Hanya **`POST /api/kalibrasi`**, **`POST /api/kalibrasi/foto`**, dan
-  **`DELETE /api/riwayat/<sid>`** yang butuh login (API → `401` JSON; halaman
-  `/kalibrasi` → redirect `/login`).
+- Login bersifat *deferred*: aksi publik berjalan tanpa login, tetapi aksi
+  tulis memicu modal login dan otomatis dilanjutkan setelah berhasil
+  (sesi tetap 8 jam sejak login pertama; tidak ada halaman register).
+- Endpoint yang butuh login (`@login_wajib` di `web/app.py`; API → `401`
+  JSON; halaman `/kalibrasi` → redirect `/login`):
+  `POST /api/kalibrasi`, `POST /api/kalibrasi/foto`, `POST /api/riwayat`,
+  `DELETE /api/riwayat/<sid>`, `PUT /api/riwayat/<sid>/segmen`,
+  `POST /api/segmen`, `PUT /api/segmen/<sid>`, `DELETE /api/segmen/<sid>`,
+  `POST /api/segmen/<sid>/anggota`,
+  `DELETE /api/segmen/<sid>/anggota/<sesi_id>`, dan halaman `GET /kalibrasi`.
 - Sisanya publik, namun dibatasi **rate-limit** (lihat [`API.md`](API.md)).
 - Kepemilikan stream live dijaga satu **token**: saat stream berjalan,
   `start`/`stop`/`anotasi`/`snapshot` dari tab lain ditolak (`409`/`403`) bila
@@ -105,6 +112,7 @@ graph TD
 
     HOME --> PETA["/peta"]
     HOME --> RIWAYAT["/riwayat"]
+    HOME --> SEGMEN["/segmen"]
     HOME --> TENTANG["/tentang"]
     HOME --> KALIBRASI["/kalibrasi 🔒"]
 
@@ -132,12 +140,12 @@ flowchart TD
     VAL -->|OK| ANALISIS["analisis_gambar()"]
 
     ANALISIS --> PRE["Preprocessing:<br/>decode · CLAHE malam"]
-    PRE --> INFER["predict<br/>YOLOv11s @ imgsz=960 (+TTA)"]
-    INFER --> POST1["Postprocessing:<br/>severity · skor prioritas"]
+    PRE --> INFER["predict<br/>YOLOv11s @ imgsz=640 (+TTA)"]
+    INFER --> POST1["Postprocessing:<br/>severity (deskriptif)"]
     POST1 --> SARING["Saring 3 lapis:<br/>conf · masuk akal · luas min"]
     SARING --> GABUNG["Gabung fragmen<br/>union-find IoU"]
     GABUNG --> TOPK["Batas top-20"]
-    TOPK --> ANOT["Anotasi gambar<br/>→ base64 JPEG"]
+    TOPK --> ANOT["Anotasi gambar<br/>→ JPEG via token URL"]
 
     ANOT --> TAMPIL["Tampilkan tabel + gambar anotasi"]
 
@@ -148,7 +156,7 @@ flowchart TD
     VERIFIKASI --> LANJUT{"Pilih aksi"}
 
     LANJUT --> PDF["Unduh PDF<br/>POST /api/laporan<br/>berita acara"]
-    LANJUT --> SIMPAN["Simpan riwayat<br/>POST /api/riwayat"]
+    LANJUT --> SIMPAN["Simpan riwayat 🔒<br/>POST /api/riwayat"]
     LANJUT --> KEMBALI["Ulangi / ganti gambar"]
 
     SIMPAN --> DB[("SQLite:<br/>sesi + temuan<br/>+ gambar + thumbnail")]
@@ -162,11 +170,16 @@ flowchart TD
    geometri tidak berubah.
 3. **Mode teliti** — *tiling* grid 640 dengan overlap 0,25; box yang menyentuh
    tepi dalam tile dibuang; digabung lintas tile via NMS/WBF.
-4. **Pseudo-segmentation** — luas diestimasi dari kontur (Otsu/adaptive +
-   morphology) di dalam bounding box. **Bukan** mask segmentasi model.
-5. **Angka otoritatif** — skor tidak dipercaya dari klien: server menghitung
-   ulang **total sesi** (= jumlah skor temuan) dan **skor tiap temuan** dari
-   `severity` (Ringan 33 / Sedang 67 / Berat 100, rumus `app/prioritas.py`).
+4. **Estimasi dimensi dari box** — luas diestimasi dari dimensi bounding box
+   terkalibrasi (`pixels_per_cm`): lebar × panjang box. **Bukan** mask
+   segmentasi model, dan bukan kontur — pseudo-segmentation pernah ada dan
+   sudah dihapus dari kode; lihat lampiran.
+5. **Angka otoritatif** — nilai dari klien tidak dipercaya: server
+   menghitung ulang severity dan agregat sesi dari hasil deteksi. Skor
+   severity per temuan (33/67/100, `app/prioritas.py`) hanya disimpan
+   sebagai data *legacy* untuk kompatibilitas data lama — tidak ditampilkan
+   dan bukan instrumen prioritas; prioritas resmi adalah **SDI-visual per
+   segmen** (`app/sdi.py`).
 
 ---
 
@@ -226,7 +239,7 @@ dikoreksi operator:
 flowchart TD
     HASIL(["rows + total + gambar_token"]) --> PILIH{"Pilih aksi"}
 
-    PILIH --> SIMPAN["POST /api/riwayat"]
+    PILIH --> SIMPAN["POST /api/riwayat 🔒"]
     PILIH --> PDF["POST /api/laporan → PDF"]
 
     SIMPAN --> IDEM{"client_ref sudah ada?"}
@@ -249,8 +262,9 @@ flowchart TD
   dobel / retry jaringan).
 - **Anti-duplikat titik**: koordinat sama dalam 10 menit terakhir ditolak kecuali
   `izinkan_duplikat: true`.
-- **Skor server-side**: `total` = jumlah skor temuan, dan skor tiap temuan
-  diturunkan dari `severity` — nilai dari klien diabaikan.
+- **Hitungan server-side**: severity dan agregat sesi dihitung ulang server
+  dari hasil deteksi — nilai dari klien diabaikan. (Kolom skor severity
+  per temuan dipertahankan sebagai data *legacy*; lihat §5 poin 5.)
 - **PDF** (`POST /api/laporan`) dibangun ulang tiap permintaan; berkas sementara
   dihapus setelah dikirim (dibaca ke memori lebih dulu agar tidak terkunci di
   Windows).
@@ -273,10 +287,10 @@ flowchart TD
 
     LANJUT --> MODE{"Mode inferensi?"}
 
-    MODE -->|Normal| NORMAL["predict @ imgsz=960 (+TTA)"]
+    MODE -->|Normal| NORMAL["predict @ imgsz=640 (+TTA)"]
     MODE -->|Teliti| TELITI["Tiling 640 · overlap 0.25<br/>buang tepi · gabung NMS/WBF"]
     MODE -->|Ensemble| ENSEMBLE["prediksi_ensemble<br/>WBF / NMS per kelas (nonaktif)"]
-    MODE -->|Live| LIVE["model.track + ByteTrack<br/>@ imgsz=480 · persist"]
+    MODE -->|Live| LIVE["model.track + ByteTrack<br/>@ imgsz_live 640 (preset otomatis) · persist"]
 
     NORMAL --> HASIL
     TELITI --> HASIL
@@ -285,9 +299,8 @@ flowchart TD
 
     subgraph HASIL ["Postprocessing — analisis_gambar()"]
         H1["proses_detections()"]
-        H1 --> H2["diagnose() → severity<br/>Ringan / Sedang / Berat"]
-        H2 --> H3["skor() → indeks prioritas<br/>Ringan 33 / Sedang 67 / Berat 100"]
-        H3 --> H4["Pseudo-segmentation<br/>kontur Otsu → luas (m²)"]
+        H1 --> H2["diagnose() → severity<br/>Ringan / Sedang / Berat (deskriptif)"]
+        H2 --> H4["Dimensi box terkalibrasi<br/>px/cm → luas (m²)"]
         H4 --> H5["saring_rows()<br/>3 lapis saringan"]
         H5 --> H6["gabung_fragmen()<br/>union-find IoU"]
         H6 --> H7["batas_topk()<br/>maks 20 temuan"]
@@ -353,33 +366,46 @@ Baris dapat bergeser seiring perubahan; nama fungsi/route adalah acuan utama.
 
 | Route | Baris | Catatan |
 |-------|-------|---------|
-| `GET/POST /login`, `GET /logout` | 244 / 250 / 272 | Autentikasi admin |
-| `GET /` | 336 | Deteksi (tab Gambar & Live) |
-| `GET /peta` | 340 | Peta sebaran GPS |
-| `GET /riwayat` | 344 | Riwayat inspeksi |
-| `GET /tentang` | 348 | Tentang & metrik model |
-| `GET /kalibrasi` | 352 | 🔒 Kalibrasi `px/cm` |
-| `GET /laporan/preview/<sid>` | 357 | Pratinjau berita acara |
-| `POST /api/detect` | 365 | Deteksi gambar |
-| `GET /api/kalibrasi` | 402 | Status kalibrasi |
-| `POST /api/kalibrasi` | 413 | 🔒 Simpan kalibrasi |
-| `POST /api/kalibrasi/foto` | 439 | 🔒 Foto penggaris → gambar+ukuran |
-| `POST /api/verifikasi` | 478 | Koreksi operator |
-| `POST /api/laporan` | 497 | Generate PDF |
-| `GET /api/stream` | 529 | MJPEG |
-| `POST /api/stream/start` | 598 | Mulai live stream |
-| `POST /api/stream/stop` | 640 | Hentikan (token pemilik) |
-| `GET /api/stream/stats` | 652 | FPS · track · deteksi |
-| `POST /api/stream/anotasi` | 657 | Toggle anotasi box |
-| `POST /api/stream/snapshot` | 666 | Snapshot per track |
-| `POST /api/demo` | 678 | Video contoh bawaan |
-| `POST /api/video` | 706 | Upload berkas video |
-| `POST /api/riwayat` | 763 | Simpan sesi |
-| `GET /api/riwayat` | 811 | Daftar riwayat |
-| `GET /api/riwayat/<sid>` | 827 | Detail sesi |
-| `DELETE /api/riwayat/<sid>` | 834 | 🔒 Hapus sesi |
-| `GET /api/riwayat/<sid>/gambar` | 842 | JPEG bukti |
-| `GET /api/peta` | 855 | Titik peta (publik) |
+| `GET/POST /login`, `GET /logout` | 322 / 328 / 351 | Autentikasi admin (halaman) |
+| `POST /api/login` | 356 | Login JSON untuk modal (deferred-login) |
+| `GET /` | 433 | Deteksi (tab Gambar & Live) |
+| `GET /peta` | 437 | Peta sebaran GPS |
+| `GET /riwayat` | 441 | Riwayat inspeksi |
+| `GET /segmen` | 445 | Segmen jalan + SDI-visual |
+| `GET /tentang` | 449 | Tentang & metrik model |
+| `GET /health` | 453 | Status worker + perangkat |
+| `GET /kalibrasi` | 463 | 🔒 Kalibrasi `px/cm` |
+| `GET /laporan/preview/<sid>` | 468 | Pratinjau berita acara |
+| `POST /api/detect` | 476 | Deteksi gambar |
+| `GET /api/kalibrasi` | 534 | Status kalibrasi |
+| `POST /api/kalibrasi` | 545 | 🔒 Simpan kalibrasi |
+| `POST /api/kalibrasi/foto` | 571 | 🔒 Foto penggaris → gambar+ukuran |
+| `POST /api/verifikasi` | 621 | Koreksi operator |
+| `POST /api/laporan` | 640 | Generate PDF |
+| `GET /api/stream` | 670 | MJPEG |
+| `POST /api/stream/start` | 739 | Mulai live stream |
+| `POST /api/stream/stop` | 783 | Hentikan (token pemilik) |
+| `GET /api/stream/stats` | 795 | FPS · track · deteksi |
+| `POST /api/stream/anotasi` | 807 | Toggle anotasi box |
+| `POST /api/stream/snapshot` | 816 | Snapshot per track |
+| `GET /api/gambar/<token>` | 831 | JPEG anotasi via token URL |
+| `POST /api/demo` | 847 | Video contoh bawaan |
+| `POST /api/video` | 877 | Upload berkas video |
+| `POST /api/riwayat` | 934 | 🔒 Simpan sesi |
+| `GET /api/riwayat` | 988 | Daftar riwayat |
+| `GET /api/riwayat/<sid>` | 1004 | Detail sesi |
+| `DELETE /api/riwayat/<sid>` | 1011 | 🔒 Hapus sesi |
+| `PUT /api/riwayat/<sid>/segmen` | 1019 | 🔒 Tetapkan/lepas segmen sesi |
+| `GET /api/riwayat/<sid>/gambar` | 1037 | JPEG bukti |
+| `GET /api/peta` | 1056 | Titik peta (publik) |
+| `POST /api/segmen` | 1061 | 🔒 Buat segmen |
+| `GET /api/segmen` | 1076 | Daftar segmen |
+| `GET /api/segmen/<sid>` | 1080 | Detail segmen + SDI-visual |
+| `PUT /api/segmen/<sid>` | 1088 | 🔒 Ubah segmen |
+| `DELETE /api/segmen/<sid>` | 1104 | 🔒 Hapus segmen |
+| `POST /api/segmen/<sid>/anggota` | 1111 | 🔒 Tambah sesi ke segmen |
+| `DELETE /api/segmen/<sid>/anggota/<sesi_id>` | 1127 | 🔒 Lepas sesi dari segmen |
+| `GET /api/segmen/<sid>/pdf` | 1135 | PDF laporan SDI segmen |
 
 ### Fungsi Inti
 
@@ -394,9 +420,11 @@ Baris dapat bergeser seiring perubahan; nama fungsi/route adalah acuan utama.
 | `get_model` (cache per ruang+path) | `web/deteksi.py` |
 | `kanonik_kelas` / `nama_kelas` | `web/deteksi.py` |
 | `diagnose` (severity) | `app/severity.py` |
-| `skor` (indeks prioritas) | `app/prioritas.py` |
-| `total_prioritas` | `app/prioritas.py` |
-| `buat_laporan` (PDF) | `app/laporan.py` |
+| `agregasi_segmen` / `hitung_sdi` (SDI-visual) | `app/sdi.py` |
+| `putusan_gate` / `saring_gate_basah` (gate basah) | `app/scene_gate.py` |
+| `skor` / `total_prioritas` (LEGACY, kompat data lama) | `app/prioritas.py` |
+| `buat_laporan` / `buat_laporan_segmen` (PDF) | `app/laporan.py` |
+| `simpan` (gambar anotasi → token) | `web/gambar_sementara.py` |
 | `simpan_sesi` | `web/database.py` |
 | `daftar_sesi` | `web/database.py` |
 | `detail_sesi` | `web/database.py` |
@@ -416,13 +444,16 @@ Aplikasi ini **sengaja** menyatakan batasan berikut (dari README & DESIGN):
    val 0,631, test 0,632 (target ≥ 0,65 belum tercapai). Dataset latih
    RDD2022 (India/Jepang).
 3. **Kamera mono tidak mengukur kedalaman.** Tebal = asumsi per severity.
-4. **Skor prioritas = indeks relatif** (Ringan 33 / Sedang 67 / Berat 100),
-   bukan RAB/biaya resmi. Tidak ada komponen harga.
+4. **Prioritas = SDI-visual per segmen**, bukan RAB/biaya resmi; tidak ada
+   komponen harga. Skor severity per temuan (33/67/100) adalah data
+   *legacy* internal — disimpan demi kompatibilitas data lama, tidak
+   ditampilkan, dan tidak dipakai menentukan prioritas.
 5. **Mode malam hanya fotometrik** (CLAHE), tidak menambah sumber cahaya.
-6. **Istilah**: selalu "indeks/skor prioritas", **tidak pernah** "biaya
-   perbaikan" mutlak.
+6. **Istilah**: prioritas selalu dinyatakan sebagai "SDI-visual",
+   **tidak pernah** "biaya perbaikan" mutlak.
 
 ---
 
 *Dokumen ini dibuat untuk keperluan dokumentasi skripsi. Struktur route dan
-nama fungsi diverifikasi langsung dari kode sumber (baris per Okt 2026).*
+nama fungsi diverifikasi langsung dari kode sumber (baris per 27 Okt 2026,
+commit `5a31454`).*

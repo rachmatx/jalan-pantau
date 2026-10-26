@@ -1,13 +1,18 @@
 # DESIGN.md — JalanPantau
 
-> **Catatan scope (Okt 2026):** dokumen ini ditulis untuk scope lama
-> (disposisi/SPK/kontraktor/estimasi biaya). Scope aktif: deteksi →
-> severity → indeks prioritas → peta GIS → riwayat → PDF. Bagian yang
-> menyebut SPK/kontraktor/disposisi/biaya adalah arsip historis.
+> **STATUS: ARSIP (per 27 Okt 2026).** Dokumen ini adalah brief desain
+> untuk scope lama (disposisi/SPK/kontraktor/estimasi biaya; prioritas =
+> skor severity per temuan). Ia **bukan** brief aktif dan **bukan** sumber
+> angka yang sah. Scope aktif sekarang: deteksi → severity (deskriptif per
+> temuan) → peta GIS → riwayat → segmen + **SDI-visual per 100 m
+> (instrumen prioritas)** → PDF. Angka model yang sah ada di `README.md`
+> dan halaman Tentang aplikasi. Bagian mana pun di bawah yang bertentangan
+> dengan itu — termasuk angka di §2 — sudah digantikan; jangan di-port
+> ke UI.
 
-> Dokumen ini adalah **brief desain resmi** untuk redesign UI/UX — boleh dikerjakan
-> tool AI mana pun (Google Stitch, dsb.) lalu di-port ke Flask. Desain lama
-> (industrial biru) **dibuang total** bila hasil baru lebih baik.
+> Dokumen ini awalnya adalah brief desain untuk redesign UI/UX (boleh
+> dikerjakan tool AI mana pun, mis. Google Stitch, lalu di-port ke Flask)
+> dan dipertahankan sebagai catatan historis proses desain.
 
 ## 1. Produk
 
@@ -15,21 +20,23 @@
 dengan Severity Terkalibrasi dan Visualisasi Geospasial: foto jalan → AI
 mendeteksi 5 jenis kerusakan (`longitudinal_crack`, `transverse_crack`,
 `alligator_crack`, `other_corruption`, `pothole`) → severity
-(Ringan/Sedang/Berat) → indeks prioritas 0–100 → laporan PDF → riwayat
-SQLite → peta GPS (Leaflet). Bahasa UI: **Indonesia**.
+(Ringan/Sedang/Berat, deskriptif) → laporan PDF → riwayat
+SQLite → peta GPS (Leaflet) → agregasi segmen + SDI-visual sebagai
+prioritas. Bahasa UI: **Indonesia**.
 Run: `python web/app.py` → `http://127.0.0.1:5000`.
 
 Model: **YOLOv11** dalam mode **deteksi (bounding box), bukan mask** —
-`best.pt` untuk foto statis, `best.onnx` (ekspor YOLOv11s) untuk live.
+`best.pt` untuk foto statis dan live (`best.onnx` cadangan live untuk
+mesin tanpa GPU, dipilih `mode_backend: auto`).
 Dataset latih (RDD2022) hanya menyediakan anotasi kotak, jadi segmentasi mask
 tidak bisa dilatih tanpa annotasi ulang. Luas area temuan dihitung dari
-*kontur di dalam bounding box*, bukan keluaran mask model.
+*dimensi bounding box terkalibrasi* (px/cm), bukan keluaran mask model.
 Penjelasan lengkap: `docs/Segmentasi-atau-Bounding-Box.md`.
 
 **Konsekuensi ke UI:** jangan sampai ada teks yang menjanjikan presisi
-segmentasi. Semua panel memakai sebutan "indeks prioritas" (bukan "biaya
-perbaikan"). Kalau butuh menampilkan bentuk, gunakan polygon dari
-kontur dalam box dan beri label bahwa itu kontur Inside box, bukan mask model.
+segmentasi. Prioritas selalu dinyatakan sebagai "SDI-visual" per segmen
+(bukan "biaya perbaikan"). Bentuk yang ditampilkan adalah bounding box itu
+sendiri; jangan menggambar polygon/kontur yang menyiratkan mask model.
 
 ## 2. Batasan implementasi (HARGA MATI untuk siapa pun yang mem-port)
 
@@ -38,12 +45,14 @@ kontur dalam box dan beri label bahwa itu kontur Inside box, bukan mask model.
 - Internet tersedia saat demo, tapi desain harus tetap waras bila font/peta lambat.
 - Kontras teks ≥ 4,5 (WCAG AA). Tanpa emoji sebagai ikon (SVG inline).
 - **Dilarang data fiktif**: tanpa testimoni palsu, tanpa paket harga. Angka yang
-  boleh tampil — YOLOv11s (model tunggal, gambar & live): mAP50 val 0,616 /
-  test 0,617 / OOD Bandung (BPID) 0,581; latih 26.900 gambar. Selain itu hanya
-  teks fungsional.
+  boleh tampil — YOLOv11s (model tunggal, gambar & live; retrain 18 Okt
+  2026, 92 epoch): mAP50 val 0,631 / test 0,632 / OOD Bandung (BPID)
+  0,540 (n=161, indikatif); classifier scene 94,62%; latih 26.900 gambar.
+  Selain itu hanya teks fungsional.
 - **Dilarang menjanjikan segmentasi.** Lihat bagian 1. Karena luas hanya
-  estimasi dari kontur dalam bounding box, seluruh teks harus memakai
-  "indeks prioritas".
+  estimasi dari dimensi bounding box terkalibrasi, teks tidak boleh
+  menjanjikan presisi segmentasi; prioritas selalu dinyatakan sebagai
+  SDI-visual per segmen.
 
 ## 3. Halaman & fitur (cakupan redesign = SEMUA)
 
@@ -56,8 +65,9 @@ kontur dalam box dan beri label bahwa itu kontur Inside box, bukan mask model.
   dobel-klik, toolbar −/+/1:1/Pas/Layar-penuh, keyboard, indikator %. Label hasil
   **selalu tampil** (terbakar di gambar) — tanpa hover, tanpa ambang zoom.
 - Hasil (pola dashboard: KPI atas → tabel bawah): kartu Temuan / Prioritas berat /
-  Total skor + tabel (#, Kelas, Ukuran, Severity, Skor prioritas) + tombol
-  Unduh PDF + Simpan ke riwayat (anti-klik-ganda).
+  Total temuan + tabel (#, Kelas, Ukuran, Severity) + tombol
+  Unduh PDF + Simpan ke riwayat (anti-klik-ganda). Skor severity per temuan
+  adalah data legacy dan **tidak ditampilkan**.
 - Panel Live: sumber webcam / HP IP-camera / file video / video contoh;
   confidence + frame skip + mode malam; KPI FPS/Titik unik/Deteksi/Frame;
   Mulai/Berhenti; snapshot → hasil + simpan (pola sama dengan Gambar).
@@ -76,9 +86,10 @@ kontur dalam box dan beri label bahwa itu kontur Inside box, bukan mask model.
   Unduh PDF + Hapus (konfirmasi) + Tutup + X. Esc menutup.
 
 ### 3.4 Tentang (`/tentang`)
-- Alur kerja, batasan jujur (kamera mono, siang hari, skor = indeks prioritas
-  bukan RAB/biaya, kalibrasi, **bounding box bukan segmentasi**), tabel bobot
-  severity (Ringan 33 / Sedang 67 / Berat 100), metrik model.
+- Alur kerja, batasan jujur (kamera mono, siang hari, prioritas = SDI-visual
+  per segmen bukan RAB/biaya, kalibrasi, **bounding box bukan segmentasi**),
+  metrik model retrain 18 Okt 2026. (Tabel bobot severity 33/67/100 adalah
+  legacy dan tidak lagi ditampilkan.)
   Nada: transparan, bukan marketing.
 
 ### 3.5 Portal Dinas (SPK) & Ruang Kerja Kontraktor — DIHAPUS

@@ -51,8 +51,9 @@ perlu disesuaikan.
 
 ## Catatan kejujuran
 - Ini **estimasi**, bukan pengukuran presisi (kamera monokular tak mengukur kedalaman).
-- Jangan mengklaim RAB/biaya rupiah; skor = indeks prioritas (Ringan 33 / Sedang
-  67 / Berat 100), tanpa komponen harga.
+- Jangan mengklaim RAB/biaya rupiah. Prioritas = SDI-visual per segmen;
+  skor severity per temuan (Ringan 33 / Sedang 67 / Berat 100) adalah data
+  *legacy* dan bukan instrumen. Tanpa komponen harga.
 - Selalu laporkan jumlah sampel (n) dan sebaran kelas.
 
 ---

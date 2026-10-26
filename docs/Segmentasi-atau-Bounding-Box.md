@@ -18,16 +18,16 @@ bounding box. Itu keputusan yang disengaja, bukan kelalaian.
 | Mode model | Deteksi objek (bounding box) |
 | Format anotasi latih | YOLO detect, 5 kolom: class cx cy w h |
 | Keluaran mask dari model | Tidak ada |
-| Luas area temuan | Diestimasi dari kontur di dalam bounding box |
+| Luas area temuan | Diestimasi dari dimensi bounding box terkalibrasi (px/cm) |
 | Jumlah kelas | 5 |
 
 Daftar kelas: `longitudinal_crack`, `transverse_crack`, `alligator_crack`,
 `other_corruption`, `pothole`.
 
-Judul resmi tetap menyebut YOLO-Segmentation karena judul disusun saat
-proposal, ketika rencana segmentasi masih mencakup. Judul skripsi tidak bisa
-diubah seluruhnya tanpa izin pembimbing. Yang dilakukan di sini adalah
-membuat ketidaksesuaian itu eksplisit dan terdokumentasi.
+Judul awal proposal menyebut YOLO-Segmentation, ketika rencana segmentasi
+masih mencakup. Judul akhir sudah disesuaikan — "…dengan Severity
+Terkalibrasi dan Visualisasi Geospasial" — dan dokumen ini dipertahankan
+untuk menjelaskan kenapa segmentasi tidak dipakai.
 
 ## 3. Bukti format latihnya bounding box
 
@@ -65,7 +65,7 @@ lama yang sudah dihapus, dan isinya tidak cocok dengan recipe sebenarnya.)
    dengan kotak itu. Seluruh kompleksitas segmentasi jadi sia-sia.
 3. **Anotasi ulang 14.176 gambar tidak proporsional.** Butuh ribuan jam
    kerja untuk menghasilkan batas presisi, sementara kebutuhan proyek ini
-   hanya estimasi luas untuk skoring prioritas.
+   hanya estimasi dimensi untuk agregasi SDI per segmen.
 
 Prinsipnya begini: segmentasi unggul kalau yang dibutuhkan adalah batas
 tepat. Kalau yang dibutuhkan urutan prioritas perbaikan, bounding box sudah
@@ -73,29 +73,32 @@ cukup, dan justru lebih kokoh terhadap noise.
 
 ## 5. Yang dipakai sebagai gantinya
 
-Luas setiap temuan diestimasi dari kontur di dalam bounding box.
-Implementasinya di `web/deteksi.py::pseudo_segmentation`:
+Luas setiap temuan diestimasi dari **dimensi bounding box terkalibrasi**:
+lebar dan panjang box (piksel) dikonversi ke cm lewat `pixels_per_cm` hasil
+kalibrasi, lalu luas = lebar × panjang (implementasi:
+`app/severity.py::box_size_cm`; pemakaian di `web/deteksi.py`).
 
-1. Crop daerah sekitar bounding box, dengan padding 8 piksel.
-2. Grayscale, lalu Gaussian blur untuk menekan noise.
-3. Adaptive threshold, supaya tetap jalan pada pencahayaan tidak merata.
-4. Morphological close lalu open untuk membersihkan noise.
-5. Ambil kontur terbesar yang luasnya di atas 10 persen area box.
-6. Luas dihitung dari kontur itu, bukan dari luas kotak.
+Versi awal proyek ini sempat memakai *pseudo-segmentation* (kontur
+Otsu/adaptive di dalam box, `web/deteksi.py::pseudo_segmentation`) untuk
+mengestimasi luas — **sudah dihapus dari kode (Okt 2026)** dan digantikan
+dimensi box terkalibrasi di atas. Jangan mengutip pseudo-segmentation
+sebagai implementasi aktif.
 
 ## 6. Batasnya, apa adanya
 
-- **Bukan mask presisi.** Ini tebakan dari intensitas piksel. Bisa meleset
-  pada permukaan berkontras rendah, misalnya aspal yang sudah pudar atau
-  lubang yang tergenang air.
+- **Bukan mask presisi.** Luas adalah luas *kotak* terkalibrasi, bukan luas
+  bentuk kerusakan sebenarnya — untuk retak tipis, luas box
+  melebih-lebihkan luas retak. Karena itu angka ini dipakai sebagai
+  komponen agregasi SDI per segmen, bukan klaim luas eksak.
 - **Box bisa memotong objek.** Bila kerusakan melebar melewati bounding box,
   bagian yang terlewat tidak akan tertangkap, karena box-nya sendiri sudah
   terpotong.
-- **Bukan angka siap RAB.** Luas di sini adalah indeks prioritas, bukan
+- **Bukan angka siap RAB.** Luas di sini adalah masukan agregasi SDI, bukan
   luas-property dalam meter persegi yang siap jadi anggaran.
 
-Karena itu semua teks di aplikasi memakai sebutan "indeks prioritas". Aplikasi
-ini tidak pernah menyebut hasil ini sebagai "biaya perbaikan" secara mutlak.
+Karena itu prioritas di aplikasi dinyatakan sebagai SDI-visual per segmen.
+Aplikasi ini tidak pernah menyebut hasil ini sebagai "biaya perbaikan"
+secara mutlak.
 
 ## 7. Kalau ditanya di sidang
 
@@ -110,9 +113,10 @@ ini tidak pernah menyebut hasil ini sebagai "biaya perbaikan" secara mutlak.
 > untuk tiap gambar, jadi seluruh 14.176 gambar harus dianotasi ulang.
 > Itu tidak proporsional untuk tujuan skripsi ini.
 >
-> Sebagai gantinya, luas diestimasi dari kontur di dalam box. Jadi ini bukan
-> segmentasi, dan memang tidak diklaim sebagai segmentasi. Yang diklaim
-> adalah deteksi objek dengan estimasi luas untuk skoring prioritas.
+> Sebagai gantinya, luas diestimasi dari dimensi bounding box terkalibrasi.
+> Jadi ini bukan segmentasi, dan memang tidak diklaim sebagai segmentasi.
+> Yang diklaim adalah deteksi objek dengan estimasi dimensi untuk agregasi
+> SDI-visual per segmen.
 
 ## 8. Kalau nanti mau benar-benar segmentasi
 
@@ -132,7 +136,7 @@ manapun adalah klaim yang belum didukung bukti.
 
 | Berkas | Isi |
 |---|---|
-| `web/deteksi.py::pseudo_segmentation` | Implementasi kontur di dalam box |
+| `app/severity.py::box_size_cm` | Dimensi box terkalibrasi → luas temuan |
 | `config/severity.yaml` | Ambang luas dan volume ke Ringan/Sedang/Berat |
 | `app/severity.py` | Pemetaan dimensi ke severity |
 | `docs/RDD2022-catatan.md` | Catatan asal dataset, termasuk keputusan awal Seg ke Detect |
