@@ -64,6 +64,14 @@
               <button type="button" data-z="full" aria-label="Layar penuh">Layar</button>
             </div>
           </figure>
+          <div class="jp-inline-error" id="galat-deteksi" role="alert" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r=".5" fill="currentColor"/></svg>
+            <div class="jp-inline-error-isi">
+              <p class="jp-inline-error-judul">Deteksi gagal</p>
+              <p class="jp-inline-error-pesan" id="galat-deteksi-pesan"></p>
+            </div>
+            <button type="button" id="galat-deteksi-ulang" class="jp-btn-light">Coba lagi</button>
+          </div>
           <div class="jp-viewmeta"><span>FILE: <span id="nama-berkas">belum ada</span></span><span>MODEL: <span id="nama-model">best.pt</span></span></div>
         </div>
       </div>
@@ -157,6 +165,9 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg>
             <span>Simpan ke Riwayat</span>
           </button>
+          {% if not session.get("admin_id") %}
+          <span class="jp-need-admin" title="Menyimpan ke riwayat membutuhkan sesi admin">Butuh sesi admin</span>
+          {% endif %}
         </div>
       </div>
       <div class="jp-kpis" id="stat-gambar">
@@ -167,7 +178,7 @@
         </div>
         <div class="jp-kpi jp-kpi-red">
           <div class="jp-kpi-top"><span>TINGKAT TERPARAH</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l10 18H2z"/><path d="M12 10v5m0 3v.5"/></svg></div>
-          <div class="jp-kpi-val"><span class="jp-pill"><span class="jp-dot" style="background:#fff"></span><span id="berat-nilai">Berat (0)</span></span></div>
+          <div class="jp-kpi-val"><span class="jp-pill"><span class="jp-dot" style="background:#fff"></span><span id="berat-nilai">Tidak ada</span></span></div>
           <p class="jp-kpi-sub">Temuan dengan tingkat keparahan tertinggi</p>
         </div>
         <div class="jp-kpi jp-kpi-blue">
@@ -387,12 +398,15 @@
             </div>
             <button type="button" id="unduh-live" class="jp-btn-demo jp-btn-block" style="margin-top:8px">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              <span>Unduh Log</span>
+              <span>Unduh Laporan PDF</span>
             </button>
             <button type="button" id="simpan-live" class="jp-btn-save jp-btn-block" style="margin-top:8px">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-              <span>Simpan Sesi</span>
+              <span>Simpan ke Riwayat</span>
             </button>
+            {% if not session.get("admin_id") %}
+            <p class="jp-need-admin" style="margin:8px 0 0">Butuh sesi admin untuk menyimpan.</p>
+            {% endif %}
           </div>
           <dialog id="dialog-tabel-live" class="jp-dialog jp-dialog-auto" aria-labelledby="dtl-judul">
             <div>

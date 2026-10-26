@@ -15,6 +15,19 @@ var verHapus = new Set();
 var verSev = {};
 var SEV_OPSI = ["Ringan", "Sedang", "Berat"];
 
+var galatDeteksi = document.getElementById("galat-deteksi");
+var galatDeteksiPesan = document.getElementById("galat-deteksi-pesan");
+
+function tampilkanGalatDeteksi(pesan) {
+  if (!galatDeteksi) return;
+  if (galatDeteksiPesan) galatDeteksiPesan.textContent = pesan;
+  galatDeteksi.hidden = false;
+}
+
+function sembunyikanGalatDeteksi() {
+  if (galatDeteksi) galatDeteksi.hidden = true;
+}
+
 function urlGambar(token) {
   return "/api/gambar/" + encodeURIComponent(token);
 }
@@ -201,15 +214,29 @@ function ukuranGambar(berkas) {
   });
 }
 
+function tingkatTerparah(rows) {
+  const urutan = { Ringan: 1, Sedang: 2, Berat: 3 };
+  let terparah = null;
+  (rows || []).forEach((r) => {
+    const sev = r.severity;
+    if (!urutan[sev]) return;
+    if (!terparah || urutan[sev] > urutan[terparah]) terparah = sev;
+  });
+  return terparah || "Tidak ada";
+}
+
+function perbaruiKPI(rows) {
+  document.getElementById("lubang-nilai").textContent = String(
+      rows.filter(function(r) { return /pothole/i.test(r.kelas || ""); }).length);
+  document.getElementById("temuan-nilai").textContent = rows.length;
+  document.getElementById("berat-nilai").textContent = tingkatTerparah(rows);
+  document.getElementById("tabel-hitung").textContent = `${rows.length} Data Tabel`;
+}
+
 function refreshVerifikasiUI() {
   renderTabelDeteksi();
   if (!terakhir) return;
-  document.getElementById("lubang-nilai").textContent = String(
-      terakhir.rows.filter(function(r) { return /pothole/i.test(r.kelas || ""); }).length);
-  document.getElementById("temuan-nilai").textContent = terakhir.rows.length;
-  const nBerat = terakhir.rows.filter((r) => r.severity === "Berat").length;
-  document.getElementById("berat-nilai").textContent = `Berat (${nBerat})`;
-  document.getElementById("tabel-hitung").textContent = `${terakhir.rows.length} Data Tabel`;
+  perbaruiKPI(terakhir.rows);
   const info = terakhir.info || { total: 0 };
   const label = teksVerifikasi(info);
   document.getElementById("verifikasi-hitung").textContent = label ? `· terverifikasi: ${label}` : "";
@@ -317,6 +344,7 @@ document.getElementById("gambar").addEventListener("change", (e) => {
       return;
     }
     status.classList.remove("galat");
+    sembunyikanGalatDeteksi();
     document.getElementById("nama-berkas").textContent = `${f.name} · ${(f.size / 1048576).toFixed(1)} MB`;
     const drop = document.getElementById("drop-foto");
     const sub = document.getElementById("drop-sub");
@@ -380,6 +408,7 @@ form.addEventListener("submit", async (e) => {
     return;
   }
   tombol.disabled = true;
+  sembunyikanGalatDeteksi();
   var tombolAsli = tombol.innerHTML;
   tombol.innerHTML = '<span style="display:inline-block;width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:jp-spin .8s linear infinite;vertical-align:middle;margin-right:8px"></span><span style="vertical-align:middle">Menganalisis…</span>';
   status.classList.remove("galat");
@@ -413,6 +442,7 @@ form.addEventListener("submit", async (e) => {
     const res = await fetch("/api/detect", { method: "POST", body: data });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error || "Deteksi gagal.");
+    sembunyikanGalatDeteksi();
     terakhir = { ...json, namaBerkas: berkas.name };
     if (json.model) {
       const nm = document.getElementById("nama-model");
@@ -456,11 +486,22 @@ form.addEventListener("submit", async (e) => {
     status.classList.remove("kosong");
     sembunyikanTanpaTemuan();
     status.classList.add("galat");
+    slot.classList.remove("kosong");
+    slot.innerHTML = window.__jpPratinjauUrl
+      ? `<img src="${window.__jpPratinjauUrl}" alt="Pratinjau ${esc(berkas.name)}">`
+      : '<div class="viewer-placeholder"><div class="viewer-placeholder-icon"></div><p>Deteksi gagal. Periksa koneksi lalu coba lagi.</p></div>';
+    tampilkanGalatDeteksi(err.message);
+    showToast("Deteksi Gagal", err.message, "galat");
   } finally {
     tombol.disabled = false;
     tombol.innerHTML = tombolAsli;
   }
 });
+
+var galatDeteksiUlang = document.getElementById("galat-deteksi-ulang");
+if (galatDeteksiUlang) {
+  galatDeteksiUlang.addEventListener("click", function () { form.requestSubmit(); });
+}
 
 function isiKoordinat(latId, lonId, lat, lon, asal) {
   const elLat = document.getElementById(latId);
@@ -641,12 +682,7 @@ function simpanDeteksiRingkas(json, namaBerkas) {
       slot.innerHTML = '<img src="' + urlGambar(data.gambar_token) + '" alt="Hasil deteksi ' + esc(data.namaBerkas) + '">';
     }
     if (data.rows && data.rows.length) {
-      document.getElementById("lubang-nilai").textContent = String(
-        data.rows.filter(function(r) { return /pothole/i.test(r.kelas || ""); }).length);
-      document.getElementById("temuan-nilai").textContent = data.rows.length;
-      var nBerat = data.rows.filter(function(r) { return r.severity === "Berat"; }).length;
-      document.getElementById("berat-nilai").textContent = "Berat (" + nBerat + ")";
-      document.getElementById("tabel-hitung").textContent = data.rows.length + " Data Tabel";
+      perbaruiKPI(data.rows);
       deteksiRows = data.rows;
       deteksiHalaman = 1;
       renderTabelDeteksi();

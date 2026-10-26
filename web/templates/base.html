@@ -76,11 +76,29 @@
       var t = document.getElementById("nav-toggle");
       var tray = document.getElementById("nav-tray");
       if (!t || !tray) return;
+      function buka() {
+        tray.hidden = false;
+        t.setAttribute("aria-expanded", "true");
+        t.setAttribute("aria-label", "Tutup menu navigasi");
+        t.classList.add("terbuka");
+      }
+      function tutup(kembalikanFokus) {
+        if (tray.hidden) return;
+        tray.hidden = true;
+        t.setAttribute("aria-expanded", "false");
+        t.setAttribute("aria-label", "Buka menu navigasi");
+        t.classList.remove("terbuka");
+        if (kembalikanFokus) t.focus();
+      }
       t.addEventListener("click", function () {
-        var buka = tray.hidden;
-        tray.hidden = !buka;
-        t.setAttribute("aria-expanded", String(buka));
-        t.classList.toggle("terbuka", buka);
+        if (tray.hidden) buka(); else tutup(false);
+      });
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") tutup(true);
+      });
+      document.addEventListener("click", function (e) {
+        if (tray.hidden || t.contains(e.target) || tray.contains(e.target)) return;
+        tutup(false);
       });
     })();
 

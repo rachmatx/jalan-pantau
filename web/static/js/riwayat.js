@@ -95,7 +95,7 @@ function renderTabel() {
       '<td>' + (r.segmen_nama ? esc(r.segmen_nama) : '<span style="color:var(--jp-muted)">-</span>') + '</td>' +
       '<td><span class="jp-rowact">' +
       '<button type="button" data-act="detail" data-id="' + r.id + '" title="Lihat detail">Detail</button>' +
-      '<button type="button" data-act="pdf" data-id="' + r.id + '" title="Unduh PDF">PDF</button>' +
+      '<button type="button" data-act="pdf" data-id="' + r.id + '" title="Unduh laporan PDF">PDF</button>' +
       '<button type="button" data-act="hapus" data-id="' + r.id + '" title="Hapus">Hapus</button>' +
       '</span></td></tr>';
   }).join("");

@@ -82,14 +82,16 @@ halaman publik tanpa login (aplikasi sengaja berjalan lokal untuk satu operator)
 
 | Persona | Login | Halaman | Kemampuan |
 |---------|-------|---------|-----------|
-| **Operator** (publik) | tidak | `/`, `/peta`, `/riwayat`, `/tentang` | Deteksi gambar/live, koreksi hasil, simpan riwayat, unduh PDF, lihat peta |
-| **Admin** | ya (session) | `+ /kalibrasi` | Semua di atas **plus** ubah kalibrasi `px/cm` dan hapus riwayat |
+| **Operator** (publik) | tidak | `/`, `/peta`, `/riwayat`, `/tentang` | Deteksi gambar/live, koreksi hasil, unduh PDF, lihat peta |
+| **Admin** | ya (session) | `+ /kalibrasi` | Semua di atas **plus** simpan riwayat, ubah kalibrasi `px/cm`, dan hapus riwayat |
 
 ### Aturan Otorisasi (ditegakkan di server)
 
-- Hanya **`POST /api/kalibrasi`**, **`POST /api/kalibrasi/foto`**, dan
-  **`DELETE /api/riwayat/<sid>`** yang butuh login (API → `401` JSON; halaman
-  `/kalibrasi` → redirect `/login`).
+- Aksi tulis tertentu butuh login: **`POST /api/riwayat`**, **`POST
+  /api/kalibrasi`**, **`POST /api/kalibrasi/foto`**, **`DELETE
+  /api/riwayat/<sid>`**, dan seluruh perubahan segmen (API → `401` JSON;
+  halaman `/kalibrasi` → redirect `/login`). Tombol simpan di UI ditandai
+  "Butuh sesi admin" dan menawarkan modal masuk tanpa meninggalkan halaman.
 - Sisanya publik, namun dibatasi **rate-limit** (lihat [`API.md`](API.md)).
 - Kepemilikan stream live dijaga satu **token**: saat stream berjalan,
   `start`/`stop`/`anotasi`/`snapshot` dari tab lain ditolak (`409`/`403`) bila

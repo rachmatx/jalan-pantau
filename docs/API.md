@@ -150,7 +150,7 @@ Metrik live — bedakan yang **kumulatif** dari yang **adil**:
 
 | Metode | Endpoint | Catatan |
 |---|---|---|
-| POST | `/api/riwayat` | simpan sesi → `{id}` atau `{id, duplikat: true, ...}`; 20/menit; `gambar_token` dari deteksi/snapshot (opsional) |
+| POST | `/api/riwayat` | simpan sesi (butuh login) → `{id}` atau `{id, duplikat: true, ...}`; 20/menit; `gambar_token` dari deteksi/snapshot (opsional) |
 | GET | `/api/riwayat` | daftar (`dari`, `sampai`, `severity`, `q`); `{data, overflow, total_db}` |
 | GET | `/api/riwayat/<sid>` | detail sesi + temuan |
 | DELETE | `/api/riwayat/<sid>` | 🔒 hapus (10/jam) |

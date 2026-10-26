@@ -704,6 +704,34 @@ main { padding: 0; flex: 1 0 auto; }
 .jp-btn-save { background: var(--jp-primary-container); color: #fdfcff; }
 .jp-btn-save:hover { background: var(--jp-primary); color: #fff; }
 .jp-btn-light svg, .jp-btn-save svg { width: 18px; height: 18px; }
+.jp-need-admin {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  color: #92400E;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.jp-inline-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid #FECACA;
+  border-radius: 10px;
+  background: #FEF2F2;
+  color: #991B1B;
+}
+.jp-inline-error > svg { width: 20px; height: 20px; flex-shrink: 0; margin-top: 1px; }
+.jp-inline-error-isi { flex: 1; min-width: 0; }
+.jp-inline-error-judul { margin: 0; font-size: 13px; font-weight: 600; }
+.jp-inline-error-pesan { margin: 2px 0 0; font-size: 12px; color: #7F1D1D; overflow-wrap: anywhere; }
+.jp-inline-error .jp-btn-light { flex-shrink: 0; }
 .jp-kpis { display: grid; grid-template-columns: 1fr; gap: 16px; }
 @media (min-width: 768px) { .jp-kpis { grid-template-columns: repeat(3, 1fr); } }
 .jp-kpi { padding: 16px; border-radius: 12px; display: flex; flex-direction: column; justify-content: space-between; gap: 4px; }
@@ -1392,7 +1420,11 @@ label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label da
   height: 2px;
   background: #0b1c30;
   border-radius: 9999px;
+  transition: transform .18s ease, opacity .18s ease;
 }
+.nav-toggle.terbuka span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.nav-toggle.terbuka span:nth-child(2) { opacity: 0; }
+.nav-toggle.terbuka span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 .nav-tray { background: #fff; border-bottom: 1px solid var(--jp-line); padding: 8px 16px 12px; }
 .nav-tray a { color: var(--jp-ink2); border-bottom-color: var(--jp-line); text-decoration: none; }
 .nav-tray a:hover { text-decoration: none; }
@@ -1500,8 +1532,11 @@ label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label da
   .jp-result-head { flex-direction: column; align-items: flex-start; gap: 8px; padding-bottom: 8px; }
   .jp-result-title { font-size: 18px; gap: 6px; }
   .jp-result-sub { font-size: 12px; }
-  .jp-result-actions { width: 100%; gap: 6px; }
+  .jp-result-actions { width: 100%; gap: 6px; flex-wrap: wrap; }
   .jp-result-actions button { flex: 1; padding: 8px 12px; font-size: 12px; justify-content: center; }
+  .jp-result-actions .jp-need-admin { flex-basis: 100%; justify-content: center; }
+  .jp-inline-error { flex-wrap: wrap; }
+  .jp-inline-error .jp-btn-light { width: 100%; justify-content: center; }
   .jp-kpis { gap: 8px; }
   .jp-kpi { padding: 12px; }
   .jp-kpi-top { font-size: 11px; }
