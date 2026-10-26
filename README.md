@@ -63,6 +63,60 @@ Uji fungsional pada 17 foto jalan: **48 temuan**, kelima kelas
 
 ---
 
+## Dataset
+
+Tiga dataset publik dipakai, masing-masing dengan peran berbeda, ditambah
+foto lokal tim. Tidak ada dataset uji yang bocor ke training.
+
+| Dataset | Dipakai untuk | Ukuran yang dipakai | Lisensi |
+|---|---|---|---|
+| RDD2022 | Latih + validasi + uji (*in-distribution*) detektor YOLOv11s | Split mirror Kaggle (train ±26.900 / val 5.758 / test 5.758 citra) | CC BY-SA 4.0 |
+| BPID Bandung | Uji *out-of-distribution* (OOD) — tidak pernah masuk training | 161 citra / 263 instance *pothole* | CC BY 4.0 |
+| IROSCD | Latih *scene classifier* untuk gate jalan basah | 2.599 citra (train 2.080 / val 259 / test 260) | CC BY 4.0 |
+| Foto lokal tim | Uji fungsional + validasi lapangan SDI | 17 foto uji + dokumentasi survei | Milik tim |
+
+### RDD2022 — dataset latih detektor
+- Tautan: [Kaggle — rdd-2022 (mirror yang dipakai)](https://www.kaggle.com/datasets/aliabdelmenam/rdd-2022) ·
+  paper: Arya et al. (2024), *RDD2022: A multi-national image dataset for
+  automatic road damage detection*, Geoscience Data Journal —
+  [doi.org/10.1002/gdj3.260](https://doi.org/10.1002/gdj3.260)
+- Isi: foto kerusakan jalan dari 6 negara (Jepang, India, Ceko, Norwegia,
+  AS, China) dengan anotasi *bounding box*. Lima kelasnya menjadi lima
+  kelas aplikasi ini (`longitudinal_crack`, `transverse_crack`,
+  `alligator_crack`, `other_corruption`, `pothole`).
+- Peran: satu-satunya sumber training detektor — split train/val/test
+  mirror ini yang dipakai retrain 18 Okt 2026. Karena tidak ada citra
+  Indonesia di dalamnya, generalisasi ke jalan lokal diuji terpisah
+  lewat BPID.
+
+### BPID — Bandung Pothole Image Dataset (uji OOD)
+- Tautan: [Mendeley Data — BPID](https://data.mendeley.com/datasets/rgymy6dwdd/1)
+  (DOI 10.17632/rgymy6dwdd.1, Binus University)
+- Isi: foto lubang jalan Kota Bandung dalam 4 kondisi (cerah, mendung,
+  basah/hujan, malam), plus bayangan pohon sebagai *hard negative*.
+- Peran: **murni test set independen** — tidak pernah masuk training,
+  jadi mAP50 0,540 di tabel akurasi adalah ukuran generalisasi yang
+  jujur. Catatan: deskripsi di Mendeley menyebut 50 citra; versi yang
+  diunduh dan diverifikasi tim berisi 161 citra / 263 box, dan versi
+  itulah yang dipakai.
+
+### IROSCD — Indonesia Road Surface Classification Dataset (gate basah)
+- Tautan: [Mendeley Data — IROSCD](https://data.mendeley.com/datasets/ftcrvjz92c/1)
+  (DOI 10.17632/ftcrvjz92c.1, BRIN)
+- Isi: foto kondisi permukaan jalan Indonesia, 4 kelas: normal, rusak,
+  bergelombang, basah.
+- Peran: melatih *scene classifier* YOLOv11n-cls (`scene_cls.pt`,
+  top-1 test 94,62% pada seed terpilih) yang menjadi **gate jalan
+  basah** — menekan false positive lubang pada bercak air. Dataset ini
+  **tidak** dipakai melatih detektor (tidak ada anotasi bounding box).
+
+### Foto lokal tim
+- Foto jalan yang dikumpulkan tim sendiri: 17 foto uji fungsional
+  (`reports/uji-foto-17/`) dan dokumentasi survei lapangan untuk
+  validasi SDI manual vs SDI-visual. Tidak dipublikasikan.
+
+---
+
 ## Fitur
 
 1. **Deteksi gambar** — unggah JPG/PNG; EXIF GPS terbaca otomatis bila ada.
