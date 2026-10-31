@@ -45,7 +45,7 @@ ENV PATH="/opt/venv/bin:$PATH" \
 # torch/onnxruntime; tzdata: zona waktu Asia/Jakarta untuk log & sesi.
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-      libglib2.0-0 libgomp1 tzdata \
+      libglib2.0-0 libgl1 libgomp1 tzdata \
  && rm -rf /var/lib/apt/lists/* \
  && useradd --create-home --uid 10001 jp
 

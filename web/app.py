@@ -376,7 +376,7 @@ def create_app():
         return jsonify({"ok": True, "username": admin["username"]})
 
     # Cache-buster: versi ini akan ditambahkan ke semua asset static
-    STATIC_VERSION = "39"
+    STATIC_VERSION = "40"  # 40: DROP-FULL v1 + KAMERA v1 (Mode Kamera Gambar Statis)
 
     @app.context_processor
     def inject_static_version():

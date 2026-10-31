@@ -31,6 +31,29 @@ if "%JP_DEMO_PASS%"=="GANTI_DENGAN_SANDI_KUAT_BARU" (
   exit /b 1
 )
 
+REM --- Pilih interpreter: utamakan venv di dalam repo. Python polos
+REM --- dari PATH sering TIDAK punya dependensi proyek (kasus
+REM --- ModuleNotFoundError: No module named 'flask'). Bila venv-mu
+REM --- bernama lain / memakai conda, arahkan PY ke python.exe-nya.
+set "PY=python"
+if exist ".venv\Scripts\python.exe" set "PY=.venv\Scripts\python.exe"
+if exist "venv\Scripts\python.exe" set "PY=venv\Scripts\python.exe"
+
+echo Memeriksa lingkungan Python: %PY%
+"%PY%" -c "import flask, ultralytics, torch; print('  Dependensi OK - CUDA tersedia:', torch.cuda.is_available())"
+if errorlevel 1 (
+  echo.
+  echo  ==========================================================
+  echo   BERHENTI: python di atas TIDAK punya dependensi proyek
+  echo   ^(flask/ultralytics/torch^). JalanPantau selama ini jalan
+  echo   dari venv/interpreter lain. Arahkan variabel PY di berkas
+  echo   .bat ini ke python.exe yang benar, lalu jalankan lagi.
+  echo  ==========================================================
+  echo.
+  pause
+  exit /b 1
+)
+
 where cloudflared >nul 2>nul
 if errorlevel 1 (
   echo.
@@ -45,7 +68,7 @@ if errorlevel 1 (
 )
 
 echo Menyalakan aplikasi JalanPantau di jendela baru...
-start "JalanPantau App - JANGAN DITUTUP" cmd /k python web\app.py
+start "JalanPantau App - JANGAN DITUTUP" cmd /k "%PY% web\app.py"
 
 echo Menunggu aplikasi siap (15 detik)...
 timeout /t 15 /nobreak >nul

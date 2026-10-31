@@ -8,6 +8,19 @@
 set -e
 cd "$(dirname "$0")/../.."
 
+# Library sistem untuk OpenCV. ultralytics menarik opencv-python
+# (varian penuh) yang terpasang berdampingan dengan
+# opencv-python-headless dari requirements deploy; mana yang menang
+# menulis berkas cv2 bergantung pada installer, dan varian penuh
+# butuh libGL.so.1 saat diimpor. Di image slim tanpa libgl1 hasilnya
+# ImportError: libGL.so.1 (terjadi di Codespaces, 31 Okt 2026).
+# Paket Docker memasang libgl1 lewat Dockerfile; di sini lewat apt.
+if command -v sudo >/dev/null 2>&1; then
+  echo "== Memasang library sistem OpenCV (libgl1, libglib2.0-0) =="
+  sudo apt-get update
+  sudo apt-get install -y libgl1 libglib2.0-0
+fi
+
 if [ ! -x .venv/bin/python ]; then
   echo "== Membuat virtualenv .venv =="
   python -m venv .venv
