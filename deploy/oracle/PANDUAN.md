@@ -234,6 +234,7 @@ docker run --rm -v <nama-volume-dari-docker-volume-ls>:/data -v "$PWD":/backup \
 | Login gagal terus / berputar ke halaman login | `JP_HTTPS` tidak cocok dengan skema akses: HTTP via IP → `0`; HTTPS domain → `1` |
 | Container app restart terus | `docker compose logs app` — paling sering: `.env` belum dibuat, atau volume lama berisi DB dari versi tak cocok (uji: ganti nama volume di compose untuk DB bersih) |
 | Inferensi sangat lambat | Wajar untuk request pertama (muat model). Bila terus lambat: naikkan shape ke 4 OCPU/24 GB dari Console (instance berhenti sebentar) |
+| Mode live gagal mulai / tracker error | Pastikan image ter-build dari `requirements-deploy.txt` versi terbaru — tracker ByteTrack butuh `scipy` + `lap` yang kini dicantumkan eksplisit (ultralytics ≥ 8.4 tidak lagi menariknya otomatis). Gejala khas bila absen: log berisi `requirement ['lap>=0.5.12'] not found` |
 | SSH tidak bisa masuk | Kunci privat salah file/longgar permission (`chmod 600`), atau IP publik berubah setelah instance dibuat ulang |
 
 ## Checklist menjelang presentasi

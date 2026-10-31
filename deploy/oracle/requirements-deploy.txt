@@ -22,6 +22,13 @@
 # dicantumkan eksplisit seperti di requirements.txt repo.
 # --------------------------------------------------------------------------
 ultralytics>=8.2        # deteksi foto via best.pt (YOLO) + scene classifier
+scipy>=1.11             # WAJIB eksplisit: ultralytics >= 8.4 tidak lagi
+lap>=0.5.12             # menarik keduanya sbg dependensi inti, padahal
+                        # tracker live (ByteTrack) membutuhkannya untuk
+                        # assignment track (ada di requirements.lock.txt
+                        # repo). Tanpa ini mode live error saat stream
+                        # mulai — terverifikasi pada uji deploy 31 Okt 2026
+                        # (foto tetap jalan; peringatan 'lap not found').
 opencv-python-headless>=4.9
 flask>=3.0
 flask-limiter>=3.5
