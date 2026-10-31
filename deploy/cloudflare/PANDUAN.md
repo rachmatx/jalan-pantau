@@ -32,7 +32,16 @@
      `cloudflared.exe`, taruh di folder yang masuk PATH (mis.
      `C:\Windows` atau folder khusus yang kamu daftarkan ke PATH).
    Cek: buka CMD baru, `cloudflared --version` harus menjawab.
-3. Buka `mulai-tunnel.bat` (di folder ini) dengan Notepad, edit dua
+3. **Reset akun admin di database PC ini (SEKALI, wajib).** Aplikasi
+   hanya menanam akun admin saat tabel admin kosong
+   (`database.init_admin`), dan di PC ini aplikasi sudah pernah
+   jalan — jadi admin lama sudah tertanam, kemungkinan besar masih
+   bersandi bawaan `jalanpantau2026`. Mengganti `JP_DEMO_PASS` di
+   .bat TIDAK mengubah sandi yang sudah tertanam itu. Obatnya:
+   dobel-klik **`reset-admin.bat`** di folder ini (menghapus baris
+   akun admin saja; data riwayat aman). Pada start berikutnya lewat
+   `mulai-tunnel.bat`, admin ditanam ulang memakai sandi dari .bat.
+4. Buka `mulai-tunnel.bat` (di folder ini) dengan Notepad, edit dua
    baris di bagian atas:
    - `JP_SECRET_KEY` — isi string acak panjang apa saja (sekali ini,
      seterusnya jangan diganti-ganti supaya sesi login tidak rusak).
