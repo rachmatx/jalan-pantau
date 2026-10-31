@@ -1,0 +1,18 @@
+# Contoh konfigurasi Cloudflare NAMED Tunnel di Windows.
+# Simpan hasil akhirnya sebagai:
+#   %USERPROFILE%\.cloudflared\config.yml
+# setelah `cloudflared tunnel login`, `tunnel create jalanpantau`,
+# dan `tunnel route dns jalanpantau app`.
+#
+# UUID & nama berkas .json diisi dari keluaran perintah create —
+# jangan pakai nilai contoh di bawah apa adanya.
+
+tunnel: 00000000-0000-0000-0000-000000000000
+credentials-file: C:\Users\GANTI_USER\.cloudflared\00000000-0000-0000-0000-000000000000.json
+
+ingress:
+  # Domain sendiri -> aplikasi lokal JalanPantau (127.0.0.1:5000)
+  - hostname: app.GANTI_DOMAINMU.tech
+    service: http://127.0.0.1:5000
+  # Semua hostname lain ditolak
+  - service: http_status:404

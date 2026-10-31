@@ -86,3 +86,66 @@ URL tetap bisa didapat lewat **Named Tunnel**: akun Cloudflare gratis
 dipindah nameserver-nya ke Cloudflare, lalu tunnel diikat ke
 subdomain tetap (mis. `app.namadomain.tech`). Kerjakan setelah
 presentasi, saat tidak ada tekanan deadline.
+
+## Mode domain sendiri (Named Tunnel) — langkah penuh Windows
+
+Quick Tunnel memang TIDAK bisa memakai domain sendiri; URL acak
+adalah harga dari "tanpa akun". Named Tunnel bisa, dari PC yang
+sama, tanpa biaya dan tanpa kartu. Waktu aktif pengerjaannya
+±15–30 menit; satu-satunya bagian yang tidak bisa dijanjikan
+waktunya adalah propagasi nameserver (menit s.d. beberapa jam).
+
+1. **Akun + daftarkan domain di Cloudflare.** Daftar di
+   cloudflare.com (email saja) → **Add a site** → masukkan domain
+   `.tech` kamu → plan **Free** → Cloudflare memberi DUA nameserver.
+   Catat keduanya persis.
+2. **Pindah nameserver di Namecheap.** Namecheap → Domain List →
+   Manage (domainmu) → Nameservers → **Custom DNS** → isi dua
+   nameserver Cloudflare → simpan. Balik ke dashboard Cloudflare
+   dan tunggu status domain jadi **Active** (ada email konfirmasi).
+   Selama belum Active, langkah berikutnya belum bisa jalan.
+3. **Ikat cloudflared ke akunmu** (CMD biasa, bukan PowerShell
+   juga boleh):
+
+   ```
+   cloudflared tunnel login
+   ```
+
+   Browser terbuka → pilih domainmu → **Authorize**. Berkas
+   `cert.pem` tersimpan di `%USERPROFILE%\.cloudflared\`.
+4. **Buat tunnel-nya:**
+
+   ```
+   cloudflared tunnel create jalanpantau
+   ```
+
+   Catat UUID yang dicetak + berkas `<UUID>.json` yang dibuat di
+   folder `.cloudflared` yang sama.
+5. **Arahkan subdomain ke tunnel:**
+
+   ```
+   cloudflared tunnel route dns jalanpantau app
+   ```
+
+   Ini membuat `app.domainmu.tech`. (Ganti `app` bila mau nama
+   subdomain lain.)
+6. **Tulis config.** Salin `config-contoh.yml` dari folder ini ke
+   `%USERPROFILE%\.cloudflared\config.yml`, lalu isi UUID, path
+   credentials (ingat: user Windows-mu, mis. `C:\Users\R\...`),
+   dan hostname dari langkahmu.
+7. **Jalankan.** Matikan quick tunnel dulu (Ctrl+C di jendelanya),
+   aplikasi biarkan tetap jalan, lalu:
+
+   ```
+   cloudflared tunnel run jalanpantau
+   ```
+
+8. **Uji** `https://app.domainmu.tech` dari HP (data seluler):
+   halaman, deteksi, login, peta — sama seperti uji quick tunnel.
+
+Bila mau tunnel-nya menyala otomatis sebagai service Windows:
+jalankan `cloudflared service install` dari CMD **Run as
+administrator** (sekali saja); aplikasinya tetap dinyalakan lewat
+`mulai-tunnel.bat` tanpa bagian tunnel, atau jadwalkan .bat itu di
+Task Scheduler. Untuk masa presentasi, menjalankan manual seperti
+langkah 7 sudah cukup dan lebih mudah diawasi.
