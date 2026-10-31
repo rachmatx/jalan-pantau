@@ -371,6 +371,88 @@ if (viewerGambar) {
   });
 }
 
+/* === DROP SELURUH HALAMAN — penanda versi: DROP-FULL v1 (31 Okt 2026) ===
+   Permintaan user: area terima drag & drop diperluas ke SELURUH tampilan
+   halaman Gambar Statis, walau kotak dropzone-nya sendiri tetap kecil
+   (tampilan dropzone TIDAK diubah). File yang dijatuhkan di titik mana pun
+   pada halaman ini masuk ke terimaBerkas() yang sama seperti dropzone.
+   Anti-bocor ke halaman/panel lain:
+   1) deteksi.js hanya dimuat oleh deteksi.html — halaman Peta/Riwayat/
+      Segmen/Kalibrasi/Tentang tidak memuat skrip ini sama sekali.
+   2) Penjaga panel: saat tab Live Streaming aktif, pilihTab() di live.js
+      menyembunyikan #panel-gambar (hidden) -> drop TIDAK diterima sebagai
+      foto; hanya dicegah agar browser tidak membuka berkasnya, plus pesan
+      status menyuruh pindah tab dulu.
+   3) Hanya drag yang membawa Files yang dicegat; menyeret teks, link,
+      atau elemen halaman dibiarkan lewat seperti biasa.
+   4) Saat ada dialog modal terbuka (konfirmasi/login), drop dilewati. */
+(function dropSeluruhHalaman() {
+  const panelStatis = document.getElementById("panel-gambar");
+  if (!panelStatis) return;
+
+  // Lapisan petunjuk sepenuh layar. pointer-events:none WAJIB: target drop
+  // harus tetap elemen di bawah kursor, bukan lapisan ini, supaya handler
+  // dropzone/viewer lama tetap bisa dikenali lewat e.target.
+  const lapis = document.createElement("div");
+  lapis.id = "drop-lapis-halaman";
+  lapis.setAttribute("aria-hidden", "true");
+  lapis.style.cssText = "position:fixed;inset:12px;z-index:9998;pointer-events:none;" +
+    "display:none;align-items:center;justify-content:center;text-align:center;" +
+    "background:rgba(0,97,148,.08);border:2px dashed #006194;border-radius:16px;" +
+    "color:#006194;font:600 16px 'Inter',system-ui,sans-serif;padding:16px";
+  lapis.textContent = "Lepaskan foto JPG/PNG di mana saja untuk deteksi";
+  document.body.appendChild(lapis);
+
+  let hitungMasuk = 0; // penghitung dragenter/dragleave agar overlay tak berkedip
+  const adaBerkas = (e) => {
+    const t = e.dataTransfer && e.dataTransfer.types;
+    return !!t && [...t].includes("Files");
+  };
+  const dialogTerbuka = () => !!document.querySelector("dialog[open]");
+  const layakTerima = () => !panelStatis.hidden && !dialogTerbuka();
+  function tampil() { lapis.style.display = "flex"; }
+  function sembunyi() { hitungMasuk = 0; lapis.style.display = "none"; }
+
+  window.addEventListener("dragenter", (e) => {
+    if (!adaBerkas(e) || !layakTerima()) return;
+    e.preventDefault();
+    hitungMasuk++;
+    tampil();
+  });
+  window.addEventListener("dragover", (e) => {
+    if (!adaBerkas(e)) return;
+    // Selalu cegat dragover berkas di halaman ini: syarat agar drop bisa
+    // diterima, sekaligus mencegah browser membuka berkas saat dilepas
+    // di luar zona (termasuk saat tab Live aktif).
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = layakTerima() ? "copy" : "none";
+  });
+  window.addEventListener("dragleave", (e) => {
+    if (!adaBerkas(e)) return;
+    hitungMasuk = Math.max(0, hitungMasuk - 1);
+    if (hitungMasuk === 0) sembunyi();
+  });
+  window.addEventListener("drop", (e) => {
+    if (!adaBerkas(e)) return;
+    e.preventDefault();
+    const diZonaLama = !!(e.target && e.target.closest &&
+      e.target.closest(".jp-dropzone, #viewer-gambar"));
+    const panelLiveAktif = panelStatis.hidden;
+    sembunyi();
+    if (panelLiveAktif) {
+      status.textContent = "Foto hanya bisa dijatuhkan di tab Gambar Statis — " +
+        "pindah tab dulu, lalu jatuhkan lagi.";
+      status.classList.add("galat");
+      return;
+    }
+    if (dialogTerbuka() || diZonaLama) return; // zona lama sudah punya handler sendiri
+    terimaBerkas(e.dataTransfer.files);
+  });
+  // Drag dibatalkan / jendela ditinggalkan: overlay jangan menggantung.
+  window.addEventListener("dragend", sembunyi);
+  document.addEventListener("visibilitychange", () => { if (document.hidden) sembunyi(); });
+})();
+
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   const berkas = document.getElementById("gambar").files[0];

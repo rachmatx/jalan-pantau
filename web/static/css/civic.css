@@ -1764,3 +1764,97 @@ label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label da
   .jp-rowact button { min-height: 36px; }
   .jp-pageactions a, .jp-pageactions button { min-height: 40px; }
 }
+
+/* ============================================================
+   Mode Kamera — panel Gambar Statis (KAMERA v1, 31 Okt 2026)
+   Tombol kecil di kepala viewer + lapisan kamera sepenuh viewer.
+   Lapisan bertanda data-zoom-fixed di template: zoom.js tidak
+   membungkusnya, jadi posisinya tidak ikut transform pan/zoom.
+   ============================================================ */
+.jp-head-kanan { display: inline-flex; align-items: center; gap: 10px; }
+.jp-btn-kamera {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--jp-primary); color: var(--jp-primary);
+  background: var(--jp-surface); border-radius: 8px;
+  font-size: 12px; font-weight: 600; padding: 7px 12px;
+  min-height: 36px; cursor: pointer; white-space: nowrap;
+}
+.jp-btn-kamera svg { width: 15px; height: 15px; }
+.jp-btn-kamera:hover { background: var(--jp-container-low); }
+.jp-btn-kamera.aktif { background: var(--jp-primary); color: #fff; }
+
+#lapis-kamera {
+  position: absolute; inset: 0; z-index: 30;
+  background: var(--jp-ink2); overflow: hidden;
+}
+#lapis-kamera[hidden] { display: none; }
+#lapis-kamera video, #lapis-kamera img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+#lapis-kamera video[hidden], #lapis-kamera img[hidden] { display: none; }
+.jp-kam-chip {
+  position: absolute; top: 12px; z-index: 2;
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(11, 28, 48, .72); color: #fff;
+  font-size: 11px; font-weight: 600; letter-spacing: .03em;
+  padding: 5px 10px; border-radius: 999px;
+}
+.jp-kam-chip .jp-dot { background: #4ade80; }
+.jp-kam-chip-kiri { left: 12px; }
+.jp-kam-chip-kanan { right: 12px; font-family: var(--jp-mono); font-weight: 500; }
+.jp-kam-chip-kanan:empty { display: none; }
+.jp-kam-petunjuk {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  bottom: 92px; z-index: 2; margin: 0; white-space: nowrap;
+  background: rgba(11, 28, 48, .65); color: #fff;
+  font-size: 12px; padding: 5px 12px; border-radius: 999px;
+  max-width: calc(100% - 24px); overflow: hidden; text-overflow: ellipsis;
+}
+.jp-kam-kontrol {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px;
+  background: linear-gradient(transparent, rgba(11, 28, 48, .55));
+}
+.jp-kam-kontrol[hidden] { display: none; }
+#kontrol-kamera-foto { justify-content: center; gap: 10px; }
+#kontrol-kamera-foto .jp-btn-light, #kontrol-kamera-foto .jp-btn-save {
+  min-height: 48px; padding: 0 18px; font-size: 13px;
+}
+.jp-kam-samping {
+  width: 48px; height: 48px; border-radius: 10px; flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, .5);
+  background: rgba(255, 255, 255, .14); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.jp-kam-samping svg { width: 22px; height: 22px; }
+.jp-kam-penyeimbang { border: none; background: none; cursor: default; }
+.jp-kam-tak-terlihat { visibility: hidden; }
+.jp-kam-jepret {
+  width: 64px; height: 64px; border-radius: 50%; flex-shrink: 0;
+  border: 4px solid #fff; background: rgba(255, 255, 255, .25);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.jp-kam-jepret::after {
+  content: ""; width: 48px; height: 48px; border-radius: 50%;
+  background: #fff; transition: transform .1s;
+}
+.jp-kam-jepret:active::after { transform: scale(.88); }
+.jp-kam-galat {
+  position: absolute; z-index: 3; left: 50%; top: 50%;
+  transform: translate(-50%, -50%); margin: 0;
+  width: min(420px, calc(100% - 48px));
+  background: var(--jp-sev-r-bg); color: var(--jp-sev-r-tx);
+  border: 1px solid var(--jp-sev-r-bd); border-radius: 10px;
+  padding: 14px 16px; font-size: 13px; text-align: center;
+}
+.jp-kam-galat[hidden] { display: none; }
+
+@media (max-width: 640px) {
+  .jp-head-viewer .jp-live-flag { display: none; }
+  .jp-kam-jepret { width: 72px; height: 72px; }
+  .jp-kam-jepret::after { width: 56px; height: 56px; }
+  .jp-kam-petunjuk { bottom: 100px; }
+}

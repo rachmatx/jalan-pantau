@@ -40,12 +40,18 @@
     <div class="jp-grid">
       <div class="jp-col-main">
         <div class="jp-card">
-          <div class="jp-card-head">
+          <div class="jp-card-head jp-head-viewer">
             <span class="jp-card-title">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
               <span>VIEWER HASIL INFERENSI</span>
             </span>
-            <span class="jp-live-flag"><span class="jp-dot"></span>LAYER INFERENCE AKTIF</span>
+            <span class="jp-head-kanan">
+              <button type="button" id="btn-mode-kamera" class="jp-btn-kamera" aria-pressed="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                <span id="btn-mode-kamera-teks">Mode Kamera</span>
+              </button>
+              <span class="jp-live-flag"><span class="jp-dot"></span>LAYER INFERENCE AKTIF</span>
+            </span>
           </div>
           <figure class="viewer zoomable" id="viewer-gambar" tabindex="0" role="application" aria-label="Penampil hasil. Roda mouse atau tombol untuk zoom, seret untuk geser, 0 pas layar, 1 ukuran asli, F layar penuh.">
             <div id="slot-gambar">
@@ -53,6 +59,27 @@
                 <div class="viewer-placeholder-icon"></div>
                 <p>Pilih gambar untuk memulai deteksi.</p>
               </div>
+            </div>
+            <!-- Lapisan Mode Kamera (KAMERA v1): data-zoom-fixed agar zoom.js
+                 tidak membungkusnya ke .zoom-inner; logika di js/kamera.js. -->
+            <div id="lapis-kamera" data-zoom-fixed hidden>
+              <video id="video-kamera" playsinline muted autoplay></video>
+              <img id="foto-kamera" alt="Hasil jepretan kamera" hidden>
+              <span class="jp-kam-chip jp-kam-chip-kiri"><span class="jp-dot"></span><span id="chip-kamera">KAMERA</span></span>
+              <span class="jp-kam-chip jp-kam-chip-kanan" id="chip-kamera-info"></span>
+              <p class="jp-kam-petunjuk" id="petunjuk-kamera">Arahkan kamera ke permukaan jalan</p>
+              <div class="jp-kam-kontrol" id="kontrol-kamera-live">
+                <button type="button" id="btn-ganti-kamera" class="jp-kam-samping jp-kam-tak-terlihat" aria-label="Ganti kamera depan atau belakang">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 2l4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>
+                </button>
+                <button type="button" id="btn-jepret" class="jp-kam-jepret" aria-label="Ambil foto"></button>
+                <span class="jp-kam-samping jp-kam-penyeimbang" aria-hidden="true"></span>
+              </div>
+              <div class="jp-kam-kontrol" id="kontrol-kamera-foto" hidden>
+                <button type="button" id="btn-foto-ulang" class="jp-btn-light"><span>Foto Ulang</span></button>
+                <button type="button" id="btn-foto-pakai" class="jp-btn-save"><span>Gunakan Foto Ini</span></button>
+              </div>
+              <p class="jp-kam-galat" id="galat-kamera" role="alert" hidden></p>
             </div>
             <div class="zoom-bar" role="toolbar" aria-label="Kontrol zoom gambar">
               <button type="button" data-z="out" aria-label="Perkecil">−</button>
@@ -425,6 +452,7 @@
 {% block skrip %}
 <script src="{{ url_for('static', filename='js/gps.js') }}?v={{ static_v }}"></script>
 <script src="{{ url_for('static', filename='js/deteksi.js') }}?v={{ static_v }}"></script>
+<script src="{{ url_for('static', filename='js/kamera.js') }}?v={{ static_v }}"></script>
 <script src="{{ url_for('static', filename='js/live.js') }}?v={{ static_v }}"></script>
 <script src="{{ url_for('static', filename='js/zoom.js') }}?v={{ static_v }}"></script>
 <script>function showToast(title, message, type = 'info') {
