@@ -1,0 +1,32 @@
+# JalanPantau — dependensi khusus deploy (Oracle Cloud ARM64 / Linux server)
+# ==========================================================================
+# Basisnya requirements.txt repo, dengan DUA penyesuaian server:
+#
+# 1) opencv-python -> opencv-python-headless.
+#    Server tidak punya layar/GUI; varian headless membuang ketergantungan
+#    libGL dan identik untuk semua pemakaian di kode (VideoCapture, imread,
+#    imwrite, CLAHE, dsb.). Tidak ada cv2.imshow di aplikasi.
+#
+# 2) torch TIDAK dipin dan TIDAK diambil dari index CUDA.
+#    ultralytics menarik torch dari PyPI; wheel torch PyPI untuk
+#    linux/aarch64 adalah build CPU (tidak ada wheel CUDA aarch64 di PyPI),
+#    jadi di instance Ampere A1 (ARM) otomatis versi CPU yang ramping.
+#    JANGAN menambahkan --index-url CUDA di sini.
+#
+# Kenapa tetap versi PENUH (bukan ONNX-only)?
+# Jalur GAMBAR aplikasi memang dirancang memakai best.pt + TTA lewat
+# ultralytics (lihat config/inferensi.yaml: jalur gambar sengaja tidak
+# dialihkan ke ONNX karena TTA dibuang untuk backend non-PyTorch, dan
+# scene classifier scene_cls.pt juga model .pt). Jalur LIVE di mesin CPU
+# otomatis memakai best.onnx (mode_backend: auto), jadi onnxruntime tetap
+# dicantumkan eksplisit seperti di requirements.txt repo.
+# --------------------------------------------------------------------------
+ultralytics>=8.2        # deteksi foto via best.pt (YOLO) + scene classifier
+opencv-python-headless>=4.9
+flask>=3.0
+flask-limiter>=3.5
+numpy>=1.26
+Pillow>=10.0
+fpdf2>=2.7
+pyyaml>=6.0
+onnxruntime>=1.17       # inferensi best.onnx (live) via CPUExecutionProvider
