@@ -17,7 +17,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 8V3h10v5M7 17H4v-7h16v7h-3M7 14h10v7H7z"/></svg>
         <span>Cetak</span>
       </button>
-      <a class="jp-btn-primary-sm" href="/">
+      <a class="jp-btn-primary-sm" href="/" style="white-space:nowrap">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
         <span>Inspeksi Baru</span>
       </a>
@@ -31,7 +31,8 @@
     <div class="jp-kpi4-card"><span class="jp-caps">TANPA SEGMEN</span><strong class="mono" id="kpi-tanpasegmen">0</strong></div>
   </div>
 
-  <div class="jp-card jp-filtercard">
+  <button type="button" class="jp-filter-toggle" id="filter-toggle" aria-expanded="false" aria-controls="filter-card">Filter &amp; Pencarian <span aria-hidden="true">⌄</span></button>
+  <div class="jp-card jp-filtercard" id="filter-card">
     <form id="filter">
       <div class="jp-filtergrid">
         <div><label class="jp-caps" for="f-dari">DARI TANGGAL</label><input type="date" id="f-dari" class="jp-input"></div>
@@ -57,6 +58,7 @@
   <div class="jp-card">
     <div class="jp-table-scroll" id="daftar" tabindex="0" role="region" aria-label="Daftar riwayat inspeksi"></div>
   </div>
+  <div class="jp-kartu-list" id="daftar-kartu" aria-label="Daftar riwayat inspeksi (kartu)"></div>
 
   <!-- Paginasi -->
   <div id="riwayat-paginasi" style="display:none;align-items:center;justify-content:center;gap:4px;margin-top:16px;flex-wrap:wrap"></div>
@@ -150,10 +152,15 @@
       </div>
       <!-- Footer Actions -->
       <div class="dialog-footer" style="width:100%;padding:12px 24px;background:var(--jp-surface);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 -1px 6px rgba(0,0,0,.03);flex-shrink:0">
-        <button type="button" id="d-hapus" class="jp-btn-danger" style="padding:8px 16px">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-          <span>Hapus Rekaman</span>
-        </button>
+        <div class="jp-menu-bungkus" id="d-menu-bungkus">
+          <button type="button" id="d-menu-btn" aria-label="Menu aksi lain" aria-haspopup="true" aria-expanded="false">⋯</button>
+          <div id="d-menu" role="menu">
+            <button type="button" id="d-hapus" class="jp-btn-danger" style="padding:8px 16px">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+              <span>Hapus Rekaman</span>
+            </button>
+          </div>
+        </div>
         <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
           <span style="font-family:var(--jp-mono);font-size:13px;font-weight:700" id="d-total">-</span>
           <button type="button" id="d-tutup" class="jp-btn-demo" style="padding:8px 16px">Tutup (Esc)</button>

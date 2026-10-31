@@ -166,6 +166,33 @@ def _gambar_untuk_laporan(data):
     return None
 
 
+def _meta_tambahan_laporan(data):
+    """Meta ekstra PDF desain hybrid dari sesi tersimpan (bila sesi_id valid):
+    waktu, lokasi, koordinat, segmen, dan id sesi untuk nomor dokumen.
+    Alur deteksi langsung (tanpa sesi) mengembalikan {} — panel data sesi
+    PDF menampilkan isian yang tersedia saja."""
+    sid = data.get("sesi_id")
+    if sid in (None, ""):
+        return {}
+    try:
+        sid = int(sid)
+    except (TypeError, ValueError):
+        return {}
+    try:
+        d = detail_sesi(sid)
+    except Exception:
+        return {}
+    if not d:
+        return {}
+    s = d["sesi"]
+    tambahan = {"SesiID": sid, "Waktu": s.get("waktu"),
+                "Lokasi": s.get("lokasi"), "Segmen": s.get("segmen_nama")}
+    lat, lon = s.get("lat"), s.get("lon")
+    if lat is not None and lon is not None:
+        tambahan["Koordinat"] = f"{lat:.6f}, {lon:.6f}"
+    return {k: v for k, v in tambahan.items() if v not in (None, "")}
+
+
 def _muat_env_file():
     """Muat berkas .env (opsional) ke os.environ TANPA menimpa env yang sudah ada.
 
@@ -376,7 +403,7 @@ def create_app():
         return jsonify({"ok": True, "username": admin["username"]})
 
     # Cache-buster: versi ini akan ditambahkan ke semua asset static
-    STATIC_VERSION = "40"  # 40: DROP-FULL v1 + KAMERA v1 (Mode Kamera Gambar Statis)
+    STATIC_VERSION = "42"  # 41: tile peta OSM Standard (CARTO wajib API key) + PDF hybrid
 
     @app.context_processor
     def inject_static_version():
@@ -397,7 +424,9 @@ def create_app():
         """
         if request.path.startswith("/api/"):
             return jsonify({"error": "Alamat API tidak dikenal."}), 404
-        return e
+        # Halaman biasa: tampilkan 404 bergaya aplikasi (dulu `return e`
+        # menyajikan halaman mentah bawaan Flask — audit UI 1 Nov 2026).
+        return render_template("error/404.html"), 404
 
     @app.errorhandler(405)
     def metode_salah(e):
@@ -652,7 +681,8 @@ def create_app():
             pdf_path = buat_pdf(
                 rows, total, img_path=_gambar_untuk_laporan(data),
                 source=data.get("source", "-"), model_name=data.get("model", "-"),
-                verifikasi=data.get("verifikasi", ""))
+                verifikasi=data.get("verifikasi", ""),
+                tambahan=_meta_tambahan_laporan(data))
         except ValueError as e:
             return jsonify({"error": str(e)}), 400
         except Exception:

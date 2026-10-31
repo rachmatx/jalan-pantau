@@ -54,7 +54,7 @@
             </span>
           </div>
           <figure class="viewer zoomable" id="viewer-gambar" tabindex="0" role="application" aria-label="Penampil hasil. Roda mouse atau tombol untuk zoom, seret untuk geser, 0 pas layar, 1 ukuran asli, F layar penuh.">
-            <div id="slot-gambar">
+            <div id="slot-gambar" class="kosong">
               <div class="viewer-placeholder">
                 <div class="viewer-placeholder-icon"></div>
                 <p>Pilih gambar untuk memulai deteksi.</p>
@@ -359,7 +359,8 @@
               <option value="halus">Halus (FPS tinggi)</option>
               <option value="seimbang">Seimbang (disarankan)</option>
             </select>
-            <p class="jp-hint">Terukur di BPID: F1 0,63 @640 vs 0,54 @960 — 640 adalah titik terbaik model ini. Preset resolusi tinggi dihapus karena frame live sudah dibatasi 640 px.</p>
+            <button type="button" class="jp-performa-toggle" id="btn-performa" aria-expanded="false">Detail performa model ›</button>
+            <p class="jp-hint" id="hint-performa">Terukur di BPID: F1 0,63 @640 vs 0,54 @960 — 640 adalah titik terbaik model ini. Preset resolusi tinggi dihapus karena frame live sudah dibatasi 640 px.</p>
           </div>
           <div class="jp-box">
             <label for="conf-live"><span>Ambang Batas Conf</span><output class="jp-conf-out" id="conf-live-out" for="conf-live">0,25</output></label>
@@ -385,6 +386,7 @@
               <div><label class="jp-hint" for="lon-live">Bujur</label><input class="jp-input jp-mono-input" type="text" id="lon-live" placeholder="107,6"></div>
             </div>
           </div>
+          <div id="aksi-live">
           <button type="button" id="mulai" class="jp-btn-go">
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg>
             <span>Mulai Stream Live</span>
@@ -398,6 +400,7 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="6" width="13" height="12" rx="2"/><path d="M15 10l7-4v12l-7-4"/></svg>
               <span>Putar Demo</span>
             </button>
+          </div>
           </div>
           <button type="button" id="buka-tabel-live" class="jp-btn-demo jp-btn-block" style="margin-top:8px">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>

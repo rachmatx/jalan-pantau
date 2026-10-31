@@ -57,6 +57,7 @@
       <div class="jp-kat" data-kat="ringan"><span>Rusak Ringan</span><b id="kat-ringan">0</b><small>SDI 100–150</small></div>
       <div class="jp-kat" data-kat="berat"><span>Rusak Berat</span><b id="kat-berat">0</b><small>SDI &gt; 150</small></div>
     </div>
+    <p class="jp-hint" id="kat-basis" style="margin-top:8px"></p>
   </div>
 
   <div class="jp-card" style="overflow:hidden">
@@ -64,7 +65,7 @@
       <span class="jp-card-title">DAFTAR SEGMEN</span>
       <span class="jp-table-count" id="tabel-hitung"></span>
     </div>
-    <div class="jp-table-scroll" tabindex="0" role="region" aria-label="Daftar segmen jalan">
+    <div class="jp-table-scroll" id="bungkus-tabel-segmen" tabindex="0" role="region" aria-label="Daftar segmen jalan">
       <table class="jp-table" style="width:100%">
         <thead>
           <tr>
@@ -85,6 +86,7 @@
       </table>
     </div>
   </div>
+  <div class="jp-kartu-list" id="kartu-segmen" aria-label="Daftar segmen jalan (kartu)"></div>
   <div id="segmen-paginasi" style="display:none;align-items:center;justify-content:center;gap:4px;margin-top:16px;flex-wrap:wrap"></div>
 
   <dialog id="dlg-segmen" class="jp-dialog jp-dialog-auto" style="max-width:860px" aria-labelledby="dg-judul">

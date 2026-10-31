@@ -1249,7 +1249,10 @@ label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label da
 .jp-dialog h3 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; }
 .jp-meta4 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 12px; border-radius: 8px; background: var(--jp-container-low); }
 @media (min-width: 640px) { .jp-meta4 { grid-template-columns: repeat(4, 1fr); } }
-.jp-meta4 span { display: block; font-size: 12px; font-weight: 600; letter-spacing: 0.05em; color: var(--jp-muted); }
+/* Hanya label langsung di sel meta — dulu `.jp-meta4 span` ikut menimpa
+   badge severity di dalam <b> (display:block membuat titik & teks badge
+   pecah dua baris). */
+.jp-meta4 > div > span { display: block; font-size: 12px; font-weight: 600; letter-spacing: 0.05em; color: var(--jp-muted); }
 .jp-meta4 b { font-size: 13px; font-weight: 600; }
 .jp-meta4 b.mono { font-family: var(--jp-mono); }
 #d-foto img { display: block; width: 100%; max-height: 44vh; object-fit: contain; background: #020617; border-radius: 8px; }
@@ -1857,4 +1860,115 @@ label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label da
   .jp-kam-jepret { width: 72px; height: 72px; }
   .jp-kam-jepret::after { width: 56px; height: 56px; }
   .jp-kam-petunjuk { bottom: 100px; }
+}
+
+/* ============================================================
+   PERBAIKAN MOBILE — audit UI/UX gabungan 1 Nov 2026.
+   Kelas baru + state nonaktif berlaku umum; seluruh perubahan
+   tata letak dibatasi @media (max-width: 640px) agar tampilan
+   desktop TIDAK berubah.
+   ============================================================ */
+
+/* Tombol berhenti nonaktif: abu netral, bukan merah pucat. */
+.jp-btn-stop:disabled { background: #E2E8F0; color: #94A3B8; opacity: 1; cursor: not-allowed; }
+
+/* Nama berkas/kode di dalam kalimat (Tentang): chip inline yang
+   mengalir mengikuti teks, bukan blok mono yang memecah kalimat. */
+.jp-kpi-sub .jp-num {
+  background: #fff; border: 1px solid #DCE6F5; border-radius: 6px;
+  padding: 0 5px; font-size: .92em; white-space: nowrap;
+}
+
+/* --- Kartu daftar (pengganti tabel khusus layar kecil) --- */
+.jp-kartu-list { display: none; }
+.jp-kartu { background: var(--jp-surface); border-radius: 14px; box-shadow: 0 1px 3px rgba(15,23,42,.07); padding: 14px; }
+.jp-kartu-kepala { display: flex; align-items: center; gap: 8px; }
+.jp-kartu-id { font-weight: 800; color: var(--jp-primary); font-size: 15px; }
+.jp-kartu-tgl { color: var(--jp-muted); font-size: 12px; }
+.jp-kartu-kepala .badge { margin-left: auto; }
+.jp-kartu-judul { font-weight: 700; font-size: 14.5px; margin-top: 9px; }
+.jp-kartu-meta { color: var(--jp-muted); font-size: 12.5px; margin-top: 3px; line-height: 1.55; }
+.jp-kartu-aksi { display: flex; gap: 8px; margin-top: 12px; border-top: 1px solid #EEF2F7; padding-top: 12px; align-items: center; }
+.jp-kartu-aksi button { min-height: 44px; padding: 0 18px; border-radius: 10px; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-family: inherit; }
+.btn-detail { background: #EFF4FF; border: 1px solid #C7DBF5; color: var(--jp-primary); }
+.btn-pdf { background: var(--jp-primary); border: 1px solid var(--jp-primary); color: #fff; }
+.btn-hapus { margin-left: auto; background: #FEF2F2; border: 1px solid #FECACA; color: #B91C1C; }
+.jp-kartu-sdi { display: flex; align-items: flex-end; gap: 10px; margin-top: 12px; }
+.jp-kartu-sdi .angka { font-size: 34px; font-weight: 800; line-height: 1; }
+.jp-kartu-sdi .label { font-size: 10px; letter-spacing: .07em; color: var(--jp-muted); font-weight: 700; }
+.jp-kartu-sdi .banding { margin-left: auto; text-align: right; font-size: 12px; color: var(--jp-muted); line-height: 1.6; }
+.jp-kartu-sdi .banding b { color: var(--jp-ink); }
+.jp-kartu-kosong { border: 1.5px dashed #CBD5E1; background: var(--jp-bg); border-radius: 12px; padding: 16px 14px; text-align: center; margin-top: 12px; }
+.jp-kartu-kosong .t { font-weight: 800; color: var(--jp-muted); font-size: 14px; letter-spacing: .03em; }
+.jp-kartu-kosong p { color: #64748B; font-size: 12.5px; margin-top: 5px; line-height: 1.55; }
+
+/* Menu titik-tiga pada footer dialog detail Riwayat.
+   Desktop: pembungkus transparan (display:contents) — tampilan sama. */
+.jp-menu-bungkus { display: contents; }
+#d-menu-btn { display: none; }
+#d-menu { display: contents; }
+
+/* Tombol lipat (filter Riwayat, detail performa Live): khusus mobile. */
+.jp-filter-toggle, .jp-performa-toggle { display: none; }
+
+/* Pembungkus aksi Live: transparan di desktop; dipindah JS ke bawah
+   viewer pada layar bertumpuk dan menjadi kolom tombol. */
+#aksi-live { display: contents; }
+#aksi-live.pindah { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+
+@media (max-width: 640px) {
+  /* Daftar: kartu menggantikan tabel (desktop tetap tabel). */
+  #daftar { display: none; }
+  #bungkus-tabel-segmen { display: none; }
+  .jp-kartu-list { display: flex; flex-direction: column; gap: 12px; }
+
+  /* Target sentuh minimum 44px pada kontrol utama. */
+  .jp-input, .jp-select { min-height: 44px; }
+  .jp-tab { min-height: 44px; }
+  .jp-rowact button { min-height: 44px; padding: 0 12px; }
+  .jp-dialog-foot button, .dialog-footer button { min-height: 44px; }
+  .jp-footer-links a { padding: 8px 4px; display: inline-block; }
+
+  /* Dialog menjadi bottom-sheet: satu gulir, footer lengket. */
+  .jp-dialog { width: 100% !important; max-width: 100% !important; margin: auto 0 0; border-radius: 16px 16px 0 0; height: 92dvh; max-height: 92dvh; }
+  .jp-dialog.jp-dialog-auto { height: fit-content; }
+  #detail .dialog-footer { flex-wrap: nowrap; }
+  #d-pdf { flex: 1; }
+  #d-tutup { display: none; } /* tutup tetap via tombol X / Esc */
+  .jp-menu-bungkus { display: block; position: relative; }
+  #d-menu-btn { display: inline-flex; width: 44px; height: 44px; align-items: center; justify-content: center; border: 1px solid var(--jp-line); border-radius: 10px; background: #fff; font-size: 18px; font-weight: 800; cursor: pointer; }
+  #d-menu { display: none; position: absolute; bottom: 52px; left: 0; background: #fff; border: 1px solid var(--jp-line); border-radius: 12px; box-shadow: 0 10px 30px rgba(15,23,42,.18); padding: 6px; min-width: 190px; z-index: 5; }
+  .jp-menu-bungkus.buka #d-menu { display: block; }
+  #d-menu #d-hapus { width: 100%; }
+
+  /* Filter Riwayat dilipat di belakang tombol. */
+  .jp-filter-toggle { display: flex; align-items: center; width: 100%; min-height: 44px; padding: 0 14px; margin-bottom: 12px; background: var(--jp-surface); border: none; border-radius: 14px; box-shadow: 0 1px 3px rgba(15,23,42,.07); font: inherit; font-weight: 700; font-size: 14px; color: var(--jp-ink); cursor: pointer; }
+  .jp-filter-toggle span { margin-left: auto; color: var(--jp-muted); }
+
+  /* Peta: panel menyisakan lajur kanan untuk tombol melayang,
+     kontrol 44px, drawer berhenti di atas garis atribusi. */
+  .jp-mapfilter { top: 10px; left: 10px; width: calc(100% - 74px); padding: 10px; }
+  .jp-mapfilter-top { flex-wrap: wrap; }
+  .jp-mapctrl { top: 10px; right: 10px; }
+  .jp-mapctrl button { width: 44px; height: 44px; }
+  .jp-sevchip { min-height: 44px; padding: 2px 12px; }
+  .jp-search input { min-height: 44px; }
+  #peta-reset-filter { min-width: 44px; min-height: 44px; }
+  .leaflet-bar a { width: 44px !important; height: 44px !important; line-height: 44px !important; }
+  .jp-drawer { bottom: 30px; right: 10px; left: 64px; width: auto; } /* lajur kiri untuk kontrol zoom Leaflet */
+  .gps-toast { position: absolute; left: 10px; right: 64px; z-index: 600; }
+
+  /* Deteksi: viewer statis lebih ringkas + CTA lengket di bawah. */
+  #viewer-gambar { height: 46vh; min-height: 230px; }
+  #viewer-gambar:has(#slot-gambar.kosong) { height: 150px; min-height: 150px; }
+  #tombol { position: sticky; bottom: 10px; z-index: 45; box-shadow: 0 8px 24px rgba(0,97,148,.35); }
+  .jp-performa-toggle { display: inline-flex; align-items: center; min-height: 44px; background: none; border: none; color: var(--jp-primary); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; padding: 0; }
+  #hint-performa { display: none; }
+  #hint-performa.buka { display: block; }
+
+  #d-total { display: none; } /* info segmen tetap ada di badan dialog */
+  #d-ttd { grid-template-columns: 1fr !important; }
+
+  /* Tentang & judul tabel: judul + label ditumpuk, tidak bertabrakan. */
+  .jp-table-title { flex-direction: column; align-items: flex-start; gap: 2px; }
 }

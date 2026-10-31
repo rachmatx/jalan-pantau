@@ -18,10 +18,9 @@ var defaultZoom = lokasiDef.data.zoom;
 var map = L.map("map", { zoomControl: false }).setView(defaultLl, defaultZoom);
 L.control.zoom({ position: "bottomleft" }).addTo(map);
 
-const osm = L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-  subdomains: "abcd",
-  maxZoom: 20,
-  attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
+const osm = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19,
+  attribution: "&copy; OpenStreetMap contributors",
 }).addTo(map);
 const satelit = L.tileLayer(
   "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
@@ -126,6 +125,17 @@ function tampilkanPeringatanGPSInline() {
   div.innerHTML = '<span style="flex:1"><b>GPS tidak diizinkan.</b> Aktifkan izin lokasi di browser untuk live tracking. Lokasi default: ' + esc(namaDef) + '.</span>' +
     '<button type="button" aria-label="Tutup peringatan" style="border:none;background:none;color:#991B1B;font-size:15px;line-height:1;cursor:pointer;padding:6px 8px;min-width:28px;min-height:28px">×</button>';
   div.querySelector("button").addEventListener("click", function () { div.remove(); });
+  // Layar kecil: tampilkan sebagai toast melayang di bawah panel filter
+  // (tidak lagi menyisip di dalam panel dan memotong pill hitungan).
+  if (window.matchMedia("(max-width: 640px)").matches) {
+    var stage = document.querySelector(".jp-mapstage");
+    if (stage) {
+      div.classList.add("gps-toast");
+      div.style.top = (card.offsetTop + card.offsetHeight + 8) + "px";
+      stage.appendChild(div);
+      return;
+    }
+  }
   var top = card.querySelector(".jp-mapfilter-top");
   if (top && top.nextSibling) card.insertBefore(div, top.nextSibling);
   else card.appendChild(div);
@@ -137,9 +147,9 @@ setTimeout(mulaiLiveGPS, 100);
 function ikon(worst) {
   return L.divIcon({
     className: "",
-    html: `<div class="titik titik-${String(worst).toLowerCase()}"></div>`,
-    iconSize: [18, 18],
-    iconAnchor: [9, 9],
+    html: `<div class="titik titik-${String(worst).toLowerCase()}" style="width:26px;height:26px"></div>`,
+    iconSize: [26, 26],
+    iconAnchor: [13, 13],
   });
 }
 

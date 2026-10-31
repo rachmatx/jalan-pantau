@@ -46,9 +46,10 @@ class TestSegmen(unittest.TestCase):
         d = db.detail_segmen(gid)
         self.assertEqual(d["nama"], "Segmen 1")
         self.assertEqual(d["anggota"], [])
-        # SDI segmen kosong -> 0 / Baik
+        # SDI segmen kosong -> total 0, kategori NETRAL (None): belum ada
+        # data, bukan "Baik" (audit UI 1 Nov 2026).
         self.assertEqual(d["sdi"]["sdi_total"], 0)
-        self.assertEqual(d["sdi"]["kategori"], "Baik")
+        self.assertIsNone(d["sdi"]["kategori"])
         # ubah + manual
         self.assertTrue(db.ubah_segmen(gid, nama="Segmen 1A", sdi_manual=25))
         d = db.detail_segmen(gid)

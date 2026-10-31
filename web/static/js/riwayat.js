@@ -70,6 +70,25 @@ function renderPaginasi(total) {
   }
 }
 
+// Kartu sesi untuk layar kecil (CSS menampilkan kartu, menyembunyikan
+// tabel, pada <= 640px). Isi & aksi sama persis dengan baris tabel.
+function kartuSesi(r) {
+  var meta = esc(r.sumber) + " · " + esc(r.n_temuan) + " temuan · " +
+    (r.segmen_nama ? esc(r.segmen_nama) : "belum masuk segmen");
+  var koord = (r.lat == null || r.lon == null) ? ""
+    : '<br><span class="mono">' + esc(koordinat(r)) + "</span>";
+  return '<article class="jp-kartu">' +
+    '<div class="jp-kartu-kepala"><span class="jp-kartu-id">#' + r.id + "</span>" +
+    '<span class="jp-kartu-tgl">' + esc(tanggal(r.waktu)) + "</span>" + badge(r.worst) + "</div>" +
+    '<div class="jp-kartu-judul">' + esc(r.lokasi) + "</div>" +
+    '<div class="jp-kartu-meta">' + meta + koord + "</div>" +
+    '<div class="jp-kartu-aksi">' +
+    '<button type="button" class="btn-detail" data-act="detail" data-id="' + r.id + '">Detail</button>' +
+    '<button type="button" class="btn-pdf" data-act="pdf" data-id="' + r.id + '">\u2B73 PDF</button>' +
+    '<button type="button" class="btn-hapus" data-act="hapus" data-id="' + r.id + '">Hapus</button>' +
+    "</div></article>";
+}
+
 function renderTabel() {
   var rows = barisTerakhir;
   if (!rows.length) {
@@ -79,6 +98,8 @@ function renderTabel() {
       '<p>Mulai deteksi kerusakan jalan, lalu simpan hasilnya ke riwayat.</p>' +
       '<a href="/" class="jp-btn-primary-sm" style="margin-top:8px">Mulai Deteksi</a>' +
     '</div>';
+    var dkKosong = document.getElementById("daftar-kartu");
+    if (dkKosong) dkKosong.innerHTML = "";
     document.getElementById("f-info").textContent = "Tidak ada catatan inspeksi.";
     renderPaginasi(0);
     return;
@@ -101,7 +122,9 @@ function renderTabel() {
   }).join("");
   var thead = '<tr><th>WAKTU &amp; ID</th><th>SUMBER</th><th>LOKASI &amp; GEOTAG</th><th>SEVERITY</th><th>TEMUAN</th><th>SEGMEN</th><th>AKSI</th></tr>';
   daftar.innerHTML = '<table class="jp-table"><thead>' + thead + '</thead><tbody>' + tbody + '</tbody></table>';
-  var btns = daftar.querySelectorAll("[data-act]");
+  var daftarKartu = document.getElementById("daftar-kartu");
+  if (daftarKartu) daftarKartu.innerHTML = pageRows.map(kartuSesi).join("");
+  var btns = document.querySelectorAll('#daftar [data-act], #daftar-kartu [data-act]');
   for (var i = 0; i < btns.length; i++) {
     (function(b) {
       b.onclick = function(e) {
@@ -217,9 +240,7 @@ async function bukaDetail(id) {
   const s = aktif.sesi;
   document.getElementById("d-judul").textContent = `Detail Inspeksi #${s.id} — ${s.lokasi}`;
   document.getElementById("d-subjudul").innerHTML =
-    `<span>Sektor ${esc(s.lokasi || '-')}</span><span style="color:var(--jp-outline)">•</span>` +
-    `<span>Klasifikasi Jalan: -</span><span style="color:var(--jp-outline)">•</span>` +
-    `<span>Konstruksi: -</span>`;
+    `<span>Sektor ${esc(s.lokasi || '-')}</span>`;
   document.getElementById("d-nomor").textContent = `BA #${s.id}`;
   document.getElementById("d-meta").innerHTML =
     `<div><span>WAKTU AUDIT</span><b>${esc(tanggal(s.waktu))}</b></div>` +
@@ -395,5 +416,48 @@ document.getElementById("d-tutup").addEventListener("click", () => {
 document.getElementById("d-x").addEventListener("click", () => {
   if (detail.open) detail.close();
 });
+
+// Filter dilipat secara default di layar kecil (tombol hanya tampil
+// pada <= 640px lewat CSS); desktop tidak terpengaruh.
+(function() {
+  var tgl = document.getElementById("filter-toggle");
+  var card = document.getElementById("filter-card");
+  if (!tgl || !card) return;
+  var kecil = window.matchMedia("(max-width: 640px)");
+  function terapkan() {
+    if (kecil.matches) {
+      card.style.display = "none";
+      tgl.setAttribute("aria-expanded", "false");
+    } else {
+      card.style.display = "";
+      tgl.setAttribute("aria-expanded", "true");
+    }
+  }
+  tgl.addEventListener("click", function() {
+    var tersembunyi = card.style.display === "none";
+    card.style.display = tersembunyi ? "" : "none";
+    tgl.setAttribute("aria-expanded", tersembunyi ? "true" : "false");
+  });
+  if (kecil.addEventListener) kecil.addEventListener("change", terapkan);
+  terapkan();
+})();
+
+// Menu titik-tiga: wadah Hapus pada footer dialog (mobile).
+(function() {
+  var bungkus = document.getElementById("d-menu-bungkus");
+  var btn = document.getElementById("d-menu-btn");
+  if (!bungkus || !btn) return;
+  btn.addEventListener("click", function(e) {
+    e.stopPropagation();
+    var buka = bungkus.classList.toggle("buka");
+    btn.setAttribute("aria-expanded", buka ? "true" : "false");
+  });
+  document.addEventListener("click", function(e) {
+    if (!bungkus.contains(e.target)) {
+      bungkus.classList.remove("buka");
+      btn.setAttribute("aria-expanded", "false");
+    }
+  });
+})();
 
 muat();

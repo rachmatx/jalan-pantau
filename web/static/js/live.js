@@ -11,6 +11,12 @@ function pilihTab(live) {
   tabLive.setAttribute("aria-selected", String(live));
   panelGambar.hidden = live;
   panelLive.hidden = !live;
+  // Teks status mengikuti konteks tab (audit UI 1 Nov 2026: teks bawaan
+  // versi unggah foto tidak cocok untuk tab Live).
+  var st = document.getElementById("status");
+  if (st) st.textContent = live
+    ? "Siap streaming. Arahkan kamera ke permukaan jalan, lalu tekan Mulai."
+    : "Siap mendeteksi. Unggah foto jalan JPG atau PNG.";
 }
 tabGambar.addEventListener("click", () => pilihTab(false));
 tabLive.addEventListener("click", () => pilihTab(true));
@@ -604,3 +610,41 @@ function showToast(title, message, type) {
   container.appendChild(toast);
   setTimeout(function () { toast.remove(); }, 5000);
 }
+
+// --- Perbaikan mobile (audit 1 Nov 2026) ---
+// Pada tata letak bertumpuk (< 1024px), tombol aksi Live dipindah ke
+// tepat di bawah viewer agar tidak terkubur di bawah seluruh parameter.
+// Di desktop node dikembalikan ke rumah asalnya; pembungkus #aksi-live
+// memakai display:contents sehingga tata letak desktop tidak berubah.
+(function() {
+  var aksi = document.getElementById("aksi-live");
+  if (!aksi || !aksi.parentNode) return;
+  var penanda = document.createComment("rumah-aksi-live");
+  aksi.parentNode.insertBefore(penanda, aksi);
+  var mq = window.matchMedia("(max-width: 1023.98px)");
+  function susun() {
+    if (mq.matches) {
+      var kartu = document.querySelector("#panel-live .jp-col-main .jp-card");
+      if (kartu && aksi.parentNode !== kartu.parentNode) kartu.after(aksi);
+      else if (kartu && aksi.previousElementSibling !== kartu) kartu.after(aksi);
+      aksi.classList.add("pindah");
+    } else {
+      if (penanda.parentNode) penanda.parentNode.insertBefore(aksi, penanda.nextSibling);
+      aksi.classList.remove("pindah");
+    }
+  }
+  if (mq.addEventListener) mq.addEventListener("change", susun);
+  susun();
+})();
+
+// Catatan benchmark resolusi: di layar kecil dilipat di belakang
+// tautan "Detail performa model" (tombol hanya tampil <= 640px).
+(function() {
+  var btn = document.getElementById("btn-performa");
+  var hint = document.getElementById("hint-performa");
+  if (!btn || !hint) return;
+  btn.addEventListener("click", function() {
+    var buka = hint.classList.toggle("buka");
+    btn.setAttribute("aria-expanded", buka ? "true" : "false");
+  });
+})();
