@@ -616,15 +616,21 @@ class TestGabungFragmen(unittest.TestCase):
         self.assertEqual(gf["iou_min"], 0.3)
         self.assertEqual(gf["inter_min"], 0.5)
 
-    def test_default_conf_slider_naik_030(self):
-        """Default slider 0,30 (18 Okt 2026): recall pothole tetap, FP turun."""
+    def test_default_conf_slider_samakan_jurnal_025(self):
+        """Default slider 0,25 (31 Okt 2026): disamakan ke naskah jurnal.
+
+        Sebelumnya 0,30 (18 Okt 2026; F1 terbaik pada sapuan BPID).
+        Diganti bukan karena hasil ukurnya berubah, melainkan agar kode
+        sama dengan ambang operasi yang tertulis di naskah.
+        """
         import inspect
         import web.app as app_mod
-        self.assertEqual(app_mod.CONF_DEFAULT, 0.30)
+        self.assertEqual(app_mod.CONF_DEFAULT, 0.25)
         import deteksi
         # Default di tanda tangan fungsi WAJIB sama dengan CONF_DEFAULT app;
         # kalau melenceng, pemanggil programatis diam-diam memakai ambang lain
-        # (terbaru: analisis_gambar() masih 0,25 sementara app sudah 0,30).
+        # (pernah kejadian: analisis_gambar() tertinggal di 0,25 saat app
+        # sempat naik ke 0,30).
         tanda = inspect.signature(deteksi.analisis_gambar).parameters["conf"]
         self.assertAlmostEqual(tanda.default, app_mod.CONF_DEFAULT)
         deteksi._infer = None

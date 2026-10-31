@@ -161,10 +161,11 @@ gabung_fragmen:
 # Toleransi per kelas (relatif terhadap slider — slider tetap batas mutlak).
 # Efektif = slider - toleransi. Retak tipis boleh lolos sedikit di bawah
 # slider, tapi menaikkan slider selalu memperketat semua kelas.
-# CATATAN: slider di UI (default 0,30) adalah titik operasi terbaik yang
-# diukur — lihat `web/app.py CONF_DEFAULT`. Angka 0,30 dipilih karena recall
-# pothole tetap 0,60 sementara FP turun 111 -> 90 dibanding slider 0,25
-# (BPID, 161 gambar). Kombinasi 0,25 + fragmen 0,30/0,50 hanya F1 0,597; pada
+# CATATAN: slider di UI kini default 0,25 (diubah 31 Okt 2026 agar sama
+# dengan ambang operasi yang tertulis di naskah jurnal — lihat
+# `web/app.py CONF_DEFAULT`). Titik operasi TERBAIK hasil ukur tetap 0,30:
+# recall pothole tetap 0,60 sementara FP turun 111 -> 90 dibanding slider
+# 0,25 (BPID, 161 gambar). Kombinasi 0,25 + fragmen 0,30/0,50 hanya F1 0,597; pada
 # slider 0,30 menjadi 0,616.
 # CATATAN pothole 0 (perubahan 18 Okt 2026). Nilai lama 0,08 dibuat 30 Sep 2026
 # dari pengamatan "recall naik" pada 3 foto — TANPA ground truth. Diuji ulang di
