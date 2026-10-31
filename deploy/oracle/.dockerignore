@@ -1,0 +1,33 @@
+# .dockerignore untuk build deploy Oracle — panduan meminta menyalin
+# berkas ini ke root repo sebagai ".dockerignore" sebelum docker build.
+# Tujuannya: konteks build kecil & cepat, dan berkas lokal/dev tidak
+# ikut masuk image.
+
+.git
+.venv
+venv
+**/__pycache__
+*.pyc
+*.patch
+
+# Tidak dibutuhkan aplikasi saat runtime.
+# CATATAN: folder deploy/ SENGAJA tidak dikecualikan — Dockerfile perlu
+# menyalin deploy/oracle/requirements-deploy.txt dari konteks build,
+# dan berkas yang kena .dockerignore tidak bisa di-COPY.
+notebooks/
+reports/
+artifacts/
+spark-output/
+screenshot aplikasi/
+test_foto/
+tests/
+scripts/
+
+# Data lokal: instance di image harus bersih; data asli hidup di
+# named volume jp-instance (lihat docker-compose.yml).
+web/instance/riwayat.db
+
+# Berkas lingkungan lokal (nilai asli hanya boleh ada di server,
+# disuntikkan lewat env_file compose, bukan dibakar ke image)
+.env
+deploy/oracle/.env

@@ -45,10 +45,14 @@ ALLOWED_IMG = {"jpg", "jpeg", "png"}
 ALLOWED_VIDEO = {"mp4", "avi", "mov", "mkv"}
 MAX_VIDEO_BYTES = 200 * 1024 * 1024  # video live (global Flask)
 MAX_IMG_BYTES = 15 * 1024 * 1024  # gambar deteksi: 12MP JPEG ~3-8MB; di atas ini tolak cepat
-# Default 0,30 (18 Okt 2026): diukur pada 161 gambar BPID berlabel, recall
-# pothole tetap 0,60 sementara FP turun 111 -> 90 dibanding 0,25 (F1 0,591 ->
-# 0,616). Slider tetap bisa diturunkan operator ke 0,05.
-CONF_MIN, CONF_MAX, CONF_DEFAULT = 0.05, 0.8, 0.30
+# Default 0,25 (diubah 31 Okt 2026): disamakan dengan ambang operasi yang
+# tertulis di naskah jurnal (0,25), atas keputusan user. Riwayat ukurnya:
+# sapuan 161 gambar BPID berlabel (18 Okt 2026) memberi F1 terbaik di 0,30
+# (recall pothole tetap 0,60, FP 111 -> 90, F1 0,591 -> 0,616) — angka itu
+# tetap tercatat di docs/Panduan-Tuning-Model.md; yang berubah di sini
+# hanya nilai bawaan slider demi konsistensi kode <-> naskah. Slider tetap
+# bisa digeser operator 0,05-0,80.
+CONF_MIN, CONF_MAX, CONF_DEFAULT = 0.05, 0.8, 0.25
 FRAME_SKIP_MIN, FRAME_SKIP_MAX = 1, 30
 _PESAN_MEMORI = ("Memori tidak cukup untuk memproses gambar ini. "
                  "Tutup tab lain, tunggu sebentar, atau pakai gambar beresolusi lebih kecil.")

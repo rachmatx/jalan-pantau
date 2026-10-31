@@ -6,7 +6,10 @@ Alur: **siapkan data → buat notebook (GPU) → jalankan sel → unduh hasil �
 Template sel: `notebooks/template-kaggle-yolo11-detect.md` (baseline) dan
 `notebooks/template-kaggle-hard-negative-finetune.md` (lanjutan: hard-negative + fine-tune + pseudo-label).
 Notebook yang dipakai untuk model aktif: `notebooks/kaggle-retrain-yolo11s-rdd2022.py`
-(imgsz 640, SGD, 150 epoch) — ini sumber kebenaran skala latih model.
+(imgsz 640, SGD, konfigurasi `epochs=150` + `patience=20`) — ini sumber
+kebenaran skala latih model. Angka 150 adalah **batas konfigurasi**, bukan
+hasil: run yang menghasilkan model aktif (retrain 18 Okt 2026) berhenti di
+**92 epoch**, dan bobot terbaiknya berasal dari epoch terakhir.
 (Koreksi 19 Okt 2026: versi dokumen ini menunjuk
 `yolov11s-rdd-only/Kaggle_Notebook_-_RDD2022_YOLOv11s_Final_Run1.md`; folder itu
 artefak run lama yang sudah dihapus.)

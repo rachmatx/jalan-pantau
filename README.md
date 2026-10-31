@@ -1,23 +1,26 @@
 # Sistem Inventarisasi Kerusakan Jalan Berbasis YOLOv11 dengan Severity Terkalibrasi dan Visualisasi Geospasial
 
 Aplikasi web untuk **deteksi otomatis kerusakan permukaan jalan** dari foto,
-dilengkapi penilaian tingkat keparahan (*severity*), **indeks prioritas
-perbaikan**, kalibrasi pengukuran, pemetaan GIS, dan laporan PDF otomatis.
+dilengkapi penilaian tingkat keparahan (*severity*) per temuan, kalibrasi
+pengukuran, pemetaan GIS, dan laporan PDF otomatis. Prioritas penanganan
+ditentukan di tingkat **segmen jalan** lewat **SDI-visual** per 100 m.
 
 Alur kerja: **kalibrasi** → unggah foto → deteksi YOLOv11 → severity
-(Ringan/Sedang/Berat) → skor prioritas 0–100 → simpan ke SQLite →
-visualisasi di **peta Leaflet** → unduh **laporan PDF**. Hasil deteksi
-tersimpan sebagai inventarisasi kerusakan yang menjadi dasar prioritas
-penanganan.
+(Ringan/Sedang/Berat, deskriptif per temuan) → simpan ke SQLite →
+visualisasi di **peta Leaflet** → agregasi per segmen → **SDI-visual** →
+unduh **laporan PDF**. Hasil deteksi tersimpan sebagai inventarisasi
+kerusakan yang menjadi dasar prioritas penanganan.
 
 > ### Catatan metodologi — harap dibaca
 >
 > - **Deteksi memakai bounding box, bukan segmentasi.** Dataset latih
 >   (RDD2022) hanya menyediakan anotasi kotak; melatih segmentasi tanpa
 >   ground truth mask tidak sah secara metodologi.
-> - **Tidak ada estimasi biaya (rupiah).** Aplikasi memakai **indeks
->   prioritas 0–100 per temuan** (bobot severity × luas ternormalisasi)
->   karena tidak ada tabel harga resmi yang dapat dikutip.
+> - **Tidak ada estimasi biaya (rupiah).** Prioritas penanganan memakai
+>   **SDI-visual per segmen 100 m** (Bina Marga, dihitung dari deteksi +
+>   dimensi terkalibrasi) karena tidak ada tabel harga resmi yang dapat
+>   dikutip. Skor severity per temuan (33/67/100) hanya data *legacy* di
+>   database; tidak ditampilkan dan tidak dipakai sebagai instrumen.
 > - **Kalibrasi wajib.** Kamera mono tidak mengukur jarak absolut; parameter
 >   `pixels_per_cm` harus dikalibrasi per pemasangan kamera (halaman
 >   Kalibrasi). Tanpa kalibrasi, dimensi hanya estimasi kasar.
@@ -41,7 +44,8 @@ penanganan.
 
 ### Akurasi terukur
 
-Model tunggal **YOLOv11s** (dipakai untuk foto statis maupun live), epoch terbaik:
+Model tunggal **YOLOv11s** (dipakai untuk foto statis maupun live; retrain
+18 Okt 2026, bobot terbaik dari epoch terakhir — 92 epoch):
 
 | Split | mAP50 | mAP50-95 | Presisi | Recall | F1 |
 |---|---|---|---|---|---|
@@ -59,6 +63,60 @@ Uji fungsional pada 17 foto jalan: **48 temuan**, kelima kelas
 
 ---
 
+## Dataset
+
+Tiga dataset publik dipakai, masing-masing dengan peran berbeda, ditambah
+foto lokal tim. Tidak ada dataset uji yang bocor ke training.
+
+| Dataset | Dipakai untuk | Ukuran yang dipakai | Lisensi |
+|---|---|---|---|
+| RDD2022 | Latih + validasi + uji (*in-distribution*) detektor YOLOv11s | Split mirror Kaggle (train ±26.900 / val 5.758 / test 5.758 citra) | CC BY-SA 4.0 |
+| BPID Bandung | Uji *out-of-distribution* (OOD) — tidak pernah masuk training | 161 citra / 263 instance *pothole* | CC BY 4.0 |
+| IROSCD | Latih *scene classifier* untuk gate jalan basah | 2.599 citra (train 2.080 / val 259 / test 260) | CC BY 4.0 |
+| Foto lokal tim | Uji fungsional + validasi lapangan SDI | 17 foto uji + dokumentasi survei | Milik tim |
+
+### RDD2022 — dataset latih detektor
+- Tautan: [Kaggle — rdd-2022 (mirror yang dipakai)](https://www.kaggle.com/datasets/aliabdelmenam/rdd-2022) ·
+  paper: Arya et al. (2024), *RDD2022: A multi-national image dataset for
+  automatic road damage detection*, Geoscience Data Journal —
+  [doi.org/10.1002/gdj3.260](https://doi.org/10.1002/gdj3.260)
+- Isi: foto kerusakan jalan dari 6 negara (Jepang, India, Ceko, Norwegia,
+  AS, China) dengan anotasi *bounding box*. Lima kelasnya menjadi lima
+  kelas aplikasi ini (`longitudinal_crack`, `transverse_crack`,
+  `alligator_crack`, `other_corruption`, `pothole`).
+- Peran: satu-satunya sumber training detektor — split train/val/test
+  mirror ini yang dipakai retrain 18 Okt 2026. Karena tidak ada citra
+  Indonesia di dalamnya, generalisasi ke jalan lokal diuji terpisah
+  lewat BPID.
+
+### BPID — Bandung Pothole Image Dataset (uji OOD)
+- Tautan: [Mendeley Data — BPID](https://data.mendeley.com/datasets/rgymy6dwdd/1)
+  (DOI 10.17632/rgymy6dwdd.1, Binus University)
+- Isi: foto lubang jalan Kota Bandung dalam 4 kondisi (cerah, mendung,
+  basah/hujan, malam), plus bayangan pohon sebagai *hard negative*.
+- Peran: **murni test set independen** — tidak pernah masuk training,
+  jadi mAP50 0,540 di tabel akurasi adalah ukuran generalisasi yang
+  jujur. Catatan: deskripsi di Mendeley menyebut 50 citra; versi yang
+  diunduh dan diverifikasi tim berisi 161 citra / 263 box, dan versi
+  itulah yang dipakai.
+
+### IROSCD — Indonesia Road Surface Classification Dataset (gate basah)
+- Tautan: [Mendeley Data — IROSCD](https://data.mendeley.com/datasets/ftcrvjz92c/1)
+  (DOI 10.17632/ftcrvjz92c.1, BRIN)
+- Isi: foto kondisi permukaan jalan Indonesia, 4 kelas: normal, rusak,
+  bergelombang, basah.
+- Peran: melatih *scene classifier* YOLOv11n-cls (`scene_cls.pt`,
+  top-1 test 94,62% pada seed terpilih) yang menjadi **gate jalan
+  basah** — menekan false positive lubang pada bercak air. Dataset ini
+  **tidak** dipakai melatih detektor (tidak ada anotasi bounding box).
+
+### Foto lokal tim
+- Foto jalan yang dikumpulkan tim sendiri: 17 foto uji fungsional
+  (`reports/uji-foto-17/`) dan dokumentasi survei lapangan untuk
+  validasi SDI manual vs SDI-visual. Tidak dipublikasikan.
+
+---
+
 ## Fitur
 
 1. **Deteksi gambar** — unggah JPG/PNG; EXIF GPS terbaca otomatis bila ada.
@@ -66,21 +124,24 @@ Uji fungsional pada 17 foto jalan: **48 temuan**, kelima kelas
    atau foto penggaris + klik 2 titik.
 3. **Severity otomatis** — Ringan/Sedang/Berat dari dimensi terkalibrasi
    (ambang di `config/severity.yaml`).
-4. **Indeks prioritas** — skor 0–100 per temuan; agregat per sesi inspeksi.
+4. **Indeks prioritas (SDI-visual)** — temuan diagregasi per segmen 100 m
+   menjadi SDI1–SDI4, total SDI, dan kategori kondisi sebagai dasar
+   prioritas penanganan.
 5. **Peta GIS** — marker temuan berfilter severity, popup detail, ringkasan
    wilayah.
 6. **Riwayat** — arsip sesi inspeksi + filter tanggal/severity/pencarian.
-7. **Laporan PDF** — generate otomatis per sesi (foto + tabel temuan + skor).
+7. **Laporan PDF** — generate otomatis per sesi (foto + tabel temuan) dan
+   per segmen (rincian SDI-visual).
 8. **Live streaming (demo)** — pratinjau kamera terpisah dari inferensi.
-9. **Segmen jalan + SDI-visual** — agregasi temuan per ruas 100 m menjadi
-   SDI1–SDI4, total SDI, kategori, dan prioritas penanganan.
+9. **Segmen jalan** — kelola ruas (buat/ubah/hapus), tetapkan sesi ke
+   segmen, dan bandingkan SDI-visual dengan SDI manual lapangan.
 
 ---
 
 ## Tangkapan Layar
 
 ### Deteksi gambar
-![Hasil deteksi gambar dengan bounding box, severity, dan skor prioritas](<screenshot aplikasi/deteksi-hasil.png>)
+![Hasil deteksi gambar dengan bounding box dan severity](<screenshot aplikasi/deteksi-hasil.png>)
 
 ### Segmen jalan + SDI-visual
 ![Detail segmen dengan agregasi temuan, SDI-visual, SDI manual, dan kategori](<screenshot aplikasi/segmen-detail.png>)
@@ -164,8 +225,8 @@ python web/app.py
 # -> http://127.0.0.1:5000
 ```
 
-Halaman: `/` (Deteksi) · `/peta` · `/riwayat` · `/kalibrasi` · `/tentang` ·
-`/login` (satu peran: admin).
+Halaman: `/` (Deteksi) · `/peta` · `/riwayat` · `/segmen` · `/kalibrasi` ·
+`/tentang` · `/login` (satu peran: admin).
 
 ---
 
@@ -177,14 +238,18 @@ Halaman: `/` (Deteksi) · `/peta` · `/riwayat` · `/kalibrasi` · `/tentang` ·
 │   ├── app.py           # routes halaman + API JSON
 │   ├── deteksi.py       # pipeline YOLO -> severity
 │   ├── streaming.py     # live stream (decouple 3-thread)
-│   ├── database.py      # SQLite: admin, sesi, temuan
+│   ├── database.py      # SQLite: admin, sesi, temuan, segmen
+│   ├── gambar_sementara.py # gambar anotasi via token URL (bukan base64)
 │   ├── templates/       # base/deteksi/peta/riwayat/tentang/kalibrasi/login/...
 │   ├── static/          # css/civic.css + js/
 │   └── instance/        # riwayat.db (runtime, gitignored)
 ├── app/                 # modul inti
-│   ├── severity.py      # dimensi -> Ringan/Sedang/Berat
-│   ├── prioritas.py     # skor prioritas 0-100
-│   ├── laporan.py       # PDF laporan (fpdf2)
+│   ├── severity.py      # dimensi -> Ringan/Sedang/Berat (deskriptif)
+│   ├── sdi.py           # SDI-visual per segmen (instrumen prioritas)
+│   ├── scene_gate.py    # gate jalan basah (scene classifier)
+│   ├── ringkasan.py     # ringkasan sesi/segmen
+│   ├── prioritas.py     # LEGACY: skor severity 33/67/100 (kompat data lama)
+│   ├── laporan.py       # PDF laporan sesi + segmen (fpdf2)
 │   └── weights/         # best.pt · best.onnx (gitignored)
 ├── config/              # severity.yaml · inferensi.yaml (editable)
 ├── reports/             # hasil evaluasi model

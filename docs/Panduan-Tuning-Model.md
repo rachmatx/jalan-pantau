@@ -1,9 +1,16 @@
 # Panduan Tuning Model — JalanPantau
 
-> **⚠️ Catatan (Okt 2026):** angka & perbandingan di bawah berasal dari model
-> **pra-retrain** (saat itu live ONNX = YOLOv11n). Setelah retrain, model gambar
-> **dan** live = **YOLOv11s**, dengan metrik terkini di `README.md`.
-> Anggap dokumen ini catatan historis.
+> **⚠️ Catatan status (diperbarui 27 Okt 2026):** dokumen ini CAMPURAN dua
+> era, jangan dibaca sebagai satu zaman.
+> - **Bagian awal sampai §5** (diagnosa, urutan eksperimen, protokol) berasal
+>   dari era **pra-retrain** (model lama YOLOv11n; live ONNX). Angka &
+>   perbandingan di bagian ini **historis** — metrik model aktif ada di
+>   `README.md` (retrain 18 Okt 2026: val 0,631 / test 0,632 / BPID 0,540).
+> - **§6–§7 justru memuat keputusan yang MASIH AKTIF** pasca-retrain, antara
+>   lain: default slider conf 0,30 (sejak 18 Okt 2026, §6d), backend
+>   otomatis live `.pt`/`.onnx` (19 Okt 2026, §6), dan `maks_sisi_proses`
+>   1536 (26 Okt 2026, §6e). Untuk ketiganya, **`config/inferensi.yaml`
+>   adalah sumber kebenaran akhir** bila teks di sini berbeda.
 
 Tujuan: menaikkan mAP50 (target ≥ 0,65) dan **generalisasi OOD** tanpa retrain
 membabi-buta. Urutkan berdasar (dampak ÷ usaha).

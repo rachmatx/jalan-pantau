@@ -1530,7 +1530,7 @@ def deteksi_gelap(img_bgr, ambang=GELAP_AMBANG_L):
         return False
 
 
-def analisis_gambar(raw: bytes, conf: float = 0.30, model_path=None,
+def analisis_gambar(raw: bytes, conf: float = 0.25, model_path=None,
                     malam: bool = False, teliti: bool = False,
                     imgsz=None, iou=None):
     """Upload bytes -> {rows, total, model, gambar_jpg, gps, malam, teliti,
@@ -1539,11 +1539,12 @@ def analisis_gambar(raw: bytes, conf: float = 0.30, model_path=None,
     `gambar_jpg` = byte JPEG anotasi; pemanggil yang menyimpannya (route web
     memakai gambar_sementara bertoken), jadi jalur ini bebas base64.
 
-    `conf` di sini harus SAMA dengan `web/app.py CONF_DEFAULT` (0,30 sejak
-    18 Okt 2026). Nilai default yang melenceng adalah jebakan: route selalu
+    `conf` di sini harus SAMA dengan `web/app.py CONF_DEFAULT` (0,25 sejak
+    31 Okt 2026, disamakan ke naskah jurnal; sebelumnya 0,30 sejak 18 Okt
+    2026). Nilai default yang melenceng adalah jebakan: route selalu
     mengoper conf dari form, tapi pemanggil programatis yang relies on default
     akan diam-diam memakai ambang berbeda. `tests/test_inferensi.py`
-    (`test_default_conf_slider_naik_030`) menjaga keduanya tetap sama.
+    (`test_default_conf_slider_samakan_jurnal_025`) menjaga keduanya sama.
     """
     model_file = str(model_path or resolve_model(kunci="model_gambar"))
     model = get_model(model_file)

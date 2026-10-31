@@ -1,0 +1,1 @@
+{"containerEnv":{"JP_HTTPS":"1"},"forwardPorts":[5000],"image":"mcr.microsoft.com/devcontainers/python:1-3.11-bookworm","name":"JalanPantau (Codespaces)","portsAttributes":{"5000":{"label":"JalanPantau web","onAutoForward":"notify"}},"postCreateCommand":"bash deploy/codespaces/setup.sh"}

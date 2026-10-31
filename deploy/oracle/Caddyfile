@@ -1,0 +1,19 @@
+# Caddyfile JalanPantau — reverse proxy ke Flask di 127.0.0.1:5000.
+#
+# MODE AWAL (akses via IP publik, HTTP saja): blok ":80" di bawah sudah
+# aktif dan cukup untuk tes pertama. Ingat: pada mode ini .env WAJIB
+# JP_HTTPS=0, kalau tidak cookie sesi ditandai Secure dan login berputar.
+#
+# MODE DOMAIN (HTTPS otomatis, untuk presentasi): bila sudah punya domain
+# (mis. domain .tech gratis dari GitHub Student Pack) dan DNS A record-nya
+# sudah menunjuk ke IP instance, NONAKTIFKAN blok ":80", AKTIFKAN blok
+# domain di bawah (ganti namanya), lalu set JP_HTTPS=1 di .env dan
+# restart kedua service. Caddy mengurus sertifikat Let's Encrypt sendiri.
+
+:80 {
+	reverse_proxy 127.0.0.1:5000
+}
+
+# jalanpantau.namadomainkamu.tech {
+# 	reverse_proxy 127.0.0.1:5000
+# }

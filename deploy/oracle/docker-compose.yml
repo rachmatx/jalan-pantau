@@ -1,0 +1,49 @@
+# JalanPantau di Oracle Cloud Always Free — jalankan dari folder ini:
+#   cp .env.example .env   (lalu isi nilainya)
+#   cp .dockerignore ../../.dockerignore
+#   docker compose build
+#   docker compose up -d
+#
+# Kedua service memakai network_mode: host karena web/app.py bind
+# 127.0.0.1:5000 secara hardcoded (tidak diubah). Konsekuensinya:
+# - app hanya bisa dijangkau dari localhost VM (aman; tidak diekspos),
+# - caddy menerima trafik publik 80/443 lalu meneruskan ke 127.0.0.1:5000.
+# Port yang perlu dibuka di Security List OCI + iptables VM: 22, 80, 443.
+
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: deploy/oracle/Dockerfile
+    image: jalanpantau:latest
+    container_name: jalanpantau-app
+    network_mode: host
+    env_file:
+      - .env
+    environment:
+      # Di dalam container tidak ada CUDA -> mode_backend auto di
+      # config/inferensi.yaml otomatis memilih best.onnx untuk LIVE,
+      # sedangkan jalur gambar tetap best.pt + TTA. Tidak perlu diubah.
+      TZ: Asia/Jakarta
+    volumes:
+      # SQLite riwayat + thumbnail. Named volume: data selamat dari
+      # rebuild/recreate container. Isi awal diambil dari image.
+      - jp-instance:/app/web/instance
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: jalanpantau-caddy
+    network_mode: host
+    depends_on:
+      - app
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+
+volumes:
+  jp-instance:
+  caddy_data:
+  caddy_config:
