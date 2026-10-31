@@ -1,0 +1,17 @@
+# Contoh konfigurasi Cloudflare NAMED Tunnel untuk JalanPantau.
+# Simpan hasil akhirnya sebagai ~/.cloudflared/config.yml
+# setelah `cloudflared tunnel create jalanpantau` dan
+# `cloudflared tunnel route dns jalanpantau app` (atau subdomainmu).
+#
+# UUID & nama berkas .json diisi dari keluaran perintah create —
+# jangan pakai nilai contoh di bawah apa adanya.
+
+tunnel: 00000000-0000-0000-0000-000000000000
+credentials-file: /home/GANTI_USER/.cloudflared/00000000-0000-0000-0000-000000000000.json
+
+ingress:
+  # Domain sendiri -> aplikasi lokal JalanPantau (127.0.0.1:5000)
+  - hostname: app.GANTI_DOMAINMU.tech
+    service: http://127.0.0.1:5000
+  # Semua hostname lain ditolak
+  - service: http_status:404

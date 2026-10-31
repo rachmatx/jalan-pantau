@@ -1,0 +1,41 @@
+# JalanPantau — service systemd (user) untuk hosting di Fedora.
+#
+# Sesuaikan DUA hal sebelum memasang:
+#   1) WorkingDirectory & ExecStart: arahkan ke lokasi clone repo dan
+#      python yang selama ini menjalankan aplikasi di laptop ini
+#      (venv bila ada, atau python3 sistem bila dependensi terpasang
+#      di sana).
+#   2) JP_SECRET_KEY & JP_DEMO_PASS: isi nilai barumu sendiri.
+#      PENTING: JP_DEMO_PASS hanya berlaku saat tabel admin KOSONG
+#      (seed pertama). Bila aplikasi pernah jalan sebelumnya, admin
+#      lama sudah tersimpan — ikuti langkah reset admin di
+#      PANDUAN.md folder ini, jangan mengandalkan env ini saja.
+#
+# Pasang:
+#   mkdir -p ~/.config/systemd/user
+#   cp deploy/fedora/jalanpantau.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now jalanpantau
+#   loginctl enable-linger $USER     # tetap jalan walau belum login
+#
+# Pantau:  journalctl --user -u jalanpantau -f
+# Berhenti: systemctl --user stop jalanpantau
+
+[Unit]
+Description=JalanPantau — sistem inventarisasi kerusakan jalan
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/jalan-pantau
+Environment=JP_HTTPS=1
+Environment=JP_SECRET_KEY=GANTI_STRING_ACAK_PANJANG
+Environment=JP_DEMO_PASS=GANTI_SANDI_KUAT_BARU
+Environment=JP_SESSION_HOURS=8
+ExecStart=%h/jalan-pantau/.venv/bin/python web/app.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
