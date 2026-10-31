@@ -87,6 +87,43 @@ dipindah nameserver-nya ke Cloudflare, lalu tunnel diikat ke
 subdomain tetap (mis. `app.namadomain.tech`). Kerjakan setelah
 presentasi, saat tidak ada tekanan deadline.
 
+## Rutinitas menyalakan dari PC mati (named tunnel, alamat tetap)
+
+Semua persiapan satu kali (install cloudflared, reset admin,
+tunnel login/create/route dns, config.yml) SUDAH selesai 31 Okt
+2026 — **jangan diulang**. Setiap kali PC baru dinyalakan dan
+situs mau dipakai, hanya ini:
+
+**Cara satu-klik:** dobel-klik `mulai-domain.bat` di folder ini
+(isi dulu JP_SECRET_KEY & JP_DEMO_PASS di bagian atasnya, samakan
+dengan .bat quick tunnel). Sisanya otomatis: cek lingkungan →
+aplikasi menyala di jendela baru → tunnel `jalanpantau` jalan.
+
+**Cara manual (setara persis):**
+
+1. Nyalakan PC, tunggu desktop siap, pastikan internet jalan.
+2. Buka CMD, masuk folder repo:
+   `cd "C:\Users\R\Documents\@Semester 5\Proyek akhir matkul AI ML PIK\jalan-pantau"`
+3. Di jendela itu, set env lalu nyalakan aplikasi (blok ini
+   disalin utuh; nilai env samakan dengan isian .bat-mu):
+   ```
+   set JP_SECRET_KEY=ISIANMU
+   set JP_DEMO_PASS=SANDI_BARUMU
+   set JP_HTTPS=1
+   .venv\Scripts\python.exe web\app.py
+   ```
+   Tunggu log preload selesai (model gambar, live, scene
+   classifier, inferensi live siap). Jendela JANGAN ditutup.
+4. Buka CMD **baru** (folder bebas), jalanin tunnel:
+   `cloudflared tunnel run jalanpantau`
+   Jendela ini juga JANGAN ditutup.
+5. Buka `https://app.rachmatx.me` — situs online. Untuk sesi
+   panjang (presentasi), matikan sleep PC lebih dulu.
+
+Mematikan: Ctrl+C di jendela tunnel, lalu Ctrl+C di jendela
+aplikasi — atau matikan PC sekalian; tidak ada yang rusak,
+data riwayat tersimpan di SQLite lokal.
+
 ## Mode domain sendiri (Named Tunnel) — langkah penuh Windows
 
 Quick Tunnel memang TIDAK bisa memakai domain sendiri; URL acak
