@@ -73,6 +73,7 @@ mati; tidak ada sisa yang terekspos.
 | Gejala | Cek pertama |
 |---|---|
 | `cloudflared` tidak dikenal | CMD-nya dibuka sebelum install selesai (buka CMD baru), atau exe belum masuk PATH |
+| `ModuleNotFoundError: No module named 'flask'` | Python yang terpanggil bukan venv proyek. .bat sekarang memilih `.venv`/`venv` di repo secara otomatis + preflight cek dependensi; bila venv-mu bernama lain/conda, arahkan `PY` di .bat ke python.exe yang benar |
 | Script berhenti di peringatan sandi | Memang begitu — `JP_DEMO_PASS` di .bat belum diganti dari placeholder |
 | URL dibuka → 502 / tidak tersambung | Aplikasi belum siap (tunggu ±15 dtk lagi) atau jendela aplikasi error — baca pesan di jendela aplikasi |
 | Login berputar terus | `JP_HTTPS` di .bat harus `1` untuk akses lewat tunnel HTTPS; jangan diubah ke 0 |
