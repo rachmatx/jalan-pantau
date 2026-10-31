@@ -18,9 +18,10 @@ var defaultZoom = lokasiDef.data.zoom;
 var map = L.map("map", { zoomControl: false }).setView(defaultLl, defaultZoom);
 L.control.zoom({ position: "bottomleft" }).addTo(map);
 
-const osm = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  maxZoom: 19,
-  attribution: "&copy; OpenStreetMap",
+const osm = L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+  subdomains: "abcd",
+  maxZoom: 20,
+  attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
 }).addTo(map);
 const satelit = L.tileLayer(
   "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
