@@ -768,8 +768,9 @@ main { padding: 0; flex: 1 0 auto; }
 }
 
 /* ---- Tabel civic ---- */
-.jp-table-title { display: flex; align-items: center; justify-content: space-between; }
+.jp-table-title { display: flex; align-items: center; justify-content: space-between; gap: 4px 12px; flex-wrap: wrap; }
 .jp-table-title h3, .jp-table-title h2 { font-size: 18px; font-weight: 600; color: var(--jp-ink); margin: 0; }
+.jp-table-meta { display: inline-flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
 .jp-table-count { font-family: var(--jp-mono); font-size: 12px; color: var(--jp-muted); }
 .jp-table-scroll { width: 100%; overflow-x: auto; border-radius: 8px; background: var(--jp-surface); box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
 table.jp-table { width: 100%; text-align: left; border-collapse: collapse; font-size: 14px; }
@@ -785,6 +786,20 @@ table.jp-table { width: 100%; text-align: left; border-collapse: collapse; font-
 th.jp-num-right { font-weight: 600; }
 .jp-note { display: flex; align-items: center; gap: 8px; color: var(--jp-muted); font-size: 12px; padding-top: 4px; margin: 0; }
 .jp-note svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+/* Koreksi dimensi operator: dua sisi (cm) yang bisa ditimpa di kolom dimensi.
+   Di-scope tabel deteksi saja — tabel riwayat/dialog hanya menampilkan angka. */
+#tabel .jp-dim-ukur { display: flex; align-items: center; gap: 4px; margin-top: 6px; }
+#tabel .jp-dim-sisi { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; letter-spacing: 0.05em; color: var(--jp-muted); }
+#tabel .jp-dim-x { font-family: var(--jp-mono); font-size: 11px; color: var(--jp-muted); }
+#tabel .jp-dim-unit { font-family: var(--jp-mono); font-size: 10px; color: var(--jp-muted); }
+#tabel .jp-dim-sisi input { width: 76px; min-height: 30px; padding: 0 5px; border: 1px solid var(--jp-line); border-radius: 8px; background: var(--jp-surface); color: var(--jp-ink); font-family: var(--jp-mono); font-size: 12px; }
+#tabel .jp-dim-sisi input:focus-visible { outline: 2px solid var(--jp-primary); outline-offset: 1px; }
+#tabel .jp-table th .jp-cell-sub { font-size: 10px; letter-spacing: 0.02em; white-space: normal; }
+@media (max-width: 1023.98px) {
+  /* 72px = muat "192,9" utuh; lebih sempit dari itu angkanya terpotong diam-diam. */
+  #tabel .jp-dim-sisi input { width: 72px; min-height: 36px; }
+}
 
 /* severity pill + badge kompatibel (dipakai badge() di JS) */
 .badge {
@@ -802,6 +817,10 @@ th.jp-num-right { font-weight: 600; }
 .badge-ringan { background: var(--jp-sev-h-bg); color: #047857; }
 .badge-sedang { background: var(--jp-sev-m-bg); color: #92400e; }
 .badge-berat { background: var(--jp-sev-r-bg); color: #ba1a1a; }
+
+/* Penunjuk sampling: temuan Berat yang angkanya masih sisi bounding box.
+   Amber, bukan merah — "belum diukur" itu daftar kerja, bukan data salah. */
+#tabel .jp-ukur-chip { display: inline-flex; align-items: center; margin-left: 6px; padding: 1px 7px; border: 1px solid var(--jp-sev-m-bd); border-radius: 9999px; background: var(--jp-sev-m-bg); color: var(--jp-sev-m-tx); font-family: var(--jp-mono); font-size: 10px; letter-spacing: 0.04em; white-space: nowrap; vertical-align: middle; }
 
 /* ---- Live ---- */
 .jp-live-head .jp-dot { background: var(--jp-err); }
@@ -2077,6 +2096,14 @@ label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label da
 .kal-step-no { width: 24px; height: 24px; flex: none; border-radius: 50%; background: var(--jp-primary); color: #fff; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; }
 .kal-step p { margin: 0; font-size: 12.5px; line-height: 1.5; }
 .kal-upload { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+/* Umpan balik saat foto diseret ke area unggah / viewer. */
+.kal-upload.kal-seret,
+.jp-viewer.kal-seret {
+  outline: 2px dashed var(--jp-primary);
+  outline-offset: 3px;
+  border-radius: 8px;
+  background: var(--jp-container-low);
+}
 .kal-btn-upload { display: inline-flex; align-items: center; height: 44px; padding: 0 18px; border-radius: 8px; border: 1.5px solid var(--jp-primary); color: var(--jp-primary); background: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
 .kal-btn-upload:hover { background: var(--jp-container-low); }
 .kal-file-sembunyi { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
@@ -2143,4 +2170,78 @@ label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label da
      bawaan Leaflet (rata dengan tinggi bar) dan tombolnya 40px. */
   .jp-drawer { left: 62px; }
   .leaflet-control-zoom a { width: 40px !important; height: 40px !important; line-height: 40px !important; }
+}
+
+/* ===== Panel pintasan keyboard (base.html) ===== */
+.jp-pintasan-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+}
+.jp-pintasan {
+  width: 92%;
+  max-width: 460px;
+  max-height: 84vh;
+  overflow-y: auto;
+  padding: 20px 24px;
+  border-radius: 12px;
+  background: var(--jp-surface);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  animation: jp-modal-in 0.2s ease;
+}
+.jp-pintasan-atas {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--jp-ink);
+}
+.jp-pintasan-atas button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--jp-line);
+  border-radius: 8px;
+  background: var(--jp-surface);
+  color: var(--jp-tx2);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.jp-pintasan-atas button:hover { background: var(--jp-container-low); }
+.jp-pintasan-sec { margin-top: 14px; }
+.jp-pintasan-h {
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--jp-tx2);
+}
+.jp-pintasan-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 5px 0;
+  font-size: 13px;
+  color: var(--jp-tx2);
+}
+.jp-pintasan-row kbd {
+  flex: 0 0 132px;
+  padding: 2px 6px;
+  border: 1px solid var(--jp-line);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: var(--jp-container-low);
+  color: var(--jp-ink);
+  font: 600 12px/1.6 var(--jp-mono);
+  text-align: center;
 }

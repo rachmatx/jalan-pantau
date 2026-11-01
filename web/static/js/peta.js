@@ -623,3 +623,24 @@ fetch("/api/segmen")
   img.addEventListener("load", function () { pasLayar(); });
   terapkan();
 })();
+
+// Pintasan peta: "/" cari jalan, L posisi saya, F pusatkan semua titik.
+// Handler zoom bawaan memanggil preventDefault lebih dulu; hormati itu.
+document.addEventListener("keydown", function (e) {
+  if (document.querySelector("dialog[open], #jp-confirm-modal, #jp-login-modal, #jp-pintasan")) return;
+  if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (window.jpSedangMengetik && window.jpSedangMengetik(e.target)) return;
+  if (e.key === "/") {
+    e.preventDefault();
+    var q = document.getElementById("peta-cari-jalan");
+    if (q) { q.focus(); q.select(); }
+    return;
+  }
+  var id = (e.key === "l" || e.key === "L") ? "map-lokasi"
+         : (e.key === "f" || e.key === "F") ? "map-fit" : "";
+  if (!id) return;
+  var tombol = document.getElementById(id);
+  if (!tombol) return;
+  e.preventDefault();
+  tombol.click();
+});

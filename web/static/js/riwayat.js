@@ -407,7 +407,8 @@ function lakukanHapus(id) {
           } else if (res.status === 401) {
             window.jpToast("error", "Login Diperlukan", "Silakan login sebagai admin dinas untuk menghapus riwayat.");
           } else {
-            window.jpToast("error", "Gagal Menghapus", "Tidak dapat menghapus riwayat.");
+            window.jpToast("error", "Gagal Menghapus",
+              (res.j && res.j.error) || "Tidak dapat menghapus riwayat.");
           }
           return;
         }
@@ -512,3 +513,22 @@ document.getElementById("d-x").addEventListener("click", () => {
 })();
 
 muat();
+
+// Pintasan riwayat: "/" fokus pencarian, "P" unduh PDF saat detail terbuka.
+document.addEventListener("keydown", function (e) {
+  if (document.querySelector("#jp-confirm-modal, #jp-login-modal, #jp-pintasan")) return;
+  if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (window.jpSedangMengetik && window.jpSedangMengetik(e.target)) return;
+  if (e.key === "/" && !detail.open) {
+    e.preventDefault();
+    var q = document.getElementById("f-q");
+    if (q) { q.focus(); q.select(); }
+    return;
+  }
+  if ((e.key === "p" || e.key === "P") && detail.open) {
+    var pdf = document.getElementById("d-pdf");
+    if (!pdf) return;
+    e.preventDefault();
+    pdf.click();
+  }
+});

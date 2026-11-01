@@ -65,7 +65,7 @@
     <div class="jp-footer-in">
       <span>© 2026 JalanPantau • Platform Kecerdasan Artifisial Inspeksi Kerusakan Permukaan Jalan</span>
       <nav class="jp-footer-links" aria-label="Navigasi sekunder">
-        <a href="/">Deteksi</a><a href="/peta">Peta</a><a href="/riwayat">Riwayat</a><a href="/segmen">Segmen</a><a href="/kalibrasi">Kalibrasi</a><a href="/tentang">Tentang</a>
+        <a href="/">Deteksi</a><a href="/peta">Peta</a><a href="/riwayat">Riwayat</a><a href="/segmen">Segmen</a><a href="/kalibrasi">Kalibrasi</a><a href="/tentang">Tentang</a><a href="#" id="btn-pintasan" title="Pintasan keyboard">Pintasan (?)</a>
       </nav>
       <span class="jp-footer-mono">SDI-visual per segmen 100 m.</span>
     </div>
@@ -111,6 +111,15 @@
       });
     };
 
+    // Shortcut keyboard tidak boleh mencuri ketikan dari kolom input.
+    window.jpSedangMengetik = function(el) {
+      el = el || document.activeElement;
+      if (!el || !el.tagName) return false;
+      var tag = el.tagName.toUpperCase();
+      return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT"
+        || el.isContentEditable === true;
+    };
+
     // Global toast notification (dipakai semua halaman)
     window.jpToast = function(type, title, message) {
       var container = document.getElementById("toast-container");
@@ -133,6 +142,64 @@
         toast.style.transition = "all .3s";
         setTimeout(function() { toast.remove(); }, 300);
       }, 4500);
+    };
+  </script>
+  <script>
+    // Custom confirm modal (pengganti confirm() bawaan browser)
+    window.jpConfirm = function(title, message, opts) {
+      opts = opts || {};
+      return new Promise(function(resolve) {
+        // Remove existing modal
+        var existing = document.getElementById("jp-confirm-modal");
+        if (existing) existing.remove();
+
+        var overlay = document.createElement("div");
+        overlay.id = "jp-confirm-modal";
+        overlay.style.cssText = "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);backdrop-filter:blur(2px);";
+
+        var modal = document.createElement("div");
+        modal.style.cssText = "background:#fff;border-radius:12px;padding:24px;max-width:400px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2);animation:jp-modal-in .2s ease;";
+
+        var iconColor = opts.type === "danger" ? "#DC2626" : "#006194";
+        var icon = opts.type === "danger"
+          ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+          : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+
+        modal.innerHTML =
+          '<div style="display:flex;align-items:flex-start;gap:16px">' +
+          '<div style="width:40px;height:40px;border-radius:50%;background:' + iconColor + ';color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">' + icon + '</div>' +
+          '<div style="flex:1">' +
+          '<div style="font-size:16px;font-weight:600;color:#0F172A;margin-bottom:4px">' + jpEsc(title || 'Konfirmasi') + '</div>' +
+          '<div style="font-size:13px;color:#475569">' + jpEsc(message == null ? '' : message) + '</div>' +
+          '</div></div>' +
+          '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px">' +
+          '<button type="button" id="jp-confirm-cancel" style="padding:8px 16px;border:1px solid #E2E8F0;border-radius:8px;background:#fff;color:#475569;font-size:13px;font-weight:500;cursor:pointer">' + jpEsc(opts.cancelText || 'Batal') + '</button>' +
+          '<button type="button" id="jp-confirm-ok" style="padding:8px 16px;border:none;border-radius:8px;background:' + iconColor + ';color:#fff;font-size:13px;font-weight:500;cursor:pointer">' + jpEsc(opts.okText || 'Ya, Hapus') + '</button>' +
+          '</div>';
+
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+
+        var fokusAwal = document.activeElement;
+        var tombolOk = document.getElementById("jp-confirm-ok");
+        tombolOk.focus();
+        function selesai(hasil) {
+          overlay.remove();
+          if (fokusAwal && fokusAwal.focus && document.contains(fokusAwal)) {
+            try { fokusAwal.focus(); } catch (_e) { /* elemen sudah hilang */ }
+          }
+          if (hasil) { resolve(true); return; }
+          resolve(false);
+        }
+        tombolOk.onclick = function() { selesai(true); };
+        document.getElementById("jp-confirm-cancel").onclick = function() { selesai(false); };
+        overlay.onclick = function(e) { if (e.target === overlay) selesai(false); };
+        // Enter di tombol utama sudah native karena fokus awal ada di sana;
+        // Esc selalu membatalkan agar dialog konsisten dengan <dialog>.
+        overlay.addEventListener("keydown", function(e) {
+          if (e.key === "Escape") { e.preventDefault(); selesai(false); }
+        });
+      });
     };
   </script>
   <script>
@@ -180,6 +247,9 @@
         function tunjukGalat(pesan) { errEl.textContent = pesan; errEl.style.display = "block"; }
         document.getElementById("jp-login-cancel").onclick = function() { tutup(false); };
         overlay.onclick = function(e) { if (e.target === overlay) tutup(false); };
+        overlay.addEventListener("keydown", function(e) {
+          if (e.key === "Escape") { e.preventDefault(); tutup(false); }
+        });
         async function masuk() {
           var u = userEl.value.trim(), p = passEl.value;
           if (!u || !p) { tunjukGalat("Isi username dan password."); return; }
@@ -254,46 +324,96 @@
     @keyframes jp-modal-in { from { opacity:0; transform:scale(.95); } to { opacity:1; transform:scale(1); } }
   </style>
   <script>
-    // Custom confirm modal (pengganti confirm() bawaan browser)
-    window.jpConfirm = function(title, message, opts) {
-      opts = opts || {};
-      return new Promise(function(resolve) {
-        // Remove existing modal
-        var existing = document.getElementById("jp-confirm-modal");
-        if (existing) existing.remove();
+    // Panel pintasan keyboard. Dibuka lewat tombol "?" atau tautan footer.
+    (function () {
+      var UMUM = [
+        ["Enter", "Konfirmasi dialog (mis. hapus)"],
+        ["Esc", "Batal / tutup dialog atau panel"],
+        ["?", "Buka / tutup panel pintasan ini"],
+      ];
+      var PER_HALAMAN = {
+        "/": [
+          ["Ctrl + Enter", "Proses foto deteksi"],
+          ["1 / 2", "Pindah tab Gambar / Live"],
+          ["Space", "Mulai / hentikan stream (tab Live)"],
+          ["N", "Ambil snapshot (tab Live)"],
+          ["B", "Tampilkan / sembunyikan bounding box"],
+          ["O", "Tampilkan / sembunyikan OSD"],
+        ],
+        "/riwayat": [
+          ["/", "Fokus ke kotak cari"],
+          ["P", "Unduh PDF (saat detail terbuka)"],
+        ],
+        "/peta": [
+          ["/", "Fokus pencarian jalan"],
+          ["L", "Posisi saya"],
+          ["F", "Pusatkan seluruh titik"],
+          ["+ / − / 0", "Zoom in / out / reset peta"],
+        ],
+        "/kalibrasi": [
+          ["Ctrl + Enter", "Simpan hasil ukur"],
+          ["Backspace", "Hapus titik terakhir"],
+          ["Seret & lepas", "Muat foto penggaris"],
+        ],
+      };
 
-        var overlay = document.createElement("div");
-        overlay.id = "jp-confirm-modal";
-        overlay.style.cssText = "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);backdrop-filter:blur(2px);";
+      function bagian(judul, baris) {
+        return '<div class="jp-pintasan-sec">' +
+          '<div class="jp-pintasan-h">' + judul + '</div>' +
+          baris.map(function (r) {
+            return '<div class="jp-pintasan-row"><kbd>' + r[0] + '</kbd><span>' + r[1] + '</span></div>';
+          }).join("") + '</div>';
+      }
 
-        var modal = document.createElement("div");
-        modal.style.cssText = "background:#fff;border-radius:12px;padding:24px;max-width:400px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2);animation:jp-modal-in .2s ease;";
+      function tutup() {
+        var el = document.getElementById("jp-pintasan");
+        if (el) el.remove();
+      }
 
-        var iconColor = opts.type === "danger" ? "#DC2626" : "#006194";
-        var icon = opts.type === "danger"
-          ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
-          : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+      function buka() {
+        if (document.getElementById("jp-pintasan")) return;
+        var jalur = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        var isi = bagian("Umum", UMUM);
+        if (PER_HALAMAN[jalur]) {
+          isi += bagian("Halaman ini", PER_HALAMAN[jalur]);
+        }
+        document.body.insertAdjacentHTML("beforeend",
+          '<div id="jp-pintasan" class="jp-pintasan-overlay" role="dialog" aria-modal="true" aria-labelledby="jp-pintasan-judul">' +
+          '<div class="jp-pintasan">' +
+          '<div class="jp-pintasan-atas">' +
+          '<div id="jp-pintasan-judul">Pintasan Keyboard</div>' +
+          '<button type="button" id="jp-pintasan-tutup" aria-label="Tutup panel pintasan">×</button>' +
+          '</div>' +
+          isi +
+          '</div></div>');
+        var overlay = document.getElementById("jp-pintasan");
+        var fokusAwal = document.activeElement;
+        document.getElementById("jp-pintasan-tutup").onclick = function () {
+          overlay.remove();
+          if (fokusAwal && fokusAwal.focus && document.contains(fokusAwal)) fokusAwal.focus();
+        };
+        overlay.onclick = function (e) { if (e.target === overlay) overlay.remove(); };
+        overlay.addEventListener("keydown", function (e) {
+          if (e.key === "Escape") { e.preventDefault(); overlay.remove(); }
+        });
+        document.getElementById("jp-pintasan-tutup").focus();
+      }
 
-        modal.innerHTML =
-          '<div style="display:flex;align-items:flex-start;gap:16px">' +
-          '<div style="width:40px;height:40px;border-radius:50%;background:' + iconColor + ';color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">' + icon + '</div>' +
-          '<div style="flex:1">' +
-          '<div style="font-size:16px;font-weight:600;color:#0F172A;margin-bottom:4px">' + jpEsc(title || 'Konfirmasi') + '</div>' +
-          '<div style="font-size:13px;color:#475569">' + jpEsc(message == null ? '' : message) + '</div>' +
-          '</div></div>' +
-          '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px">' +
-          '<button type="button" id="jp-confirm-cancel" style="padding:8px 16px;border:1px solid #E2E8F0;border-radius:8px;background:#fff;color:#475569;font-size:13px;font-weight:500;cursor:pointer">' + jpEsc(opts.cancelText || 'Batal') + '</button>' +
-          '<button type="button" id="jp-confirm-ok" style="padding:8px 16px;border:none;border-radius:8px;background:' + iconColor + ';color:#fff;font-size:13px;font-weight:500;cursor:pointer">' + jpEsc(opts.okText || 'Ya, Hapus') + '</button>' +
-          '</div>';
-
-        overlay.appendChild(modal);
-        document.body.appendChild(overlay);
-
-        document.getElementById("jp-confirm-ok").onclick = function() { overlay.remove(); resolve(true); };
-        document.getElementById("jp-confirm-cancel").onclick = function() { overlay.remove(); resolve(false); };
-        overlay.onclick = function(e) { if (e.target === overlay) { overlay.remove(); resolve(false); } };
+      var tautan = document.getElementById("btn-pintasan");
+      if (tautan) {
+        tautan.addEventListener("click", function (e) {
+          e.preventDefault();
+          buka();
+        });
+      }
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "?" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+          if (window.jpSedangMengetik && window.jpSedangMengetik(e.target)) return;
+          e.preventDefault();
+          if (document.getElementById("jp-pintasan")) tutup(); else buka();
+        }
       });
-    };
+    })();
   </script>
   {% block skrip %}{% endblock %}
 </body>

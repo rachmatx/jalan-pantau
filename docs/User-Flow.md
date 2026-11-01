@@ -163,7 +163,7 @@ flowchart TD
     ANOT --> TAMPIL["Tampilkan tabel + gambar anotasi"]
 
     TAMPIL --> VERIF{"Butuh koreksi?"}
-    VERIF -->|Ya| VERIFIKASI["POST /api/verifikasi<br/>(hapus baris / ubah severity)"]
+    VERIF -->|Ya| VERIFIKASI["POST /api/verifikasi<br/>(hapus baris / ubah severity / timpa dimensi)"]
     VERIF -->|Tidak| LANJUT
 
     VERIFIKASI --> LANJUT{"Pilih aksi"}
@@ -186,7 +186,13 @@ flowchart TD
 4. **Estimasi dimensi dari box** — luas diestimasi dari dimensi bounding box
    terkalibrasi (`pixels_per_cm`): lebar × panjang box. **Bukan** mask
    segmentasi model, dan bukan kontur — pseudo-segmentation pernah ada dan
-   sudah dihapus dari kode; lihat lampiran.
+   sudah dihapus dari kode; lihat lampiran. Karena sisi box hanyalah **batas
+   atas**, tiap temuan diberi label mutu bukti (`estimasi` / `visual` /
+   `terukur`) yang ikut tampil di tabel, dan operator tidak ditagih mengukur
+   semuanya: hanya temuan **Berat** yang butuh angka hasil ukur (sampling —
+   di situ angka menentukan biaya dan material). Sisa temuan tetap memakai
+   batas atas box, dan jumlah yang belum diukur dicetak sebagai catatan di
+   PDF laporan.
 5. **Angka otoritatif** — nilai dari klien tidak dipercaya: server
    menghitung ulang severity dan agregat sesi dari hasil deteksi. Skor
    severity per temuan (33/67/100, `app/prioritas.py`) hanya disimpan

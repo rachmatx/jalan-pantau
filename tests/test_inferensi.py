@@ -694,7 +694,8 @@ class TestVerifikasiOperator(unittest.TestCase):
         from deteksi import terapkan_koreksi
         baru, total, info = terapkan_koreksi(self._rows(), hapus=[0], severity={})
         self.assertEqual(len(baru), 1)
-        self.assertEqual(info, {"hapus": 1, "severity": 0, "total": 1})
+        self.assertEqual(info, {"hapus": 1, "severity": 0, "dimensi": 0,
+                                "total": 1})
         self.assertEqual(baru[0]["idx_asli"], 1)
 
     def test_koreksi_severity_hitung_ulang(self):
@@ -1334,13 +1335,18 @@ class TestSkalaProsesGambar(unittest.TestCase):
             boxes = [B([100.0, 200.0, 300.0, 400.0], 4, 0.9)]
 
         names = {4: "pothole"}
+        from deteksi import get_config
+        ppc = get_config()["pixels_per_cm"]
         tanpa = deteksi.proses_detections(R, names)
         self.assertEqual(tanpa[0]["box"], [100.0, 200.0, 300.0, 400.0])
         dobel = deteksi.proses_detections(R, names, skala_box=2.0)
         self.assertEqual(dobel[0]["box"], [200.0, 400.0, 600.0, 800.0])
         # Dimensi fisik ikut membesar — buktinya kalibrasi px/cm tak mengecil.
-        self.assertAlmostEqual(dobel[0]["panjang_cm"],
-                               2 * tanpa[0]["panjang_cm"], places=1)
+        # Box-nya persegi 200 px, jadi pembandingnya px/cm konfigurasi, bukan
+        # 2x nilai tersimpan: panjang_cm dibulatkan 1 desimal sehingga 2x nilai
+        # bulat bisa meleset 0,1 cm dari hasil kali aslinya.
+        self.assertAlmostEqual(tanpa[0]["panjang_cm"], 200.0 / ppc, places=1)
+        self.assertAlmostEqual(dobel[0]["panjang_cm"], 400.0 / ppc, places=1)
 
     def test_maks_0_analisis_resolusi_asli(self):
         out = self._analisis(0)

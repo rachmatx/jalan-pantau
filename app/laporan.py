@@ -115,6 +115,23 @@ def _conf_dari(it):
         return None
 
 
+def _perlu_diukur(it):
+    """Temuan Berat yang angkanya belum dari hasil ukur (sisi bounding box).
+
+    Samakan dengan perlu_diukur() + _mutu_terdahulu() di web/deteksi.py —
+    sampling: hanya Berat yang menuntut angka lapangan, sebab di situlah nilai
+    itu menentukan biaya dan material. Kolom 'mutu' hanya ada pada sesi yang
+    masih hidup; sesi tersimpan dibaca dari penanda "(manual)" di `dasar`, yang
+    ditulis diagnose_cm khusus untuk angka hasil ukur operator.
+    """
+    mutu = str(it.get("mutu") or "")
+    if mutu == "terukur":
+        return False
+    if not mutu and "manual" in str(it.get("dasar") or ""):
+        return False
+    return str(it.get("severity") or "").strip().capitalize() == "Berat"
+
+
 def _potong_lebar(pdf, teks, lebar, maks=60):
     """Potong teks agar muat selebar `lebar` (mm) pada font aktif.
 
@@ -557,6 +574,7 @@ def buat_laporan(path, items, total, img_path=None, meta=None):
              ("SEVERITY", 28, "L"), ("CONF", 16, "C"), ("BAHAN", 42, "L")]
     _kepala_tabel(pdf, kolom)
     n_diubah = 0
+    n_belum = 0
     if not items:
         pdf.set_font("helvetica", "I", 9)
         pdf.set_text_color(*ABU)
@@ -575,6 +593,8 @@ def buat_laporan(path, items, total, img_path=None, meta=None):
         label_sev, pal = _sev_dari(it.get("severity"))
         if it.get("diubah"):
             n_diubah += 1
+        if _perlu_diukur(it):
+            n_belum += 1
         x = X0
         pdf.set_font("helvetica", "", 8.5)
         pdf.set_text_color(*ABU2)
@@ -602,13 +622,27 @@ def buat_laporan(path, items, total, img_path=None, meta=None):
         pdf.set_xy(x + 2, y + 1.2)
         pdf.cell(39, 5.2, _aman(it.get("bahan", "-"), 26))
         pdf.set_y(y + 7.2)
+    # Dua catatan terpisah: yang pertama menjelaskan bahwa angka bukan murni AI,
+    # yang kedua menjaga agar laporan tidak tampak lebih terukur daripada
+    # kenyataannya (sel UKURAN cuma 33 mm, jadi caveatnya di sini).
+    catatan = []
     if n_diubah:
+        catatan.append(f"{n_diubah} temuan diubah operator "
+                       f"(lihat Verifikasi operator).")
+    if n_belum:
+        catatan.append(f"{n_belum} temuan Berat belum diukur di lapangan; "
+                       f"angkanya masih sisi bounding box (batas atas).")
+    if catatan:
         pdf.set_font("helvetica", "I", 7.5)
         pdf.set_text_color(*ABU)
-        pdf.set_xy(X0, pdf.get_y() + 0.8)
-        pdf.cell(0, 4, f"Catatan: {n_diubah} temuan diubah operator "
-                       f"(lihat Verifikasi operator).")
-        pdf.set_y(pdf.get_y() + 5.5)
+        indent = pdf.get_string_width("Catatan: ")
+        for j, baris in enumerate(catatan):
+            x = X0 if j == 0 else X0 + indent
+            pdf.set_xy(x, pdf.get_y() + 0.8)
+            pdf.cell(LEBAR - (x - X0), 4,
+                     baris if j else "Catatan: " + baris)
+            pdf.set_y(pdf.get_y() + 4.2)
+        pdf.set_y(pdf.get_y() + 1.3)
         pdf.set_text_color(*INK)
     pdf.ln(2.5)
 

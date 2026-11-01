@@ -69,7 +69,7 @@ Tidak ada endpoint register: akun hanya dibuat sebagai seed admin di
 |---|---|---|---|
 | POST | `/api/detect` | 30/menit | multipart: `gambar`, `conf`, `malam`, `teliti` → `{rows, total, model, gambar_token, gps, malam, teliti, gelap, disaring, scene}` |
 | GET | `/api/gambar/<token>` | — | JPEG anotasi dari `gambar_token`; tanpa login (token = kapabilitas acak), cache 6 jam |
-| POST | `/api/verifikasi` | — | JSON `{rows, hapus[], severity{}}` → hasil koreksi operator + total |
+| POST | `/api/verifikasi` | — | JSON `{rows, hapus[], severity{}, dimensi{idx:{panjang_cm,lebar_cm}}}` → hasil koreksi operator + total (`dimensi` di luar 0,1–1000 cm → 400). Tiap baris balasannya membawa `mutu`: `estimasi` (sisi bounding box = batas atas), `visual` (severity diubah tanpa angka ukur), `terukur` (angka operator) |
 | POST | `/api/laporan` | 20/menit | JSON `{rows, total, gambar_token atau sesi_id, source, model, verifikasi}` → **PDF** (`application/pdf`) |
 
 > Model yang dipakai adalah YOLO dalam mode **deteksi bounding box**, bukan

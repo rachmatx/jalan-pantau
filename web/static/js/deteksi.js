@@ -13,7 +13,11 @@ var deteksiPerHal = 10;
 var barisAsli = null;
 var verHapus = new Set();
 var verSev = {};
+var verDim = {};
 var SEV_OPSI = ["Ringan", "Sedang", "Berat"];
+// Sama dengan DIM_MIN_CM/DIM_MAX_CM di web/deteksi.py: angka di luar ini
+// ditolak backend, lebih baik diberitahukan sebelum dikirim.
+var DIM_MIN_CM = 0.1, DIM_MAX_CM = 1000;
 // Hasil disimpan 24 jam: payload sudah berupa token gambar, bukan base64.
 var TTL_HASIL_MS = 24 * 60 * 60 * 1000;
 
@@ -50,6 +54,57 @@ function urlGambar(token) {
   return "/api/gambar/" + encodeURIComponent(token);
 }
 
+/* Kolom dimensi menampilkan sisi bounding box yang dipakai perhitungan.
+   Angka itu BATAS ATAS: pada retak miring/berkelok, sisi pendek box mengukur
+   simpangan retak (bisa 3x lebar bukaan sebenarnya), jadi sediakan input
+   untuk menimpanya dengan hasil ukur operator.
+   Satuan ditulis di layar ("cm"), bukan cuma di tooltip: operator yang terbiasa
+   membaca "lebar kotak ... mm" di baris yang sama bisa salah isi 10x lipat.
+   type=text + inputmode=decimal, BUKAN type=number: operator mengetik "0,8"
+   dan number input mengubah ketikan itu menjadi .value kosong (browser
+   menolaknya diam-diam), sehingga koreksi tidak pernah terkirim. */
+function sisiInput(ia, sisi, nilai, nomor) {
+  const n = Number(nilai);
+  const v = isFinite(n) ? String(n) : "";
+  const nama = sisi === "panjang_cm" ? "Panjang" : "Lebar";
+  return `<label class="jp-dim-sisi" title="${nama} (cm)">${nama.slice(0, 1)}` +
+    `<input type="text" data-dim="${ia}" data-sisi="${sisi}" value="${esc(v)}" ` +
+    `inputmode="decimal" autocomplete="off" ` +
+    `aria-label="${nama} temuan baris ${nomor} dalam cm">` +
+    `<span class="jp-dim-unit">cm</span></label>`;
+}
+
+// Mutu bukti tiap baris, dibuat backend (mutu_baris di web/deteksi.py). Baris
+// hasil /api/detect belum pernah diverifikasi: tanpa kolom 'mutu' artinya memang
+// masih angka box, jadi 'estimasi' dipakai sebagai bawaan.
+var MUTU_LABEL = {
+  estimasi: ["AI", "batas atas box"],
+  visual: ["Operator", "severity dilihat mata"],
+  terukur: ["Operator", "angka diukur manual"]
+};
+
+// Samakan dengan perlu_diukur() di web/deteksi.py: sampling, hanya temuan Berat
+// yang menuntut angka hasil ukur.
+function perluDiukur(r) {
+  return r.severity === "Berat" && (r.mutu || "estimasi") !== "terukur";
+}
+
+/* Daftar kerja operator di statusbar. Bukan peringatan gagal: Ringan/Sedang
+   sengaja dibiarkan sebagai estimasi karena angka box terlalu besar ke arah
+   yang aman. Dipakai tiap kali tabel dibangun ulang — deteksi baru, koreksi,
+   maupun hasil yang dipulihkan dari localStorage. */
+function nudgePerluDiukur(rows) {
+  const n = (rows || []).filter(perluDiukur).length;
+  return n ? ` Perlu diukur: ${n} temuan Berat.` : "";
+}
+
+function selSumber(r) {
+  const m = MUTU_LABEL[r.mutu] || MUTU_LABEL.estimasi;
+  const jejak = r.diubah ? ` title="${esc(r.diubah)}"` : "";
+  return `<span${jejak}><span class="jp-cell-main">${m[0]}</span>` +
+    `<span class="jp-cell-sub">${m[1]}</span></span>`;
+}
+
 function renderTabelDeteksi() {
   var totalHal = Math.ceil(deteksiRows.length / deteksiPerHal);
   if (deteksiHalaman > totalHal) deteksiHalaman = totalHal;
@@ -59,21 +114,26 @@ function renderTabelDeteksi() {
   var rows = deteksiRows.slice(mulai, sampai);
   var tbody = rows.map(function(r, i) {
     var ia = (r.idx_asli != null) ? r.idx_asli : (mulai + i);
-    var sumber = r.diubah
-      ? `<span class="jp-cell-main">AI*</span><span class="jp-cell-sub">${esc(r.diubah)}</span>`
-      : `<span class="jp-cell-main">AI</span><span class="jp-cell-sub">mentah model</span>`;
+    var sumber = selSumber(r);
     var opsi = SEV_OPSI.map(function(s) {
       return `<option value="${s}"${s === r.severity ? " selected" : ""}>${s}</option>`;
     }).join("");
     var aksi = `<select data-sev="${ia}" aria-label="Koreksi severity baris ${mulai + i + 1}" style="height:32px;border:1px solid var(--jp-line);border-radius:8px;background:var(--jp-surface);font-size:12px">${opsi}</select> ` +
       `<button type="button" data-hapus="${ia}" aria-label="Hapus baris ${mulai + i + 1}" style="height:32px;padding:0 10px;border:1px solid var(--jp-line);border-radius:8px;background:var(--jp-surface);font-size:12px;cursor:pointer">Hapus</button>`;
+    var dimensi = `<div class="jp-dim-ukur">${sisiInput(ia, "panjang_cm", r.panjang_cm, mulai + i + 1)}` +
+      `<span class="jp-dim-x">x</span>${sisiInput(ia, "lebar_cm", r.lebar_cm, mulai + i + 1)}</div>`;
+    // Chip cuma penunjuk prioritas kerja, bukan peringatan: Ringan/Sedang dibiarkan
+    // sebagai estimasi karena angka box terlalu besar ke arah yang aman.
+    var perlu = perluDiukur(r)
+      ? `<span class="jp-ukur-chip" title="Angka masih sisi bounding box (batas atas). Ukur di lapangan untuk memastikan Berat.">perlu diukur</span>`
+      : "";
     return `<tr><td class="jp-num">${String(mulai + i + 1).padStart(2, "0")}</td>` +
       `<td><span class="jp-cell-main">${esc(namaKelas(r.kelas))}</span><span class="jp-cell-sub">class: ${esc(r.kelas)}</span></td>` +
-      `<td class="jp-num">${esc(r.dasar)}</td><td>${badge(r.severity)}${r.makna ? `<span class="jp-cell-sub"> · ${esc(r.makna)}</span>` : ""}</td>` +
+      `<td class="jp-num">${esc(r.dasar)}${dimensi}</td><td>${badge(r.severity)}${perlu}${r.makna ? `<span class="jp-cell-sub"> · ${esc(r.makna)}</span>` : ""}</td>` +
       `<td class="jp-num">${esc(confStr(r.conf))}</td>` +
       `<td>${sumber}</td><td style="white-space:nowrap">${aksi}</td></tr>`;
   }).join("");
-  var thead = `<tr><th>#</th><th>JENIS KERUSAKAN</th><th>AREA / DIMENSI ESTIMASI</th><th>TINGKAT / KELAS</th><th>CONFIDENCE</th><th>SUMBER</th><th>VERIFIKASI</th></tr>`;
+  var thead = `<tr><th>#</th><th>JENIS KERUSAKAN</th><th>AREA / DIMENSI ESTIMASI<span class="jp-cell-sub">sisi bounding box = batas atas, bisa dikoreksi manual</span></th><th>TINGKAT / KELAS</th><th>CONFIDENCE</th><th>SUMBER<span class="jp-cell-sub">mutu bukti: batas atas / visual / terukur</span></th><th>VERIFIKASI</th></tr>`;
   document.getElementById("tabel").innerHTML = `<table class="jp-table"><thead>${thead}</thead><tbody>${tbody}</tbody></table>`;
   // Pagination
   var pagEl = document.getElementById("deteksi-paginasi");
@@ -106,7 +166,8 @@ async function syncVerifikasi() {
   const res = await fetch("/api/verifikasi", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ rows: barisAsli, hapus: [...verHapus], severity: verSev }),
+    body: JSON.stringify({ rows: barisAsli, hapus: [...verHapus], severity: verSev,
+                           dimensi: verDim }),
   });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(json.error || "Verifikasi gagal.");
@@ -127,6 +188,7 @@ function teksVerifikasi(info) {
   var bagian = [];
   if (info.hapus) bagian.push(info.hapus + " hapus");
   if (info.severity) bagian.push(info.severity + " koreksi severity");
+  if (info.dimensi) bagian.push(info.dimensi + " koreksi dimensi");
   return info.total + " perubahan (" + bagian.join(", ") + ")";
 }
 
@@ -267,7 +329,8 @@ function refreshVerifikasiUI() {
   status.classList.remove("kosong");
   const mode = terakhir.teliti ? " (mode teliti)" : "";
   status.textContent = `${terakhir.rows.length} temuan${mode}.` +
-    (label ? ` Terverifikasi operator: ${label}.` : "");
+    (label ? ` Terverifikasi operator: ${label}.` : "") +
+    nudgePerluDiukur(deteksiRows);
 }
 
 // idx_asli bisa berlubang setelah verifikasi (0, 2, 3); posisi array bukan
@@ -283,12 +346,26 @@ function barisAsliDenganId(ia) {
 }
 
 document.getElementById("tabel").addEventListener("change", async (e) => {
+  if (!barisAsli) return;
   const sel = e.target.closest ? e.target.closest("select[data-sev]") : null;
-  if (!sel || !barisAsli) return;
-  const ia = sel.getAttribute("data-sev");
-  const asal = (barisAsliDenganId(ia) || {}).severity;
-  if (sel.value && sel.value !== asal) verSev[ia] = sel.value;
-  else delete verSev[ia];
+  if (sel) {
+    const ia = sel.getAttribute("data-sev");
+    const asal = (barisAsliDenganId(ia) || {}).severity;
+    if (sel.value && sel.value !== asal) verSev[ia] = sel.value;
+    else delete verSev[ia];
+  } else {
+    const inp = e.target.closest ? e.target.closest("input[data-dim]") : null;
+    if (!inp) return;
+    const galat = simpanDimensi(inp);
+    if (galat) {
+      status.textContent = galat;
+      status.classList.add("galat");
+      // Render ulang supaya kolom menampilkan angka yang benar-benar terpakai,
+      // bukan angka yang barusan ditolak.
+      renderTabelDeteksi();
+      return;
+    }
+  }
   try {
     await syncVerifikasi();
   } catch (err) {
@@ -296,6 +373,34 @@ document.getElementById("tabel").addEventListener("change", async (e) => {
     status.classList.add("galat");
   }
 });
+
+/* Satu sisi yang diketik operator -> state verDim. Hanya sisi yang BEDA dari
+   hasil AI yang dikirim: mengetik ulang angka box tidak boleh dihitung sebagai
+   koreksi, dan backend membulatkan ke 1 desimal (toleransi 0,05 cm). */
+function simpanDimensi(inp) {
+  const ia = inp.getAttribute("data-dim");
+  const sisi = inp.getAttribute("data-sisi");
+  const asal = barisAsliDenganId(ia);
+  if (!asal) return "Baris hasil AI tidak ditemukan. Jalankan deteksi ulang.";
+  const v = angkaCm(inp.value);
+  if (!isFinite(v) || v < DIM_MIN_CM || v > DIM_MAX_CM) {
+    return `Dimensi harus angka ${String(DIM_MIN_CM).replace(".", ",")}-${DIM_MAX_CM} cm.`;
+  }
+  const map = verDim[ia] || {};
+  if (Math.abs(v - Number(asal[sisi])) < 0.05) delete map[sisi];
+  else map[sisi] = v;
+  if (Object.keys(map).length) verDim[ia] = map;
+  else delete verDim[ia];
+  return null;
+}
+
+/* input type=text menerima apa pun, jadi polanya dikunci di sini: koma atau
+   titik sebagai pemisah desimal, tanpa sisa karakter. parseFloat murni akan
+   membaca "0,88.5" (hasil ketik di kolom terisi) sebagai 0.88 tanpa protes. */
+function angkaCm(teks) {
+  const t = String(teks).trim().replace(",", ".");
+  return /^\d+(\.\d+)?$/.test(t) ? parseFloat(t) : NaN;
+}
 
 document.getElementById("tabel").addEventListener("click", async (e) => {
   const btn = e.target.closest ? e.target.closest("button[data-hapus]") : null;
@@ -312,6 +417,7 @@ document.getElementById("tabel").addEventListener("click", async (e) => {
 document.getElementById("verifikasi-reset").addEventListener("click", async () => {
   verHapus = new Set();
   verSev = {};
+  verDim = {};
   try {
     await syncVerifikasi();
   } catch (err) {
@@ -599,6 +705,7 @@ form.addEventListener("submit", async (e) => {
     barisAsli = json.rows;
     verHapus = new Set();
     verSev = {};
+    verDim = {};
     await syncVerifikasi();
     sorotBagian(hasil);
     showToast("Deteksi Selesai",
@@ -831,13 +938,14 @@ function simpanDeteksiRingkas(json, namaBerkas) {
         : "";
       if (status) {
         status.textContent = data.rows.length + " temuan (dipulihkan" +
-          (jam ? " · " + jam : "") + ").";
+          (jam ? " · " + jam : "") + ")." + nudgePerluDiukur(data.rows);
         status.classList.remove("galat");
         status.classList.remove("kosong");
       }
       barisAsli = data.rows;
       verHapus = new Set();
       verSev = {};
+      verDim = {};
     }
   } catch (e) { /* abaikan */ }
 })();
@@ -938,3 +1046,24 @@ if (lonInput) setupGeocodeTrigger(lonInput);
     }
   }).catch(function(err) { console.warn("[JalanPantau] banner kalibrasi", err); });
 })();
+
+// Pintasan halaman deteksi: Ctrl/Cmd+Enter memproses foto, 1/2 pindah tab.
+document.addEventListener("keydown", function (e) {
+  if (document.querySelector("dialog[open], #jp-confirm-modal, #jp-login-modal, #jp-pintasan")) return;
+  if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+    var panelGambar = document.getElementById("panel-gambar");
+    if (tombol.disabled || (panelGambar && panelGambar.hidden)) return;
+    e.preventDefault();
+    form.requestSubmit();
+    return;
+  }
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.defaultPrevented) return;
+  if (window.jpSedangMengetik && window.jpSedangMengetik(e.target)) return;
+  if (e.key === "1" || e.key === "2") {
+    var tab = document.getElementById(e.key === "1" ? "tab-gambar" : "tab-live");
+    if (!tab) return;
+    e.preventDefault();
+    tab.click();
+  }
+});

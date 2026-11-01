@@ -38,7 +38,9 @@ ROOT = WEB_DIR.parent
 if str(APP_DIR) not in sys.path:
     sys.path.insert(0, str(APP_DIR))
 
-from severity import diagnose, load_config, makna_untuk_kelas  # noqa: E402
+from severity import (  # noqa: E402
+    diagnose, diagnose_cm, load_config, makna_untuk_kelas,
+)
 from prioritas import skor as skor_prioritas  # noqa: E402
 from laporan import buat_laporan  # noqa: E402
 from scene_gate import (  # noqa: E402
@@ -721,15 +723,143 @@ def batas_topk(rows, maks=0):
 
 SEV_VALID = ("Ringan", "Sedang", "Berat")
 
+# Batas wajar untuk angka yang diketik operator pada koreksi dimensi (cm).
+# Bawah: di bawah 1 mm tidak bisa dipercaya dari foto. Atas: 10 m — segmen
+# survei, bukan satu temuan; di atas ini hampir pasti salah ketik dan akan
+# membajak agregasi SDI satu segmen.
+DIM_MIN_CM, DIM_MAX_CM = 0.1, 1000.0
 
-def terapkan_koreksi(rows, hapus=None, severity=None):
-    """Verifikasi operator: hapus baris + koreksi severity (hitung ulang skor prioritas).
+# Mutu bukti sebuah temuan. Angka bounding box selalu BATAS ATAS, jadi jujur soal
+# asal angkanya lebih penting daripada terlihat presisi: operator cukup mengukur
+# temuan Berat (sampling), sisanya dibiarkan berlabel estimasi.
+MUTU_ESTIMASI, MUTU_VISUAL, MUTU_TERUKUR = "estimasi", "visual", "terukur"
+MUTU_VALID = (MUTU_ESTIMASI, MUTU_VISUAL, MUTU_TERUKUR)
+
+
+def _angka_baris(nilai):
+    """Angka dari baris hasil, 0.0 bila kosong/rusak (pakai untuk label jejak)."""
+    try:
+        n = float(nilai)
+    except (TypeError, ValueError):
+        return 0.0
+    return n if math.isfinite(n) else 0.0
+
+
+def _dimensi_map(dimensi):
+    """{idx_asli: {'panjang_cm': x, 'lebar_cm': y}} -> {idx: {sisi: angka}}.
+
+    Satu sisi boleh tidak dikirim (operator hanya mengoreksi lebar, misalnya);
+    sisi yang hilang diisi pemanggil dari baris aslinya. Nilai non-angka,
+    NaN/inf, atau di luar DIM_MIN_CM..DIM_MAX_CM melempar ValueError: koreksi
+    yang diam-diam dibuang lebih berbahaya daripada pesan galat, karena
+    operator mengira angkanya sudah tersimpan.
+    """
+    out = {}
+    for k, v in (dimensi or {}).items():
+        try:
+            i = int(k)
+        except (TypeError, ValueError):
+            continue
+        if v is None:
+            continue
+        if not isinstance(v, dict):
+            raise ValueError(f"Dimensi baris {i} harus berupa objek angka.")
+        sisi = {}
+        for kunci in ("panjang_cm", "lebar_cm"):
+            if v.get(kunci) is None:
+                continue
+            try:
+                n = float(str(v[kunci]).replace(",", "."))
+            except (TypeError, ValueError):
+                raise ValueError(f"Dimensi {kunci} baris {i} bukan angka.")
+            if not math.isfinite(n) or not DIM_MIN_CM <= n <= DIM_MAX_CM:
+                raise ValueError(
+                    f"Dimensi {kunci} baris {i} harus {DIM_MIN_CM}-"
+                    f"{DIM_MAX_CM:g} cm.")
+            sisi[kunci] = n
+        if not sisi:
+            continue
+        out[i] = sisi
+    return out
+
+
+def _item_dari_box(r, cfg):
+    """Ulangi klasifikasi dari box; baris tanpa box (mis. dipulihkan dari
+    riwayat) memakai nilai yang tersimpan apa adanya."""
+    try:
+        x1, y1, x2, y2 = (float(v) for v in r["box"])
+        return diagnose(r.get("kelas", "-"), x1, y1, x2, y2, cfg)
+    except (KeyError, TypeError, ValueError):
+        return {"kelas": r.get("kelas", "-"),
+                "panjang_cm": r.get("panjang_cm", 0),
+                "lebar_cm": r.get("lebar_cm", 0),
+                "luas_cm2": r.get("luas_cm2", 0),
+                "makna": makna_untuk_kelas(r.get("kelas", "-")),
+                "dasar": r.get("dasar", "-")}
+
+
+def _mutu_terdahulu(r):
+    """Mutu baris yang sudah pernah diverifikasi (mis. dipulihkan dari riwayat).
+
+    Tabel `temuan` tidak menyimpan kolom 'mutu', jadi sesi lama harus dibaca dari
+    bukti yang memang tersimpan: teks jejak 'diubah' dan penanda "(manual)" di
+    `dasar` (ditulis diagnose_cm untuk angka hasil ukur operator, tidak pernah
+    untuk sisi box). Tanpa ini sesi tersimpan dituduh belum mengukur padahal
+    angkanya sudah dari penggaris.
+    """
+    lama = r.get("mutu")
+    if lama in MUTU_VALID:
+        return lama
+    jejak = str(r.get("diubah") or "")
+    if "dimensi" in jejak:
+        return MUTU_TERUKUR
+    if "severity" in jejak:
+        return MUTU_VISUAL
+    if "manual" in str(r.get("dasar") or ""):
+        return MUTU_TERUKUR
+    return MUTU_ESTIMASI
+
+
+def mutu_baris(r, ada_dim=False, ada_sev=False):
+    """Mutu bukti baris ini setelah koreksi berjalan."""
+    if ada_dim:
+        return MUTU_TERUKUR
+    if _mutu_terdahulu(r) == MUTU_TERUKUR:
+        # Angka ukurnya tersimpan di baris ini sendiri; mengubah severity tidak
+        # membuat hasil ukur hilang.
+        return MUTU_TERUKUR
+    if ada_sev:
+        return MUTU_VISUAL
+    return _mutu_terdahulu(r)
+
+
+def perlu_diukur(r):
+    """Sampling: hanya temuan Berat yang butuh angka hasil ukur operator.
+
+    Ringan/Sedang dibiarkan memakai sisi bounding box: kesalahannya satu arah
+    (terlalu besar) dan tidak mengubah tindakan. Pada Berat angka itulah yang
+    menentukan biaya dan material, jadi di situ waktu operator dibelanjakan.
+    Lewat _mutu_terdahulu agar baris yang belum dinormalkan sesi ini (mis.
+    dibaca langsung dari riwayat) tetap dinilai dari bukti yang tersimpan.
+    """
+    return (r.get("severity") == "Berat"
+            and _mutu_terdahulu(r) != MUTU_TERUKUR)
+
+
+def terapkan_koreksi(rows, hapus=None, severity=None, dimensi=None):
+    """Verifikasi operator: hapus baris + koreksi severity + timpa dimensi.
 
     rows = hasil mentah AI (tak dimutasi). hapus = [idx_asli...],
-    severity = {idx_asli: 'Ringan'|'Sedang'|'Berat'}. Koreksi severity
-    menghitung ulang bahan + skor dari box (bila ada) lewat config aktif.
-    Tiap baris hasil membawa 'sumber' ('AI') + 'idx_asli' + opsional 'diubah'.
-    Mengembalikan (rows_baru, total, info {hapus, severity, total}).
+    severity = {idx_asli: 'Ringan'|'Sedang'|'Berat'},
+    dimensi = {idx_asli: {'panjang_cm': x, 'lebar_cm': y}}.
+    Koreksi dimensi mengganti sisi bounding box dengan angka hasil ukur
+    operator lalu menghitung ulang luas, severity, bahan, dan skor dari angka
+    itu (diagnose_cm) — sebab sisi box hanya BATAS ATAS dan bisa 3x lebih
+    besar dari kerusakan sebenarnya pada retak miring/berkelok. Bila operator
+    juga menentukan severity eksplisit, angka itulah yang dipakai.
+    Tiap baris hasil membawa 'sumber' ('AI') + 'idx_asli' + 'mutu' ('estimasi' /
+    'visual' / 'terukur') + opsional 'diubah'.
+    Mengembalikan (rows_baru, total, info {hapus, severity, dimensi, total}).
     """
     cfg = get_config()
     hapus_set = set()
@@ -746,7 +876,8 @@ def terapkan_koreksi(rows, hapus=None, severity=None):
             continue
         if v in SEV_VALID:
             sev_map[i] = v
-    out, n_hapus, n_sev = [], 0, 0
+    dim_map = _dimensi_map(dimensi)
+    out, n_hapus, n_sev, n_dim = [], 0, 0, 0
     for i, r in enumerate(rows or []):
         # Baris hasil verifikasi sebelumnya sudah membawa idx_asli asli yang
         # bisa berlubang (0, 2, 3). Koreksi operator dari UI dikunci ke angka
@@ -761,33 +892,44 @@ def terapkan_koreksi(rows, hapus=None, severity=None):
         r = dict(r)
         r.setdefault("sumber", "AI")
         r["idx_asli"] = idx
-        if idx in sev_map and sev_map[idx] != r.get("severity"):
-            lama = r.get("severity", "-")
-            baru_sev = sev_map[idx]
-            try:
-                x1, y1, x2, y2 = (float(v) for v in r["box"])
-                item = diagnose(r.get("kelas", "-"), x1, y1, x2, y2, cfg)
-            except (KeyError, TypeError, ValueError):
-                item = {"kelas": r.get("kelas", "-"),
-                        "panjang_cm": r.get("panjang_cm", 0),
-                        "lebar_cm": r.get("lebar_cm", 0),
-                        "luas_cm2": r.get("luas_cm2", 0),
-                        "makna": makna_untuk_kelas(r.get("kelas", "-")),
-                        "dasar": r.get("dasar", "-")}
-            item["severity"] = baru_sev
-            item["bahan"] = cfg["bahan"][baru_sev]
-            item["tebal_asumsi_cm"] = cfg["tebal_asumsi_cm"][baru_sev]
-            baru = skor_prioritas(item)
-            for k in ("conf", "box", "sumber", "idx_asli", "track_id", "frames"):
-                if k in r:
-                    baru[k] = r[k]
-            baru["diubah"] = f"severity {lama}->{baru_sev}"
-            r = baru
-            n_sev += 1
-        out.append(r)
+        ada_dim = idx in dim_map
+        ada_sev = idx in sev_map and sev_map[idx] != r.get("severity")
+        r["mutu"] = mutu_baris(r, ada_dim, ada_sev)
+        if not (ada_dim or ada_sev):
+            out.append(r)
+            continue
+        lama_p = _angka_baris(r.get("panjang_cm"))
+        lama_l = _angka_baris(r.get("lebar_cm"))
+        sev_lama = r.get("severity", "-")
+        if ada_dim:
+            p = dim_map[idx].get("panjang_cm", lama_p)
+            l = dim_map[idx].get("lebar_cm", lama_l)
+            item = diagnose_cm(r.get("kelas", "-"), p, l, cfg)
+        else:
+            item = _item_dari_box(r, cfg)
+        if ada_sev:
+            item["severity"] = sev_map[idx]
+            item["bahan"] = cfg["bahan"][sev_map[idx]]
+            item["tebal_asumsi_cm"] = cfg["tebal_asumsi_cm"][sev_map[idx]]
+        baru = skor_prioritas(item)
+        for k in ("conf", "box", "sumber", "idx_asli", "track_id", "frames",
+                  "mutu"):
+            if k in r:
+                baru[k] = r[k]
+        jejak = []
+        if ada_dim:
+            jejak.append(f"dimensi {lama_p:g}x{lama_l:g} -> "
+                         f"{baru['panjang_cm']:g}x{baru['lebar_cm']:g} cm")
+            n_dim += 1
+        if baru.get("severity") != sev_lama:
+            jejak.append(f"severity {sev_lama}->{baru['severity']}")
+            if ada_sev:
+                n_sev += 1
+        baru["diubah"] = "; ".join(jejak)
+        out.append(baru)
     total = sum(int(r.get("skor_prioritas", 0)) for r in out)
-    return out, total, {"hapus": n_hapus, "severity": n_sev,
-                       "total": n_hapus + n_sev}
+    return out, total, {"hapus": n_hapus, "severity": n_sev, "dimensi": n_dim,
+                        "total": n_hapus + n_sev + n_dim}
 
 
 def kelas_mayoritas(votes, bawaan=None):

@@ -47,7 +47,7 @@
         <div class="kal-upload">
           <label class="kal-btn-upload" for="foto-penggaris">Pilih foto penggaris</label>
           <input type="file" id="foto-penggaris" class="kal-file-sembunyi" accept="image/jpeg,image/png" aria-label="Foto penggaris untuk kalibrasi">
-          <span class="kal-fname" id="kal-nama-foto">Belum ada berkas dipilih · JPG/PNG, maks 5 MB</span>
+          <span class="kal-fname" id="kal-nama-foto">Seret foto ke sini atau klik tombol · JPG/PNG, maks 5 MB</span>
         </div>
         <div id="slot-penggaris" class="jp-viewer kosong kal-viewer"><div class="kal-kosong"><div class="kal-kosong-ikon" aria-hidden="true">▦</div><p><strong>Foto penggaris tampil di sini</strong><br>Klik foto untuk menandai titik pertama skala.</p></div></div>
         <div class="kalibrasi-bar kal-ukur">
@@ -494,6 +494,25 @@
             catatan: 'foto penggaris via UI'});
   });
 
+  // Pintasan metode B. Ctrl/Cmd+Enter tetap jalan walau fokus di kolom
+  // angka (bukan tombol ketik), Backspace hanya saat tidak mengetik.
+  document.addEventListener('keydown', function(e){
+    if (document.querySelector('dialog[open], #jp-confirm-modal, #jp-login-modal, #jp-pintasan')) return;
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      if (!btnSimpanP.disabled) btnSimpanP.click();
+      else toast('Tandai dua titik dulu sebelum menyimpan.', false);
+      return;
+    }
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (window.jpSedangMengetik && window.jpSedangMengetik(e.target)) return;
+    if (e.key === "Backspace" || e.key === "Delete") {
+      if (!titik.length) return;
+      e.preventDefault();
+      btnHapus.click();
+    }
+  });
+
   muatStatus();
 })();
 </script>
@@ -507,6 +526,58 @@
     inp.addEventListener('change', function(){
       lbl.textContent = (inp.files && inp.files[0]) ? inp.files[0].name : awal;
     });
+
+    // Drag-and-drop foto penggaris. Berkas yang jatuh dimasukkan ke input
+    // yang sama supaya validasi/unggah hanya punya satu jalur (change).
+    function galat(pesan){
+      if (window.jpToast) window.jpToast('error', 'Kalibrasi', pesan);
+    }
+    function punyaBerkas(e){
+      var dt = e.dataTransfer;
+      if (!dt || !dt.types) return false;
+      return Array.prototype.indexOf.call(dt.types, 'Files') !== -1;
+    }
+    function pakaiBerkas(f){
+      if (!f) return;
+      if (!/^image\/(jpeg|png)$/.test(f.type)) {
+        galat('Format harus JPG atau PNG.');
+        return;
+      }
+      if (f.size > 5 * 1024 * 1024) {
+        galat('Ukuran berkas maksimal 5 MB.');
+        return;
+      }
+      var dt = new DataTransfer();
+      dt.items.add(f);
+      inp.files = dt.files;
+      inp.dispatchEvent(new Event('change', {bubbles: true}));
+    }
+    function pasangSeret(el){
+      if (!el) return;
+      el.addEventListener('dragenter', function(e){
+        if (!punyaBerkas(e)) return;
+        e.preventDefault();
+        el.classList.add('kal-seret');
+      });
+      el.addEventListener('dragover', function(e){
+        if (!punyaBerkas(e)) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+        el.classList.add('kal-seret');
+      });
+      el.addEventListener('dragleave', function(e){
+        if (el.contains(e.relatedTarget)) return;
+        el.classList.remove('kal-seret');
+      });
+      el.addEventListener('drop', function(e){
+        if (!punyaBerkas(e)) return;
+        e.preventDefault();
+        el.classList.remove('kal-seret');
+        pakaiBerkas(e.dataTransfer.files[0]);
+      });
+    }
+    pasangSeret(document.querySelector('.kal-upload'));
+    pasangSeret(document.getElementById('slot-penggaris'));
   })();
 </script>
 {% endblock %}

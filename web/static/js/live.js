@@ -701,3 +701,27 @@ function showToast(title, message, type) {
     btn.setAttribute("aria-expanded", buka ? "true" : "false");
   });
 })();
+
+// Pintasan tab Live: Space mulai/berhenti, N snapshot, B bounding box, O OSD.
+document.addEventListener("keydown", function (e) {
+  if (panelLive.hidden) return;
+  if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (window.jpSedangMengetik && window.jpSedangMengetik(e.target)) return;
+  if (document.querySelector("dialog[open], #jp-confirm-modal, #jp-login-modal, #jp-pintasan")) return;
+  var tag = (e.target && e.target.tagName || "").toUpperCase();
+  if (e.key === " ") {
+    if (tag === "BUTTON") return;
+    e.preventDefault();
+    if (btnMulai && !btnMulai.disabled) { btnMulai.click(); return; }
+    if (btnBerhenti && !btnBerhenti.disabled) btnBerhenti.click();
+    return;
+  }
+  var id = (e.key === "n" || e.key === "N") ? "btn-snapshot"
+         : (e.key === "b" || e.key === "B") ? "btn-toggle-box"
+         : (e.key === "o" || e.key === "O") ? "btn-toggle-osd" : "";
+  if (!id) return;
+  var tombol = document.getElementById(id);
+  if (!tombol) return;
+  e.preventDefault();
+  tombol.click();
+});

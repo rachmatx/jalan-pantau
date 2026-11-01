@@ -405,7 +405,7 @@ def create_app():
                         "csrf": csrf_token()})
 
     # Cache-buster: versi ini akan ditambahkan ke semua asset static
-    STATIC_VERSION = "51"  # 51: 19 perbaikan bug + hirarki mobile; 41: tile OSM Standard + PDF hybrid
+    STATIC_VERSION = "60"  # 60: nudge perlu diukur ikut di jalur restore; 59: kolom SUMBER jadi mutu bukti + chip
 
     @app.context_processor
     def inject_static_version():
@@ -448,21 +448,23 @@ def create_app():
     def kebanyakan_request(e):
         """Rate limit tercapai. Form login -> render ulang dengan pesan ramah
         (bukan halaman hitam-putih bawaan flask-limiter); API -> JSON."""
+        # Batas lama 10/jam membuat bersih-bersih 10 riwayat mengunci admin
+        # selama sejam tanpa penjelasan. Beri tahu sisa waktu tunggunya.
+        try:
+            detik = max(1, int(e.reset_at - time.time()))
+        except (AttributeError, TypeError, ValueError):
+            detik = 60
+        menit = max(1, math.ceil(detik / 60))
         if request.path == "/login":
-            retry = 60
-            if hasattr(e, "description") and isinstance(getattr(e, "description"), str):
-                import re as _re
-                m = _re.search(r"(\d+)\s*second", e.description)
-                if m:
-                    retry = int(m.group(1))
-            menit = max(1, round(retry / 60))
             return render_template(
                 "login.html",
                 galat="Terlalu banyak percobaan login. Untuk keamanan, "
                       "tunggu sekitar " + str(menit) + " menit sebelum coba lagi."), 429
         if request.path.startswith("/api/"):
-            return jsonify({"error": "Terlalu banyak permintaan. "
-                                     "Coba lagi beberapa saat lagi."}), 429
+            resp = jsonify({"error": "Terlalu banyak permintaan. Coba lagi dalam "
+                                     + str(menit) + " menit."})
+            resp.headers["Retry-After"] = str(detik)
+            return resp, 429
         return render_template("error/429.html"), 429
 
     @app.get("/")
@@ -659,7 +661,8 @@ def create_app():
     def api_verifikasi():
         """Verifikasi operator: hasil mentah AI + daftar koreksi -> hasil final.
 
-        Body: {rows: [...mentah...], hapus: [idx...], severity: {idx: sev}}.
+        Body: {rows: [...mentah...], hapus: [idx...], severity: {idx: sev},
+               dimensi: {idx: {panjang_cm, lebar_cm}}}.
         Stateless: frontend menyimpan state koreksi, backend menghitung ulang.
         """
         data = request.get_json(force=True, silent=True) or {}
@@ -674,8 +677,15 @@ def create_app():
         severity = data.get("severity")
         if severity is not None and not isinstance(severity, dict):
             return jsonify({"error": "Format severity tidak valid."}), 400
+        dimensi = data.get("dimensi")
+        if dimensi is not None and not isinstance(dimensi, dict):
+            return jsonify({"error": "Format dimensi tidak valid."}), 400
         try:
-            baru, total, info = terapkan_koreksi(rows, hapus, severity)
+            baru, total, info = terapkan_koreksi(rows, hapus, severity, dimensi)
+        except ValueError as e:
+            # Angka koreksi dimensi tidak masuk akal: kabari operator, jangan
+            # biarkan koreksinya hilang diam-diam.
+            return jsonify({"error": str(e)}), 400
         except Exception:
             app.logger.exception("verifikasi gagal")
             return jsonify({"error": "Verifikasi gagal. Coba lagi."}), 500
@@ -1087,7 +1097,7 @@ def create_app():
 
     @app.delete("/api/riwayat/<int:sid>")
     @login_wajib
-    @(limiter.limit("10 per hour") if limiter else (lambda f: f))
+    @(limiter.limit("30 per minute; 300 per hour") if limiter else (lambda f: f))
     def api_riwayat_hapus(sid):
         if not hapus_sesi(sid):
             return jsonify({"error": "Riwayat tidak ditemukan."}), 404
