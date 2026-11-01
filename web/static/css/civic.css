@@ -1687,11 +1687,11 @@ label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label da
 @media (max-width: 1023.98px) {
   #panel-live .jp-col-main,
   #panel-live .jp-col-side { grid-column: 1 / -1 !important; }
-  /* Audit UI 19 Okt 2026: pada layar sempit, panel Parameter Inspeksi (aksi
-     utama: unggah foto + tombol deteksi) diletakkan DI ATAS viewer. Sebelumnya
-     viewer setinggi 45vh mendorong formulir ke bawah lipatan sehingga pengguna
-     harus menggulir dulu sebelum bisa bertindak. */
-  #panel-gambar .jp-col-side { order: -1; }
+  /* Audit hirarki mobile 1 Nov 2026: urutan panel gambar mengikuti DOM —
+     viewer (konten utama: pratinjau foto + hasil) tampil SEBELUM panel
+     parameter. Aturan lama (19 Okt 2026) mengangkat parameter ke atas karena
+     viewer kosong saat itu ~430px; kini viewer kosong hanya 150px dan tombol
+     deteksi lengket di bawah layar, jadi alasan lama tidak berlaku. */
 }
 
 /* FIX 2026-10-16: cegah overflow horizontal di .jp-grid.
@@ -2112,4 +2112,35 @@ label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label da
   .kal-hasil { flex-basis: 100%; }
   .kal-ukur .kalibrasi-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; margin-left: 0; }
   .kal-ukur .kalibrasi-actions .jp-btn-primary { grid-column: span 2; }
+}
+
+/* ===== Audit hirarki mobile (1 Nov 2026) ===== */
+#viewer-gambar, #viewer-live { scroll-margin-top: 76px; }
+@media (max-width: 640px) {
+  /* Ringkasan angka lebih ringkas agar daftar isi halaman lebih cepat tampil. */
+  .jp-kpi4 { gap: 8px; }
+  .jp-kpi4-card { padding: 10px 12px; }
+  .jp-kpi4-card strong { margin-top: 4px; }
+  .jp-kat { padding: 8px 12px; }
+  .jp-kat b { font-size: 20px; }
+}
+
+/* Viewer gambar kosong di layar sempit: sembunyikan bilah zoom (tidak ada
+   gambar untuk di-zoom; bilahnya menimpa teks keadaan kosong). Bilah
+   muncul lagi begitu ada gambar (kelas .kosong dicabut JS). */
+@media (max-width: 1023.98px) {
+  #viewer-gambar:has(#slot-gambar.kosong) .zoom-bar { display: none; }
+}
+
+/* ===== Skala mobile 90% + kontrol zoom peta (permintaan user, 1 Nov 2026) ===== */
+@media (max-width: 640px) {
+  /* User lebih nyaman pada zoom browser 90%: seluruh tata letak mobile
+     dirender pada skala 0,9 agar setara tanpa user mengatur zoom manual. */
+  html { zoom: 0.9; }
+  /* Kontrol zoom Leaflet (bottomleft dari peta.js) diletakkan PERSIS DI
+     SAMPING bar Ringkasan Wilayah (sketsa user 1 Nov 2026): bar digeser
+     mulai x=62px agar pojok kiri bawah bebas; kontrol tetap di posisi
+     bawaan Leaflet (rata dengan tinggi bar) dan tombolnya 40px. */
+  .jp-drawer { left: 62px; }
+  .leaflet-control-zoom a { width: 40px !important; height: 40px !important; line-height: 40px !important; }
 }

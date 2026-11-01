@@ -405,7 +405,7 @@ def create_app():
                         "csrf": csrf_token()})
 
     # Cache-buster: versi ini akan ditambahkan ke semua asset static
-    STATIC_VERSION = "47"  # 47: atribut segmen + CSRF pasca-login modal; 41: tile OSM Standard + PDF hybrid
+    STATIC_VERSION = "51"  # 51: 19 perbaikan bug + hirarki mobile; 41: tile OSM Standard + PDF hybrid
 
     @app.context_processor
     def inject_static_version():
