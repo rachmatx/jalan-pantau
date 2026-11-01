@@ -1,4 +1,5 @@
 /* Halaman Segmen: daftar + detail SDI-visual per segmen jalan. */
+// Resolusi merge 4279cff v1 (1 Nov 2026): empty state lokal PC + bersihin kartu-segmen dari remote.
 (function() {
   "use strict";
 
@@ -59,6 +60,12 @@
     document.getElementById("kat-sedang").textContent = hit["Sedang"];
     document.getElementById("kat-ringan").textContent = hit["Rusak Ringan"];
     document.getElementById("kat-berat").textContent = hit["Rusak Berat"];
+    var basis = document.getElementById("kat-basis");
+    if (basis) {
+      var terisi = hit["Baik"] + hit["Sedang"] + hit["Rusak Ringan"] + hit["Rusak Berat"];
+      basis.textContent = "Dihitung dari " + terisi + " segmen yang sudah berisi data" +
+        (data.length > terisi ? " — " + (data.length - terisi) + " segmen belum ada data." : ".");
+    }
     renderTabelSegmen();
   }
 
@@ -73,13 +80,42 @@
       '<td class="jp-num-right">' + esc(g.panjang_m) + " m</td>" +
       '<td class="jp-num-right">' + esc(g.n_sesi) + "</td>" +
       '<td class="jp-num-right" style="font-weight:700">' + fmtSDI(sdi.sdi_total) + "</td>" +
-      "<td>" + badgeKat(sdi.kategori) + "</td>" +
+      "<td>" + (sdi.kategori ? badgeKat(sdi.kategori)
+        : '<span style="color:var(--jp-muted)">Belum ada data</span>') + "</td>" +
       '<td class="jp-num-right">' + fmtSDI(manual) + "</td>" +
       '<td class="jp-num-right">' + esc(selisih) + "</td>" +
       '<td><div class="jp-rowact">' +
         '<button type="button" data-act="detail" data-lihat="' + g.id + '">Detail</button>' +
         '<button type="button" data-act="hapus" data-hapus="' + g.id + '">Hapus</button>' +
       "</div></td></tr>";
+  }
+
+  // Kartu segmen untuk layar kecil (CSS <= 640px menampilkan kartu,
+  // menyembunyikan tabel). Segmen kosong tampil netral, bukan "Baik".
+  function kartuSegmen(g) {
+    const sdi = g.sdi || {};
+    const manual = g.sdi_manual;
+    var kepala = '<div class="jp-kartu-kepala"><span class="jp-kartu-id">' + esc(g.nama) + "</span></div>" +
+      '<div class="jp-kartu-meta">' + esc(g.jalan) + " · " + esc(g.panjang_m) + " m · " +
+      esc(g.n_sesi) + " sesi · " + esc(sdi.n_temuan_total || 0) + " temuan</div>";
+    var tengah;
+    if (!sdi.kategori) {
+      tengah = '<div class="jp-kartu-kosong"><div class="t">BELUM ADA DATA</div>' +
+        "<p>Tetapkan sesi inspeksi ke segmen ini untuk menghitung SDI-visual. " +
+        "Segmen kosong tidak diberi kategori.</p></div>";
+    } else {
+      var sel = (manual === null || manual === undefined) ? null
+        : Math.abs(Number(manual) - Number(sdi.sdi_total || 0)).toFixed(0);
+      tengah = '<div class="jp-kartu-sdi"><div><div class="angka">' + fmtSDI(sdi.sdi_total) + "</div>" +
+        '<div class="label">SDI-VISUAL</div></div>' + badgeKat(sdi.kategori) +
+        '<div class="banding">Manual <b>' + fmtSDI(manual) + "</b>" +
+        (sel === null ? "" : "<br>Selisih <b>" + sel + "</b>") + "</div></div>";
+    }
+    return '<article class="jp-kartu">' + kepala + tengah +
+      '<div class="jp-kartu-aksi">' +
+      '<button type="button" class="btn-detail" data-lihat="' + g.id + '">Detail</button>' +
+      '<button type="button" class="btn-hapus" data-hapus="' + g.id + '">Hapus</button>' +
+      "</div></article>";
   }
 
   function renderTabelSegmen() {
@@ -99,6 +135,8 @@
         var btn = document.getElementById("btn-buat");
         if (btn) btn.click();
       };
+      var ksg = document.getElementById("kartu-segmen");
+      if (ksg) ksg.innerHTML = "";
       if (pag) { pag.style.display = "none"; pag.innerHTML = ""; }
       return;
     }
@@ -114,6 +152,16 @@
     tb.querySelectorAll("[data-hapus]").forEach(function(b) {
       b.onclick = function() { hapusSegmen(Number(b.getAttribute("data-hapus"))); };
     });
+    var wadahKartu = document.getElementById("kartu-segmen");
+    if (wadahKartu) {
+      wadahKartu.innerHTML = pageRows.map(kartuSegmen).join("");
+      wadahKartu.querySelectorAll("[data-lihat]").forEach(function(b) {
+        b.onclick = function() { bukaDetail(Number(b.getAttribute("data-lihat"))); };
+      });
+      wadahKartu.querySelectorAll("[data-hapus]").forEach(function(b) {
+        b.onclick = function() { hapusSegmen(Number(b.getAttribute("data-hapus"))); };
+      });
+    }
     renderPaginasiSegmen(totalHal, start, pageRows.length);
   }
 
@@ -194,7 +242,7 @@
     const sdi = g.sdi || {};
     const komp = sdi.komp || {};
     const manual = g.sdi_manual;
-    const selisih = (manual === null || manual === undefined) ? "-"
+    const selisih = (manual === null || manual === undefined) ? ""
       : "Selisih vs manual: <b>" + Math.abs(Number(manual) - Number(sdi.sdi_total || 0)).toFixed(0) + "</b>";
     const anggota = (g.anggota || []).map(function(s) {
       return "<tr><td>#" + s.id + "</td><td>" + esc(s.waktu) + "</td>" +
@@ -217,9 +265,11 @@
     ].filter(Boolean).join(" · ");
     document.getElementById("dg-isi").innerHTML =
       '<div class="jp-sdi-hero">' +
-        '<div class="jp-sdi-hero-num"><span>SDI-VISUAL</span><b>' + fmtSDI(sdi.sdi_total) + "</b></div>" +
-        '<div class="jp-sdi-hero-meta">' + badgeKat(sdi.kategori) +
-          "<p>" + selisih + "</p>" +
+        '<div class="jp-sdi-hero-num"><span>SDI-VISUAL</span><b>' + (sdi.kategori ? fmtSDI(sdi.sdi_total) : "\u2013") + "</b></div>" +
+        '<div class="jp-sdi-hero-meta">' + (sdi.kategori ? badgeKat(sdi.kategori)
+            : '<span style="display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;color:#fff;background:#64748B">Belum ada data</span>') +
+          (sdi.kategori ? "" : "<p>Segmen ini belum memiliki sesi anggota, jadi SDI-visual belum terhitung.</p>") +
+          (selisih ? "<p>" + selisih + "</p>" : "") +
           (sdi.n_tanpa_dimensi
             ? "<p>" + sdi.n_tanpa_dimensi + " temuan tanpa data dimensi tidak masuk perhitungan.</p>"
             : "") +
@@ -234,7 +284,7 @@
             barisSDI("SDI3 - jumlah lubang", sdi.sdi3, sdi.sdi3_ket) +
             barisSDI("SDI4 - bekas roda", sdi.sdi4, sdi.sdi4_ket) +
           "</tbody></table></div>" +
-          (sdi.varian ? '<p style="font-size:12px;color:var(--jp-muted);margin:8px 0 0">' + esc(sdi.varian) + "</p>" : "") +
+          (sdi.varian ? '<p style="font-size:12px;color:var(--jp-muted);margin:8px 0 0">Varian perhitungan: ' + esc(sdi.varian) + "</p>" : "") +
         "</div>" +
         "<div>" +
           "<h3>Data segmen</h3>" +
@@ -262,11 +312,11 @@
       "<h3>Posisi pada skala Bina Marga</h3>" +
       skalaSDI(sdi.sdi_total, manual) +
       "<h3>Sesi anggota (" + (g.anggota || []).length + ")</h3>" +
-      '<div class="jp-table-scroll"><table class="jp-table" style="width:100%">' +
+      '<div class="jp-table-scroll"><table class="jp-table tabel-sesi" style="width:100%">' +
         '<thead><tr><th>ID</th><th>Waktu</th><th>Lokasi</th><th class="jp-num-right">Temuan</th><th style="text-align:right">Aksi</th></tr></thead>' +
         "<tbody>" + anggota + "</tbody></table></div>" +
       "<h3>Sesi tanpa segmen</h3>" +
-      '<div class="jp-table-scroll" style="max-height:260px;overflow-y:auto"><table class="jp-table" style="width:100%">' +
+      '<div class="jp-table-scroll" style="max-height:260px;overflow-y:auto"><table class="jp-table tabel-sesi" style="width:100%">' +
         '<thead><tr><th>ID</th><th>Waktu</th><th>Lokasi</th><th class="jp-num-right">Temuan</th><th style="text-align:right">Aksi</th></tr></thead>' +
         "<tbody>" + bebas + "</tbody></table></div>";
 

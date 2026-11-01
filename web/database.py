@@ -406,6 +406,13 @@ def sdi_segmen(segmen_id):
                     "lebar_cm": r["lebar_cm"]})
     komp = _agregasi_sdi(det, s["panjang_m"], s["lebar_m"])
     hasil = _hitung_sdi(komp)
+    if not rows:
+        # Audit UI 1 Nov 2026: segmen tanpa sesi anggota BELUM punya data —
+        # kategori harus netral (None), bukan "Baik". SDI total 0 dari
+        # hitung_sdi() adalah nilai matematis komponen kosong; melabelinya
+        # "Baik" membuat segmen belum-survei terlihat sehat di daftar,
+        # distribusi kategori, dialog, dan PDF.
+        hasil["kategori"] = None
     hasil["n_temuan_total"] = len(rows)
     hasil["n_tanpa_dimensi"] = tanpa_dimensi
     hasil["komp"] = komp  # data pengukuran agregat (untuk penjelasan visual)

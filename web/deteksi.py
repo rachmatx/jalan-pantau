@@ -1698,16 +1698,22 @@ def analisis_gambar(raw: bytes, conf: float = 0.25, model_path=None,
 
 
 def buat_pdf(rows, total, img_path=None, source="-", model_name="-",
-             verifikasi=""):
+             verifikasi="", tambahan=None):
     """rows + total -> path PDF sementara (pemanggil menghapus setelah dikirim).
 
     `img_path` = gambar bukti yang SUDAH ada di disk (gambar sementara bertoken
     atau gambar sesi tersimpan). Fungsi ini tidak memilikinya dan tidak
     menghapusnya. Gambar tidak valid ditangani buat_laporan seperti sebelumnya.
+
+    `tambahan` = dict meta ekstra desain hybrid (Waktu/Lokasi/Koordinat/
+    Segmen/SesiID) bila laporan dibuat dari sesi tersimpan; boleh None.
     """
     pdf_path = None
     try:
         meta = {"Sumber": source, "Model": model_name}
+        if tambahan:
+            meta.update({k: v for k, v in tambahan.items()
+                         if v not in (None, "")})
         if verifikasi:
             meta["Verifikasi operator"] = verifikasi
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
