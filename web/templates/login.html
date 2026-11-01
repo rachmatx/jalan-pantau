@@ -47,6 +47,14 @@
       border-radius:4px}
     .login-petunjuk-catatan{margin:10px 0 0;padding-top:10px;
       border-top:1px solid #E2E8F0;font-size:12px;color:#475569}
+    .pass-wrap{position:relative}
+    .pass-wrap input{padding-right:48px}
+    .pass-eye{position:absolute;right:4px;top:50%;transform:translateY(-50%);
+      width:40px;height:44px;display:flex;align-items:center;justify-content:center;
+      background:none;border:none;border-radius:8px;cursor:pointer;color:#64748B}
+    .pass-eye:hover{color:#006194;background:#F1F5F9}
+    .pass-eye:focus-visible{outline:2px solid rgba(0,97,148,.35)}
+    .pass-eye svg{width:20px;height:20px}
     .login-back{text-align:center;margin:18px 0 0;font-size:13px}
     .login-back a{color:#006194;text-decoration:none;font-weight:600;display:inline-block;padding:6px 8px}
     .login-back a:hover{text-decoration:underline}
@@ -74,11 +82,35 @@
                autocomplete="username" placeholder="admin">
 
         <label for="password">Password</label>
-        <input type="password" id="password" name="password" required
-               autocomplete="current-password" placeholder="Password">
+        <div class="pass-wrap">
+          <input type="password" id="password" name="password" required
+                 autocomplete="current-password" placeholder="Password">
+          <button type="button" class="pass-eye" id="pass-eye"
+                  aria-label="Tampilkan password" aria-pressed="false">
+            <svg id="ikon-mata-buka" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg id="ikon-mata-tutup" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 8 10 8a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.53 13.53 0 0 0 2 12s3.5 8 10 8a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/></svg>
+          </button>
+        </div>
 
         <button type="submit" class="login-btn">Masuk</button>
       </form>
+      <script>
+        (function () {
+          var btn = document.getElementById('pass-eye');
+          var inp = document.getElementById('password');
+          var buka = document.getElementById('ikon-mata-buka');
+          var tutup = document.getElementById('ikon-mata-tutup');
+          btn.addEventListener('click', function () {
+            var terlihat = inp.type === 'text';
+            inp.type = terlihat ? 'password' : 'text';
+            buka.style.display = terlihat ? '' : 'none';
+            tutup.style.display = terlihat ? 'none' : '';
+            btn.setAttribute('aria-pressed', String(!terlihat));
+            btn.setAttribute('aria-label', terlihat ? 'Tampilkan password' : 'Sembunyikan password');
+            inp.focus();
+          });
+        })();
+      </script>
 
       <p class="login-back"><a href="/">Kembali ke halaman utama</a></p>
     </section>

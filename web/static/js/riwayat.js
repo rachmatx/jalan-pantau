@@ -200,14 +200,15 @@ function renderTabelTemuan() {
   var end = Math.min(start + PER_HALAMAN_TEMUAN, temuan.length);
   var pageRows = temuan.slice(start, end);
 
+  // Kolom REKOMENDASI & sub "Kode:" dibuang: isinya selalu "-" (placeholder
+  // tanpa data) dan membuat tabel melebar tak perlu di layar kecil.
   tabelEl.innerHTML =
     `<table class="jp-table"><thead><tr><th>NO</th><th>KATEGORI KERUSAKAN</th>` +
-    `<th>TINGKAT KEPARAHAN</th><th>DIMENSI</th><th>REKOMENDASI</th></tr></thead><tbody>` +
+    `<th>TINGKAT KEPARAHAN</th><th>DIMENSI</th></tr></thead><tbody>` +
     pageRows.map((r) =>
       `<tr><td class="jp-num">${esc(String(r.idx).padStart(2, "0"))}</td>` +
-      `<td><span class="jp-cell-main">${esc(r.kelas)}</span><span class="jp-cell-sub">Kode: -</span></td>` +
-      `<td>${badge(r.severity)}</td><td class="jp-num">${esc(r.dasar)}</td>` +
-      `<td style="font-size:12px;color:var(--jp-tx2)">-</td></tr>`
+      `<td><span class="jp-cell-main">${esc(r.kelas)}</span></td>` +
+      `<td>${badge(r.severity)}</td><td class="jp-num">${esc(r.dasar)}</td></tr>`
     ).join("") + `</tbody></table>`;
 
   // Render pagination

@@ -301,11 +301,11 @@
       "<h3>Posisi pada skala Bina Marga</h3>" +
       skalaSDI(sdi.sdi_total, manual) +
       "<h3>Sesi anggota (" + (g.anggota || []).length + ")</h3>" +
-      '<div class="jp-table-scroll"><table class="jp-table" style="width:100%">' +
+      '<div class="jp-table-scroll"><table class="jp-table tabel-sesi" style="width:100%">' +
         '<thead><tr><th>ID</th><th>Waktu</th><th>Lokasi</th><th class="jp-num-right">Temuan</th><th style="text-align:right">Aksi</th></tr></thead>' +
         "<tbody>" + anggota + "</tbody></table></div>" +
       "<h3>Sesi tanpa segmen</h3>" +
-      '<div class="jp-table-scroll" style="max-height:260px;overflow-y:auto"><table class="jp-table" style="width:100%">' +
+      '<div class="jp-table-scroll" style="max-height:260px;overflow-y:auto"><table class="jp-table tabel-sesi" style="width:100%">' +
         '<thead><tr><th>ID</th><th>Waktu</th><th>Lokasi</th><th class="jp-num-right">Temuan</th><th style="text-align:right">Aksi</th></tr></thead>' +
         "<tbody>" + bebas + "</tbody></table></div>";
 

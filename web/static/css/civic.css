@@ -1972,3 +1972,100 @@ label.jp-caps, .jp-caps { margin: 0 0 5px; } /* netralkan margin-bottom label da
   /* Tentang & judul tabel: judul + label ditumpuk, tidak bertabrakan. */
   .jp-table-title { flex-direction: column; align-items: flex-start; gap: 2px; }
 }
+
+/* Sapuan target sentuh susulan (audit 1 Nov 2026): tiga tombol kecil
+   yang lolos dari sapuan pertama. Khusus <= 640px — desktop utuh. */
+@media (max-width: 640px) {
+  /* !important diperlukan: aturan dasar .zoom-bar button memakai
+     min-width/height 28px !important. */
+  .zoom-bar button { min-width: 44px !important; min-height: 44px !important; height: 44px !important; }
+  .jp-gps-btn { min-height: 44px; }
+  .jp-btn-kamera { min-height: 44px; }
+}
+
+/* Susulan audit (1 Nov 2026, paket kedua): hamburger, tabel di dalam
+   dialog, dan badan drawer peta. Khusus <= 640px. */
+@media (max-width: 640px) {
+  .nav-toggle { width: 44px; height: 44px; }
+  #d-tabel .jp-table th, #d-tabel .jp-table td,
+  #dg-isi .jp-table th, #dg-isi .jp-table td { padding: 8px 10px; }
+  #d-tabel .jp-table th:first-child, #d-tabel .jp-table td:first-child { display: none; }
+  .tabel-sesi th:nth-child(2), .tabel-sesi td:nth-child(2) { display: none; }
+  #drawer-body { max-height: 44vh; overflow-y: auto; }
+  #toggle-drawer-btn { min-width: 44px; min-height: 44px; }
+  /* Rampingkan lanjutan: tabel dialog harus muat tanpa geser menyamping. */
+  #detail .dialog-body { padding: 16px 14px !important; }
+  #d-tabel .jp-table, #dg-isi .jp-table { font-size: 12.5px; }
+  #d-tabel .jp-table th, #d-tabel .jp-table td,
+  #dg-isi .jp-table th, #dg-isi .jp-table td { padding: 6px 8px; }
+  #d-tabel .jp-num { white-space: normal; }
+  #d-tabel .jp-table th, #dg-isi .jp-table th { white-space: normal; }
+  #dg-isi .jp-table td { overflow-wrap: break-word; }
+}
+
+/* ===== Halaman Kalibrasi v1 (rancangan disetujui user 1 Nov 2026) =====
+   Semua gaya halaman ini di-scope .kal-wrap; id & JS ukur tidak berubah. */
+.kal-wrap .jp-card { padding: 20px; }
+.kal-grid { margin-top: 16px; }
+.kal-col { display: flex; flex-direction: column; gap: 16px; }
+.kal-title { font-size: 20px; font-weight: 700; margin: 0; }
+.kal-h { font-size: 17px; font-weight: 700; margin: 2px 0 4px; }
+.kal-caps { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--jp-primary); text-transform: uppercase; }
+.kal-desc { font-size: 13px; color: var(--jp-tx2); line-height: 1.55; margin: 0 0 12px; }
+.kal-hero-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.kal-pill { padding: 4px 12px; border-radius: 9999px; background: var(--jp-container-low); border: 1px solid var(--jp-line); font-family: var(--jp-mono); font-size: 12px; font-weight: 700; color: var(--jp-tx2); }
+.kal-info { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; font-family: var(--jp-mono); }
+.kal-info > div { background: var(--jp-container-low); border-radius: 10px; padding: 10px 14px; flex: 1 1 150px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--jp-tx2); }
+.kal-info > div strong { display: block; margin-top: 3px; font-size: 13px; letter-spacing: 0; text-transform: none; color: var(--jp-ink); overflow-wrap: break-word; }
+.kal-info > div:first-child { background: transparent; padding-left: 0; flex: 0 0 auto; }
+.kal-info > div:first-child strong { font-size: 30px; line-height: 1.1; white-space: nowrap; }
+.kal-alert { margin-top: 14px; background: var(--jp-sev-m-bg); border: 1px solid var(--jp-sev-m-bd); color: #92400E; border-radius: 10px; padding: 10px 14px; font-size: 13px; line-height: 1.55; }
+.kal-note { margin: 14px 0 0; border-top: 1px solid var(--jp-line); padding-top: 12px; font-size: 13px; color: var(--jp-tx2); line-height: 1.6; }
+.kal-form-row { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; }
+.kal-form-row label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.kal-f-ppc { flex: 0 1 180px; }
+.kal-f-cat { flex: 1 1 220px; }
+.kal-wrap .jp-input { height: 44px; }
+.kal-wrap .jp-btn-primary, .kal-wrap .jp-btn-demo { height: 44px; min-height: 44px; }
+.kal-form-row .jp-btn-primary { width: auto; flex: none; }
+.kal-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 12px 0 14px; }
+.kal-step { background: var(--jp-container-low); border-radius: 10px; padding: 12px; display: flex; gap: 10px; align-items: flex-start; }
+.kal-step-no { width: 24px; height: 24px; flex: none; border-radius: 50%; background: var(--jp-primary); color: #fff; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+.kal-step p { margin: 0; font-size: 12.5px; line-height: 1.5; }
+.kal-upload { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.kal-btn-upload { display: inline-flex; align-items: center; height: 44px; padding: 0 18px; border-radius: 8px; border: 1.5px solid var(--jp-primary); color: var(--jp-primary); background: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
+.kal-btn-upload:hover { background: var(--jp-container-low); }
+.kal-file-sembunyi { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+.kal-fname { font-size: 13px; color: var(--jp-tx2); overflow-wrap: anywhere; }
+.kal-viewer { min-height: 260px; margin-top: 14px; }
+.kal-viewer.kosong { border: 1.5px dashed #CBD5E1; background: #FBFDFF; }
+.kal-kosong { text-align: center; color: var(--jp-tx2); }
+.kal-kosong-ikon { width: 44px; height: 44px; margin: 0 auto 8px; border-radius: 12px; background: var(--jp-container-low); color: var(--jp-primary); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.kal-kosong p { margin: 0; font-size: 13.5px; line-height: 1.55; }
+.kal-ukur { align-items: end; }
+.kal-ukur .kalibrasi-field input { width: 130px; }
+.kal-hasil { flex: 1 1 220px; align-self: stretch; background: var(--jp-container-low); border-radius: 10px; padding: 10px 14px; display: flex; flex-direction: column; justify-content: center; }
+.kal-hasil-label { font-size: 11px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--jp-tx2); }
+.kal-hasil .kalibrasi-status { margin: 2px 0 0; }
+.kal-dampak { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; font-family: var(--jp-mono); }
+.kal-dampak > span { background: var(--jp-container-low); border-radius: 10px; padding: 12px 14px; font-size: 0; color: var(--jp-tx2); display: flex; flex-direction: column; }
+.kal-dampak > span strong { font-size: 24px; color: var(--jp-ink); line-height: 1.15; margin-bottom: 2px; }
+.kal-dampak > span::after { font-family: "Inter", system-ui, sans-serif; font-size: 12px; line-height: 1.45; }
+.kal-dampak > span:nth-child(1)::after { content: "panjang kotak deteksi 100 px di foto"; }
+.kal-dampak > span:nth-child(2)::after { content: "lebar lubang \00d8 25 cm di foto"; }
+.kal-list { margin: 10px 0 16px; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--jp-tx2); line-height: 1.55; }
+.kal-btn-block { width: 100%; }
+@media (max-width: 640px) {
+  .kal-info > div:first-child { flex-basis: 100%; }
+  .kal-info > div { flex-basis: calc(50% - 5px); }
+  .kal-info > div:last-child { flex-basis: 100%; }
+  .kal-steps { grid-template-columns: 1fr; }
+  .kal-form-row { flex-direction: column; align-items: stretch; }
+  .kal-f-ppc { flex: none; }
+  .kal-viewer { min-height: 200px; }
+  .kal-ukur .kalibrasi-field { flex: 1 1 100%; }
+  .kal-ukur .kalibrasi-field input { width: 100%; }
+  .kal-hasil { flex-basis: 100%; }
+  .kal-ukur .kalibrasi-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; margin-left: 0; }
+  .kal-ukur .kalibrasi-actions .jp-btn-primary { grid-column: span 2; }
+}
