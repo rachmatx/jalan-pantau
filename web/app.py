@@ -403,7 +403,7 @@ def create_app():
         return jsonify({"ok": True, "username": admin["username"]})
 
     # Cache-buster: versi ini akan ditambahkan ke semua asset static
-    STATIC_VERSION = "46"  # 41: tile peta OSM Standard (CARTO wajib API key) + PDF hybrid
+    STATIC_VERSION = "50"  # 41: tile peta OSM Standard (CARTO wajib API key) + PDF hybrid
 
     @app.context_processor
     def inject_static_version():

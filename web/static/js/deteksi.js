@@ -516,6 +516,12 @@ form.addEventListener("submit", async (e) => {
     }
     slot.classList.remove("kosong");
     slot.innerHTML = `<img src="${urlGambar(json.gambar_token)}" alt="Hasil deteksi ${esc(berkas.name)}">`;
+    // Layar sempit: gulir halus ke viewer agar hasil langsung terlihat
+    // (panel parameter berada di bawah viewer pada mobile).
+    if (window.matchMedia("(max-width: 1023.98px)").matches) {
+      const vw = document.getElementById("viewer-gambar");
+      if (vw) vw.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
     if (json.gps && json.gps.lat != null && isiKoordinat("lat-gambar", "lon-gambar", json.gps.lat, json.gps.lon)) {
       status.textContent = "Koordinat terisi otomatis dari foto. ";
       status.classList.remove("galat");
