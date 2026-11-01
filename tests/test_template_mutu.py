@@ -23,7 +23,19 @@ def berkas_template():
     return sorted(p for p in TEMPLATES.rglob("*.html"))
 
 
-class TestEntitasHtml(unittest.TestCase):
+class TestAtributAksiSegmen(unittest.TestCase):
+    """Atribut data-keluar/data-masuk global dipakai tautan sesi di base.html.
+
+    Regresi: tombol "Keluarkan" anggota segmen memakai data-keluar sehingga
+    klik-nya memicu dialog logout (dan benar-benar keluar bila dikonfirmasi).
+    """
+
+    def test_tidak_memakai_atribut_sesi_global(self):
+        js = (AKAR / "web" / "static" / "js" / "segmen.js").read_text(
+            encoding="utf-8")
+        self.assertNotIn("data-keluar", js)
+        self.assertNotIn("data-masuk", js)
+
     """Entitas yang tidak dikenal browser akan tampil apa adanya."""
 
     def test_tidak_ada_entitas_rusak(self):

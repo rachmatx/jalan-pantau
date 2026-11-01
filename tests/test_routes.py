@@ -78,8 +78,8 @@ class TestCsrfHtml(unittest.TestCase):
         self.assertIn("Permintaan Ditolak", r.get_data(as_text=True))
 
     def test_env_loader(self):
-        from web.app import _muat_env_file
-        _muat_env_file()  # tidak error bila .env tidak ada
+        from web.env_file import muat_env_file
+        muat_env_file()  # tidak error bila .env tidak ada
 
 
 if __name__ == "__main__":

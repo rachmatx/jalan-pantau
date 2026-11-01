@@ -248,13 +248,13 @@
       return "<tr><td>#" + s.id + "</td><td>" + esc(s.waktu) + "</td>" +
         "<td>" + esc(s.lokasi) + "</td>" +
         '<td class="jp-num-right">' + esc(s.n_temuan) + "</td>" +
-        '<td><div class="jp-rowact"><button type="button" data-act="hapus" data-keluar="' + s.id + '">Keluarkan</button></div></td></tr>';
+        '<td><div class="jp-rowact"><button type="button" data-act="hapus" data-anggota-keluar="' + s.id + '">Keluarkan</button></div></td></tr>';
     }).join("") || '<tr><td colspan="5" style="color:var(--jp-muted)">Belum ada sesi anggota.</td></tr>';
     const bebas = (g.tanpa_segmen || []).map(function(s) {
       return "<tr><td>#" + s.id + "</td><td>" + esc(s.waktu) + "</td>" +
         "<td>" + esc(s.lokasi) + "</td>" +
         '<td class="jp-num-right">' + esc(s.n_temuan) + "</td>" +
-        '<td><div class="jp-rowact"><button type="button" data-act="detail" data-masuk="' + s.id + '">Masukkan</button></div></td></tr>';
+        '<td><div class="jp-rowact"><button type="button" data-act="detail" data-anggota-masuk="' + s.id + '">Masukkan</button></div></td></tr>';
     }).join("") || '<tr><td colspan="5" style="color:var(--jp-muted)">Semua sesi sudah ber-segmen.</td></tr>';
 
     document.getElementById("dg-judul").textContent = "Segmen: " + g.nama;
@@ -339,18 +339,18 @@
     document.getElementById("e-pdf").onclick = function() {
       window.location.href = "/api/segmen/" + id + "/pdf";
     };
-    document.querySelectorAll("[data-keluar]").forEach(function(b) {
+    document.querySelectorAll("[data-anggota-keluar]").forEach(function(b) {
       b.onclick = async function() {
-        const r = await fetch("/api/segmen/" + id + "/anggota/" + b.getAttribute("data-keluar"), { method: "DELETE" });
+        const r = await fetch("/api/segmen/" + id + "/anggota/" + b.getAttribute("data-anggota-keluar"), { method: "DELETE" });
         if (r.ok) { bukaDetail(id); muat(); }
       };
     });
-    document.querySelectorAll("[data-masuk]").forEach(function(b) {
+    document.querySelectorAll("[data-anggota-masuk]").forEach(function(b) {
       b.onclick = async function() {
         const r = await fetch("/api/segmen/" + id + "/anggota", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sesi_id: Number(b.getAttribute("data-masuk")) }),
+          body: JSON.stringify({ sesi_id: Number(b.getAttribute("data-anggota-masuk")) }),
         });
         if (r.ok) { bukaDetail(id); muat(); }
       };

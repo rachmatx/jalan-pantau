@@ -27,6 +27,8 @@ prioritas adalah SDI-visual per segmen (app/sdi.py).
 Field "makna" pada output diagnose() menyatakan apa yang sebenarnya
 diklasifikasikan: "tingkat keparahan" | "kelas ukuran" | "kelas luasan".
 """
+import math
+
 import yaml
 
 # Makna klasifikasi per jenis kerusakan (untuk kejujuran terminologi).
@@ -43,6 +45,20 @@ def makna_untuk_kelas(cls_name):
     if "crack" in c and "alligator" not in c:
         return MAKNA_KEPARAHAN
     return MAKNA_LUASAN
+
+
+def _angka_bawah(nilai, desimal=1):
+    """Format angka dengan pembulatan KE BAWAH.
+
+    Teks 'dasar' dipakai sebagai jejak audit severity. Pembulatan biasa bisa
+    menaruh angka di sisi ambang yang salah (9,99 mm tampil '10 mm' padahal
+    severity-nya Ringan), jadi selalu potong ke bawah.
+    """
+    p = 10 ** desimal
+    teks = f"{math.floor(nilai * p) / p:.{desimal}f}"
+    if "." in teks:
+        teks = teks.rstrip("0").rstrip(".")
+    return teks
 
 
 def load_config(path="config/severity.yaml"):
@@ -104,13 +120,13 @@ def diagnose(cls_name, x1, y1, x2, y2, cfg):
     makna = makna_untuk_kelas(c)
     if "crack" in c and "alligator" not in c:
         sev = crack_severity(min(w, h) * 10, cfg)
-        dasar = f"lebar retak {min(w, h) * 10:.0f} mm"
+        dasar = f"lebar retak {_angka_bawah(min(w, h) * 10)} mm"
     elif "pothole" in c:
         sev = pothole_severity(max(w, h), cfg)
-        dasar = f"diameter ±{max(w, h):.0f} cm (kelas ukuran)"
+        dasar = f"diameter ±{_angka_bawah(max(w, h))} cm (kelas ukuran)"
     else:  # alligator_crack, other_corruption
         sev = area_severity(area, cfg)
-        dasar = f"luas area {area:.0f} cm2 (kelas luasan)"
+        dasar = f"luas area {_angka_bawah(area)} cm2 (kelas luasan)"
     return {
         "kelas": cls_name,
         "panjang_cm": round(max(w, h), 1),

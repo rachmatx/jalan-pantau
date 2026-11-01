@@ -6,6 +6,7 @@ Buka: http://127.0.0.1:5000
 """
 import atexit
 import functools
+import math
 import os
 import secrets
 import sys
@@ -18,6 +19,12 @@ from pathlib import Path
 
 # Pastikan folder web/ ada di path untuk import lokal
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+# .env harus dimuat sebelum modul lain membaca os.environ (AKUN_DEMO dievaluasi
+# saat import database, bukan saat create_app).
+from env_file import muat_env_file  # noqa: E402
+
+muat_env_file()
 
 from flask import (Flask, Response, current_app, jsonify, redirect,
                    render_template, request, send_file, session, url_for)
@@ -56,6 +63,20 @@ CONF_MIN, CONF_MAX, CONF_DEFAULT = 0.05, 0.8, 0.25
 FRAME_SKIP_MIN, FRAME_SKIP_MAX = 1, 30
 _PESAN_MEMORI = ("Memori tidak cukup untuk memproses gambar ini. "
                  "Tutup tab lain, tunggu sebentar, atau pakai gambar beresolusi lebih kecil.")
+
+
+def _rows_valid(rows):
+    """Payload rows: list of dict (bukan str/dict/angka yang lolos ke SQL)."""
+    return isinstance(rows, list) and all(isinstance(r, dict) for r in rows)
+
+
+def _teks(data, kunci, bawaan="-"):
+    v = data.get(kunci, bawaan)
+    if v is None:
+        return bawaan
+    if not isinstance(v, str):
+        raise ValueError(f"Nilai {kunci} tidak valid.")
+    return v
 
 
 def _kurang_memori(e):
@@ -193,32 +214,7 @@ def _meta_tambahan_laporan(data):
     return {k: v for k, v in tambahan.items() if v not in (None, "")}
 
 
-def _muat_env_file():
-    """Muat berkas .env (opsional) ke os.environ TANPA menimpa env yang sudah ada.
-
-    Format sederhana: KEY=VALUE per baris; abaikan komentar (#) dan baris kosong.
-    Berguna agar `.env.example` -> `.env` benar-benar berfungsi (tanpa dependensi).
-    """
-    p = WEB_DIR.parent / ".env"
-    if not p.is_file():
-        return
-    try:
-        for baris in p.read_text(encoding="utf-8").splitlines():
-            baris = baris.strip()
-            if not baris or baris.startswith("#") or "=" not in baris:
-                continue
-            k, v = baris.split("=", 1)
-            k = k.strip()
-            v = v.strip().strip('"').strip("'")
-            if k and k not in os.environ:
-                os.environ[k] = v
-    except OSError:
-        pass
-
-
-
 def create_app():
-    _muat_env_file()
     app = Flask(__name__, template_folder=str(WEB_DIR / "templates"),
                 static_folder=str(WEB_DIR / "static"))
     app.config["MAX_CONTENT_LENGTH"] = MAX_VIDEO_BYTES
@@ -395,15 +391,21 @@ def create_app():
         admin = cek_login(user, pwd)
         if not admin:
             return jsonify({"error": "Username atau password salah."}), 401
+        csrf = session.get("_csrf")
         session.clear()
         session.permanent = True
         session["admin_id"] = admin["id"]
         session["admin_user"] = admin["username"]
         session["login_at"] = time.time()
-        return jsonify({"ok": True, "username": admin["username"]})
+        # Pertahankan token agar aksi yang ditunda (retry simpan/hapus dari
+        # dialog login) tidak langsung 403 tanpa reload halaman.
+        if csrf:
+            session["_csrf"] = csrf
+        return jsonify({"ok": True, "username": admin["username"],
+                        "csrf": csrf_token()})
 
     # Cache-buster: versi ini akan ditambahkan ke semua asset static
-    STATIC_VERSION = "46"  # 41: tile peta OSM Standard (CARTO wajib API key) + PDF hybrid
+    STATIC_VERSION = "47"  # 47: atribut segmen + CSRF pasca-login modal; 41: tile OSM Standard + PDF hybrid
 
     @app.context_processor
     def inject_static_version():
@@ -518,6 +520,8 @@ def create_app():
         try:
             conf = float(request.form.get("conf", CONF_DEFAULT))
         except ValueError:
+            return jsonify({"error": "Confidence tidak valid."}), 400
+        if not math.isfinite(conf):
             return jsonify({"error": "Confidence tidak valid."}), 400
         conf = min(max(conf, CONF_MIN), CONF_MAX)
         malam = request.form.get("malam", "") in ("1", "true", "on")
@@ -662,9 +666,16 @@ def create_app():
         rows = data.get("rows", [])
         if not rows:
             return jsonify({"error": "Tidak ada hasil untuk diverifikasi."}), 400
+        if not _rows_valid(rows):
+            return jsonify({"error": "Format rows tidak valid."}), 400
+        hapus = data.get("hapus")
+        if hapus is not None and not isinstance(hapus, list):
+            return jsonify({"error": "Format hapus tidak valid."}), 400
+        severity = data.get("severity")
+        if severity is not None and not isinstance(severity, dict):
+            return jsonify({"error": "Format severity tidak valid."}), 400
         try:
-            baru, total, info = terapkan_koreksi(
-                rows, data.get("hapus"), data.get("severity"))
+            baru, total, info = terapkan_koreksi(rows, hapus, severity)
         except Exception:
             app.logger.exception("verifikasi gagal")
             return jsonify({"error": "Verifikasi gagal. Coba lagi."}), 500
@@ -677,6 +688,8 @@ def create_app():
         rows, total = data.get("rows", []), data.get("total", 0)
         if not rows:
             return jsonify({"error": "Tidak ada hasil untuk dilaporkan."}), 400
+        if not _rows_valid(rows):
+            return jsonify({"error": "Format rows tidak valid."}), 400
         try:
             pdf_path = buat_pdf(
                 rows, total, img_path=_gambar_untuk_laporan(data),
@@ -745,18 +758,22 @@ def create_app():
             return "URL IP-camera tidak valid."
         # Untuk penggunaan lokal/izin IP privat (192.168.x.x, 10.x.x.x, dll)
         # Hanya blokir localhost dan alamat yang benar-benar tidak valid
-        if host in ("localhost", "ip6-localhost"):
+        if host in ("localhost", "ip6-localhost") or host.endswith(".localhost"):
             return "URL IP-camera tidak boleh localhost. Gunakan IP privat (192.168.x.x) atau IP publik."
         import ipaddress as _ip
+
+        def _terlarang(nilai):
+            try:
+                ip = _ip.ip_address(str(nilai).split("%", 1)[0])
+            except ValueError:
+                return False
+            if isinstance(ip, _ip.IPv6Address) and ip.ipv4_mapped:
+                ip = ip.ipv4_mapped
+            return (ip.is_loopback or ip.is_multicast or ip.is_reserved
+                    or ip.is_unspecified or ip.is_link_local)
+
         try:
             ip = _ip.ip_address(host)
-            # Hanya blokir loopback, multicast, reserved, dan unspecified
-            # IP privat (192.168.x.x, 10.x.x.x, 172.16-31.x.x) DIIZINKAN untuk penggunaan lokal
-            if (ip.is_loopback or ip.is_multicast or ip.is_reserved
-                    or ip.is_unspecified):
-                return "URL IP-camera tidak boleh alamat loopback/multicast."
-            if ip == _ip.ip_address("169.254.169.254"):
-                return "URL IP-camera tidak boleh metadata cloud."
         except ValueError:
             # Bentuk IP terobfuskasi tetap ditafsirkan resolver/ffmpeg (desimal
             # 2130706433, heksa 0x7f000001, oktal 0177.0.0.1, bentuk pendek
@@ -768,6 +785,21 @@ def create_app():
             # hostname biasa: hanya blokir suffix yang jelas-jelas lokal
             if host.endswith((".local", ".internal")):
                 return "URL IP-camera tidak boleh host lokal."
+            # Resolusi DNS: hostname yang mengarah ke loopback/link-local adalah
+            # jalan pintas SSRF yang lolos dari pemeriksaan IP literal.
+            import socket as _socket
+            try:
+                hasil = _socket.getaddrinfo(host, None)
+            except (OSError, UnicodeError):
+                return "Host IP-camera tidak dapat diresolusi."
+            if not hasil or any(_terlarang(info[4][0]) for info in hasil):
+                return ("URL IP-camera tidak boleh mengarah ke alamat "
+                        "loopback/internal.")
+        else:
+            # IP privat (192.168.x.x, 10.x.x.x, 172.16-31.x.x) DIIZINKAN untuk
+            # penggunaan lokal; loopback/link-local/metadata tidak.
+            if _terlarang(ip):
+                return "URL IP-camera tidak boleh alamat loopback/multicast."
         return None
 
     @app.post("/api/stream/start")
@@ -795,6 +827,8 @@ def create_app():
             skip = int(data.get("frame_skip", 2 if source == "webcam" else 1))  # default skip 2 untuk webcam
         except (TypeError, ValueError):
             return jsonify({"error": "confidence/frame_skip tidak valid."}), 400
+        if not math.isfinite(conf):
+            return jsonify({"error": "confidence/frame_skip tidak valid."}), 400
         conf = min(max(conf, CONF_MIN), CONF_MAX)
         skip = min(max(skip, FRAME_SKIP_MIN), FRAME_SKIP_MAX)
         malam = data.get("malam", False) in (True, 1, "1", "true", "on")
@@ -811,7 +845,7 @@ def create_app():
                       performa=performa)
         return jsonify({"ok": True, "token": _token_terbit(),
                         "tips": "FPS tampil rendah? Coba Mode Performa 'Halus'. "
-                                "Deteksi jarang? Pakai 'Akurat' atau kecilkan "
+                                "Deteksi jarang? Pakai 'Seimbang' atau kecilkan "
                                 "interval inferensi."})
 
     @app.post("/api/stream/stop")
@@ -891,6 +925,8 @@ def create_app():
             skip = int(data.get("frame_skip", 2))
         except (TypeError, ValueError):
             return jsonify({"error": "confidence/frame_skip tidak valid."}), 400
+        if not math.isfinite(conf):
+            return jsonify({"error": "confidence/frame_skip tidak valid."}), 400
         conf = min(max(conf, CONF_MIN), CONF_MAX)
         skip = min(max(skip, FRAME_SKIP_MIN), FRAME_SKIP_MAX)
         malam = data.get("malam", False) in (True, 1, "1", "true", "on")
@@ -922,6 +958,8 @@ def create_app():
             conf = float(request.form.get("conf", CONF_DEFAULT))
             skip = int(request.form.get("frame_skip", 1))
         except (TypeError, ValueError):
+            return jsonify({"error": "confidence/frame_skip tidak valid."}), 400
+        if not math.isfinite(conf):
             return jsonify({"error": "confidence/frame_skip tidak valid."}), 400
         conf = min(max(conf, CONF_MIN), CONF_MAX)
         skip = min(max(skip, FRAME_SKIP_MIN), FRAME_SKIP_MAX)
@@ -974,6 +1012,8 @@ def create_app():
         rows = data.get("rows", [])
         if not rows:
             return jsonify({"error": "Tidak ada hasil untuk disimpan."}), 400
+        if not _rows_valid(rows):
+            return jsonify({"error": "Format rows tidak valid."}), 400
         img_bytes = None
         token = data.get("gambar_token")
         if token:
@@ -990,6 +1030,9 @@ def create_app():
             if ada:
                 return jsonify({"id": ada, "duplikat": True, "alasan": "client_ref"})
         try:
+            sumber = _teks(data, "sumber")
+            lokasi = _teks(data, "lokasi")
+            model = _teks(data, "model")
             lat, lon = _koordinat(data)
             try:
                 total = int(data.get("total", 0))
@@ -998,15 +1041,15 @@ def create_app():
             # Heuristik anti-duplikat titik: koordinat sama dalam 10 menit terakhir.
             # Bisa dilewati dengan izinkan_duplikat (inspeksi ulang yang disengaja).
             if not data.get("izinkan_duplikat"):
-                kembar = sesi_duplikat_coord(lat, lon, sumber=data.get("sumber"))
+                kembar = sesi_duplikat_coord(lat, lon, sumber=sumber)
                 if kembar:
                     return jsonify({
                         "id": kembar, "duplikat": True, "alasan": "koordinat",
                         "pesan": "Riwayat di titik ini baru saja tersimpan."})
             try:
                 sid = simpan_sesi(
-                    sumber=data.get("sumber", "-"), lokasi=data.get("lokasi", "-"),
-                    model=data.get("model", "-"), rows=rows, total=total,
+                    sumber=sumber, lokasi=lokasi, model=model,
+                    rows=rows, total=total,
                     lat=lat, lon=lon, image_bytes=img_bytes,
                     client_ref=client_ref)
             except IntegrityError:
@@ -1173,6 +1216,7 @@ def create_app():
         if d is None:
             return jsonify({"error": "Segmen tidak ditemukan."}), 404
         try:
+            pdf_path = None
             with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
                 pdf_path = f.name
             buat_laporan_segmen(pdf_path, d)
@@ -1182,10 +1226,11 @@ def create_app():
             app.logger.exception("buat pdf segmen gagal")
             return jsonify({"error": "Gagal membuat PDF."}), 500
         finally:
-            try:
-                os.remove(pdf_path)
-            except OSError:
-                pass
+            if pdf_path:
+                try:
+                    os.remove(pdf_path)
+                except OSError:
+                    pass
         return send_file(BytesIO(isi), as_attachment=True,
                          download_name=f"sdi-segmen-{sid}.pdf",
                          mimetype="application/pdf")

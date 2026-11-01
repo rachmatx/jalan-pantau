@@ -748,15 +748,22 @@ def terapkan_koreksi(rows, hapus=None, severity=None):
             sev_map[i] = v
     out, n_hapus, n_sev = [], 0, 0
     for i, r in enumerate(rows or []):
-        if i in hapus_set:
+        # Baris hasil verifikasi sebelumnya sudah membawa idx_asli asli yang
+        # bisa berlubang (0, 2, 3). Koreksi operator dari UI dikunci ke angka
+        # itu, jadi jangan dinomori ulang menurut posisi array.
+        try:
+            idx = int(r.get("idx_asli", i))
+        except (TypeError, ValueError):
+            idx = i
+        if idx in hapus_set:
             n_hapus += 1
             continue
         r = dict(r)
         r.setdefault("sumber", "AI")
-        r["idx_asli"] = i
-        if i in sev_map and sev_map[i] != r.get("severity"):
+        r["idx_asli"] = idx
+        if idx in sev_map and sev_map[idx] != r.get("severity"):
             lama = r.get("severity", "-")
-            baru_sev = sev_map[i]
+            baru_sev = sev_map[idx]
             try:
                 x1, y1, x2, y2 = (float(v) for v in r["box"])
                 item = diagnose(r.get("kelas", "-"), x1, y1, x2, y2, cfg)

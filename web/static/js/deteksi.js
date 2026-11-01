@@ -270,11 +270,23 @@ function refreshVerifikasiUI() {
     (label ? ` Terverifikasi operator: ${label}.` : "");
 }
 
+// idx_asli bisa berlubang setelah verifikasi (0, 2, 3); posisi array bukan
+// kuncinya. Cari berdasarkan angka yang dipakai tombol/select itu sendiri.
+function barisAsliDenganId(ia) {
+  if (!barisAsli) return null;
+  for (var i = 0; i < barisAsli.length; i++) {
+    var r = barisAsli[i];
+    var id = (r.idx_asli != null) ? String(r.idx_asli) : String(i);
+    if (id === String(ia)) return r;
+  }
+  return null;
+}
+
 document.getElementById("tabel").addEventListener("change", async (e) => {
   const sel = e.target.closest ? e.target.closest("select[data-sev]") : null;
   if (!sel || !barisAsli) return;
   const ia = sel.getAttribute("data-sev");
-  const asal = (barisAsli[Number(ia)] || {}).severity;
+  const asal = (barisAsliDenganId(ia) || {}).severity;
   if (sel.value && sel.value !== asal) verSev[ia] = sel.value;
   else delete verSev[ia];
   try {

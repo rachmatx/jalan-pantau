@@ -94,6 +94,31 @@ class TestSegmen(unittest.TestCase):
         with self.assertRaises(ValueError):
             db.simpan_sesi("foto", "km 3", "yolo", ROWS, 0, segmen_id=999999)
 
+    def test_temuan_tanpa_dimensi_disimpan_null(self):
+        """Regresi: None -> 0.0 membuat penjaga n_tanpa_dimensi tak pernah aktif
+        dan SDI menghitung kerusakan berluas nol (kategori palsu)."""
+        db = self.db
+        gid = db.tambah_segmen("Seg-NoDim", panjang_m=100, lebar_m=6)
+        rows = [{"kelas": "pothole", "severity": "Berat", "dasar": "-"}]
+        sid = db.simpan_sesi("foto", "-", "yolo", rows, 0, segmen_id=gid)
+        r = db.get_db().execute(
+            "SELECT panjang_cm, lebar_cm FROM temuan WHERE sesi_id = ?",
+            (sid,)).fetchone()
+        self.assertIsNone(r["panjang_cm"])
+        self.assertIsNone(r["lebar_cm"])
+        sdi = db.detail_segmen(gid)["sdi"]
+        self.assertEqual(sdi["n_temuan_total"], 1)
+        self.assertEqual(sdi["n_tanpa_dimensi"], 1)
+        self.assertIsNone(sdi["kategori"])
+        # Data lama yang sudah terlanjur 0.0 juga harus dihitung tanpa dimensi.
+        db.get_db().execute(
+            "UPDATE temuan SET panjang_cm = 0, lebar_cm = 0 WHERE sesi_id = ?",
+            (sid,))
+        db.get_db().commit()
+        sdi = db.detail_segmen(gid)["sdi"]
+        self.assertEqual(sdi["n_tanpa_dimensi"], 1)
+        self.assertIsNone(sdi["kategori"])
+
     def test_tetapkan_segmen_tak_valid(self):
         db = self.db
         sid = db.simpan_sesi("foto", "km 4", "yolo", ROWS, 0)

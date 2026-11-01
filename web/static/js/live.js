@@ -281,6 +281,7 @@ async function mulai() {
     statusLive.textContent = err.message;
     statusLive.classList.add("galat");
     btnMulai.disabled = false;
+    throw err;  // penerus (tombol retry) harus tahu kegagalannya
   }
 }
 
@@ -332,7 +333,9 @@ async function ambilSnapshot() {
   } catch { return null; }
 }
 
-btnMulai.addEventListener("click", mulai);
+btnMulai.addEventListener("click", function() {
+  mulai().catch(function(e) { console.error("[JalanPantau] mulai stream", e); });
+});
 btnBerhenti.addEventListener("click", () => hentikan(true));
 
 document.getElementById("demo").addEventListener("click", async () => {
@@ -500,9 +503,14 @@ document.getElementById("unduh-live").addEventListener("click", async () => {
   // Snapshot button: pakai snapshot live yang sudah ada (ambilSnapshot)
   var btnSnap = document.getElementById("btn-snapshot");
   if (btnSnap) btnSnap.addEventListener("click", () => {
-    ambilSnapshot().then(() => {
+    ambilSnapshot().then(function(snap) {
+      if (!snap) {
+        showToast("Snapshot", "Gagal mengambil snapshot.", "galat");
+        return;
+      }
       showToast("Snapshot", "Snapshot sesi live diperbarui (tabel + total).", "success");
-    }).catch(() => {
+    }).catch(function(e) {
+      console.error("[JalanPantau] snapshot live", e);
       showToast("Snapshot", "Gagal mengambil snapshot.", "galat");
     });
   });

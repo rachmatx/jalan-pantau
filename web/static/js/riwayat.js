@@ -155,31 +155,58 @@ function renderTabel() {
   renderPaginasi(rows.length);
 }
 
-async function muat() {
-  // Skeleton loading saat fetch
-  var daftarEl = document.getElementById("daftar");
-  daftarEl.innerHTML = Array(5).fill(
-    '<tr><td colspan="7" style="padding:12px"><span class="skel" style="width:100%;height:18px"></span></td></tr>'
-  ).join("").replace(/tr>/g, "div>").replace(/td/g, "div");
-  // Tampilkan sebagai skeleton cards
-  daftarEl.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px">' +
+function tampilkanSkeletonRiwayat() {
+  document.getElementById("daftar").innerHTML =
+    '<div style="display:flex;flex-direction:column;gap:8px">' +
     Array(5).fill('<div style="height:60px;border-radius:8px;background:linear-gradient(90deg,var(--jp-container) 25%,var(--jp-container-low) 50%,var(--jp-container) 75%);background-size:200% 100%;animation:jp-skeleton 1.5s infinite"></div>').join("") +
-  '</div>';
+    "</div>";
+}
 
+function tampilkanGalatMuat(err) {
+  console.error("[JalanPantau] muat riwayat", err);
+  barisTerakhir = [];
+  halaman = 1;
+  var daftarEl = document.getElementById("daftar");
+  daftarEl.innerHTML = '<div class="jp-empty">' +
+    '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--jp-muted)" stroke-width="1.5" style="margin-bottom:8px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+    '<strong>Gagal memuat riwayat</strong>' +
+    '<p>Server tidak merespons atau mengembalikan galat. Riwayat tidak ditampilkan agar tidak menyesatkan.</p>' +
+    '<button type="button" class="jp-btn-light" data-muat-ulang style="margin-top:8px">Coba Lagi</button>' +
+  '</div>';
+  var ulang = daftarEl.querySelector("[data-muat-ulang]");
+  if (ulang) ulang.onclick = muat;
+  var kartu = document.getElementById("daftar-kartu");
+  if (kartu) kartu.innerHTML = "";
+  var infoEl = document.getElementById("f-info");
+  if (infoEl) {
+    infoEl.textContent = "Gagal memuat riwayat.";
+    infoEl.style.background = "";
+    infoEl.style.padding = "";
+  }
+  renderPaginasi(0);
+}
+
+async function muat() {
+  tampilkanSkeletonRiwayat();
   var q = new URLSearchParams({
     dari: document.getElementById("f-dari").value,
     sampai: document.getElementById("f-sampai").value,
     severity: document.getElementById("f-sev").value,
     q: document.getElementById("f-q").value.trim(),
   });
-  var res = await fetch("/api/riwayat?" + q);
-  var json = await res.json();
-  var rows = json.data || [];
-  barisTerakhir = rows;
-  halaman = 1;
-  perbaruiKpi(rows, json.total_db);
-  renderTabel();
-  tampilkanPeringatanOverflow(json.overflow, json.total_db, rows.length);
+  try {
+    var res = await fetch("/api/riwayat?" + q);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    var json = await res.json();
+    var rows = json.data || [];
+    barisTerakhir = rows;
+    halaman = 1;
+    perbaruiKpi(rows, json.total_db);
+    renderTabel();
+    tampilkanPeringatanOverflow(json.overflow, json.total_db, rows.length);
+  } catch (e) {
+    tampilkanGalatMuat(e);
+  }
 }
 
 function tampilkanPeringatanOverflow(overflow, totalDB, jumlahTampil) {

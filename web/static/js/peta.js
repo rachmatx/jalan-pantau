@@ -22,6 +22,7 @@ const osm = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 19,
   attribution: "&copy; OpenStreetMap contributors",
 }).addTo(map);
+
 const satelit = L.tileLayer(
   "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
   { maxZoom: 19, attribution: "Esri WorldImagery" });
@@ -35,6 +36,7 @@ const markerPerId = {};
 var gpsMarker = null;
 var gpsCircle = null;
 var gpsWatchId = null;
+var markerLokasi = null;  // hasil tombol "Lokasi Saya" (bukan filter)
 
 function buatMarkerGPS(ll) {
   // Hapus marker lama jika ada
@@ -239,6 +241,12 @@ function fokusMarker(id) {
 function gambar(aturPandangan) {
   lapis.clearLayers();
   for (const k of Object.keys(markerPerId)) delete markerPerId[k];
+  // clearLayers() ikut mencabut marker lokasi pengguna/GPS, yang bukan
+  // bagian dari data temuan. Pasang kembali agar tidak hilang saat filter
+  // atau "Fit" digambar ulang.
+  if (markerLokasi) markerLokasi.addTo(lapis);
+  if (gpsMarker) gpsMarker.addTo(lapis);
+  if (gpsCircle) gpsCircle.addTo(lapis);
   const aktif = filterAktif(), q = kataKunci();
   const tampil = semua.filter((t) => cocok(t, aktif, q));
   document.getElementById("peta-hitung").textContent =
@@ -290,10 +298,11 @@ document.getElementById("map-lokasi").addEventListener("click", () => {
     (pos) => {
       var ll = [pos.coords.latitude, pos.coords.longitude];
       map.setView(ll, 15);
-      // Tandai lokasi user
-      var mUser = L.marker(ll, { icon: L.divIcon({ className: "", html: '<div style="width:16px;height:16px;border-radius:50%;background:#006194;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3)" />', iconSize: [16, 16], iconAnchor: [8, 8] }) }).addTo(lapis);
-      mUser.bindPopup("Lokasi Anda").openPopup();
-      beriNamaMarker(mUser, "Lokasi Anda");
+      // Tandai lokasi user (satu marker saja; klik berulang mengganti).
+      if (markerLokasi) { try { lapis.removeLayer(markerLokasi); } catch (e) { console.warn("hapus marker lokasi", e); } }
+      markerLokasi = L.marker(ll, { icon: L.divIcon({ className: "", html: '<div style="width:16px;height:16px;border-radius:50%;background:#006194;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3)" />', iconSize: [16, 16], iconAnchor: [8, 8] }) }).addTo(lapis);
+      markerLokasi.bindPopup("Lokasi Anda").openPopup();
+      beriNamaMarker(markerLokasi, "Lokasi Anda");
       // Cari titik terdekat
       cariTerdekat(ll);
     },

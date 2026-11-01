@@ -266,6 +266,127 @@ class TestValidasiInput(unittest.TestCase):
         r = self.c.post("/api/riwayat", json={"rows": ROWS, "total": 1, "lat": 999, "lon": 0})
         self.assertEqual(r.status_code, 400)
 
+    def test_riwayat_sumber_lokasi_model_salah_tipe_400(self):
+        """Nilai non-teks tidak boleh lolos ke binding SQL (500)."""
+        for field in ("sumber", "lokasi", "model"):
+            r = self.c.post("/api/riwayat",
+                            json={"rows": ROWS, "total": 1,
+                                  field: {"bukan": "teks"}})
+            self.assertEqual(r.status_code, 400, field)
+
+    def test_verifikasi_rows_bukan_list_dict_400(self):
+        for rows in ("abc", {"kelas": "pothole"}, [1, 2]):
+            r = self.c.post("/api/verifikasi", json={"rows": rows})
+            self.assertEqual(r.status_code, 400, rows)
+
+    def test_verifikasi_severity_bukan_dict_400(self):
+        r = self.c.post("/api/verifikasi",
+                        json={"rows": ROWS, "severity": [1, 2]})
+        self.assertEqual(r.status_code, 400)
+
+    def test_verifikasi_hapus_bukan_list_400(self):
+        r = self.c.post("/api/verifikasi",
+                        json={"rows": ROWS, "hapus": {"x": 1}})
+        self.assertEqual(r.status_code, 400)
+
+    def test_laporan_rows_bukan_list_dict_400(self):
+        for rows in ("abc", [1, 2], {"kelas": "pothole"}):
+            r = self.c.post("/api/laporan", json={"rows": rows, "total": 1})
+            self.assertEqual(r.status_code, 400, rows)
+
+    def test_detect_conf_nan_400(self):
+        """NaN harus ditolak sebelum masuk ke antrean inferensi."""
+        from PIL import Image
+        buf = io.BytesIO()
+        Image.new("RGB", (32, 32), (90, 90, 90)).save(buf, format="JPEG")
+        buf.seek(0)
+        import web.app as app_mod
+        jalan = mock.Mock()
+        asli = app_mod.analisis_gambar_terjadwal
+        app_mod.analisis_gambar_terjadwal = jalan
+        try:
+            r = self.c.post("/api/detect",
+                            data={"gambar": (buf, "jalan.jpg"), "conf": "nan"},
+                            content_type="multipart/form-data")
+        finally:
+            app_mod.analisis_gambar_terjadwal = asli
+        self.assertEqual(r.status_code, 400)
+        jalan.assert_not_called()
+
+    def test_stream_start_conf_nan_400(self):
+        import web.app as app_mod
+        mulai = mock.Mock()
+        asli = app_mod.MANAGER.start
+        app_mod.MANAGER.start = mulai
+        try:
+            r = self.c.post("/api/stream/start",
+                            json={"source": "webcam", "target": "0",
+                                  "conf": "nan"})
+        finally:
+            app_mod.MANAGER.start = asli
+        self.assertEqual(r.status_code, 400)
+        mulai.assert_not_called()
+
+    def test_stream_start_hostname_loopback_400(self):
+        """Hostname yang resolve ke loopback harus ditolak seperti IP literal."""
+        import socket
+        import web.app as app_mod
+        alamat = [(socket.AF_INET, socket.SOCK_STREAM, 6, "",
+                   ("127.0.0.1", 0))]
+        mulai = mock.Mock()
+        asli = app_mod.MANAGER.start
+        app_mod.MANAGER.start = mulai
+        try:
+            with mock.patch("socket.getaddrinfo", return_value=alamat):
+                r = self.c.post(
+                    "/api/stream/start",
+                    json={"source": "ipcam",
+                          "target": "http://kamera-uji.example/x"})
+        finally:
+            app_mod.MANAGER.start = asli
+        self.assertEqual(r.status_code, 400)
+        mulai.assert_not_called()
+
+    def test_stream_start_ipv4_mapped_loopback_400(self):
+        import web.app as app_mod
+        mulai = mock.Mock()
+        asli = app_mod.MANAGER.start
+        app_mod.MANAGER.start = mulai
+        try:
+            r = self.c.post(
+                "/api/stream/start",
+                json={"source": "ipcam",
+                      "target": "http://[::ffff:127.0.0.1]/"})
+        finally:
+            app_mod.MANAGER.start = asli
+        self.assertEqual(r.status_code, 400)
+        mulai.assert_not_called()
+
+    def test_stream_tips_preset_aktual(self):
+        """Tips tidak boleh menyarankan preset yang sudah dihapus."""
+        import web.app as app_mod
+        asli = app_mod.MANAGER.start
+        app_mod.MANAGER.start = lambda *a, **k: None
+        try:
+            r = self.c.post("/api/stream/start",
+                            json={"source": "webcam", "target": "0"})
+        finally:
+            app_mod.MANAGER.start = asli
+        tips = r.get_json()["tips"]
+        self.assertNotIn("Akurat", tips)
+        self.assertIn("Seimbang", tips)
+
+    def test_segmen_pdf_tempfile_gagal_json_500(self):
+        """Gagal membuat file sementara -> 500 JSON, bukan UnboundLocalError."""
+        import web.app as app_mod
+        with mock.patch.object(app_mod, "detail_segmen",
+                               return_value={"id": 1}), \
+             mock.patch("web.app.tempfile.NamedTemporaryFile",
+                        side_effect=OSError("disk")):
+            r = self.c.get("/api/segmen/1/pdf")
+        self.assertEqual(r.status_code, 500)
+        self.assertTrue(r.is_json)
+
 
 
 

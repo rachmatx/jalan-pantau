@@ -69,7 +69,8 @@ def _aman(teks, maks=48):
                         ("”", '"'), ("‘", "'"), ("’", "'")):
         s = s.replace(asal, ganti)
     if len(s) > maks:
-        s = s[:max(maks - 1, 0)] + "…"
+        # ASCII: "…" hasil potong akan menjadi '?' setelah encode latin-1.
+        s = s[:max(maks - 3, 0)] + "..."
     return s.encode("latin-1", "replace").decode("latin-1")
 
 
@@ -112,6 +113,21 @@ def _conf_dari(it):
         return c if 0 <= c <= 1 else None
     except (TypeError, ValueError):
         return None
+
+
+def _potong_lebar(pdf, teks, lebar, maks=60):
+    """Potong teks agar muat selebar `lebar` (mm) pada font aktif.
+
+    Memotong per jumlah karakter tidak cukup: huruf courier 8,4 pt memakan
+    ~1,8 mm, sehingga 24 karakter meluber dari sel 33 mm dan menutupi badge
+    severity di sebelahnya.
+    """
+    s = _aman(teks, maks)
+    if pdf.get_string_width(s) <= lebar:
+        return s
+    while s and pdf.get_string_width(s + "...") > lebar:
+        s = s[:-1]
+    return s.rstrip() + "..."
 
 
 def _bungkus(pdf, teks, lebar):
@@ -572,7 +588,7 @@ def buat_laporan(path, items, total, img_path=None, meta=None):
         x += 58
         pdf.set_font("courier", "", 8.4)
         pdf.set_xy(x + 2, y + 1.4)
-        pdf.cell(33, 5.2, _aman(it.get("dasar", "-"), 24))
+        pdf.cell(33, 5.2, _potong_lebar(pdf, it.get("dasar", "-"), 33))
         x += 36
         _chip(pdf, x + 2, y + 1.1, label_sev, pal["bg"], pal["tx"], 7.8)
         x += 28
@@ -628,6 +644,9 @@ def buat_laporan_segmen(path, detail):
     sdi = seg.get("sdi") or {}
     total_sdi = sdi.get("sdi_total", 0)
     kategori = sdi.get("kategori") or "-"
+    # Tanpa temuan terukur, sdi_total=0 hanyalah artefak komponen kosong;
+    # kategori None adalah penanda bahwa segmen memang belum punya data.
+    ada_data = kategori != "-"
     tgl = datetime.now()
     nomor = (f"SDI-{tgl:%Y%m%d}-SEG{int(seg['id']):02d}"
              if seg.get("id") else f"SDI-{tgl:%Y%m%d}")
@@ -660,16 +679,26 @@ def buat_laporan_segmen(path, detail):
     pdf.set_font("helvetica", "B", 30)
     pdf.set_text_color(*INK)
     pdf.set_xy(X0 + 4, y + 7)
-    pdf.cell(50, 13, _fmt_angka(total_sdi))
-    warna_kat = KAT_WARNA.get(kategori, ABU)
-    pdf.set_draw_color(*warna_kat)
-    pdf.set_fill_color(*KAT_LATAR.get(kategori, LATAR))
-    pdf.rect(X0 + 4, y + 21.5, 46, 6.6, style="DF", round_corners=True,
-             corner_radius=2.5)
-    pdf.set_font("helvetica", "B", 9)
-    pdf.set_text_color(*warna_kat)
-    pdf.set_xy(X0 + 4, y + 22.4)
-    pdf.cell(46, 5, _aman(kategori, 20), align="C")
+    pdf.cell(50, 13, _fmt_angka(total_sdi) if ada_data else "-")
+    if ada_data:
+        warna_kat = KAT_WARNA.get(kategori, ABU)
+        pdf.set_draw_color(*warna_kat)
+        pdf.set_fill_color(*KAT_LATAR.get(kategori, LATAR))
+        pdf.rect(X0 + 4, y + 21.5, 46, 6.6, style="DF", round_corners=True,
+                 corner_radius=2.5)
+        pdf.set_font("helvetica", "B", 9)
+        pdf.set_text_color(*warna_kat)
+        pdf.set_xy(X0 + 4, y + 22.4)
+        pdf.cell(46, 5, _aman(kategori, 20), align="C")
+    else:
+        pdf.set_draw_color(*GARIS)
+        pdf.set_fill_color(*LATAR)
+        pdf.rect(X0 + 4, y + 21.5, 52, 6.6, style="DF", round_corners=True,
+                 corner_radius=2.5)
+        pdf.set_font("helvetica", "B", 8)
+        pdf.set_text_color(*ABU)
+        pdf.set_xy(X0 + 4, y + 22.6)
+        pdf.cell(52, 5, "Belum ada data terukur", align="C")
     pdf.set_font("helvetica", "", 7)
     pdf.set_text_color(*ABU2)
     pdf.set_xy(X0 + 4, y + 28.6)
@@ -680,18 +709,19 @@ def buat_laporan_segmen(path, detail):
     pdf.set_text_color(*ABU2)
     pdf.set_xy(sx, y + 3.5)
     pdf.cell(sw, 3.8, "POSISI SDI TERHADAP AMBANG")
-    try:
-        v = float(total_sdi)
-    except (TypeError, ValueError):
-        v = 0
-    mx = sx + min(max(v, 0), 200) / 200 * sw
-    pdf.set_font("helvetica", "B", 8.5)
-    pdf.set_text_color(*INK)
-    pdf.set_xy(mx - 10, y + 8.6)
-    pdf.cell(20, 4.4, _fmt_angka(total_sdi), align="C")
-    pdf.set_fill_color(*INK)
-    pdf.polygon([(mx - 2.6, y + 13.6), (mx + 2.6, y + 13.6),
-                 (mx, y + 16.6)], style="F")
+    if ada_data:
+        try:
+            v = float(total_sdi)
+        except (TypeError, ValueError):
+            v = 0
+        mx = sx + min(max(v, 0), 200) / 200 * sw
+        pdf.set_font("helvetica", "B", 8.5)
+        pdf.set_text_color(*INK)
+        pdf.set_xy(mx - 10, y + 8.6)
+        pdf.cell(20, 4.4, _fmt_angka(total_sdi), align="C")
+        pdf.set_fill_color(*INK)
+        pdf.polygon([(mx - 2.6, y + 13.6), (mx + 2.6, y + 13.6),
+                     (mx, y + 16.6)], style="F")
     seg_w = sw / 4
     for i, nama_kat in enumerate(("Baik", "Sedang", "Rusak Ringan",
                                   "Rusak Berat")):
@@ -859,9 +889,13 @@ def buat_laporan_segmen(path, detail):
                 penyumbang = label.split(" - ")[0] + " " + \
                     label.split(" - ")[1].lower()
                 break
-    isi = (f"SDI total {_fmt_angka(total_sdi)} termasuk kategori "
-           f"{kategori} ({PITA_KAT.get(kategori, '-')}). Komponen "
-           f"penyumbang terbesar: {penyumbang}. ")
+    if ada_data:
+        isi = (f"SDI total {_fmt_angka(total_sdi)} termasuk kategori "
+               f"{kategori} ({PITA_KAT.get(kategori, '-')}). Komponen "
+               f"penyumbang terbesar: {penyumbang}. ")
+    else:
+        isi = ("Belum ada temuan dengan dimensi terukur pada segmen ini, "
+               "sehingga SDI belum dapat dihitung. ")
     if sdi.get("n_tanpa_dimensi"):
         isi += (f"{sdi['n_tanpa_dimensi']} temuan tanpa data dimensi tidak "
                 f"masuk perhitungan. ")

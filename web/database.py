@@ -12,6 +12,12 @@ from pathlib import Path
 from flask import current_app, g
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from env_file import muat_env_file
+
+# Dimuat sebelum AKUN_DEMO dievaluasi, supaya JP_DEMO_PASS dari .env berlaku
+# meski modul ini diimpor tanpa lewat create_app().
+muat_env_file()
+
 # Formula skor prioritas (Ringan 33 / Sedang 67 / Berat 100) dipakai bersama
 # dengan app/prioritas.py supaya tidak ada dua sumber kebenaran.
 _APP_DIR = Path(__file__).resolve().parent.parent / "app"
@@ -399,19 +405,17 @@ def sdi_segmen(segmen_id):
         (segmen_id,)).fetchall()
     det, tanpa_dimensi = [], 0
     for r in rows:
-        if r["panjang_cm"] is None or r["lebar_cm"] is None:
+        if (r["panjang_cm"] is None or r["lebar_cm"] is None
+                or r["panjang_cm"] <= 0 or r["lebar_cm"] <= 0):
             tanpa_dimensi += 1
             continue
         det.append({"kelas": r["kelas"], "panjang_cm": r["panjang_cm"],
                     "lebar_cm": r["lebar_cm"]})
     komp = _agregasi_sdi(det, s["panjang_m"], s["lebar_m"])
     hasil = _hitung_sdi(komp)
-    if not rows:
-        # Audit UI 1 Nov 2026: segmen tanpa sesi anggota BELUM punya data —
-        # kategori harus netral (None), bukan "Baik". SDI total 0 dari
-        # hitung_sdi() adalah nilai matematis komponen kosong; melabelinya
-        # "Baik" membuat segmen belum-survei terlihat sehat di daftar,
-        # distribusi kategori, dialog, dan PDF.
+    if not det:
+        # Tidak ada temuan yang bisa diukur -> kategori netral (None), bukan
+        # "Baik": angka 0 hanyalah artefak komponen kosong.
         hasil["kategori"] = None
     hasil["n_temuan_total"] = len(rows)
     hasil["n_tanpa_dimensi"] = tanpa_dimensi
@@ -463,6 +467,17 @@ def _angka(nilai, batas, bawaan=0.0):
     if x != x or x in (float("inf"), float("-inf")):
         return float(bawaan)
     return max(0.0, min(x, float(batas)))
+
+
+def _dimensi(nilai, batas):
+    """Dimensi temuan: None bila tidak diukur (bukan 0.0 yang tampak valid)."""
+    try:
+        x = float(nilai)
+    except (TypeError, ValueError):
+        return None
+    if x != x or x in (float("inf"), float("-inf")) or x <= 0:
+        return None
+    return min(x, float(batas))
 
 
 def simpan_sesi(sumber, lokasi, model, rows, total, lat=None, lon=None, image_bytes=None,
@@ -517,8 +532,8 @@ def simpan_sesi(sumber, lokasi, model, rows, total, lat=None, lon=None, image_by
                      if r.get("conf") is not None else None),
             "track_id": (int(_angka(r.get("track_id"), 10 ** 6))
                          if r.get("track_id") is not None else None),
-            "panjang_cm": _angka(r.get("panjang_cm"), 10 ** 4),
-            "lebar_cm": _angka(r.get("lebar_cm"), 10 ** 4),
+            "panjang_cm": _dimensi(r.get("panjang_cm"), 10 ** 4),
+            "lebar_cm": _dimensi(r.get("lebar_cm"), 10 ** 4),
         })
     total = sum(t["skor_prioritas"] for t in temuan)
     sev = [t["severity"] for t in temuan]
